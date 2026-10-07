@@ -157,8 +157,12 @@ def solve_min_time_dynamic(track: Track, veh: DynVehicle, init: dict, ds: float 
     t0 = time.time()
     try:
         sol, ok = opti.solve(), True
-    except RuntimeError:
+    except RuntimeError as err:
         sol, ok = opti.debug, False
+        try:
+            sol.stats()
+        except RuntimeError:          # failed before IPOPT ran (e.g. out of memory)
+            raise err from None
     st = sol.stats()
     val = lambda e: np.asarray(sol.value(e)).ravel()
     return DynOCPResult(s, val(n), val(xi), val(vx), val(vy), val(r), val(d), val(U[0, :]),
@@ -167,14 +171,40 @@ def solve_min_time_dynamic(track: Track, veh: DynVehicle, init: dict, ds: float 
                         time.time() - t0)
 
 
-def initial_guess_from_kinematic(track: Track, veh: DynVehicle, ocp0) -> dict:
-    """Initial guess from the L0 (rear-axle, kinematic) OCP solution."""
-    v = ocp0.v
+def initial_guess_from_kinematic(track: Track, veh: DynVehicle, ocp0, speed_scale: float = 1.0) -> dict:
+    """Initial guess from the L0 (rear-axle, kinematic) OCP solution, optionally at a
+    reduced speed (the kinematic speeds are beyond what the dynamic car can do)."""
+    v = ocp0.v * speed_scale
     r = v * np.tan(ocp0.delta) / veh.L
-    fx = ocp0.fx
+    fx = ocp0.fx * speed_scale**2
     return {"s": ocp0.s, "n": ocp0.n + veh.lr * np.sin(ocp0.xi), "xi": ocp0.xi,
             "vx": v, "vy": veh.lr * r, "r": r, "delta": ocp0.delta,
             "f_drive": np.maximum(fx, 0.0), "f_brake": np.minimum(fx, 0.0)}
+
+
+def initial_guess_quasi_steady(track: Track, veh: DynVehicle, ocp0, speed_scale: float = 1.0,
+                               max_frac: float = 0.98) -> dict:
+    """Initial guess from the L0 solution with tyre slip: speed, yaw rate and longitudinal
+    force from the kinematic plan, the lateral axle forces from the quasi-steady balance
+    (m vx r split so that the yaw moment vanishes), the slip angles from the inverse tyre
+    curve (capped at ``max_frac`` of the peak force), and v_y, steering and heading so
+    that the rear axle keeps the kinematic course. The kinematic guess has both slip
+    angles zero, i.e. no lateral tyre force, which leaves large defects in the lateral
+    dynamics for the optimiser to remove."""
+    vx = ocp0.v * speed_scale
+    r = vx * np.tan(ocp0.delta) / veh.L
+    fx = ocp0.fx * speed_scale**2
+    fd, fb = np.maximum(fx, 0.0), np.minimum(fx, 0.0)
+    F = tyre_forces(veh, vx, veh.lr * r, r, ocp0.delta, fd, fb)          # normal loads
+    fy = veh.m * vx * r
+    inv = lambda y: np.tan(np.arcsin(np.clip(y, -max_frac, max_frac)) / veh.C) / veh.B
+    ar = inv(fy * veh.lf / veh.L / (veh.mu_y * F["fzr"]))
+    af = inv(fy * veh.lr / veh.L / (veh.mu_y * F["fzf"]))
+    vy = veh.lr * r - vx * np.tan(ar)
+    delta = np.clip(af + np.arctan((vy + veh.lf * r) / vx), -veh.delta_max, veh.delta_max)
+    xi = ocp0.xi + ar
+    return {"s": ocp0.s, "n": ocp0.n + veh.lr * np.sin(xi), "xi": xi, "vx": vx, "vy": vy, "r": r,
+            "delta": delta, "f_drive": fd, "f_brake": fb}
 
 
 def initial_guess_from_dynamic(o: DynOCPResult) -> dict:
