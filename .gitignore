@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+build/
+dist/
+
+# Track data is downloaded at runtime (LGPL-3.0 upstream, not redistributed here)
+data/
+
+# Generated results (figures used in the docs live in docs/figures/)
+results/
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
