@@ -28,7 +28,8 @@ class L0Config:
     track: str = "Spielberg"
     margin: float = 0.3          # extra distance to the edges [m]
     eta_plan: float = 0.97       # friction fraction used by the plans that are executed
-    ocp_ds: float = 4.0          # OCP grid [m]
+    ocp_ds: float = 2.0          # OCP grid [m] (see the grid study in docs/L0.md)
+    qss_ds: float = 0.5          # resolution of the path the QSS profile is computed on [m]
     dt: float = 0.02             # simulator step [s]
     mincurv_step: int = 3        # every k-th centreline sample for the QP
 
@@ -79,16 +80,19 @@ def run(cfg: L0Config = L0Config(), outdir: str | FsPath | None = None, verbose:
     veh = Vehicle()
     timing = {}
 
-    cl = Path.from_points(np.column_stack([track.x[::cfg.mincurv_step], track.y[::cfg.mincurv_step]]))
+    cl = Path.from_points(np.column_stack([track.x[::cfg.mincurv_step], track.y[::cfg.mincurv_step]]),
+                          resample=cfg.qss_ds)
     centre = speed_profile(cl, veh).lap_time
 
     t0 = time.time()
     alpha, mc = min_curvature_line(track, veh, margin=cfg.margin, step=cfg.mincurv_step)
     timing["mincurv_s"] = time.time() - t0
-    q_ideal = speed_profile(mc, veh, 1.0)
-    q_plan = speed_profile(mc, veh, cfg.eta_plan)
     idx = np.arange(0, len(track.s), cfg.mincurv_step)
-    init = initial_guess_from_path(track, veh, idx, alpha, mc, q_ideal.v, q_ideal.a)
+    q_knots = speed_profile(mc, veh, 1.0)                 # on the QP points: OCP initial guess
+    init = initial_guess_from_path(track, veh, idx, alpha, mc, q_knots.v, q_knots.a)
+    mc_dense = Path.from_points(np.column_stack([mc.x, mc.y]), resample=cfg.qss_ds)
+    q_ideal = speed_profile(mc_dense, veh, 1.0)
+    q_plan = speed_profile(mc_dense, veh, cfg.eta_plan)
 
     t0 = time.time()
     o_ideal = solve_min_time(track, veh, init, ds=cfg.ocp_ds, margin=cfg.margin, eta=1.0)
@@ -98,7 +102,7 @@ def run(cfg: L0Config = L0Config(), outdir: str | FsPath | None = None, verbose:
     closed = {}
     sims = {}
     for name, (path, v, a, kref) in {
-        "mincurv_qss": plan_from_points(np.column_stack([mc.x, mc.y]), q_plan.v),
+        "mincurv_qss": (mc_dense, q_plan.v, q_plan.a, None),
         "ocp": plan_from_points(o_plan.xy(track), o_plan.v, kappa=np.tan(o_plan.delta) / veh.L),
     }.items():
         t0 = time.time()
@@ -120,8 +124,8 @@ def run(cfg: L0Config = L0Config(), outdir: str | FsPath | None = None, verbose:
         out = FsPath(outdir)
         out.mkdir(parents=True, exist_ok=True)
         (out / "summary.json").write_text(json.dumps(asdict(res), indent=2))
-        np.savez(out / "l0_data.npz", alpha=alpha, mc_x=mc.x, mc_y=mc.y, mc_v=q_plan.v,
+        np.savez(out / "l0_data.npz", alpha=alpha, mc_x=mc_dense.x, mc_y=mc_dense.y, mc_v=q_plan.v,
                  ocp_s=o_ideal.s, ocp_n=o_ideal.n, ocp_v=o_ideal.v, ocp_delta=o_ideal.delta,
                  ocp_fx=o_ideal.fx, ocp_plan_n=o_plan.n, ocp_plan_v=o_plan.v)
-    return res, dict(track=track, veh=veh, mc=mc, q_plan=q_plan, q_ideal=q_ideal,
+    return res, dict(track=track, veh=veh, mc=mc, mc_dense=mc_dense, q_plan=q_plan, q_ideal=q_ideal,
                      o_ideal=o_ideal, o_plan=o_plan, sims=sims)

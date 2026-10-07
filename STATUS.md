@@ -8,7 +8,7 @@ after APPROVE. Workflow: [docs/workflow.md](docs/workflow.md).
 
 | Layer | Branch | State | Review |
 |---|---|---|---|
-| L0 deterministic kinematic | `layer/L0` | complete, review requested | pending |
+| L0 deterministic kinematic | `layer/L0` | review round 1 fixes committed | round 1: CHANGES_REQUESTED (2 major) → fixed, re-review requested |
 | L1 dynamic single-track + Pacejka | `layer/L1` | in progress | – |
 | L2 model mismatch, closed loop | – | planned | – |
 | L3 stochastic disturbances | – | planned | – |
@@ -17,14 +17,20 @@ after APPROVE. Workflow: [docs/workflow.md](docs/workflow.md).
 
 ## L0 summary
 
-Spielberg, generic open-wheel car. Ideal lap: centre line 78.35 s, minimum curvature 72.33 s,
-minimum-time OCP 71.43 s. Closed loop with 3 % friction margin: 73.17 s / 72.28 s.
+Spielberg, generic open-wheel car. Ideal lap: centre line 77.89 s, minimum curvature 72.14 s,
+minimum-time OCP 71.26 s (2 m grid; limit ≈ 71.0 s). Closed loop with 3 % friction margin:
+72.90 s / 72.10 s, ellipse usage ≤ 0.995 for control steps 5–40 ms.
 Reproduce: `python scripts/fetch_tracks.py Spielberg && python scripts/run_l0.py && pytest`.
+
+Reference environment: Windows 11, Python 3.12.10, numpy 2.5.3, scipy 1.18.1, casadi 3.8.1,
+matplotlib 3.11.2. Numbers reproduce on other versions (reviewer: Python 3.11); figures are not
+expected to be byte-identical.
 
 ## Review log
 
 | Date | Commit | Scope | Verdict | Notes |
 |---|---|---|---|---|
+| 2026-10-06 | a514825 | L0 | CHANGES_REQUESTED | M1 OCP closed loop not robust to control step; M2 no OCP grid convergence; minors: margin < design, QSS end-point accel, projection jitter, front-axle approximation undocumented; nits: env versions, .gitattributes; Q1 author e-mail → user |
 
 ## Notes for resuming
 

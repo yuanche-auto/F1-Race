@@ -21,14 +21,42 @@ def test_sim_circle_constant_steering(track, vehicle):
     assert np.isclose(np.hypot(x[0], x[1] - R), R, atol=1e-6)
 
 
-def test_closed_loop_follows_qss_plan(track, vehicle, mincurv):
+@pytest.mark.parametrize("dt", [0.02, 0.04])
+def test_closed_loop_follows_qss_plan(track, vehicle, mincurv, dt):
+    from f1race.path import Path as RPath
+
     _, path = mincurv
-    prof = speed_profile(path, vehicle, eta=0.97)
-    dense, v, a, k = plan_from_points(np.column_stack([path.x, path.y]), prof.v)
-    r = run_closed_loop(track, vehicle, dense, v, a, k, dt=0.02)
+    dense = RPath.from_points(np.column_stack([path.x, path.y]), resample=0.5)
+    prof = speed_profile(dense, vehicle, eta=0.97)
+    r = run_closed_loop(track, vehicle, dense, prof.v, prof.a, None, dt=dt)
     assert r.completed
     assert abs(r.lap_time - prof.lap_time) < 0.3
-    assert r.max_usage <= 1.0 and r.min_margin > 0.0
+    assert r.max_usage <= 0.995 + 1e-9 and r.min_margin > 0.0
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("dt", [0.02, 0.04])
+def test_closed_loop_follows_ocp_plan(track, vehicle, mincurv, dt):
+    alpha, path = mincurv
+    prof = speed_profile(path, vehicle)
+    idx = np.arange(0, len(track.s), 3)
+    init = initial_guess_from_path(track, vehicle, idx, alpha, path, prof.v, prof.a)
+    o = _ocp_cache(track, vehicle, init)
+    dense, v, a, k = plan_from_points(o.xy(track), o.v, kappa=np.tan(o.delta) / vehicle.L)
+    r = run_closed_loop(track, vehicle, dense, v, a, k, dt=dt)
+    assert r.completed
+    assert abs(r.lap_time - o.lap_time) < 0.3
+    assert r.max_usage <= 0.995 + 1e-9 and r.min_margin > 0.0
+
+
+_OCP = {}
+
+
+def _ocp_cache(track, vehicle, init):
+    if "plan" not in _OCP:
+        _OCP["plan"] = solve_min_time(track, vehicle, init, ds=2.0, margin=0.3, eta=0.97)
+        assert _OCP["plan"].success
+    return _OCP["plan"]
 
 
 @pytest.mark.slow

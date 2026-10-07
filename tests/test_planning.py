@@ -27,24 +27,28 @@ def test_qss_circle_matches_analytic(circle_path, vehicle):
 
 
 def test_qss_feasible_and_maximal(mincurv, vehicle):
+    from f1race.planning.qss import _bwd, _fwd
+
     _, path = mincurv
     prof = speed_profile(path, vehicle)
     w = prof.v**2
     wn = np.roll(w, -1)
+    kn = np.roll(path.kappa, -1)
     ds = path.ds
     a = (wn - w) / (2 * ds)
-    # every segment respects the limits used by the passes (end-point evaluation)
-    amin_end, _ = vehicle.accel_limits(wn, np.roll(path.kappa, -1))
-    _, amax_start = vehicle.accel_limits(w, path.kappa)
-    assert np.all(a <= amax_start + 1e-6)
-    assert np.all(a >= amin_end - 1e-6)
-    assert np.all(w <= pointwise_v2_max(path, vehicle) * (1 + 1e-9))
-    # maximality: every point is limited by its own bound or by a neighbour's pass
-    lim_fwd = np.roll(w + 2 * np.roll(ds, 0) * amax_start, 1)
-    lim_bwd = wn - 2 * ds * amin_end
+    # physical feasibility: the segment acceleration is admissible at both ends
+    for ww, kk in ((w, path.kappa), (wn, kn)):
+        amin, amax = vehicle.accel_limits(ww, kk)
+        assert np.all(a <= amax + 1e-6)
+        assert np.all(a >= amin - 1e-6)
     wmax = pointwise_v2_max(path, vehicle)
+    assert np.all(w <= wmax * (1 + 1e-9))
+    # maximality: every point is limited by its own bound or by a neighbour's pass
+    # (up to 0.1 %: the conservative two-end rule is not exactly symmetric between passes)
+    lim_fwd = np.roll([_fwd(vehicle, wi, ki, kj, d) for wi, ki, kj, d in zip(w, path.kappa, kn, ds)], 1)
+    lim_bwd = np.array([_bwd(vehicle, wj, kj, ki, d) for wj, kj, ki, d in zip(wn, kn, path.kappa, ds)])
     tight = np.minimum.reduce([wmax, lim_fwd, lim_bwd])
-    assert np.allclose(w, tight, rtol=1e-6, atol=1e-6)
+    assert np.allclose(w, tight, rtol=1e-3, atol=1e-6)
 
 
 def test_mincurv_bounds_and_gain(track, vehicle, mincurv):

@@ -9,7 +9,8 @@ vehicles", 2016)
 which gives e'' + k_psi e' + k_e e = 0 in arclength for small errors; the gains
 are scheduled with speed (bounded temporal bandwidth). The law is evaluated
 half a step ahead and the resulting steering angle is commanded through the
-rate-limited actuator.
+rate-limited actuator, capped by a friction governor: the commanded angle never
+asks for more than ``eta_exec`` of the lateral grip at the current speed.
 
 Speed: feed-forward of the planned acceleration (scaled by v / v_ref because the
 reference is a function of arclength) plus proportional feedback;
@@ -77,7 +78,12 @@ class PathTracker:
         ke, kpsi = wn * wn, 2.0 * self.zeta * wn
         sc = np.sin(dpsi) / dpsi if abs(dpsi) > 1e-6 else 1.0
         kc = kap * np.cos(dpsi) / (1.0 - kap * e) - kpsi * dpsi - ke * e * sc
-        delta_des = float(np.clip(np.arctan(veh.L * kc), -veh.delta_max, veh.delta_max))
+        # friction governor: never command more steering than the lateral grip allows at
+        # the current speed (pure-lateral usage <= eta_exec); path accuracy is traded for grip
+        v2 = v * v
+        d_grip = np.arctan(veh.L * self.eta_exec * veh.mu_y * veh.fz(v2) / (veh.m * max(v2, 1e-6)))
+        d_lim = min(veh.delta_max, d_grip)
+        delta_des = float(np.clip(np.arctan(veh.L * kc), -d_lim, d_lim))
         drate = float(np.clip((delta_des - delta) / dt, -veh.delta_rate_max, veh.delta_rate_max))
 
         # v_ref is a function of arclength: d v_ref/dt = a_ref * v / v_ref

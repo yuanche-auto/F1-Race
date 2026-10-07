@@ -22,7 +22,8 @@ learning-based controller beat a model-based one, and why?*
 python -m venv .venv && .venv/Scripts/activate      # or: source .venv/bin/activate
 pip install -e .[dev]
 python scripts/fetch_tracks.py Spielberg             # downloads the track (see "Data")
-python scripts/run_l0.py                             # ~40 s; writes results/L0 and docs/figures/L0
+python scripts/run_l0.py                             # ~65 s; writes results/L0 and docs/figures/L0
+python scripts/l0_studies.py                         # ~4 min; grid / step studies
 pytest                                               # ~1-2 min
 ```
 
@@ -30,9 +31,13 @@ pytest                                               # ~1-2 min
 
 | Plan | Lap time (ideal, friction fully used) | Lap time with 3 % friction margin | Closed loop (simulator) |
 |---|---|---|---|
-| centre line + speed profile | 78.35 s | – | – |
-| minimum-curvature line + speed profile | 72.33 s | 73.09 s | 73.17 s |
-| minimum-time optimal control | **71.43 s** | 72.25 s | **72.28 s** |
+| centre line + speed profile | 77.89 s | – | – |
+| minimum-curvature line + speed profile | 72.14 s | 72.89 s | 72.90 s |
+| minimum-time optimal control | **71.26 s** | 72.07 s | **72.10 s** |
+
+OCP on a 2 m grid (grid limit ≈ 71.0 s), speed profiles at 0.5 m; the closed
+loop stays within 99.5 % of the friction ellipse for control steps from 5 to
+40 ms. See the grid and step studies in [docs/L0.md](docs/L0.md).
 
 ![lines](docs/figures/L0/lines.png)
 

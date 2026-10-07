@@ -121,27 +121,47 @@ class Track:
         return self._kdt
 
     def project(self, px, py) -> tuple[np.ndarray, np.ndarray]:
-        """Frenet coordinates (s, n) of points: nearest point on the piecewise-linear
-        centreline (global search, refined on the two adjacent segments)."""
+        """Frenet coordinates (s, n) of points.
+
+        On each segment the tangent is interpolated linearly between the two end
+        samples and the foot point solves (p - c(lam)) . t(lam) = 0 (a quadratic in
+        lam). Unlike a plain polyline projection this is continuous across the
+        samples: on the inside of tight corners a polyline foot point jumps by about
+        |n| kappa ds at every vertex.
+        """
         px = np.atleast_1d(np.asarray(px, float))
         py = np.atleast_1d(np.asarray(py, float))
         _, idx = self._tree().query(np.column_stack([px, py]))
         N = len(self.s)
+        tx, ty = np.cos(self.psi), np.sin(self.psi)
         best_d = np.full(px.shape, np.inf)
         s_out = np.zeros(px.shape)
         n_out = np.zeros(px.shape)
-        for off in (-1, 0):
+        for off in range(-3, 3):                 # segments around the nearest sample
             a = (idx + off) % N
             b = (a + 1) % N
-            ax, ay = self.x[a], self.y[a]
-            vx, vy = self.x[b] - ax, self.y[b] - ay
-            L2 = vx**2 + vy**2
-            lam = np.clip(((px - ax) * vx + (py - ay) * vy) / L2, 0.0, 1.0)
-            qx, qy = ax + lam * vx, ay + lam * vy
-            d = np.hypot(px - qx, py - qy)
-            sgn = np.sign(vx * (py - ay) - vy * (px - ax))
+            dx, dy = self.x[b] - self.x[a], self.y[b] - self.y[a]
+            qx, qy = px - self.x[a], py - self.y[a]
+            gx, gy = tx[b] - tx[a], ty[b] - ty[a]
+            A = -(dx * gx + dy * gy)
+            B = qx * gx + qy * gy - (dx * tx[a] + dy * ty[a])
+            C = qx * tx[a] + qy * ty[a]
+            lin = -C / np.where(np.abs(B) > 1e-12, B, -1e-12)
+            disc = np.sqrt(np.maximum(B * B - 4 * A * C, 0.0))
+            Asafe = np.where(np.abs(A) > 1e-12, A, 1.0)
+            r1, r2 = (-B + disc) / (2 * Asafe), (-B - disc) / (2 * Asafe)
+            quad = np.where(np.abs(r1 - lin) < np.abs(r2 - lin), r1, r2)
+            lam = np.where(np.abs(A) > 1e-9 * np.maximum(np.abs(B), 1e-12), quad, lin)
+            lam = np.clip(lam, 0.0, 1.0)
+            cx, cy = self.x[a] + lam * dx, self.y[a] + lam * dy
+            ux, uy = (1 - lam) * tx[a] + lam * tx[b], (1 - lam) * ty[a] + lam * ty[b]
+            un = np.hypot(ux, uy)
+            ux, uy = ux / un, uy / un
+            ex, ey = px - cx, py - cy
+            d = np.hypot(ex, ey)
             better = d < best_d
             best_d = np.where(better, d, best_d)
-            s_out = np.where(better, np.mod(self.s[a] + lam * np.sqrt(L2), self.length), s_out)
-            n_out = np.where(better, sgn * d, n_out)
+            seg = np.hypot(dx, dy)
+            s_out = np.where(better, np.mod(self.s[a] + lam * seg, self.length), s_out)
+            n_out = np.where(better, ux * ey - uy * ex, n_out)
         return s_out, n_out
