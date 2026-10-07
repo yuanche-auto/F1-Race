@@ -6,7 +6,8 @@ delta = atan(L kappa), the lateral force m v^2 kappa and the steering rate
 u = dv/dt = (1/2) dw/ds, bounded by the friction ellipse (with downforce), the
 power limit and the resistances (Vehicle.accel_limits). The time-optimal profile
 is obtained with the classic forward (max acceleration) / backward (max
-braking) passes, started at the slowest point of the loop and repeated until
+braking) passes (each segment uses a constant acceleration that is admissible at
+both of its ends), started at the slowest point of the loop and repeated until
 the profile is periodic (one sweep normally suffices; on long constant-radius
 sections drag makes the sustainable speed lower than the lateral limit and the
 sweeps converge to that equilibrium).
@@ -42,6 +43,25 @@ def pointwise_v2_max(path: Path, vehicle: Vehicle) -> np.ndarray:
     return np.minimum(np.minimum(w_lat, w_rate), w_top)
 
 
+def _fwd(veh: Vehicle, wi: float, ki: float, kj: float, ds: float) -> float:
+    """Largest w at the end of a segment reachable from wi with constant acceleration
+    admissible at BOTH ends (the limit is evaluated at the start and at the predicted
+    end; the smaller one is used)."""
+    _, a1 = veh.accel_limits(wi, ki)
+    wp = max(wi + 2.0 * a1 * ds, 0.0)
+    _, a2 = veh.accel_limits(wp, kj)
+    return max(wi + 2.0 * min(a1, a2) * ds, 0.0)
+
+
+def _bwd(veh: Vehicle, wj: float, kj: float, ki: float, ds: float) -> float:
+    """Largest w at the start of a segment from which wj can be reached with a
+    constant deceleration admissible at both ends."""
+    a1, _ = veh.accel_limits(wj, kj)
+    wp = max(wj - 2.0 * a1 * ds, 0.0)
+    a2, _ = veh.accel_limits(wp, ki)
+    return max(wj - 2.0 * max(a1, a2) * ds, 0.0)
+
+
 def speed_profile(path: Path, vehicle: Vehicle, eta: float = 1.0,
                   max_sweeps: int = 50) -> SpeedProfile:
     """Time-optimal speed on a closed path; friction scaled by ``eta`` (planning margin)."""
@@ -57,16 +77,14 @@ def speed_profile(path: Path, vehicle: Vehicle, eta: float = 1.0,
         w_old = w.copy()
         for k in range(1, N + 1):
             i, j = (i0 + k - 1) % N, (i0 + k) % N
-            _, amax = veh.accel_limits(w[i], kap[i])
-            w[j] = min(w[j], max(w[i] + 2.0 * amax * ds[i], 0.0))
+            w[j] = min(w[j], _fwd(veh, w[i], kap[i], kap[j], ds[i]))
         if np.max(np.abs(w - w_old)) < 1e-9:
             break
     for _ in range(max_sweeps):                         # backward passes until periodic
         w_old = w.copy()
         for k in range(1, N + 1):
             j, i = (i0 - k + 1) % N, (i0 - k) % N
-            amin, _ = veh.accel_limits(w[j], kap[j])
-            w[i] = min(w[i], max(w[j] - 2.0 * amin * ds[i], 0.0))
+            w[i] = min(w[i], _bwd(veh, w[j], kap[j], kap[i], ds[i]))
         if np.max(np.abs(w - w_old)) < 1e-9:
             break
 

@@ -48,9 +48,12 @@ def figures(ctx, figdir: Path) -> None:
     plt.close(fig)
 
     # 2) speed profiles over centreline arclength
-    idx = np.arange(0, len(tr.s), 3)
+    md = ctx["mc_dense"]
+    s_md, _ = tr.project(md.x, md.y)
+    order = np.argsort(s_md)
     fig, ax = plt.subplots(figsize=(12, 4))
-    ax.plot(tr.s[idx], ctx["q_ideal"].v * 3.6, label=f"min-curvature + QSS ({ctx['q_ideal'].lap_time:.2f} s)")
+    ax.plot(s_md[order], ctx["q_ideal"].v[order] * 3.6,
+            label=f"min-curvature + QSS ({ctx['q_ideal'].lap_time:.2f} s)")
     ax.plot(oi.s, oi.v * 3.6, label=f"minimum-time OCP ({oi.lap_time:.2f} s)")
     ax.set_xlabel("centreline arclength [m]")
     ax.set_ylabel("speed [km/h]")
