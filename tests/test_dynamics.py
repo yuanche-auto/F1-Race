@@ -55,3 +55,24 @@ def test_low_speed_steady_state_matches_kinematics(track, dveh):
         x = sim.step(x, np.array([0.0, max(f, 0.0), min(f, 0.0)]))
     r_kin = x[3] * np.tan(delta) / dveh.L
     assert abs(x[5] - r_kin) / r_kin < 0.03
+
+
+def test_quasi_steady_guess_balances_cornering(dveh):
+    """On a steady corner the quasi-steady guess has the lateral force and (almost) no yaw
+    moment that the turn needs, and keeps the rear axle on the kinematic course."""
+    from types import SimpleNamespace
+
+    from f1race.planning.ocp_dynamic import initial_guess_quasi_steady
+
+    v, R = np.array([30.0, 45.0]), 120.0
+    d_kin = np.full(2, np.arctan(dveh.L / R))
+    o0 = SimpleNamespace(s=np.zeros(2), n=np.zeros(2), xi=np.zeros(2), v=v, delta=d_kin,
+                         fx=dveh.q_drag * v**2)
+    g = initial_guess_quasi_steady(None, dveh, o0)
+    F = tyre_forces(dveh, g["vx"], g["vy"], g["r"], g["delta"], g["f_drive"], g["f_brake"])
+    lat = F["fyr"] + F["fyf"] * np.cos(g["delta"]) + F["fxf"] * np.sin(g["delta"])
+    yaw = dveh.lf * F["fyf"] * np.cos(g["delta"]) - dveh.lr * F["fyr"]
+    assert np.allclose(lat, dveh.m * g["vx"] * g["r"], rtol=0.01)
+    assert np.all(np.abs(yaw) < 0.01 * dveh.lr * np.abs(F["fyr"]))
+    assert np.all(np.abs(F["ar"]) < dveh.alpha_peak) and np.all(np.abs(F["af"]) < dveh.alpha_peak)
+    assert np.allclose(g["xi"] - F["ar"], o0.xi)                      # rear-axle course unchanged

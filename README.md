@@ -20,15 +20,15 @@ learning-based controller beat a model-based one, and why?*
 
 ```bash
 python -m venv .venv && .venv/Scripts/activate      # or: source .venv/bin/activate
-pip install -e .[dev]
+pip install -e .[dev]                                # or first: pip install -r requirements-lock.txt
 python scripts/fetch_tracks.py Spielberg             # downloads the track (see "Data")
 python scripts/run_l0.py                             # ~65 s; writes results/L0 and docs/figures/L0
 python scripts/l0_studies.py                         # ~4 min; grid / step studies
-python scripts/run_l1.py                             # ~15 min; writes results/L1 and docs/figures/L1
+python scripts/run_l1.py                             # ~20 min; writes results/L1 and docs/figures/L1
 python scripts/l1_studies.py                         # ~40 min; grid / model / tracker studies
 python scripts/run_l2.py                             # ~45 min (8 processes); Monte Carlo over plant parameters
 python scripts/l2_studies.py                         # ~15 min; one parameter at a time
-pytest -m "not slow"                                 # ~2 min (full suite incl. optimisations ~10 min)
+pytest -m "not slow"                                 # ~2 min (full suite ~12 min, ~30 min if the first L1 guess fails)
 ```
 
 ## L0 results (Spielberg, generic open-wheel car with downforce)
