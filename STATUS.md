@@ -9,9 +9,9 @@ after APPROVE. Workflow: [docs/workflow.md](docs/workflow.md).
 | Layer | Branch | State | Review |
 |---|---|---|---|
 | L0 deterministic kinematic | `layer/L0` → local `main` (18a7a58) | **approved**; push waits for the author-e-mail decision (Q1) | round 2: APPROVE |
-| L1 dynamic single-track + Pacejka | `layer/L1` | results done (ideal 73.91 s, closed loop 75.57 s); studies running, then review | – |
-| L2 model mismatch, closed loop | (on `layer/L1` for now) | NMPC (time domain) + receding-horizon min-time MPC (spatial) written; nominal laps running | – |
-| L3 stochastic disturbances | – | planned | – |
+| L1 dynamic single-track + Pacejka | `layer/L1` (a6b1cb5) | complete, review requested | pending |
+| L2 model mismatch, closed loop | `layer/L2` | complete, review requested | pending |
+| L3 stochastic disturbances | `layer/L3` | in progress | – |
 | L4 learning / adaptation | – | planned | – |
 | L5 reinforcement learning | – | planned | – |
 

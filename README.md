@@ -8,7 +8,7 @@ compares several solution methods on the same problem:
 |---|---|---|---|
 | **L0** | deterministic kinematic model | minimum-curvature line + quasi-steady speed profile; minimum-time optimal control; closed-loop verification | ✅ done ([docs/L0.md](docs/L0.md)) |
 | **L1** | dynamic single-track model with tyre slip (magic formula) and load transfer | minimum-time optimal control on the dynamic model; feed-forward/feedback tracking; what the kinematic model misses | ✅ done ([docs/L1.md](docs/L1.md)) |
-| L2 | closed loop with model mismatch | offline trajectory + tracking, NMPC, MPCC, constraint tightening | planned |
+| **L2** | closed loop with model mismatch | offline plan + tracking vs NMPC, constraint tightening, Monte Carlo and one-at-a-time sensitivity | ✅ done ([docs/L2.md](docs/L2.md)) |
 | L3 | stochastic disturbances | stochastic MPC (chance constraints), scenario MPC | planned |
 | L4 | learning and adaptation | online parameter estimation + adaptive MPC, Gaussian-process residual models, learning MPC | planned |
 | L5 | reinforcement learning | SAC/PPO with domain randomisation, residual RL, RL value functions as MPC terminal cost | planned |
@@ -26,6 +26,8 @@ python scripts/run_l0.py                             # ~65 s; writes results/L0 
 python scripts/l0_studies.py                         # ~4 min; grid / step studies
 python scripts/run_l1.py                             # ~15 min; writes results/L1 and docs/figures/L1
 python scripts/l1_studies.py                         # ~40 min; grid / model / tracker studies
+python scripts/run_l2.py                             # ~45 min (8 processes); Monte Carlo over plant parameters
+python scripts/l2_studies.py                         # ~15 min; one parameter at a time
 pytest -m "not slow"                                 # ~2 min (full suite incl. optimisations ~10 min)
 ```
 
@@ -57,6 +59,16 @@ Details, model equations and discussion: [docs/L0.md](docs/L0.md).
 The tracker completes the lap only in a narrow window of plan margins and gains;
 see [docs/L1.md](docs/L1.md).
 
+## L2 results (plant parameters differ from the controllers' model)
+
+| Controller | Laps completed on 13 cars | Nominal car |
+|---|---|---|
+| offline plan (5 % reserve) + tracking | 3 / 13 | 75.57 s |
+| NMPC re-planning every 50 ms (5 % reserve) | **7 / 13** | 75.88 s |
+
+Re-planning doubles the success rate, but every controller fails on cars with
+less usable grip than its model assumes; see [docs/L2.md](docs/L2.md).
+
 ## Repository layout
 
 ```
@@ -66,7 +78,8 @@ src/f1race/
   dynamics.py       dynamic single-track model (L1): tyres, load transfer, axle ellipses
   path.py           closed paths (racing lines) with curvature and its derivative
   planning/         minimum-curvature QP, QSS speed profile, minimum-time OCP
-  control/          path + speed tracking controller
+  control/          path/speed tracking (L0), dynamic tracker (L1), NMPC and experimental
+                    receding-horizon min-time MPC (L2)
   sim/              time-domain simulator with constraint monitoring
   experiments/      one module per layer
 scripts/            data download and per-layer reproduction scripts
