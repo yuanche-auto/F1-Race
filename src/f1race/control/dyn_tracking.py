@@ -7,6 +7,10 @@ stability at the limits of handling", 2015):
 
     delta_cmd = delta_ff(s) - k_p (e + x_la sin(dpsi)) - k_r (r - r_ff(s))
 
+plus an ESC-like counter-steer k_esc (|a_r| - esc_frac a_peak) when the rear slip
+angle approaches the tyre peak, and capped so that the front slip angle stays
+within ``slip_frac`` of the tyre peak.
+
 Longitudinal: planned force (acceleration part scaled by v / v_ref) plus speed
 feedback, routed to the driven rear axle (positive) or to the brakes (negative),
 then limited per axle to what its friction ellipse leaves at the current lateral
@@ -23,12 +27,15 @@ from ..path import Path
 class DynTracker:
     def __init__(self, path: Path, ff: dict, vehicle: DynVehicle, dt: float,
                  k_p: float = 0.05, x_la: float = 12.0, k_r: float = 0.0, kv: float = 6.0,
-                 eta_exec: float = 0.99):
+                 eta_exec: float = 0.99, slip_frac: float = 1.0, k_esc: float = 0.0,
+                 esc_frac: float = 0.85):
         """``ff``: arrays on the path points: vx, delta, r, f (net longitudinal force)."""
         self.path, self.veh, self.dt = path, vehicle, dt
         self.ff = {k: np.asarray(v) for k, v in ff.items()}
         self.k_p, self.x_la, self.k_r, self.kv = k_p, x_la, k_r, kv
         self.eta_exec = eta_exec
+        self.slip_frac = slip_frac
+        self.k_esc, self.esc_frac = k_esc, esc_frac
         self.idx = None
         self.log: list[tuple] = []
 
@@ -70,26 +77,46 @@ class DynTracker:
         course = psi + 0.5 * dt * r + np.arctan2(vy, max(vx, 1.0))
         dpsi = np.angle(np.exp(1j * (course - th)))
         d_cmd = ff["delta"] - self.k_p * (e + self.x_la * np.sin(dpsi)) - self.k_r * (r - ff["r"])
+        # rear-slip stabiliser (ESC-like): counter-steer in proportion to how far the rear
+        # slip angle exceeds esc_frac of the tyre peak; the drive force is cut below
+        a_r = -np.arctan((vy - veh.lr * r) / max(vx, 1.0))
+        a_on = self.esc_frac * veh.alpha_peak
+        esc = np.sign(a_r) * max(abs(a_r) - a_on, 0.0)
+        d_cmd = d_cmd + self.k_esc * esc
+        # front-slip governor: keep the front slip angle on the stable side of the tyre peak
+        th_f = np.arctan((vy + veh.lf * r) / max(vx, 1.0))
+        lim = self.slip_frac * veh.alpha_peak
+        d_cmd = float(np.clip(d_cmd, th_f - lim, th_f + lim))
         d_cmd = float(np.clip(d_cmd, -veh.delta_max, veh.delta_max))
         drate = (d_cmd - d) / dt
         # the reference is a function of arclength: scale the planned acceleration by v / v_ref
         a_ff = (ff["f"] - veh.resist(ff["vx"] ** 2)) / veh.m
         f = ff["f"] + veh.m * a_ff * (vx / max(ff["vx"], 1.0) - 1.0) + veh.m * self.kv * (ff["vx"] - vx)
-        fd, fb = max(f, 0.0), min(f, 0.0)
-        # traction control / ABS: keep each axle inside eta_exec of its friction ellipse,
-        # given the lateral force it carries at the commanded steering angle
         d_next = d + float(np.clip(drate, -veh.delta_rate_max, veh.delta_rate_max)) * dt
-        F = tyre_forces(veh, vx, vy, r, d_next, fd, fb)
-        eta = self.eta_exec
-        def avail(fy, fz, mu_y_frac=None):
-            lat = abs(fy) / (eta * veh.mu_y * fz)
-            return eta * veh.mu_x * fz * np.sqrt(max(1.0 - lat * lat, 0.0))
-        ar_, af_ = avail(F["fyr"], F["fzr"]), avail(F["fyf"], F["fzf"])
-        kb = veh.brake_front
-        if fd > 0.0:
-            fd = min(fd, ar_)
-        if fb < 0.0:
-            lim = min(af_ / kb, ar_ / (1.0 - kb)) if kb < 1.0 else af_ / kb
-            fb = max(fb, -lim)
+        fd, fb = traction_limit(veh, x, d_next, max(f, 0.0), min(f, 0.0), self.eta_exec)
+        if esc != 0.0:
+            fd = 0.0
         self.log.append((t, sp, e, dpsi, ff["vx"]))
         return drate, fd, fb
+
+
+def traction_limit(veh: DynVehicle, x: np.ndarray, delta: float, fd: float, fb: float,
+                   eta: float) -> tuple[float, float]:
+    """Traction control / ABS: limit the drive (rear) and brake (balance-split) forces so
+    that each axle stays inside ``eta`` of its friction ellipse, given the lateral force
+    it carries at steering angle ``delta`` (nominal model)."""
+    _, _, _, vx, vy, r, _ = x
+    F = tyre_forces(veh, vx, vy, r, delta, fd, fb)
+
+    def avail(fy, fz):
+        lat = abs(fy) / (eta * veh.mu_y * fz)
+        return eta * veh.mu_x * fz * np.sqrt(max(1.0 - lat * lat, 0.0))
+
+    a_r, a_f = avail(F["fyr"], F["fzr"]), avail(F["fyf"], F["fzf"])
+    kb = veh.brake_front
+    if fd > 0.0:
+        fd = min(fd, a_r)
+    if fb < 0.0:
+        lim = min(a_f / kb, a_r / (1.0 - kb)) if kb < 1.0 else a_f / kb
+        fb = max(fb, -lim)
+    return fd, fb

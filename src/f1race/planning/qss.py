@@ -7,8 +7,9 @@ u = dv/dt = (1/2) dw/ds, bounded by the friction ellipse (with downforce), the
 power limit and the resistances (Vehicle.accel_limits). The time-optimal profile
 is obtained with the classic forward (max acceleration) / backward (max
 braking) passes (each segment uses a constant acceleration that is admissible at
-both of its ends), started at the slowest point of the loop and repeated until
-the profile is periodic (one sweep normally suffices; on long constant-radius
+both of its ends), started at the slowest point of the loop and alternated until
+the profile no longer changes (so both pass rules hold everywhere, also across
+the start of the loop) (one sweep normally suffices; on long constant-radius
 sections drag makes the sustainable speed lower than the lateral limit and the
 sweeps converge to that equilibrium).
 """
@@ -73,19 +74,15 @@ def speed_profile(path: Path, vehicle: Vehicle, eta: float = 1.0,
     i0 = int(np.argmin(wmax))
 
     w = wmax.copy()
-    for _ in range(max_sweeps):                         # forward passes until periodic
+    for _ in range(max_sweeps):       # alternate forward / backward sweeps until nothing changes
         w_old = w.copy()
-        for k in range(1, N + 1):
+        for k in range(1, N + 1):                       # forward (acceleration)
             i, j = (i0 + k - 1) % N, (i0 + k) % N
             w[j] = min(w[j], _fwd(veh, w[i], kap[i], kap[j], ds[i]))
-        if np.max(np.abs(w - w_old)) < 1e-9:
-            break
-    for _ in range(max_sweeps):                         # backward passes until periodic
-        w_old = w.copy()
-        for k in range(1, N + 1):
+        for k in range(1, N + 1):                       # backward (braking)
             j, i = (i0 - k + 1) % N, (i0 - k) % N
             w[i] = min(w[i], _bwd(veh, w[j], kap[j], kap[i], ds[i]))
-        if np.max(np.abs(w - w_old)) < 1e-9:
+        if np.max(np.abs(w - w_old)) < 1e-10:
             break
 
     v = np.sqrt(w)

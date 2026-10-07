@@ -7,7 +7,7 @@ compares several solution methods on the same problem:
 | Layer | Setting | Methods compared | Status |
 |---|---|---|---|
 | **L0** | deterministic kinematic model | minimum-curvature line + quasi-steady speed profile; minimum-time optimal control; closed-loop verification | ✅ done ([docs/L0.md](docs/L0.md)) |
-| L1 | dynamic single-track model with tyre slip (Pacejka) and load transfer | minimum-time optimal control on the dynamic model; how much the kinematic assumption costs | planned |
+| **L1** | dynamic single-track model with tyre slip (magic formula) and load transfer | minimum-time optimal control on the dynamic model; feed-forward/feedback tracking; what the kinematic model misses | ✅ done ([docs/L1.md](docs/L1.md)) |
 | L2 | closed loop with model mismatch | offline trajectory + tracking, NMPC, MPCC, constraint tightening | planned |
 | L3 | stochastic disturbances | stochastic MPC (chance constraints), scenario MPC | planned |
 | L4 | learning and adaptation | online parameter estimation + adaptive MPC, Gaussian-process residual models, learning MPC | planned |
@@ -24,7 +24,9 @@ pip install -e .[dev]
 python scripts/fetch_tracks.py Spielberg             # downloads the track (see "Data")
 python scripts/run_l0.py                             # ~65 s; writes results/L0 and docs/figures/L0
 python scripts/l0_studies.py                         # ~4 min; grid / step studies
-pytest                                               # ~1-2 min
+python scripts/run_l1.py                             # ~15 min; writes results/L1 and docs/figures/L1
+python scripts/l1_studies.py                         # ~40 min; grid / model / tracker studies
+pytest -m "not slow"                                 # ~2 min (full suite incl. optimisations ~10 min)
 ```
 
 ## L0 results (Spielberg, generic open-wheel car with downforce)
@@ -43,12 +45,25 @@ loop stays within 99.5 % of the friction ellipse for control steps from 5 to
 
 Details, model equations and discussion: [docs/L0.md](docs/L0.md).
 
+## L1 results (same track and car, dynamic single-track model)
+
+| Plan / run | Lap time |
+|---|---|
+| kinematic optimum (L0) | 71.26 s |
+| dynamic optimum (ideal) | **73.91 s** (+2.6 s: rear-wheel drive, per-axle friction, slip) |
+| dynamic plan with 5 % margin, driven by feed-forward/feedback tracking | **75.57 s** |
+| kinematic plan driven on the dynamic car | spins at the first corner |
+
+The tracker completes the lap only in a narrow window of plan margins and gains;
+see [docs/L1.md](docs/L1.md).
+
 ## Repository layout
 
 ```
 src/f1race/
   track.py          closed track: smoothing spline, widths, Frenet projection
   vehicle.py        vehicle parameters, friction ellipse with downforce, power limit
+  dynamics.py       dynamic single-track model (L1): tyres, load transfer, axle ellipses
   path.py           closed paths (racing lines) with curvature and its derivative
   planning/         minimum-curvature QP, QSS speed profile, minimum-time OCP
   control/          path + speed tracking controller

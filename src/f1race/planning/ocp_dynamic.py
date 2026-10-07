@@ -96,7 +96,8 @@ def _limits(veh: DynVehicle, X, U, eta):
 
 def solve_min_time_dynamic(track: Track, veh: DynVehicle, init: dict, ds: float = 2.5,
                            nsub: int = 2, margin: float = 0.3, eta: float = 1.0,
-                           max_iter: int = 3000, verbose: bool = False) -> DynOCPResult:
+                           max_iter: int = 3000, max_cpu_time: float = 900.0,
+                           verbose: bool = False) -> DynOCPResult:
     """``init``: arrays over centre-line arclength init['s'] with keys
     n, xi, vx, vy, r, delta, f_drive, f_brake."""
     N = int(round(track.length / ds))
@@ -149,7 +150,8 @@ def solve_min_time_dynamic(track: Track, veh: DynVehicle, init: dict, ds: float 
     opti.set_initial(U[2, :], np.minimum(g("f_brake"), 0.0) / FS)
 
     opti.solver("ipopt", {"expand": True, "print_time": False},
-                {"max_iter": max_iter, "tol": 1e-8, "acceptable_tol": 1e-6,
+                {"max_iter": max_iter, "max_cpu_time": max_cpu_time,
+                 "tol": 1e-6, "acceptable_tol": 1e-4, "acceptable_iter": 10,
                  "mu_strategy": "adaptive", "print_level": 5 if verbose else 0,
                  "linear_solver": "mumps"})
     t0 = time.time()
@@ -173,3 +175,9 @@ def initial_guess_from_kinematic(track: Track, veh: DynVehicle, ocp0) -> dict:
     return {"s": ocp0.s, "n": ocp0.n + veh.lr * np.sin(ocp0.xi), "xi": ocp0.xi,
             "vx": v, "vy": veh.lr * r, "r": r, "delta": ocp0.delta,
             "f_drive": np.maximum(fx, 0.0), "f_brake": np.minimum(fx, 0.0)}
+
+
+def initial_guess_from_dynamic(o: DynOCPResult) -> dict:
+    """Warm start from another dynamic solution (e.g. eta = 1 for a run with a margin)."""
+    return {"s": o.s, "n": o.n, "xi": o.xi, "vx": o.vx, "vy": o.vy, "r": o.r, "delta": o.delta,
+            "f_drive": o.f_drive, "f_brake": o.f_brake}

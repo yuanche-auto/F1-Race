@@ -29,7 +29,7 @@ from .vehicle import G, Vehicle
 
 @dataclass(frozen=True)
 class DynVehicle(Vehicle):
-    lr: float = 1.98             # rear axle -> CG [m]  (45 % static load on the front axle)
+    lr: float = 1.62             # rear axle -> CG [m]: front axle carries lr / L = 45 % statically
     Iz: float = 1000.0           # yaw inertia [kg m^2]
     h_cg: float = 0.30           # CG height [m]
     aero_front: float = 0.45     # share of the downforce on the front axle

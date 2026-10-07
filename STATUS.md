@@ -8,9 +8,9 @@ after APPROVE. Workflow: [docs/workflow.md](docs/workflow.md).
 
 | Layer | Branch | State | Review |
 |---|---|---|---|
-| L0 deterministic kinematic | `layer/L0` | review round 1 fixes committed | round 1: CHANGES_REQUESTED (2 major) → fixed, re-review requested |
-| L1 dynamic single-track + Pacejka | `layer/L1` | in progress | – |
-| L2 model mismatch, closed loop | – | planned | – |
+| L0 deterministic kinematic | `layer/L0` → local `main` (18a7a58) | **approved**; push waits for the author-e-mail decision (Q1) | round 2: APPROVE |
+| L1 dynamic single-track + Pacejka | `layer/L1` | results done (ideal 73.91 s, closed loop 75.57 s); studies running, then review | – |
+| L2 model mismatch, closed loop | (on `layer/L1` for now) | NMPC (time domain) + receding-horizon min-time MPC (spatial) written; nominal laps running | – |
 | L3 stochastic disturbances | – | planned | – |
 | L4 learning / adaptation | – | planned | – |
 | L5 reinforcement learning | – | planned | – |
@@ -30,10 +30,28 @@ expected to be byte-identical.
 
 | Date | Commit | Scope | Verdict | Notes |
 |---|---|---|---|---|
+| 2026-10-06 | 18a7a58 | L0 fixes | **APPROVE** | nits n3 (failure mode at coarser steps = off track) and n4 (tighter maximality tolerance on dense paths) folded into L1 |
 | 2026-10-06 | a514825 | L0 | CHANGES_REQUESTED | M1 OCP closed loop not robust to control step; M2 no OCP grid convergence; minors: margin < design, QSS end-point accel, projection jitter, front-axle approximation undocumented; nits: env versions, .gitattributes; Q1 author e-mail → user |
+
+## Open decisions for the user
+
+* **Q1 (blocks every push):** commits are authored as `Yuan <yuanche@umich.edu>` (the global git
+  config). Pushing makes the address public and links the repository to the university. Keep it, or
+  rewrite the unpushed commits to the GitHub no-reply address before the first push?
 
 ## Notes for resuming
 
 * venv: `.venv` (Python 3.12). Track data in `data/` (git-ignored), fetched by script.
-* Next: L1 — dynamic single-track model (states vx, vy, r; Pacejka lateral forces, load
-  transfer, driven rear axle), minimum-time OCP on it, comparison with L0.
+* A worktree `../F1-Race-wt-L0` holds `layer/L0` (used for the review fixes; can be removed).
+* L1 (branch `layer/L1`, contains the approved L0 via merge): `dynamics.py`, `planning/ocp_dynamic.py`
+  (CPU cap 15 min per solve), `sim/dynamic.py`, `control/dyn_tracking.py` (look-ahead feedback,
+  TC/ABS `traction_limit`, front-slip governor, optional ESC term), `experiments/l1.py`
+  (continuation over eta: 0.97 from L0 -> ideal -> all margins -> ideal), `scripts/run_l1.py`
+  (~14 min, caches plans in results/L1/l1_plans.pkl), `scripts/l1_studies.py` (~40 min),
+  tests `test_dynamics.py`, `test_l1_pipeline.py`.
+* L2 groundwork (not committed yet): `control/nmpc.py` (Frenet time-domain NMPC, track/mpcc
+  modes, solver-failure fallback), `control/rh_mpc.py` (spatial receding-horizon min-time
+  MPC; terminal speed bound must come from a plan with the same eta), `experiments/l2.py`
+  (plant perturbation sampler, multiprocessing Monte Carlo).
+* Next after L1: L2 (plant with parameter mismatch; offline plan + tracking vs NMPC vs MPCC vs
+  constraint tightening; Monte Carlo over plant parameters).
