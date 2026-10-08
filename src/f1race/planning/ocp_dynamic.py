@@ -96,10 +96,12 @@ def _limits(veh: DynVehicle, X, U, eta):
 
 def solve_min_time_dynamic(track: Track, veh: DynVehicle, init: dict, ds: float = 2.5,
                            nsub: int = 2, margin: float = 0.3, eta: float = 1.0,
-                           max_iter: int = 3000, max_cpu_time: float = 900.0,
+                           max_iter: int = 1000, max_cpu_time: float | None = None,
                            verbose: bool = False) -> DynOCPResult:
     """``init``: arrays over centre-line arclength init['s'] with keys
-    n, xi, vx, vy, r, delta, f_drive, f_brake."""
+    n, xi, vx, vy, r, delta, f_drive, f_brake. Solves are limited by the iteration
+    count, not by CPU time, so that the outcome does not depend on the machine's load
+    (``max_cpu_time`` is optional)."""
     N = int(round(track.length / ds))
     h = track.length / N
     s = np.arange(N) * h
@@ -150,7 +152,7 @@ def solve_min_time_dynamic(track: Track, veh: DynVehicle, init: dict, ds: float 
     opti.set_initial(U[2, :], np.minimum(g("f_brake"), 0.0) / FS)
 
     opti.solver("ipopt", {"expand": True, "print_time": False},
-                {"max_iter": max_iter, "max_cpu_time": max_cpu_time,
+                {"max_iter": max_iter, **({} if max_cpu_time is None else {"max_cpu_time": max_cpu_time}),
                  "tol": 1e-6, "acceptable_tol": 1e-4, "acceptable_iter": 10,
                  "mu_strategy": "adaptive", "print_level": 5 if verbose else 0,
                  "linear_solver": "mumps"})

@@ -108,9 +108,9 @@ def first_dynamic_plan(track, veh, o0, eta: float, log: list, **kw):
     numpy/scipy builds tried disagree on the plain kinematic guess. Every converged
     start led to the same final plans (the continuation in ``dynamic_plans`` removes
     the differences between local optima). Four different guesses are therefore tried
-    in turn, each capped at 600 iterations (successful solves take 100-330); in the
-    seven perturbed trials this sequence always converged, once only at the third
-    guess."""
+    in turn, each capped at 600 iterations and not in CPU time (successful solves take
+    100-330 iterations); in the seven perturbed trials this sequence always converged,
+    once only at the third guess."""
     attempts = [("kinematic", lambda: initial_guess_from_kinematic(track, veh, o0)),
                 ("quasi-steady at 97 % speed", lambda: initial_guess_quasi_steady(track, veh, o0, 0.97)),
                 ("quasi-steady at 93 % speed", lambda: initial_guess_quasi_steady(track, veh, o0, 0.93)),
