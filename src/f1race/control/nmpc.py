@@ -48,16 +48,23 @@ def _periodic_interpolant(name: str, s: np.ndarray, f: np.ndarray, length: float
 
 class FrenetMPC:
     def __init__(self, track: Track, veh: DynVehicle, ref: dict, mode: str = "track",
-                 N: int = 30, dt: float = 0.05, eta: float = 0.97, margin: float = 0.3,
-                 weights: dict | None = None, max_iter: int = 500, soft_limits: bool | int = True):
+                 N: int = 30, dt: float = 0.05, eta=0.97, margin: float = 0.3,
+                 weights: dict | None = None, max_iter: int = 500, soft_limits: bool | int = True,
+                 backoff=None):
         """``ref``: arrays over centre-line arclength ref['s'] with keys n, xi, vx (the
         reference trajectory, e.g. an L1 plan; in MPCC mode only vx is used, as a
-        terminal speed bound). ``soft_limits``: friction ellipses and slip angles as
-        exactly penalised soft constraints at every stage (True), at the first k stages
-        only (an integer k), or hard everywhere (False, which makes the NLP infeasible
-        whenever the measured state is already past a limit: the slip angles at stage 0
-        depend on the measured state only)."""
-        self.track, self.veh, self.mode, self.N, self.dt, self.eta = track, veh, mode, N, dt, eta
+        terminal speed bound). ``eta``: friction factor, a number or one value per
+        stage (N). ``soft_limits``: friction ellipses and slip angles as exactly
+        penalised soft constraints at every stage (True), at the first k stages only (an
+        integer k), or hard everywhere (False, which makes the NLP infeasible whenever
+        the measured state is already past a limit: the slip angles at stage 0 depend on
+        the measured state only). ``backoff``: optional extra distance [m] kept from the
+        track edges per predicted state (N + 1 values, the first unused), e.g.
+        stochastic constraint tightening (L3)."""
+        eta_k = np.broadcast_to(np.asarray(eta, float), (N,)).copy()
+        b_k = np.zeros(N + 1) if backoff is None else np.asarray(backoff, float)
+        self.track, self.veh, self.mode, self.N, self.dt = track, veh, mode, N, dt
+        self.eta, self.eta_k, self.backoff = eta, eta_k, b_k
         w = {"n": 1.0, "xi": 10.0, "v": 0.2, "drate": 1.0, "dF": 0.5, "slack": 1e4, "progress": 1.0,
              "limit_slack": 1e6}           # physics limits cost far more than track limits
         w.update(weights or {})
@@ -100,18 +107,19 @@ class FrenetMPC:
             ur2 = (Fi["fxr"] / (veh.mu_x * Fi["fzr"])) ** 2 + (Fi["fyr"] / (veh.mu_y * Fi["fzr"])) ** 2
             if i < n_soft:
                 ap = veh.alpha_peak                     # slip slacks in units of the peak angle
+                ek = eta_k[i]
                 # the longitudinal force of each axle stays hard-limited (always satisfiable):
                 # otherwise the optimiser buys impossible braking with ellipse slack
                 g += [uf2 - T[0, i], ur2 - T[1, i], Fi["af"] - ap * T[2, i], Fi["af"] + ap * T[2, i],
                       Fi["ar"] - ap * T[3, i], Fi["ar"] + ap * T[3, i], U[1, i] * FS * X[3, i],
                       Fi["fxf"] / (veh.mu_x * Fi["fzf"]), Fi["fxr"] / (veh.mu_x * Fi["fzr"])]
-                lbg += [-ca.inf, -ca.inf, -ca.inf, -ap, -ca.inf, -ap, -ca.inf, -eta, -eta]
-                ubg += [eta**2, eta**2, ap, ca.inf, ap, ca.inf, veh.P_max, eta, eta]
+                lbg += [-ca.inf, -ca.inf, -ca.inf, -ap, -ca.inf, -ap, -ca.inf, -ek, -ek]
+                ubg += [ek**2, ek**2, ap, ca.inf, ap, ca.inf, veh.P_max, ek, ek]
                 J += w["limit_slack"] * h * (ca.sumsqr(T[:, i]) + 10.0 * ca.sum1(T[:, i]))
             else:
                 g += [uf2, ur2, Fi["af"], Fi["ar"], U[1, i] * FS * X[3, i]]
                 lbg += [-ca.inf, -ca.inf, -veh.alpha_peak, -veh.alpha_peak, -ca.inf]
-                ubg += [eta**2, eta**2, veh.alpha_peak, veh.alpha_peak, veh.P_max]
+                ubg += [eta_k[i]**2, eta_k[i]**2, veh.alpha_peak, veh.alpha_peak, veh.P_max]
             du = U[:, i] - (P[7:] if i == 0 else U[:, i - 1])
             J += h * (w["drate"] * U[0, i] ** 2 + w["dF"] * (du[1] ** 2 + du[2] ** 2) / h)
         for i in range(1, N + 1):
@@ -121,7 +129,7 @@ class FrenetMPC:
                 chord = 0.5 * arm**2 * ca.fabs(ki)
                 na = ni + arm * ca.sin(xii)
                 g += [na + (wr(si) - body - chord) + S[j, i], (wl(si) - body - chord) - na + S[j, i]]
-                lbg += [0, 0]; ubg += [ca.inf, ca.inf]
+                lbg += [b_k[i], b_k[i]]; ubg += [ca.inf, ca.inf]
             J += w["slack"] * h * ca.sumsqr(S[:, i]) + 10 * w["slack"] * h * ca.sum1(S[:, i])
             if mode == "track":
                 J += h * (w["n"] * (ni - nref(si)) ** 2 + w["xi"] * (xii - xiref(si)) ** 2
@@ -205,14 +213,23 @@ class FrenetMPC:
         return u, info
 
 
+    def prediction(self) -> tuple[np.ndarray, np.ndarray]:
+        """Predicted states (N + 1, 7) and inputs (N, 3, forces in N) of the last solve."""
+        return self.z[self.Xi].copy(), self.z[self.Ui] * np.array([1.0, FS, FS])
+
+
 class MPCController:
     """Plant interface: converts the simulator state to curvilinear coordinates,
     re-solves the MPC every ``mpc.dt`` and holds the input in between."""
 
-    def __init__(self, mpc: FrenetMPC, sim_dt: float, tc_eta: float | None = 0.99):
+    def __init__(self, mpc: FrenetMPC, sim_dt: float, tc_eta: float | None = 0.99,
+                 record: bool = False):
         """``tc_eta``: optional low-level traction control / ABS applied at every
-        simulator step (the MPC input is held for mpc.dt while the state moves)."""
+        simulator step (the MPC input is held for mpc.dt while the state moves).
+        ``record``: keep every prediction (for calibrating constraint tightening, L3)."""
         self.mpc, self.sim_dt, self.tc_eta = mpc, sim_dt, tc_eta
+        self.record = record
+        self.predictions: list[tuple[float, np.ndarray, np.ndarray]] = []
         self.track = mpc.track
         self.u = np.zeros(3)
         self.t_next = 0.0
@@ -240,6 +257,8 @@ class MPCController:
             self.u = u
             self.t_next = t + self.mpc.dt
             self.log.append((t, xf[0], xf[1], info["time"], info["status"], info["slack"]))
+            if self.record:
+                self.predictions.append((t, *self.mpc.prediction()))
         drate, fd, fb = float(self.u[0]), float(self.u[1]), float(self.u[2])
         if self.tc_eta is not None:
             veh = self.mpc.veh
