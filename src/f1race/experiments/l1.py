@@ -23,7 +23,7 @@ from ..dynamics import DynVehicle
 from ..path import Path
 from ..planning.mincurv import min_curvature_line
 from ..planning.ocp_dynamic import (initial_guess_from_dynamic, initial_guess_from_kinematic,
-                                   solve_min_time_dynamic)
+                                   initial_guess_quasi_steady, solve_min_time_dynamic)
 from ..planning.ocp_kinematic import initial_guess_from_path, solve_min_time
 from ..planning.qss import speed_profile
 from ..sim.dynamic import DynamicSim, DynSimResult
@@ -54,7 +54,23 @@ class L1Result:
     l1_ocp_plan: float
     closed_loop: dict = field(default_factory=dict)
     plans: dict = field(default_factory=dict)
+    solve_log: list = field(default_factory=list)
     timing: dict = field(default_factory=dict)
+
+
+def code_fingerprint() -> str:
+    """SHA-256 of the modules that determine the L1 plans (stored with the cached plans so
+    that tests can tell whether the cache was produced by the current code)."""
+    import hashlib
+
+    root = FsPath(__file__).resolve().parents[1]
+    files = ["track.py", "vehicle.py", "path.py", "dynamics.py", "planning/mincurv.py",
+             "planning/qss.py", "planning/ocp_kinematic.py", "planning/ocp_dynamic.py",
+             "experiments/l1.py"]
+    h = hashlib.sha256()
+    for f in files:
+        h.update((root / f).read_bytes().replace(b"\r\n", b"\n"))
+    return h.hexdigest()
 
 
 def dyn_reference(track: Track, veh: DynVehicle, o, ds: float = 0.5):
@@ -83,28 +99,61 @@ def run_dyn_closed_loop(track, veh, o, dt, tracker: dict | None = None) -> DynSi
     return res
 
 
-def dynamic_plans(track, veh, o0, cfg) -> dict:
+def first_dynamic_plan(track, veh, o0, eta: float, log: list, **kw):
+    """First dynamic solve, from the kinematic L0 solution, with fall-backs.
+
+    Whether IPOPT converges from a guess built from the L0 solution is decided by
+    rounding: the same guess perturbed by 1e-10 (relative) converged in 6 of 7 trials
+    from the kinematic guess and in 4 of 7 from the quasi-steady one, and the two
+    numpy/scipy builds tried disagree on the plain kinematic guess. Every converged
+    start led to the same final plans (the continuation in ``dynamic_plans`` removes
+    the differences between local optima). Four different guesses are therefore tried
+    in turn, each capped at 600 iterations (successful solves take 100-330); in the
+    seven perturbed trials this sequence always converged, once only at the third
+    guess."""
+    attempts = [("kinematic", lambda: initial_guess_from_kinematic(track, veh, o0)),
+                ("quasi-steady at 97 % speed", lambda: initial_guess_quasi_steady(track, veh, o0, 0.97)),
+                ("quasi-steady at 93 % speed", lambda: initial_guess_quasi_steady(track, veh, o0, 0.93)),
+                ("kinematic at 93 % speed", lambda: initial_guess_from_kinematic(track, veh, o0, 0.93))]
+    for name, make in attempts:
+        o = solve_min_time_dynamic(track, veh, make(), eta=eta, max_iter=600, **kw)
+        log.append({"step": f"first eta={eta}", "init": name, "status": o.status,
+                    "iterations": o.iterations, "lap_time": o.lap_time})
+        if o.success:
+            return o
+    raise RuntimeError(f"dynamic OCP: no initial guess converged for eta = {eta}: {log}")
+
+
+def dynamic_plans(track, veh, o0, cfg, log: list | None = None) -> dict:
     """Continuation over the friction margin. The dynamic OCP has several local optima
     and the kinematic solution is a poor initial guess for eta = 1 (74.6 s instead of
-    73.9 s on Spielberg): solve eta = first_eta from the kinematic solution, the ideal
-    from that, every margin from the ideal, and finally the ideal again from the best
-    plan; keep the best solution found for each eta. Each solve is capped in CPU time."""
+    73.9 s on Spielberg): solve eta = first_eta (with fall-backs), the ideal from that,
+    every margin from the ideal, and finally the ideal again from the executed plan;
+    keep the best solution found for each eta. Every solve is logged."""
     kw = dict(ds=cfg.ds_l1, nsub=cfg.nsub, margin=cfg.margin)
+    log = [] if log is None else log
     best = {}
 
-    def keep(eta, o):
+    def keep(eta, init, step):
+        o = solve_min_time_dynamic(track, veh, init, eta=eta, **kw)
+        log.append({"step": step, "status": o.status, "iterations": o.iterations, "lap_time": o.lap_time})
         if o.success and (eta not in best or o.lap_time < best[eta].lap_time):
             best[eta] = o
 
-    keep(cfg.first_eta, solve_min_time_dynamic(track, veh, initial_guess_from_kinematic(track, veh, o0),
-                                               eta=cfg.first_eta, **kw))
-    keep(1.0, solve_min_time_dynamic(track, veh, initial_guess_from_dynamic(best[cfg.first_eta]), eta=1.0, **kw))
+    best[cfg.first_eta] = first_dynamic_plan(track, veh, o0, cfg.first_eta, log, **kw)
+    keep(1.0, initial_guess_from_dynamic(best[cfg.first_eta]), f"ideal from eta={cfg.first_eta}")
+    if 1.0 not in best:
+        raise RuntimeError(f"dynamic OCP: ideal problem failed: {log}")
     for eta in cfg.etas:
-        keep(eta, solve_min_time_dynamic(track, veh, initial_guess_from_dynamic(best[1.0]), eta=eta, **kw))
-    keep(1.0, solve_min_time_dynamic(track, veh, initial_guess_from_dynamic(best[cfg.eta_plan]), eta=1.0, **kw))
+        keep(eta, initial_guess_from_dynamic(best[1.0]), f"eta={eta} from ideal")
+    for eta in cfg.etas:                                 # second chance from the neighbour
+        if eta not in best:
+            src = min(best, key=lambda e: abs(e - eta))
+            keep(eta, initial_guess_from_dynamic(best[src]), f"eta={eta} from eta={src}")
+    keep(1.0, initial_guess_from_dynamic(best[cfg.eta_plan]), f"ideal from eta={cfg.eta_plan}")
     missing = [e for e in (1.0, *cfg.etas) if e not in best]
     if missing:
-        raise RuntimeError(f"dynamic OCP failed for eta = {missing}")
+        raise RuntimeError(f"dynamic OCP failed for eta = {missing}: {log}")
     return best
 
 
@@ -155,7 +204,8 @@ def run(cfg: L1Config = L1Config(), outdir=None, verbose: bool = True):
     o0p = solve_min_time(track, veh, init0, ds=cfg.ds_l0, margin=cfg.margin, eta=cfg.eta_l0_plan)
 
     t0 = time.time()
-    plans = dynamic_plans(track, veh, o0, cfg)
+    solve_log: list = []
+    plans = dynamic_plans(track, veh, o0, cfg, solve_log)
     timing["l1_ocp_s"] = time.time() - t0
     o1, o1p = plans[1.0], plans[cfg.eta_plan]
     for o in (o0, o0p):
@@ -169,8 +219,9 @@ def run(cfg: L1Config = L1Config(), outdir=None, verbose: bool = True):
 
     res = L1Result(asdict(cfg), o0.lap_time, o1.lap_time, o1p.lap_time,
                    {"l1_plan_on_dynamic_car": summarize(cl_l1),
-                    "l0_plan_on_dynamic_car": summarize(cl_l0)}, timing)
-    res.plans = {str(k): v.lap_time for k, v in sorted(plans.items())}
+                    "l0_plan_on_dynamic_car": summarize(cl_l0)},
+                   plans={str(k): v.lap_time for k, v in sorted(plans.items())},
+                   solve_log=solve_log, timing=timing)
     res.timing["total_s"] = time.time() - t_all
     if verbose:
         print(json.dumps(asdict(res), indent=2))
@@ -184,6 +235,7 @@ def run(cfg: L1Config = L1Config(), outdir=None, verbose: bool = True):
     if outdir is not None:
         import pickle
         with open(FsPath(outdir) / "l1_plans.pkl", "wb") as fh:
-            pickle.dump({"o0": o0, "o0p": o0p, "plans": plans}, fh)
+            pickle.dump({"o0": o0, "o0p": o0p, "plans": plans, "code": code_fingerprint(),
+                         "config": asdict(cfg)}, fh)
     return res, dict(track=track, veh=veh, o0=o0, o0p=o0p, o1=o1, o1p=o1p, plans=plans,
                      cl_l1=cl_l1, cl_l0=cl_l0)

@@ -1,7 +1,7 @@
 """Reproduce the L1 results and figures (dynamic single-track model).
 
     python scripts/fetch_tracks.py Spielberg
-    python scripts/run_l1.py            # ~8 min; writes results/L1/ and docs/figures/L1/
+    python scripts/run_l1.py            # ~20 min; writes results/L1/ and docs/figures/L1/
 """
 from __future__ import annotations
 
