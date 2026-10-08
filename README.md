@@ -9,9 +9,9 @@ compares several solution methods on the same problem:
 | **L0** | deterministic kinematic model | minimum-curvature line + quasi-steady speed profile; minimum-time optimal control; closed-loop verification | ✅ done ([docs/L0.md](docs/L0.md)) |
 | **L1** | dynamic single-track model with tyre slip (magic formula) and load transfer | minimum-time optimal control on the dynamic model; feed-forward/feedback tracking; what the kinematic model misses | ✅ done ([docs/L1.md](docs/L1.md)) |
 | **L2** | closed loop with model mismatch | offline plan + tracking vs NMPC, constraint tightening, Monte Carlo and one-at-a-time sensitivity | ✅ done ([docs/L2.md](docs/L2.md)) |
-| L3 | stochastic disturbances | stochastic MPC (chance constraints), scenario MPC | planned |
-| L4 | learning and adaptation | online parameter estimation + adaptive MPC, Gaussian-process residual models, learning MPC | planned |
-| L5 | reinforcement learning | SAC/PPO with domain randomisation, residual RL, RL value functions as MPC terminal cost | planned |
+| **L3** | stochastic disturbances (friction varying along the track, gusts, sensor noise) | NMPC with uniform reserves vs stochastic MPC with back-offs calibrated from measured prediction errors; ablations | 🔍 in review ([branch `layer/L3`](https://github.com/yuanche-auto/F1-Race/tree/layer/L3)) |
+| **L4** | learning the car | identify the parameters from an exploration lap, re-plan, drive with the identified model; noise sensitivity | ✅ approved, merges after L3 ([branch `layer/L4`](https://github.com/yuanche-auto/F1-Race/tree/layer/L4)) |
+| **L5** | reinforcement learning | residual soft actor-critic on top of the L1 tracker, with and without an observation history, trained on randomised cars and disturbances | 🔍 in review ([branch `layer/L5`](https://github.com/yuanche-auto/F1-Race/tree/layer/L5)) |
 
 The guiding question of the whole series: *in which settings does a
 learning-based controller beat a model-based one, and why?*
@@ -73,6 +73,28 @@ Hard constraints on the measured slip angles make the MPC problem infeasible and
 cost 7 cars. A larger reserve helps little: the remaining failures are cars that
 turn differently from the model (softer tyres, different aero balance), mostly
 without reaching the friction limit; see [docs/L2.md](docs/L2.md).
+
+## Work in review (L3–L5)
+
+L3–L5 are complete and published on their branches, but not yet merged here:
+every layer reaches `main` only after the independent review (see
+[Development process](#development-process)). Preliminary results, which may
+still change in review:
+
+* **L3, stochastic disturbances** ([docs](https://github.com/yuanche-auto/F1-Race/blob/layer/L3/docs/L3.md)): on 30
+  disturbed laps a stochastic MPC whose reserves grow along the prediction
+  horizon completes 29–30 of 30, the best uniform reserve 16 of 30 (and 2.2 s
+  slower). The review asked for checks of the calibration (it was taken from
+  mostly failed laps); with three alternative calibrations the stochastic MPC
+  completes 28–30 of 30.
+* **L4, learning the car** ([docs](https://github.com/yuanche-auto/F1-Race/blob/layer/L4/docs/L4.md), approved):
+  identifying the car from one exploration lap and re-planning completes 25 of 25
+  cars, against 13 of 25 for the nominal model, as fast as with the true
+  parameters; with sensor noise on the data 22 of 25.
+* **L5, reinforcement learning** ([docs](https://github.com/yuanche-auto/F1-Race/blob/layer/L5/docs/L5.md)): a
+  residual RL policy with an observation history completes all 51 L2 cars and all
+  30 L3 laps, but is 3–6 s per lap slower than the model-based controllers that
+  learn the car (L4) or calibrate their uncertainty (L3).
 
 ## Repository layout
 

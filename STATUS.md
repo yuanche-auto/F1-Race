@@ -10,10 +10,10 @@ after APPROVE. Workflow: [docs/workflow.md](docs/workflow.md).
 |---|---|---|---|
 | L0 deterministic kinematic | `layer/L0` → `main` (18a7a58) | **approved, pushed** to origin/main 2026-10-07 | round 2: APPROVE |
 | L1 dynamic single-track + Pacejka | `layer/L1` → `main` (571a982) | **approved, pushed** to origin/main 2026-10-07 | round 2: APPROVE (m4, m5 fixed on `layer/L2`) |
-| L2 model mismatch, closed loop | `layer/L2` | review fixes done (soft MPC limits, 51 cars, statistics); re-review pending | round 1: CHANGES_REQUESTED |
-| L3 stochastic disturbances | `layer/L3` | in progress | – |
-| L4 learning / adaptation | – | planned | – |
-| L5 reinforcement learning | – | planned | – |
+| L2 model mismatch, closed loop | `layer/L2` → `main` (270fb2b) | **approved, pushed** to origin/main 2026-10-08 | round 2: APPROVE (m1, m2 fixed on `layer/L3`) |
+| L3 stochastic disturbances | `layer/L3` (pushed for reading, not merged) | done; robustness checks for the review in progress | round 1: CHANGES_REQUESTED |
+| L4 learning / adaptation | `layer/L4` (pushed for reading, not merged) | done; merges after L3 (built on it) | round 1: APPROVE (minors fixed in 66f6cb3) |
+| L5 reinforcement learning | `layer/L5` (pushed for reading, not merged) | done; review after L3 | – |
 
 ## L0 summary
 
@@ -35,6 +35,9 @@ Figures are not expected to be byte-identical across versions.
 
 | Date | Commit | Scope | Verdict | Notes |
 |---|---|---|---|---|
+| 2026-10-08 | 6ebbab7 | L4 | **APPROVE** | minors: bounds hit in the noise study, saturation filter uses the true usage (no effect), docstring; fixed in 66f6cb3 |
+| 2026-10-08 | 6ec6007 | L3 | CHANGES_REQUESTED | MAJOR-1 back-offs calibrated on mostly failed laps, sensitive to the environment -> truncated / iterated / other-environment calibrations; minors: per-stage semantics, failure analysis, ablation scope |
+| 2026-10-08 | 270fb2b | L2 fixes | **APPROVE** | statistics recomputed from runs.json; soft NMPC cross-checked in Python 3.11 (13 cars, same outcomes); hard ablation with 500 iterations still fails on the 7 cars; minors m1 (iterations of the ablation) and m2 (cross-check numbers) fixed on `layer/L3` |
 | 2026-10-08 | 4e695ba | L2 | CHANGES_REQUESTED | MAJOR-1 fallback to the shifted plan hides infeasible NLPs (hard slip/ellipse limits on the measured state) and was not reported; MAJOR-2 13 cars cannot support "doubles the success rate"; minor: spatial-MPC trials not reproducible from a file |
 | 2026-10-07 | 571a982 | L1 fixes | **APPROVE** | reproduced in the reviewer's environment (Python 3.11.15); minors m4 (first-solve attempts stopped by the CPU cap, so load-dependent -> iteration caps only) and m5 (run times under load) fixed on `layer/L2` |
 | 2026-10-07 | a6b1cb5 | L1 | CHANGES_REQUESTED | BLOCKER-1 first dynamic solve (eta 0.97 from the kinematic guess) hits the CPU cap in another environment -> KeyError; minors: cache not tied to code, test usage bound loose, "5 of 8 gain sets" missing in the results section, run-time figures inconsistent; nits: nsub convergence numbers |
