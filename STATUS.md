@@ -13,7 +13,7 @@ after APPROVE. Workflow: [docs/workflow.md](docs/workflow.md).
 | L2 model mismatch, closed loop | `layer/L2` → `main` (270fb2b) | **approved, pushed** to origin/main 2026-10-08 | round 2: APPROVE (m1, m2 fixed on `layer/L3`) |
 | L3 stochastic disturbances | `layer/L3` | done (SMPC 30/30 vs best uniform 16/30); review requested | – |
 | L4 learning / adaptation | `layer/L4` | done (identified model 25/25 vs nominal 13/25; noisy data 22/25); review requested | – |
-| L5 reinforcement learning | `layer/L5` | residual SAC on the L1 tracker; training (1M steps) | – |
+| L5 reinforcement learning | `layer/L5` | done (history policy 51/51 and 30/30, 82 s); review after L3/L4 | – |
 
 ## L0 summary
 

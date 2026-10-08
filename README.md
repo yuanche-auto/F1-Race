@@ -9,9 +9,9 @@ compares several solution methods on the same problem:
 | **L0** | deterministic kinematic model | minimum-curvature line + quasi-steady speed profile; minimum-time optimal control; closed-loop verification | ✅ done ([docs/L0.md](docs/L0.md)) |
 | **L1** | dynamic single-track model with tyre slip (magic formula) and load transfer | minimum-time optimal control on the dynamic model; feed-forward/feedback tracking; what the kinematic model misses | ✅ done ([docs/L1.md](docs/L1.md)) |
 | **L2** | closed loop with model mismatch | offline plan + tracking vs NMPC, constraint tightening, Monte Carlo and one-at-a-time sensitivity | ✅ done ([docs/L2.md](docs/L2.md)) |
-| **L3** | stochastic disturbances (friction varying along the track, gusts, sensor noise) | NMPC with uniform reserves vs chance-constrained (stochastic) MPC with back-offs calibrated from measured prediction errors; ablations | ✅ done ([docs/L3.md](docs/L3.md)) |
-| **L4** | learning the car | identify the parameters from an exploration lap (least squares on the logged dynamics), re-plan, drive with the identified model; noise sensitivity | ✅ done ([docs/L4.md](docs/L4.md)) |
-| L5 | reinforcement learning | SAC/PPO with domain randomisation, residual RL, RL value functions as MPC terminal cost | planned |
+| **L3** | stochastic disturbances (friction varying along the track, gusts, sensor noise) | NMPC with uniform reserves vs chance-constrained (stochastic) MPC with back-offs calibrated from measured prediction errors; ablations | ✅ done, in review ([docs/L3.md](docs/L3.md)) |
+| **L4** | learning the car | identify the parameters from an exploration lap (least squares on the logged dynamics), re-plan, drive with the identified model; noise sensitivity | ✅ done, in review ([docs/L4.md](docs/L4.md)) |
+| **L5** | reinforcement learning | residual soft actor-critic on top of the L1 tracker (with and without an observation history), trained with randomised cars and disturbances; compared on the L2 and L3 test sets | ✅ done, in review ([docs/L5.md](docs/L5.md)) |
 
 The guiding question of the whole series: *in which settings does a
 learning-based controller beat a model-based one, and why?*
@@ -30,6 +30,7 @@ python scripts/run_l2.py                             # ~3 h (8 processes); Monte
 python scripts/l2_studies.py                         # ~20 min; one parameter at a time
 python scripts/run_l3.py                             # ~5 h (12 processes); calibration + 13 controllers x 30 seeds
 python scripts/run_l4.py                             # ~3 h (7 processes); identify + re-plan on 25 cars (noise: run_l4.py noise)
+pip install -e .[rl] && python scripts/run_l5.py sac_history8   # L5: evaluate the trained policy in models/L5
 pytest -m "not slow"                                 # ~2 min (full suite ~12 min, ~30 min if the first L1 guess fails)
 ```
 
@@ -106,6 +107,19 @@ knows the car (12 to 0 against the nominal model, p = 0.0005). With realistic
 sensor noise the naive estimate is biased but still completes 22 of 25. See
 [docs/L4.md](docs/L4.md).
 
+## L5 results (residual reinforcement learning, same test sets as L2 and L3)
+
+| Controller | L2: 51 cars | L3: 30 disturbed laps |
+|---|---|---|
+| tracker alone | 3 / 51 | 0 / 30 |
+| NMPC, nominal model (L2) / SMPC ε = 0.01 (L3) | 22 / 51, 76.31 s | 30 / 30, 79.20 s |
+| **residual RL with observation history** | **51 / 51**, 82.04 s | **30 / 30**, 81.99 s |
+
+The learned policy is the most robust controller of the series but 3–6 s per lap
+slower than the model-based controllers that identify the car (L4) or calibrate
+their uncertainty (L3): it learned to be cautious at every corner rather than to
+drive each car at its own limit. See [docs/L5.md](docs/L5.md).
+
 ## Repository layout
 
 ```
@@ -120,6 +134,7 @@ src/f1race/
   sim/              time-domain simulator with constraint monitoring; stochastic
                     disturbances (L3)
   estimation/       parameter identification from driving data (L4)
+  rl/               Gymnasium environment for residual RL on the tracker (L5)
   experiments/      one module per layer
 scripts/            data download and per-layer reproduction scripts
 tests/              pytest suite
