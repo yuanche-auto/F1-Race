@@ -1,6 +1,6 @@
 """L4 experiment: learn the car, then drive it.
 
-Same 13 cars as L2 (nominal + 12 with perturbed parameters). L2 showed that a
+The first 24 perturbed cars of L2 (same seed) and the nominal car. L2 showed that a
 controller built on the nominal model fails on about half of them, whatever
 friction reserve it keeps. Here every car first drives an exploration lap with a
 cautious controller (the L2 NMPC with a 12 % reserve), the parameters are
