@@ -68,3 +68,18 @@ def test_calibration_quantiles():
     assert np.allclose(c["eta"], 1.0 - z * 0.01 * np.arange(1, 4), atol=0.002)
     assert np.allclose(c["backoff"][1:], 10 * 1.96 * 0.01 * np.arange(2, 5), rtol=0.03)
     assert c["backoff"][0] == 0.0
+
+
+def test_truncation_and_event_rates():
+    from f1race.experiments.l3 import _truncate, event_rates
+
+    s = {"k": np.array([0, 1, 0, 1]), "t": np.array([1.0, 1.0, 9.0, 9.0]), "u_pred": np.full(4, 0.9),
+         "u_real": np.array([0.95, 0.9, 0.9, 0.9]), "f": np.ones(4), "e_n": np.array([0.0, 0.5, 0.0, 0.1]),
+         "t_end": 10.0, "completed": False}
+    tr = _truncate(s, 2.0)
+    assert list(tr["t"]) == [1.0, 1.0]                            # predictions within 2 s of the failure dropped
+    assert _truncate({**s, "completed": True}, 2.0) is not None and len(_truncate({**s, "completed": True}, 2.0)["t"]) == 4
+    cfg = {"N": 2, "u_threshold": 0.85}
+    ev = event_rates(s, {"eta": [0.97, 0.97], "backoff": [0.0, 0.3, 0.3]}, cfg)
+    assert (ev["friction_n"], ev["friction_violations"]) == (4, 1)  # only d = 0.05 > 0.03
+    assert (ev["track_n"], ev["track_violations"]) == (2, 1)        # e_n 0.5 > 0.3, 0.1 < 0.3

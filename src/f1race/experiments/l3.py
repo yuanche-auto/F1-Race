@@ -5,7 +5,7 @@ it meets a different realisation of three disturbances (``sim/stochastic.py``):
 friction varying along the track, lateral gusts and noise on the measured state.
 The controllers know the statistics, not the realisation. Question: how large a
 friction / track-limit reserve does the MPC need, and does a reserve shaped by
-the uncertainty (stochastic MPC with chance constraints) beat a uniform one?
+the uncertainty (stochastic MPC with calibrated constraint tightening) beat a uniform one?
 
 Controllers (all on the nominal model):
 
@@ -77,7 +77,7 @@ def _calibration_samples(track: Track, veh: DynVehicle, ctl: MPCController, r, d
     n_ax = np.column_stack(n_ax)                                         # (K, 2) front, rear
     arms = np.array([veh.lf, -veh.lr])
     N = cfg["N"]
-    cols = {"k": [], "u_pred": [], "u_real": [], "f": [], "e_n": []}
+    cols = {"k": [], "u_pred": [], "u_real": [], "f": [], "e_n": [], "t": []}
     for t, X, U in ctl.predictions:
         js = int(round(t / cfg["dt"])) + np.arange(N + 1) * step
         m = js < K
@@ -87,6 +87,7 @@ def _calibration_samples(track: Track, veh: DynVehicle, ctl: MPCController, r, d
         ax = np.argmax(up, axis=1)                                         # axle closer to its limit
         mk = m[:N]
         cols["k"].append(np.arange(N + 1)[m])
+        cols["t"].append(np.full(int(m.sum()), t))
         cols["e_n"].append(e_n)
         cols["f"].append(f_real[js[m]])
         cols["u_pred"].append(np.concatenate([up[mk, ax[mk]], np.full(m.sum() - mk.sum(), np.nan)]))
@@ -110,7 +111,7 @@ def run_one(args) -> dict:
     else:
         mpc = FrenetMPC(track, model, ref_from_plan(o), mode="track", N=cfg["N"], dt=cfg["mpc_dt"],
                         eta=spec["eta"], margin=spec.get("mpc_margin", 0.3), backoff=spec.get("backoff"))
-        controller = MPCController(mpc, dt, record=record)
+        controller = MPCController(mpc, dt, record=record or bool(spec.get("measure_events")))
     dist = disturbances(track, seed, cfg)
     r = StochasticSim(track, model, dist, dt).run(controller, x0, t_max=cfg["t_max"])
     u_plant = r.usage.max(axis=1)
@@ -118,6 +119,7 @@ def run_one(args) -> dict:
            "stop_reason": r.stop_reason, "distance": float(r.progress[-1]),
            "max_usage": r.max_usage, "slide_fraction": r.slide_fraction,
            "usage_over_1_fraction": float(np.mean(u_plant > 1.0)),
+           "max_usage_last_2s": float(u_plant[-int(round(2.0 / dt)):].max()),
            "min_edge_margin": r.min_margin,
            "max_rear_slip_deg": float(np.degrees(np.abs(r.slip[:, 1]).max())),
            "wall_s": time.time() - t0}
@@ -125,13 +127,43 @@ def run_one(args) -> dict:
         st = [l[3] for l in controller.log]
         out["solve_ms_mean"] = float(np.mean(st) * 1e3)
         out["fallbacks"] = int(sum(1 for x in controller.mpc.stats if x["fallback"]))
-    if record:
-        out["samples"] = {k: v.tolist() for k, v in
-                          _calibration_samples(track, model, controller, r, dist, cfg).items()}
+    if record or spec.get("measure_events"):
+        smp = _calibration_samples(track, model, controller, r, dist, cfg)
+        if spec.get("measure_events"):
+            out["events"] = event_rates(smp, spec, cfg)
+        if record:
+            out["samples"] = {k: v.tolist() for k, v in smp.items()}
+            out["samples"].update({"t_end": float(r.t[-1]), "completed": bool(r.completed)})
     return out
 
 
-def calibrate(samples: list[dict], cfg: L3Config, eps: float) -> dict:
+def event_rates(smp: dict, spec: dict, cfg: dict) -> dict:
+    """How often the calibrated events occur in a run: among the near-limit predictions
+    (u_pred >= u_threshold), the fraction whose realised error d = u_real - u_pred + 1 - f
+    exceeds the stage's reserve 1 - eta_k; and the fraction of predicted axle positions
+    whose realised lateral error exceeds the stage's track back-off b_k (k >= 1)."""
+    N = cfg["N"]
+    k = np.asarray(smp["k"]).astype(int)
+    eta = np.broadcast_to(np.asarray(spec["eta"], float), (N,))
+    b = np.zeros(N + 1) if spec.get("backoff") is None else np.asarray(spec["backoff"], float)
+    m = (k < N) & (np.asarray(smp["u_pred"]) >= cfg["u_threshold"])
+    d = np.asarray(smp["u_real"])[m] - np.asarray(smp["u_pred"])[m] + 1.0 - np.asarray(smp["f"])[m]
+    fr = d > 1.0 - eta[k[m]]
+    mt = k >= 1
+    tr = np.asarray(smp["e_n"])[mt] > b[k[mt]]
+    return {"friction_n": int(m.sum()), "friction_violations": int(fr.sum()),
+            "track_n": int(mt.sum()), "track_violations": int(tr.sum())}
+
+
+def _truncate(s: dict, drop: float) -> dict:
+    """Drop the predictions made in the last ``drop`` seconds before a failure."""
+    if drop <= 0.0 or s.get("completed", True) or "t" not in s:
+        return s
+    keep = np.asarray(s["t"]) <= float(s["t_end"]) - drop
+    return {k: (np.asarray(v)[keep] if isinstance(v, (list, np.ndarray)) else v) for k, v in s.items()}
+
+
+def calibrate(samples: list[dict], cfg: L3Config, eps: float, drop_before_failure: float = 0.0) -> dict:
     """Per-stage back-offs from pooled calibration samples.
 
     Friction: the plant's ellipse holds if the nominal usage of the car stays below the
@@ -140,7 +172,10 @@ def calibrate(samples: list[dict], cfg: L3Config, eps: float) -> dict:
     eta_k = 1 - q_k, q_k the (1 - eps) quantile of d over the samples whose prediction
     is near the limit (u_pred >= u_threshold).
     Track limits: back-off b_k = (1 - eps) quantile of the axle-point lateral error.
-    Both are made non-decreasing along the horizon."""
+    Both are made non-decreasing along the horizon. ``drop_before_failure``: ignore the
+    predictions made in the last seconds before a calibration lap failed (the transient
+    of the failure is not part of the disturbance statistics)."""
+    samples = [_truncate(s, drop_before_failure) for s in samples]
     k = np.concatenate([np.asarray(s["k"]) for s in samples])
     up = np.concatenate([np.asarray(s["u_pred"]) for s in samples])
     ur = np.concatenate([np.asarray(s["u_real"]) for s in samples])
@@ -156,7 +191,8 @@ def calibrate(samples: list[dict], cfg: L3Config, eps: float) -> dict:
         b_n[i] = np.quantile(en[k == i], 1.0 - eps)
     q_u = np.maximum.accumulate(np.maximum(np.nan_to_num(q_u, nan=0.0), 0.0))
     b_n[1:] = np.maximum.accumulate(b_n[1:])
-    return {"eps": eps, "eta": (1.0 - q_u).tolist(), "backoff": b_n.tolist(), "samples_per_stage": n_u.tolist()}
+    return {"eps": eps, "eta": (1.0 - q_u).tolist(), "backoff": b_n.tolist(), "samples_per_stage": n_u.tolist(),
+            "drop_before_failure": drop_before_failure}
 
 
 def run_jobs(jobs, workers: int, verbose: bool = True) -> list[dict]:
