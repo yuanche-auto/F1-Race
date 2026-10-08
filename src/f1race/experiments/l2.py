@@ -7,6 +7,8 @@ fixed seed. Controllers:
 * ``plan_track``      offline L1 plan (eta_plan) + feed-forward/feedback tracker
 * ``plan_track_safe`` the same with a larger planning margin (constraint tightening)
 * ``nmpc_track``      NMPC following the L1 plan (re-plans every 50 ms, eta 0.95)
+* ``nmpc_track_hard`` the same with hard friction-ellipse and slip constraints (ablation:
+                      the NLP becomes infeasible once the measured state is past a limit)
 * ``nmpc_track_safe`` the same on the 7 % plan with eta 0.93 in the MPC (tightening)
 * ``nmpc_track_robust`` the same on a 12 % plan with eta 0.88 (strong tightening)
 * ``rh_mintime``      receding-horizon minimum-time MPC over the next 200 m of track
@@ -81,9 +83,11 @@ def run_one(args) -> dict:
         path_s, ff_s = dyn_reference(track, model, o_safe)
         controller = DynTracker(path_s, ff_s, model, dt, **cfg["tracker"])
         x0 = x0_from_plan(o_safe, path_s)
-    elif ctrl == "nmpc_track":
+    elif ctrl in ("nmpc_track", "nmpc_track_hard"):
+        hard = ctrl == "nmpc_track_hard"              # original formulation (200 iterations)
         mpc = FrenetMPC(track, model, ref_from_plan(o_plan), mode="track", N=cfg["N"],
-                        dt=cfg["mpc_dt"], eta=cfg["mpc_eta"])
+                        dt=cfg["mpc_dt"], eta=cfg["mpc_eta"], soft_limits=not hard,
+                        max_iter=200 if hard else 500)
         controller = MPCController(mpc, dt)
     elif ctrl == "nmpc_track_robust":
         o_rob = plans["robust"]
@@ -107,6 +111,8 @@ def run_one(args) -> dict:
     r = sim.run(controller, x0, t_max=cfg["t_max"])
     is_mpc = isinstance(controller, (MPCController, SpatialMPCController))
     solve_times = [l[3] for l in controller.log] if is_mpc else []
+    fb = [x["fallback"] for x in controller.mpc.stats] if is_mpc else []
+    last = int(round(2.0 / cfg["mpc_dt"]))
     return {"controller": ctrl, "plant": plant_info, "lap_time": r.lap_time, "completed": r.completed,
             "stop_reason": r.stop_reason, "distance": float(r.progress[-1]),
             "max_usage": r.max_usage, "slide_fraction": r.slide_fraction,
@@ -114,13 +120,18 @@ def run_one(args) -> dict:
             "max_rear_slip_deg": float(np.degrees(np.abs(r.slip[:, 1]).max())),
             "solve_ms_mean": float(np.mean(solve_times) * 1e3) if solve_times else None,
             "solve_ms_max": float(np.max(solve_times) * 1e3) if solve_times else None,
+            "solves": len(fb), "fallbacks": int(sum(fb)),
+            "fallback_fraction": float(np.mean(fb)) if fb else None,
+            "fallbacks_last_2s": int(sum(fb[-last:])) if fb else None,
+            "fallback_status": sorted({x["status"] for x in controller.mpc.stats if x["fallback"]})
+            if is_mpc else [],
             "wall_s": time.time() - t0}
 
 
 @dataclass
 class L2Config:
     track: str = "Spielberg"
-    n_plants: int = 12
+    n_plants: int = 50
     seed: int = 0
     dt: float = 0.01
     N: int = 30
@@ -156,13 +167,18 @@ def run(plans: dict, cfg: L2Config = L2Config(), controllers=("plan_track", "pla
 
 
 def summarize(results: list[dict]) -> dict:
+    from scipy.stats import binomtest
+
     out = {}
     for c in sorted({r["controller"] for r in results}):
         rs = [r for r in results if r["controller"] == c]
         done = [r for r in rs if r["completed"]]
         laps = np.array([r["lap_time"] for r in done])
         nominal = [r for r in rs if r["plant"].get("nominal")]
-        out[c] = {"runs": len(rs), "completed": len(done),
+        ci = binomtest(len(done), len(rs)).proportion_ci(method="exact")
+        is_mpc = rs[0].get("solves")
+        fail = [r for r in rs if not r["completed"]]
+        out[c] = {"runs": len(rs), "completed": len(done), "completed_ci95": [ci.low, ci.high],
                   "lap_mean": float(laps.mean()) if len(laps) else None,
                   "lap_max": float(laps.max()) if len(laps) else None,
                   "lap_nominal_plant": nominal[0]["lap_time"] if nominal else None,
@@ -170,5 +186,28 @@ def summarize(results: list[dict]) -> dict:
                   "max_usage": float(max(r["max_usage"] for r in rs)),
                   "min_edge_margin": float(min(r["min_edge_margin"] for r in rs)),
                   "solve_ms_mean": (float(np.mean([r["solve_ms_mean"] for r in rs]))
-                                    if rs[0]["solve_ms_mean"] is not None else None)}
+                                    if rs[0]["solve_ms_mean"] is not None else None),
+                  "fallback_fraction_mean": (float(np.mean([r["fallback_fraction"] for r in rs]))
+                                             if is_mpc else None),
+                  "fallback_fraction_max": (float(np.max([r["fallback_fraction"] for r in rs]))
+                                            if is_mpc else None),
+                  "fallbacks_last_2s_of_failures_mean": (float(np.mean([r["fallbacks_last_2s"] for r in fail]))
+                                                         if is_mpc and fail else None)}
     return out
+
+
+def paired_test(results: list[dict], a: str, b: str) -> dict:
+    """Exact McNemar test on the same cars: laps completed by only one of the two."""
+    import json as _json
+
+    from scipy.stats import binomtest
+
+    key = lambda r: _json.dumps(r["plant"], sort_keys=True)          # noqa: E731
+    A = {key(r): r["completed"] for r in results if r["controller"] == a}
+    B = {key(r): r["completed"] for r in results if r["controller"] == b}
+    common = sorted(set(A) & set(B))
+    only_a = sum(A[k] and not B[k] for k in common)
+    only_b = sum(B[k] and not A[k] for k in common)
+    n = only_a + only_b
+    p = binomtest(min(only_a, only_b), n, 0.5).pvalue if n else 1.0
+    return {"a": a, "b": b, "cars": len(common), "only_a": only_a, "only_b": only_b, "p": float(p)}

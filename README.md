@@ -26,8 +26,8 @@ python scripts/run_l0.py                             # ~65 s; writes results/L0 
 python scripts/l0_studies.py                         # ~4 min; grid / step studies
 python scripts/run_l1.py                             # ~20 min; writes results/L1 and docs/figures/L1
 python scripts/l1_studies.py                         # ~40 min; grid / model / tracker studies
-python scripts/run_l2.py                             # ~45 min (8 processes); Monte Carlo over plant parameters
-python scripts/l2_studies.py                         # ~15 min; one parameter at a time
+python scripts/run_l2.py                             # ~3 h (8 processes); Monte Carlo over 51 cars
+python scripts/l2_studies.py                         # ~20 min; one parameter at a time
 pytest -m "not slow"                                 # ~2 min (full suite ~12 min, ~30 min if the first L1 guess fails)
 ```
 
@@ -61,13 +61,18 @@ see [docs/L1.md](docs/L1.md).
 
 ## L2 results (plant parameters differ from the controllers' model)
 
-| Controller | Laps completed on 13 cars | Nominal car |
+| Controller | Laps completed on 51 cars (95 % interval) | Nominal car |
 |---|---|---|
-| offline plan (5 % reserve) + tracking | 3 / 13 | 75.57 s |
-| NMPC re-planning every 50 ms (5 % reserve) | **7 / 13** | 75.88 s |
+| offline plan (5 % reserve) + tracking | 3 / 51 (1–16 %) | 75.57 s |
+| NMPC re-planning every 50 ms (5 % reserve) | **22 / 51** (29–58 %) | 76.07 s |
+| the same NMPC with hard friction / slip constraints | 15 / 51 (17–44 %) | 75.88 s |
+| NMPC with a 12 % reserve | 27 / 51 (38–67 %) | 78.91 s |
 
-Re-planning doubles the success rate, but every controller fails on cars with
-less usable grip than its model assumes; see [docs/L2.md](docs/L2.md).
+Re-planning completes 19 cars the tracker cannot (and none the other way round).
+Hard constraints on the measured slip angles make the MPC problem infeasible and
+cost 7 cars. A larger reserve helps little: the remaining failures are cars that
+turn differently from the model (softer tyres, different aero balance), mostly
+without reaching the friction limit; see [docs/L2.md](docs/L2.md).
 
 ## Repository layout
 
