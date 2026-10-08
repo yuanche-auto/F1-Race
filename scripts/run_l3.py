@@ -28,6 +28,7 @@ from f1race.experiments.l3 import L3Config, calibrate, config_dict, run_jobs, su
 OUT = ROOT / "results" / "L3"
 UNIFORM = (0.95, 0.93, 0.88)
 UNIFORM_TRACK = ((0.95, 0.5), (0.89, 0.8))           # (eta, extra track margin [m])
+ABLATION_EPS = 0.01
 
 
 def plans_for(keys) -> dict:
@@ -104,13 +105,23 @@ def controllers(cfg: L3Config, cal: dict) -> dict:
     for c in cal["smpc"]:
         specs[f"smpc_{c['eps']}"] = {"kind": "nmpc", "plan_eta": plan_eta_for(c["eta"]),
                                      "eta": c["eta"], "backoff": c["backoff"]}
+    # ablation of the eps = 0.01 controller: which part of the tightening matters?
+    c = next(c for c in cal["smpc"] if c["eps"] == ABLATION_EPS)
+    pe = plan_eta_for(c["eta"])
+    specs["smpc_fric_only"] = {"kind": "nmpc", "plan_eta": pe, "eta": c["eta"]}
+    specs["smpc_track_only"] = {"kind": "nmpc", "plan_eta": 0.95, "eta": 0.95, "backoff": c["backoff"]}
+    specs["smpc_flat"] = {"kind": "nmpc", "plan_eta": pe, "eta": c["eta"][0],
+                          "backoff": [0.0] + [c["backoff"][1]] * cfg.N}
     return specs
 
 
 LABELS = {"tracker": "plan 5 % + tracker", "nmpc_0.95": "NMPC, uniform 5 %",
           "nmpc_0.93": "NMPC, uniform 7 %", "nmpc_0.88": "NMPC, uniform 12 %",
           "nmpc_0.95_m0.8": "NMPC, uniform 5 % + 0.5 m", "nmpc_0.89_m1.1": "NMPC, uniform 11 % + 0.8 m",
-          "smpc_0.2": "SMPC ε = 0.2", "smpc_0.05": "SMPC ε = 0.05", "smpc_0.01": "SMPC ε = 0.01"}
+          "smpc_0.2": "SMPC ε = 0.2", "smpc_0.05": "SMPC ε = 0.05", "smpc_0.01": "SMPC ε = 0.01",
+          "smpc_fric_only": "ε = 0.01, friction tightening only",
+          "smpc_track_only": "ε = 0.01, track back-off only (5 % plan)",
+          "smpc_flat": "ε = 0.01 plan, stage-0/1 tightening at every stage"}
 
 
 def tables(results, cal) -> str:
