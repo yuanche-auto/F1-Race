@@ -2,6 +2,8 @@
 
     python scripts/try_rh_mpc.py N ds nsub eta both_ends t_max [terminal_eta]
     e.g. python scripts/try_rh_mpc.py 50 4.0 3 0.95 1 30 0.95
+    python scripts/try_rh_mpc.py all      # the eight configurations of docs/L2.md
+                                          # -> results/L2/rh_mpc_trials.json (~30 min)
 
 Needs results/L1/l1_plans.pkl (scripts/run_l1.py). Prints how the run ended,
 solver statistics and solve times.
@@ -26,7 +28,14 @@ from f1race.sim.dynamic import DynamicSim  # noqa: E402
 from f1race.track import Track  # noqa: E402
 
 
-def main(argv) -> None:
+CONFIGS = [  # N, ds, nsub, eta, both_ends, t_max, terminal eta
+    (40, 5.0, 3, 0.95, "0", 30, 0.95), (40, 5.0, 3, 0.93, "0", 30, 0.93),
+    (50, 4.0, 3, 0.93, "0", 30, 0.93), (50, 4.0, 3, 0.95, "1", 30, 0.95),
+    (50, 4.0, 1, 0.95, "1", 30, 0.95), (50, 4.0, 1, 0.93, "1", 30, 0.93),
+    (60, 3.0, 2, 0.95, "0", 30, 0.95), (80, 2.5, 2, 0.95, "0", 30, 0.95)]
+
+
+def trial(argv) -> dict:
     N, ds, nsub, eta = int(argv[0]), float(argv[1]), int(argv[2]), float(argv[3])
     both, t_max = argv[4] == "1", float(argv[5])
     term_eta = float(argv[6]) if len(argv) > 6 else eta
@@ -46,6 +55,29 @@ def main(argv) -> None:
           f"edge margin {r.min_margin:.3f} m; solve mean {T.mean() * 1e3:.0f} ms, "
           f"p95 {np.percentile(T, 95) * 1e3:.0f} ms; wall {time.time() - t0:.0f} s")
     print({k: st.count(k) for k in set(st)})
+    return {"N": N, "ds": ds, "nsub": nsub, "eta": eta, "both_ends": both, "terminal_eta": term_eta,
+            "stop_reason": r.stop_reason, "t_end": float(r.t[-1]), "distance": float(r.progress[-1]),
+            "max_usage": r.max_usage, "min_edge_margin": r.min_margin,
+            "solve_ms_mean": float(T.mean() * 1e3), "solve_ms_p95": float(np.percentile(T, 95) * 1e3),
+            "status": {k: st.count(k) for k in set(st)}}
+
+
+def _trial(cfg):
+    sys.path.insert(0, str(ROOT / "src"))
+    return trial([str(v) for v in cfg])
+
+
+def main(argv) -> None:
+    if argv == ["all"]:
+        import json
+        from multiprocessing import get_context
+
+        with get_context("spawn").Pool(8) as pool:
+            res = pool.map(_trial, CONFIGS)
+        (ROOT / "results" / "L2").mkdir(parents=True, exist_ok=True)
+        (ROOT / "results" / "L2" / "rh_mpc_trials.json").write_text(json.dumps(res, indent=1))
+        return
+    trial(argv)
 
 
 if __name__ == "__main__":
