@@ -9,7 +9,7 @@ compares several solution methods on the same problem:
 | **L0** | deterministic kinematic model | minimum-curvature line + quasi-steady speed profile; minimum-time optimal control; closed-loop verification | ✅ done ([docs/L0.md](docs/L0.md)) |
 | **L1** | dynamic single-track model with tyre slip (magic formula) and load transfer | minimum-time optimal control on the dynamic model; feed-forward/feedback tracking; what the kinematic model misses | ✅ done ([docs/L1.md](docs/L1.md)) |
 | **L2** | closed loop with model mismatch | offline plan + tracking vs NMPC, constraint tightening, Monte Carlo and one-at-a-time sensitivity | ✅ done ([docs/L2.md](docs/L2.md)) |
-| L3 | stochastic disturbances | stochastic MPC (chance constraints), scenario MPC | planned |
+| **L3** | stochastic disturbances (friction varying along the track, gusts, sensor noise) | NMPC with uniform reserves vs chance-constrained (stochastic) MPC with back-offs calibrated from measured prediction errors; ablations | ✅ done ([docs/L3.md](docs/L3.md)) |
 | L4 | learning and adaptation | online parameter estimation + adaptive MPC, Gaussian-process residual models, learning MPC | planned |
 | L5 | reinforcement learning | SAC/PPO with domain randomisation, residual RL, RL value functions as MPC terminal cost | planned |
 
@@ -28,6 +28,7 @@ python scripts/run_l1.py                             # ~20 min; writes results/L
 python scripts/l1_studies.py                         # ~40 min; grid / model / tracker studies
 python scripts/run_l2.py                             # ~3 h (8 processes); Monte Carlo over 51 cars
 python scripts/l2_studies.py                         # ~20 min; one parameter at a time
+python scripts/run_l3.py                             # ~5 h (12 processes); calibration + 13 controllers x 30 seeds
 pytest -m "not slow"                                 # ~2 min (full suite ~12 min, ~30 min if the first L1 guess fails)
 ```
 
@@ -74,6 +75,21 @@ cost 7 cars. A larger reserve helps little: the remaining failures are cars that
 turn differently from the model (softer tyres, different aero balance), mostly
 without reaching the friction limit; see [docs/L2.md](docs/L2.md).
 
+## L3 results (random friction field, gusts and sensor noise; 30 laps each)
+
+| Controller | Laps completed (95 % interval) | Mean lap |
+|---|---|---|
+| offline plan + tracking | 0 / 30 (0–12 %) | – |
+| NMPC, uniform 5 % friction reserve | 5 / 30 (6–35 %) | 77.45 s |
+| NMPC, uniform 11 % and 0.8 m track reserve | 16 / 30 (34–72 %) | 81.43 s |
+| **stochastic MPC, ε = 0.05** | **29 / 30** (83–100 %) | 78.26 s |
+| **stochastic MPC, ε = 0.01** | **30 / 30** (88–100 %) | 79.20 s |
+
+Back-offs calibrated from the measured prediction errors, growing along the
+horizon and covering friction and track limits, make the MPC both safer and
+faster than any uniform reserve; the same tightening without the growth along
+the horizon completes 16 of 30. See [docs/L3.md](docs/L3.md).
+
 ## Repository layout
 
 ```
@@ -85,7 +101,8 @@ src/f1race/
   planning/         minimum-curvature QP, QSS speed profile, minimum-time OCP
   control/          path/speed tracking (L0), dynamic tracker (L1), NMPC and experimental
                     receding-horizon min-time MPC (L2)
-  sim/              time-domain simulator with constraint monitoring
+  sim/              time-domain simulator with constraint monitoring; stochastic
+                    disturbances (L3)
   experiments/      one module per layer
 scripts/            data download and per-layer reproduction scripts
 tests/              pytest suite
