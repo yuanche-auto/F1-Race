@@ -9,7 +9,7 @@ after APPROVE. Workflow: [docs/workflow.md](docs/workflow.md).
 | Layer | Branch | State | Review |
 |---|---|---|---|
 | L0 deterministic kinematic | `layer/L0` → `main` (18a7a58) | **approved, pushed** to origin/main 2026-10-07 | round 2: APPROVE |
-| L1 dynamic single-track + Pacejka | `layer/L1` | blocker fixed (environment-robust first solve, see below); re-review pending | round 1: CHANGES_REQUESTED |
+| L1 dynamic single-track + Pacejka | `layer/L1` → `main` (571a982) | **approved, pushed** to origin/main 2026-10-07 | round 2: APPROVE (m4, m5 fixed on `layer/L2`) |
 | L2 model mismatch, closed loop | `layer/L2` (0ae7547 + merge of L1 571a982) | done; Monte Carlo re-run on the final L1 plans, then review | – |
 | L3 stochastic disturbances | `layer/L3` | in progress | – |
 | L4 learning / adaptation | – | planned | – |
@@ -35,6 +35,7 @@ Figures are not expected to be byte-identical across versions.
 
 | Date | Commit | Scope | Verdict | Notes |
 |---|---|---|---|---|
+| 2026-10-07 | 571a982 | L1 fixes | **APPROVE** | reproduced in the reviewer's environment (Python 3.11.15); minors m4 (first-solve attempts stopped by the CPU cap, so load-dependent -> iteration caps only) and m5 (run times under load) fixed on `layer/L2` |
 | 2026-10-07 | a6b1cb5 | L1 | CHANGES_REQUESTED | BLOCKER-1 first dynamic solve (eta 0.97 from the kinematic guess) hits the CPU cap in another environment -> KeyError; minors: cache not tied to code, test usage bound loose, "5 of 8 gain sets" missing in the results section, run-time figures inconsistent; nits: nsub convergence numbers |
 | 2026-10-06 | 18a7a58 | L0 fixes | **APPROVE** | nits n3 (failure mode at coarser steps = off track) and n4 (tighter maximality tolerance on dense paths) folded into L1 |
 | 2026-10-06 | a514825 | L0 | CHANGES_REQUESTED | M1 OCP closed loop not robust to control step; M2 no OCP grid convergence; minors: margin < design, QSS end-point accel, projection jitter, front-axle approximation undocumented; nits: env versions, .gitattributes; Q1 author e-mail → user |
@@ -49,7 +50,7 @@ Figures are not expected to be byte-identical across versions.
 * venv: `.venv` (Python 3.12). Track data in `data/` (git-ignored), fetched by script.
 * A worktree `../F1-Race-wt-L0` holds `layer/L0` (used for the review fixes; can be removed).
 * L1 (branch `layer/L1`, contains the approved L0 via merge): `dynamics.py`, `planning/ocp_dynamic.py`
-  (CPU cap 15 min per solve), `sim/dynamic.py`, `control/dyn_tracking.py` (look-ahead feedback,
+  (iteration caps, no CPU-time cap), `sim/dynamic.py`, `control/dyn_tracking.py` (look-ahead feedback,
   TC/ABS `traction_limit`, front-slip governor, optional ESC term), `experiments/l1.py`
   (continuation over eta: 0.97 from L0 -> ideal -> all margins -> ideal), `scripts/run_l1.py`
   (~20 min, caches plans in results/L1/l1_plans.pkl), `scripts/l1_studies.py` (~40 min),
