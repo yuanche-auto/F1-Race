@@ -27,7 +27,8 @@ def lap_actions(name: str | None):
     plan = pickle.load(open(ROOT / "results" / "L1" / "l1_plans.pkl", "rb"))["plans"][0.95]
     history, model = 1, None
     if name:
-        model = SAC.load(ROOT / "results" / "L5" / name, device="cpu")
+        path = ROOT / "results" / "L5" / name
+        model = SAC.load(path if path.with_suffix(".zip").exists() else ROOT / "models" / "L5" / name, device="cpu")
         dim = model.observation_space.shape[0]
         history = 1 if dim == 19 else (dim - 2) // 19
     env = RacingEnv(plan, randomize_plant=False, history=history, episode_s=120.0)
