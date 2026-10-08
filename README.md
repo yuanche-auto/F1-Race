@@ -9,7 +9,7 @@ compares several solution methods on the same problem:
 | **L0** | deterministic kinematic model | minimum-curvature line + quasi-steady speed profile; minimum-time optimal control; closed-loop verification | ✅ done ([docs/L0.md](docs/L0.md)) |
 | **L1** | dynamic single-track model with tyre slip (magic formula) and load transfer | minimum-time optimal control on the dynamic model; feed-forward/feedback tracking; what the kinematic model misses | ✅ done ([docs/L1.md](docs/L1.md)) |
 | **L2** | closed loop with model mismatch | offline plan + tracking vs NMPC, constraint tightening, Monte Carlo and one-at-a-time sensitivity | ✅ done ([docs/L2.md](docs/L2.md)) |
-| **L3** | stochastic disturbances (friction varying along the track, gusts, sensor noise) | NMPC with uniform reserves vs chance-constrained (stochastic) MPC with back-offs calibrated from measured prediction errors; ablations | ✅ done ([docs/L3.md](docs/L3.md)) |
+| **L3** | stochastic disturbances (friction varying along the track, gusts, sensor noise) | NMPC with uniform reserves vs stochastic MPC with back-offs calibrated from measured prediction errors (four calibrations); ablations | ✅ done ([docs/L3.md](docs/L3.md)) |
 | **L4** | learning the car | identify the parameters from an exploration lap (least squares on the logged dynamics), re-plan, drive with the identified model; noise sensitivity | ✅ done ([docs/L4.md](docs/L4.md)) |
 | L5 | reinforcement learning | SAC/PPO with domain randomisation, residual RL, RL value functions as MPC terminal cost | planned |
 
@@ -28,7 +28,7 @@ python scripts/run_l1.py                             # ~20 min; writes results/L
 python scripts/l1_studies.py                         # ~40 min; grid / model / tracker studies
 python scripts/run_l2.py                             # ~3 h (8 processes); Monte Carlo over 51 cars
 python scripts/l2_studies.py                         # ~20 min; one parameter at a time
-python scripts/run_l3.py                             # ~5 h (12 processes); calibration + 13 controllers x 30 seeds
+python scripts/run_l3.py                             # ~8 h (12 processes) incl. calibrate / iterate / failures; 18 controllers x 30 seeds
 python scripts/run_l4.py                             # ~3 h (7 processes); identify + re-plan on 25 cars (noise: run_l4.py noise)
 pytest -m "not slow"                                 # ~2 min (full suite ~12 min, ~30 min if the first L1 guess fails)
 ```
@@ -88,8 +88,9 @@ without reaching the friction limit; see [docs/L2.md](docs/L2.md).
 
 Back-offs calibrated from the measured prediction errors, growing along the
 horizon and covering friction and track limits, make the MPC both safer and
-faster than any uniform reserve; the same tightening without the growth along
-the horizon completes 16 of 30. See [docs/L3.md](docs/L3.md).
+faster than any uniform reserve; with three other calibrations it completes
+28–30 of 30, while the same average tightening applied uniformly along the
+horizon completes 10 of 30. See [docs/L3.md](docs/L3.md).
 
 ## L4 results (the L2 cars, learned from one exploration lap)
 
