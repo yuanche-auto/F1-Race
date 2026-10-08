@@ -45,7 +45,7 @@ class L3Config:
     gust_tau: float = 1.0             # ... and correlation time [s]
     noise: bool = True                # measurement noise (sim/stochastic.NOISE_SIGMA)
     calib_seeds: tuple = (1000, 1001, 1002, 1003, 1004, 1005)
-    test_seeds: tuple = tuple(range(12))
+    test_seeds: tuple = tuple(range(30))
     eps: tuple = (0.2, 0.05, 0.01)
     u_threshold: float = 0.85         # calibrate friction errors where the prediction is near the limit
     dt: float = 0.01
@@ -178,7 +178,10 @@ def summarize(results: list[dict]) -> dict:
         rs = [r for r in results if r["controller"] == c]
         done = [r for r in rs if r["completed"]]
         laps = np.array([r["lap_time"] for r in done])
-        out[c] = {"runs": len(rs), "completed": len(done),
+        from scipy.stats import binomtest
+
+        ci = binomtest(len(done), len(rs)).proportion_ci(method="exact")
+        out[c] = {"runs": len(rs), "completed": len(done), "completed_ci95": [ci.low, ci.high],
                   "lap_mean": float(laps.mean()) if len(laps) else None,
                   "lap_std": float(laps.std()) if len(laps) else None,
                   "usage_over_1_fraction_mean": float(np.mean([r["usage_over_1_fraction"] for r in rs])),
@@ -187,6 +190,20 @@ def summarize(results: list[dict]) -> dict:
                   "solve_ms_mean": (float(np.mean([r["solve_ms_mean"] for r in rs]))
                                     if "solve_ms_mean" in rs[0] else None)}
     return out
+
+
+def paired_test(results: list[dict], a: str, b: str) -> dict:
+    """Exact McNemar test over the seeds both controllers were run on."""
+    from scipy.stats import binomtest
+
+    A = {r["seed"]: r["completed"] for r in results if r["controller"] == a}
+    B = {r["seed"]: r["completed"] for r in results if r["controller"] == b}
+    common = sorted(set(A) & set(B))
+    only_a = sum(A[k] and not B[k] for k in common)
+    only_b = sum(B[k] and not A[k] for k in common)
+    n = only_a + only_b
+    return {"a": a, "b": b, "seeds": len(common), "only_a": only_a, "only_b": only_b,
+            "p": float(binomtest(min(only_a, only_b), n, 0.5).pvalue) if n else 1.0}
 
 
 def config_dict(cfg: L3Config) -> dict:

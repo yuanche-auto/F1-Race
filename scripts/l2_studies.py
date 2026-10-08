@@ -39,7 +39,8 @@ def main() -> None:
     plans = {"plan": cache["plans"][0.95], "safe": cache["plans"][0.93]}
     cfg = asdict(L2Config())
     plants = one_at_a_time(DynVehicle())
-    jobs = [(c, info, v, plans, cfg) for c in ("plan_track", "nmpc_track") for info, v in plants]
+    ctrls = ("plan_track", "nmpc_track", "nmpc_track_hard")
+    jobs = [(c, info, v, plans, cfg) for c in ctrls for info, v in plants]
     results = []
     with get_context("spawn").Pool(8) as pool:
         for r in pool.imap_unordered(run_one, jobs):
@@ -47,14 +48,21 @@ def main() -> None:
             print(r["controller"], r["plant"], r["stop_reason"], f"{r['lap_time']:.3f}", flush=True)
     (ROOT / "results" / "L2").mkdir(parents=True, exist_ok=True)
     (ROOT / "results" / "L2" / "oat.json").write_text(json.dumps(results, indent=1))
-    print("\n| parameter | value | plan 5 % + tracker | NMPC on plan 5 % |")
+    print(table(results, plants))
+
+
+def table(results, plants) -> str:
+    ctrls = ("plan_track", "nmpc_track", "nmpc_track_hard")
+    lines = ["| parameter | value | plan 5 % + tracker | NMPC on plan 5 % | NMPC, hard limits |",
+             "|---|---|---|---|---|"]
     for info, _ in plants:
         cells = []
-        for c in ("plan_track", "nmpc_track"):
+        for c in ctrls:
             r = next(r for r in results if r["controller"] == c and r["plant"] == info)
             cells.append(f"{r['lap_time']:.2f} s" if r["completed"] else f"{r['stop_reason']} at {r['distance']:.0f} m")
         (k, v), = info.items()
-        print(f"| {k} | {v} | {cells[0]} | {cells[1]} |")
+        lines.append(f"| {k} | {v} | " + " | ".join(cells) + " |")
+    return "\n".join(lines)
 
 
 if __name__ == "__main__":

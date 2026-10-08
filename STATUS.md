@@ -10,10 +10,10 @@ after APPROVE. Workflow: [docs/workflow.md](docs/workflow.md).
 |---|---|---|---|
 | L0 deterministic kinematic | `layer/L0` → `main` (18a7a58) | **approved, pushed** to origin/main 2026-10-07 | round 2: APPROVE |
 | L1 dynamic single-track + Pacejka | `layer/L1` → `main` (571a982) | **approved, pushed** to origin/main 2026-10-07 | round 2: APPROVE (m4, m5 fixed on `layer/L2`) |
-| L2 model mismatch, closed loop | `layer/L2` (0ae7547 + merge of L1 571a982) | done; Monte Carlo re-run on the final L1 plans, then review | – |
-| L3 stochastic disturbances | `layer/L3` | in progress | – |
-| L4 learning / adaptation | – | planned | – |
-| L5 reinforcement learning | – | planned | – |
+| L2 model mismatch, closed loop | `layer/L2` → `main` (270fb2b) | **approved, pushed** to origin/main 2026-10-08 | round 2: APPROVE (m1, m2 fixed on `layer/L3`) |
+| L3 stochastic disturbances | `layer/L3` | done (SMPC 30/30 vs best uniform 16/30); review requested | – |
+| L4 learning / adaptation | `layer/L4` | done (identified model 25/25 vs nominal 13/25; noisy data 22/25); review requested | – |
+| L5 reinforcement learning | `layer/L5` | residual SAC on the L1 tracker; training (1M steps) | – |
 
 ## L0 summary
 
@@ -35,6 +35,8 @@ Figures are not expected to be byte-identical across versions.
 
 | Date | Commit | Scope | Verdict | Notes |
 |---|---|---|---|---|
+| 2026-10-08 | 270fb2b | L2 fixes | **APPROVE** | statistics recomputed from runs.json; soft NMPC cross-checked in Python 3.11 (13 cars, same outcomes); hard ablation with 500 iterations still fails on the 7 cars; minors m1 (iterations of the ablation) and m2 (cross-check numbers) fixed on `layer/L3` |
+| 2026-10-08 | 4e695ba | L2 | CHANGES_REQUESTED | MAJOR-1 fallback to the shifted plan hides infeasible NLPs (hard slip/ellipse limits on the measured state) and was not reported; MAJOR-2 13 cars cannot support "doubles the success rate"; minor: spatial-MPC trials not reproducible from a file |
 | 2026-10-07 | 571a982 | L1 fixes | **APPROVE** | reproduced in the reviewer's environment (Python 3.11.15); minors m4 (first-solve attempts stopped by the CPU cap, so load-dependent -> iteration caps only) and m5 (run times under load) fixed on `layer/L2` |
 | 2026-10-07 | a6b1cb5 | L1 | CHANGES_REQUESTED | BLOCKER-1 first dynamic solve (eta 0.97 from the kinematic guess) hits the CPU cap in another environment -> KeyError; minors: cache not tied to code, test usage bound loose, "5 of 8 gain sets" missing in the results section, run-time figures inconsistent; nits: nsub convergence numbers |
 | 2026-10-06 | 18a7a58 | L0 fixes | **APPROVE** | nits n3 (failure mode at coarser steps = off track) and n4 (tighter maximality tolerance on dense paths) folded into L1 |

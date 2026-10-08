@@ -10,6 +10,7 @@ or it is solved here).
 from __future__ import annotations
 
 import json
+import os
 import pickle
 import sys
 from pathlib import Path
@@ -23,12 +24,15 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from f1race.experiments.l3 import L3Config, calibrate, config_dict, run_jobs, summarize  # noqa: E402
+from f1race.experiments.l3 import L3Config, calibrate, config_dict, paired_test, run_jobs, summarize  # noqa: E402
 
 OUT = ROOT / "results" / "L3"
 UNIFORM = (0.95, 0.93, 0.88)
 UNIFORM_TRACK = ((0.95, 0.5), (0.89, 0.8))           # (eta, extra track margin [m])
 ABLATION_EPS = 0.01
+PAIRS = [("smpc_0.05", "nmpc_0.95"), ("smpc_0.05", "nmpc_0.89_m1.1"), ("smpc_0.01", "nmpc_0.89_m1.1"),
+         ("smpc_0.01", "nmpc_0.88"), ("smpc_0.01", "smpc_flat"), ("smpc_0.01", "smpc_fric_only"),
+         ("smpc_0.01", "smpc_track_only"), ("nmpc_0.95", "tracker")]
 
 
 def plans_for(keys) -> dict:
@@ -126,14 +130,21 @@ LABELS = {"tracker": "plan 5 % + tracker", "nmpc_0.95": "NMPC, uniform 5 %",
 
 def tables(results, cal) -> str:
     summ = summarize(results)
-    lines = ["| controller | laps completed | mean lap (completed) | lap std | time over the plant's ellipse | failures | mean solve |",
-             "|---|---|---|---|---|---|---|"]
+    lines = ["| controller | laps completed | 95 % interval | mean lap (completed) | lap std | time over the plant's ellipse | failures | mean solve |",
+             "|---|---|---|---|---|---|---|---|"]
     for c in [c for c in LABELS if c in summ]:
         s = summ[c]
-        lines.append(f"| {LABELS[c]} | {s['completed']}/{s['runs']} | "
+        ci = s["completed_ci95"]
+        lines.append(f"| {LABELS[c]} | {s['completed']}/{s['runs']} | {100 * ci[0]:.0f}–{100 * ci[1]:.0f} % | "
                      + (f"{s['lap_mean']:.2f} s | {s['lap_std']:.2f} s" if s["lap_mean"] else "– | –")
                      + f" | {100 * s['usage_over_1_fraction_mean']:.2f} % | {'; '.join(s['failures']) or '-'} | "
                      + (f"{s['solve_ms_mean']:.0f} ms |" if s["solve_ms_mean"] else "– |"))
+    lines += ["", "| comparison (same seeds) | only the first completes | only the second | exact McNemar p |",
+              "|---|---|---|---|"]
+    for a, b in PAIRS:
+        if a in summ and b in summ:
+            t = paired_test(results, a, b)
+            lines.append(f"| {LABELS[a]} vs {LABELS[b]} | {t['only_a']} | {t['only_b']} | {t['p']:.3g} |")
     lines += ["", "| ε | η at stage 0 / 10 / 20 / 29 | track back-off [m] at stage 1 / 10 / 20 / 30 | reference plan |",
               "|---|---|---|---|"]
     for c in cal["smpc"]:
@@ -195,10 +206,12 @@ def main() -> None:
     names = [a for a in args if a in specs] or list(specs)
     plans = plans_for(sorted({(s["plan_eta"], s.get("plan_margin", 0.3)) for s in specs.values()}))
     c = config_dict(cfg)
-    jobs = [(n, specs[n], s, plans, c, False) for n in names for s in cfg.test_seeds]
-    new = run_jobs(jobs, cfg.workers)
     old = json.loads((OUT / "runs.json").read_text()) if (OUT / "runs.json").exists() else []
-    results = [r for r in old if r["controller"] not in names] + new
+    done = {(r["controller"], r["seed"]) for r in old}           # runs are deterministic: resume
+    jobs = [(n, specs[n], s, plans, c, False) for n in names for s in cfg.test_seeds
+            if (n, s) not in done]
+    new = run_jobs(jobs, int(os.environ.get("L3_WORKERS", cfg.workers)))
+    results = old + new
     (OUT / "runs.json").write_text(json.dumps(results, indent=1))
     report(cfg)
 
