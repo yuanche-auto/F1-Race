@@ -11,7 +11,7 @@ compares several solution methods on the same problem:
 | **L2** | closed loop with model mismatch | offline plan + tracking vs NMPC, constraint tightening, Monte Carlo and one-at-a-time sensitivity | ✅ done ([docs/L2.md](docs/L2.md)) |
 | **L3** | stochastic disturbances (friction varying along the track, gusts, sensor noise) | NMPC with uniform reserves vs stochastic MPC with back-offs calibrated from measured prediction errors (four calibrations); ablations | ✅ done ([docs/L3.md](docs/L3.md)) |
 | **L4** | learning the car | identify the parameters from an exploration lap (least squares on the logged dynamics), re-plan, drive with the identified model; noise sensitivity | ✅ done ([docs/L4.md](docs/L4.md)) |
-| L5 | reinforcement learning | SAC/PPO with domain randomisation, residual RL, RL value functions as MPC terminal cost | planned |
+| **L5** | reinforcement learning | residual soft actor-critic on top of the L1 tracker, with and without an observation history, trained on randomised cars and disturbances | 🔍 in review ([branch `layer/L5`](https://github.com/yuanche-auto/F1-Race/tree/layer/L5)) |
 
 The guiding question of the whole series: *in which settings does a
 learning-based controller beat a model-based one, and why?*
@@ -106,6 +106,16 @@ when that lap ends off track; with them the controller is as good as one that
 knows the car (12 to 0 against the nominal model, p = 0.0005). With realistic
 sensor noise the naive estimate is biased but still completes 22 of 25. See
 [docs/L4.md](docs/L4.md).
+
+## Work in review (L5)
+
+L5 is complete and published on its branch but not yet merged here: every layer
+reaches `main` only after the independent review (see
+[Development process](#development-process)). Preliminary result, which may
+still change in review: a residual RL policy with an observation history
+completes all 51 L2 cars and all 30 L3 laps, but is 3–6 s per lap slower than
+the model-based controllers that learn the car (L4) or calibrate their
+uncertainty (L3) ([docs](https://github.com/yuanche-auto/F1-Race/blob/layer/L5/docs/L5.md)).
 
 ## Repository layout
 
