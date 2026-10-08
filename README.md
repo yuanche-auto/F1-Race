@@ -10,7 +10,7 @@ compares several solution methods on the same problem:
 | **L1** | dynamic single-track model with tyre slip (magic formula) and load transfer | minimum-time optimal control on the dynamic model; feed-forward/feedback tracking; what the kinematic model misses | ✅ done ([docs/L1.md](docs/L1.md)) |
 | **L2** | closed loop with model mismatch | offline plan + tracking vs NMPC, constraint tightening, Monte Carlo and one-at-a-time sensitivity | ✅ done ([docs/L2.md](docs/L2.md)) |
 | **L3** | stochastic disturbances (friction varying along the track, gusts, sensor noise) | NMPC with uniform reserves vs chance-constrained (stochastic) MPC with back-offs calibrated from measured prediction errors; ablations | ✅ done ([docs/L3.md](docs/L3.md)) |
-| L4 | learning and adaptation | online parameter estimation + adaptive MPC, Gaussian-process residual models, learning MPC | planned |
+| **L4** | learning the car | identify the parameters from an exploration lap (least squares on the logged dynamics), re-plan, drive with the identified model; noise sensitivity | ✅ done ([docs/L4.md](docs/L4.md)) |
 | L5 | reinforcement learning | SAC/PPO with domain randomisation, residual RL, RL value functions as MPC terminal cost | planned |
 
 The guiding question of the whole series: *in which settings does a
@@ -29,6 +29,7 @@ python scripts/l1_studies.py                         # ~40 min; grid / model / t
 python scripts/run_l2.py                             # ~3 h (8 processes); Monte Carlo over 51 cars
 python scripts/l2_studies.py                         # ~20 min; one parameter at a time
 python scripts/run_l3.py                             # ~5 h (12 processes); calibration + 13 controllers x 30 seeds
+python scripts/run_l4.py                             # ~3 h (7 processes); identify + re-plan on 25 cars (noise: run_l4.py noise)
 pytest -m "not slow"                                 # ~2 min (full suite ~12 min, ~30 min if the first L1 guess fails)
 ```
 
@@ -90,6 +91,21 @@ horizon and covering friction and track limits, make the MPC both safer and
 faster than any uniform reserve; the same tightening without the growth along
 the horizon completes 16 of 30. See [docs/L3.md](docs/L3.md).
 
+## L4 results (the L2 cars, learned from one exploration lap)
+
+| Controller | Laps completed on 25 cars (95 % interval) | Mean lap |
+|---|---|---|
+| NMPC, nominal model | 13 / 25 (31–72 %) | 76.35 s |
+| exploration lap (NMPC, 12 % reserve) | 16 / 25 (43–82 %) | 79.21 s |
+| **NMPC, identified model, re-planned** | **25 / 25** (86–100 %) | 76.87 s |
+| NMPC, true model, re-planned | 25 / 25 (86–100 %) | 76.89 s |
+
+The parameters are identified almost exactly from the exploration lap, even
+when that lap ends off track; with them the controller is as good as one that
+knows the car (12 to 0 against the nominal model, p = 0.0005). With realistic
+sensor noise the naive estimate is biased but still completes 22 of 25. See
+[docs/L4.md](docs/L4.md).
+
 ## Repository layout
 
 ```
@@ -103,6 +119,7 @@ src/f1race/
                     receding-horizon min-time MPC (L2)
   sim/              time-domain simulator with constraint monitoring; stochastic
                     disturbances (L3)
+  estimation/       parameter identification from driving data (L4)
   experiments/      one module per layer
 scripts/            data download and per-layer reproduction scripts
 tests/              pytest suite
