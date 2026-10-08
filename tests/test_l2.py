@@ -50,3 +50,38 @@ def test_nmpc_tracks_plan_for_a_few_seconds(track):
     assert r.stop_reason == "time limit"            # no spin / off track in 8 s (through turn 1)
     assert r.max_usage <= 1.0 and r.min_margin > 0.0
     assert not any(s["fallback"] for s in mpc.stats)
+
+
+def test_paired_test_counts_discordant_cars():
+    from f1race.experiments.l2 import paired_test
+
+    mk = lambda c, mu, ok: {"controller": c, "plant": {"mu": mu}, "completed": ok}   # noqa: E731
+    rs = [mk("a", m, True) for m in (1, 2, 3)] + [mk("b", 1, True), mk("b", 2, False), mk("b", 3, False)]
+    t = paired_test(rs, "a", "b")
+    assert (t["only_a"], t["only_b"], t["cars"]) == (2, 0, 3) and abs(t["p"] - 0.5) < 1e-12
+
+
+@pytest.mark.skipif(not CACHE.exists(), reason="run scripts/run_l1.py first")
+def test_soft_limits_keep_the_mpc_feasible_past_the_tyre_peak(track):
+    """With the measured rear slip angle beyond the tyre peak, the stage-0 slip constraint
+    cannot be met by any input: the hard formulation is infeasible, the soft one solves
+    and reports the slack it needed."""
+    from f1race.control.nmpc import FrenetMPC, MPCController
+    from f1race.experiments.l1 import dyn_reference
+    from f1race.experiments.l2 import ref_from_plan, x0_from_plan
+
+    veh = DynVehicle()
+    o = pickle.load(open(CACHE, "rb"))["plans"][0.95]
+    path, _ = dyn_reference(track, veh, o)
+    x = x0_from_plan(o, path)
+    x[4] = -0.15 * x[3]                                  # rear slip ~ 8.5 deg > peak (6.1 deg)
+    out = {}
+    for soft in (False, True):
+        mpc = FrenetMPC(track, veh, ref_from_plan(o), mode="track", N=30, dt=0.05, eta=0.95,
+                        soft_limits=soft, max_iter=200 if not soft else 500)
+        xf = MPCController(mpc, 0.01).frenet(x)
+        _, info = mpc.solve(xf, np.zeros(3))
+        out[soft] = info
+    assert out[False]["status"] not in ("Solve_Succeeded", "Solved_To_Acceptable_Level")
+    assert out[True]["status"] in ("Solve_Succeeded", "Solved_To_Acceptable_Level")
+    assert out[True]["limit_slack"] > 0.1

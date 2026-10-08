@@ -17,8 +17,12 @@ Two objectives on the same constraints:
 
 Constraints: friction ellipse of both axles (factor ``eta``), slip angles within
 the tyre peak, power, steering angle and rate, and track limits for the front
-and rear axle points (softened with a heavily penalised slack so that the NLP
-stays feasible after a disturbance). Multiple shooting with one RK4 step per MPC step, IPOPT with warm
+and rear axle points. Track limits, ellipses and slip angles are softened with
+heavily (exactly) penalised slacks so that the NLP stays feasible after a
+disturbance: the solution is unchanged while the constraints can be met, and
+the slip angles at stage 0, fixed by the measured state, can no longer make the
+problem infeasible (``soft_limits=False`` restores the hard version, kept as an
+ablation). Multiple shooting with one RK4 step per MPC step, IPOPT with warm
 start; if a solve fails, the shifted previous plan is applied instead.
 """
 from __future__ import annotations
@@ -45,18 +49,24 @@ def _periodic_interpolant(name: str, s: np.ndarray, f: np.ndarray, length: float
 class FrenetMPC:
     def __init__(self, track: Track, veh: DynVehicle, ref: dict, mode: str = "track",
                  N: int = 30, dt: float = 0.05, eta=0.97, margin: float = 0.3,
-                 weights: dict | None = None, max_iter: int = 200, backoff=None):
+                 weights: dict | None = None, max_iter: int = 500, soft_limits: bool | int = True,
+                 backoff=None):
         """``ref``: arrays over centre-line arclength ref['s'] with keys n, xi, vx (the
         reference trajectory, e.g. an L1 plan; in MPCC mode only vx is used, as a
         terminal speed bound). ``eta``: friction factor, a number or one value per
-        stage (N); ``backoff``: optional extra distance [m] kept from the track edges
-        per predicted state (N + 1 values, the first unused), e.g. stochastic
-        constraint tightening (L3)."""
+        stage (N). ``soft_limits``: friction ellipses and slip angles as exactly
+        penalised soft constraints at every stage (True), at the first k stages only (an
+        integer k), or hard everywhere (False, which makes the NLP infeasible whenever
+        the measured state is already past a limit: the slip angles at stage 0 depend on
+        the measured state only). ``backoff``: optional extra distance [m] kept from the
+        track edges per predicted state (N + 1 values, the first unused), e.g.
+        stochastic constraint tightening (L3)."""
         eta_k = np.broadcast_to(np.asarray(eta, float), (N,)).copy()
         b_k = np.zeros(N + 1) if backoff is None else np.asarray(backoff, float)
         self.track, self.veh, self.mode, self.N, self.dt = track, veh, mode, N, dt
         self.eta, self.eta_k, self.backoff = eta, eta_k, b_k
-        w = {"n": 1.0, "xi": 10.0, "v": 0.2, "drate": 1.0, "dF": 0.5, "slack": 1e4, "progress": 1.0}
+        w = {"n": 1.0, "xi": 10.0, "v": 0.2, "drate": 1.0, "dF": 0.5, "slack": 1e4, "progress": 1.0,
+             "limit_slack": 1e6}           # physics limits cost far more than track limits
         w.update(weights or {})
         self.w = w
         L = track.length
@@ -83,6 +93,8 @@ class FrenetMPC:
         X = ca.SX.sym("X", 7, N + 1)
         U = ca.SX.sym("U", 3, N)
         S = ca.SX.sym("S", 2, N + 1)                  # track-limit slacks (front, rear points)
+        n_soft = N if soft_limits is True else int(soft_limits)
+        T = ca.SX.sym("T", 4, n_soft)                   # ellipse (front, rear) and slip slacks
         P = ca.SX.sym("P", 7 + 3)                     # initial state, previous input
         g, lbg, ubg = [], [], []
         J = 0
@@ -93,9 +105,21 @@ class FrenetMPC:
             Fi = tyre_forces(veh, X[3, i], X[4, i], X[5, i], X[6, i], U[1, i] * FS, U[2, i] * FS, lib=ca)
             uf2 = (Fi["fxf"] / (veh.mu_x * Fi["fzf"])) ** 2 + (Fi["fyf"] / (veh.mu_y * Fi["fzf"])) ** 2
             ur2 = (Fi["fxr"] / (veh.mu_x * Fi["fzr"])) ** 2 + (Fi["fyr"] / (veh.mu_y * Fi["fzr"])) ** 2
-            g += [uf2, ur2, Fi["af"], Fi["ar"], U[1, i] * FS * X[3, i]]
-            lbg += [-ca.inf, -ca.inf, -veh.alpha_peak, -veh.alpha_peak, -ca.inf]
-            ubg += [eta_k[i]**2, eta_k[i]**2, veh.alpha_peak, veh.alpha_peak, veh.P_max]
+            if i < n_soft:
+                ap = veh.alpha_peak                     # slip slacks in units of the peak angle
+                ek = eta_k[i]
+                # the longitudinal force of each axle stays hard-limited (always satisfiable):
+                # otherwise the optimiser buys impossible braking with ellipse slack
+                g += [uf2 - T[0, i], ur2 - T[1, i], Fi["af"] - ap * T[2, i], Fi["af"] + ap * T[2, i],
+                      Fi["ar"] - ap * T[3, i], Fi["ar"] + ap * T[3, i], U[1, i] * FS * X[3, i],
+                      Fi["fxf"] / (veh.mu_x * Fi["fzf"]), Fi["fxr"] / (veh.mu_x * Fi["fzr"])]
+                lbg += [-ca.inf, -ca.inf, -ca.inf, -ap, -ca.inf, -ap, -ca.inf, -ek, -ek]
+                ubg += [ek**2, ek**2, ap, ca.inf, ap, ca.inf, veh.P_max, ek, ek]
+                J += w["limit_slack"] * h * (ca.sumsqr(T[:, i]) + 10.0 * ca.sum1(T[:, i]))
+            else:
+                g += [uf2, ur2, Fi["af"], Fi["ar"], U[1, i] * FS * X[3, i]]
+                lbg += [-ca.inf, -ca.inf, -veh.alpha_peak, -veh.alpha_peak, -ca.inf]
+                ubg += [eta_k[i]**2, eta_k[i]**2, veh.alpha_peak, veh.alpha_peak, veh.P_max]
             du = U[:, i] - (P[7:] if i == 0 else U[:, i - 1])
             J += h * (w["drate"] * U[0, i] ** 2 + w["dF"] * (du[1] ** 2 + du[2] ** 2) / h)
         for i in range(1, N + 1):
@@ -114,7 +138,7 @@ class FrenetMPC:
             J += -w["progress"] * (X[0, N] - X[0, 0])
             g.append(X[3, N] - vref(X[0, N])); lbg.append(-ca.inf); ubg.append(0.0)
 
-        z = ca.vertcat(ca.vec(X), ca.vec(U), ca.vec(S))
+        z = ca.vertcat(ca.vec(X), ca.vec(U), ca.vec(S), ca.vec(T))
         self.nx = 7 * (N + 1)
         self.nu = 3 * N
         lbz = np.full(z.shape[0], -np.inf)
@@ -127,9 +151,11 @@ class FrenetMPC:
         lbz[Ui[:, 0]], ubz[Ui[:, 0]] = -veh.delta_rate_max, veh.delta_rate_max
         lbz[Ui[:, 1]], ubz[Ui[:, 1]] = 0.0, np.inf
         lbz[Ui[:, 2]], ubz[Ui[:, 2]] = -np.inf, 0.0
+        Ti = self.nx + self.nu + 2 * (N + 1) + np.arange(T.numel()).reshape(n_soft, 4)
         lbz[Si] = 0.0
         ubz[Si[0]] = 0.0                                # slack at the (fixed) initial state unused
-        self.Xi, self.Ui, self.Si = Xi, Ui, Si
+        lbz[Ti] = 0.0
+        self.Xi, self.Ui, self.Si, self.Ti = Xi, Ui, Si, Ti
         self.lbz, self.ubz = lbz, ubz
         self.lbg, self.ubg = np.array(lbg, float), np.array(ubg, float)
         nlp = {"x": z, "f": J, "g": ca.vertcat(*g), "p": P}
@@ -181,7 +207,8 @@ class FrenetMPC:
             self.z = z0
         u = z[self.Ui[0]] * np.array([1.0, FS, FS])
         info = {"status": st["return_status"], "iter": st["iter_count"], "time": time.time() - t0,
-                "slack": float(np.max(z[self.Si])), "fallback": fallback}
+                "slack": float(np.max(z[self.Si])), "fallback": fallback,
+                "limit_slack": float(np.max(z[self.Ti])) if self.Ti.size else 0.0}
         self.stats.append(info)
         return u, info
 
