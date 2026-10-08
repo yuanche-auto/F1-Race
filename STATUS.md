@@ -11,7 +11,7 @@ after APPROVE. Workflow: [docs/workflow.md](docs/workflow.md).
 | L0 deterministic kinematic | `layer/L0` → `main` (18a7a58) | **approved, pushed** to origin/main 2026-10-07 | round 2: APPROVE |
 | L1 dynamic single-track + Pacejka | `layer/L1` → `main` (571a982) | **approved, pushed** to origin/main 2026-10-07 | round 2: APPROVE (m4, m5 fixed on `layer/L2`) |
 | L2 model mismatch, closed loop | `layer/L2` → `main` (270fb2b) | **approved, pushed** to origin/main 2026-10-08 | round 2: APPROVE (m1, m2 fixed on `layer/L3`) |
-| L3 stochastic disturbances | `layer/L3` | Monte Carlo running (soft NMPC); review after | – |
+| L3 stochastic disturbances | `layer/L3` | done (SMPC 30/30 vs best uniform 16/30); review requested | – |
 | L4 learning / adaptation | `layer/L4` | identify from an exploration lap, re-plan; 25-car run in progress | – |
 | L5 reinforcement learning | `layer/L5` | residual SAC on the L1 tracker; training (1M steps) | – |
 
