@@ -13,7 +13,7 @@ after APPROVE. Workflow: [docs/workflow.md](docs/workflow.md).
 | L2 model mismatch, closed loop | `layer/L2` → `main` (270fb2b) | **approved, pushed** to origin/main 2026-10-08 | round 2: APPROVE (m1, m2 fixed on `layer/L3`) |
 | L3 stochastic disturbances | `layer/L3` → `main` | **approved, pushed** to origin/main 2026-10-08 | round 2: APPROVE (nit: truncation definition, on `layer/L5`) |
 | L4 learning / adaptation | `layer/L4` → `main` | **approved, pushed** to origin/main 2026-10-08 | round 1: APPROVE (minors fixed in 66f6cb3) |
-| L5 reinforcement learning | `layer/L5` (published for reading) | done; review requested | – |
+| L5 reinforcement learning | `layer/L5` | first results withdrawn; multi-seed redo running (docs/L5_protocol.md, started 2026-10-08 21:55) | review in progress |
 
 ## L0 summary
 
@@ -49,6 +49,20 @@ Figures are not expected to be byte-identical across versions.
 
 * **Q1 (2026-10-07):** keep the author e-mail `yuanche@umich.edu`; push each layer to `main` as
   soon as the reviewer approves it.
+
+## L5 redo (running while the user is away)
+
+* Protocol, fixed before the runs: [docs/L5_protocol.md](docs/L5_protocol.md) (groups A/B/C,
+  seeds 1–3, validation set, selection rule, reporting).
+* Pipeline: `scripts/l5_multiseed.py` (worktree `../F1-Race-wt-L5`, venv `.venv-rl`); log
+  `results/L5/multiseed/driver.log`. It is resumable: re-running it skips finished training
+  runs (all 12 checkpoints present) and finished evaluations. If a training run was cut
+  off, delete its partial checkpoints before re-running.
+* Decisions taken without the user (also in the protocol): plain policy not retrained
+  (more seeds instead); a_c = 4 m/s² fixed by physics, not tuned; 3 training runs in
+  parallel with 8 environments each (unchanged training settings).
+* After it finishes: write docs/L5.md from results/L5/multiseed/tables.md and the
+  baselines, request the review, merge to main and push after APPROVE (user's rule).
 
 ## Notes for resuming
 
