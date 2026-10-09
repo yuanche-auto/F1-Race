@@ -119,11 +119,13 @@ sensor noise the naive estimate is biased but still completes 22 of 25. See
 | **RL, checkpoint selected on validation laps** | **51 / 51**, 81.2 s | **30 / 30**, 81.2 s |
 
 A learned policy can be more robust than the model-based controller without a
-model of the actual car, but whether a training run produces one is close to a
-coin toss: most runs have a blind spot, one corner where they fail on almost
-every car, invisible in training. It takes several runs and a validation on
-full laps to find a good one, and it is still slower than the model-based
-controllers that identify the car (L4) or calibrate their reserves (L3). See
+model of the actual car, but a single training run is not enough: almost every
+run beats the nominal NMPC, only about one in three beats an NMPC slowed to its
+pace, and most runs have a blind spot, one corner where they fail on almost
+every car, invisible in training. With several runs and a validation on full
+laps each design yielded a good policy; it is still slower than the
+model-based controllers that identify the car (L4, in a favourable setting) or
+calibrate their reserves (L3). See
 [docs/L5.md](docs/L5.md).
 
 ## Repository layout
