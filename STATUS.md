@@ -13,7 +13,7 @@ after APPROVE. Workflow: [docs/workflow.md](docs/workflow.md).
 | L2 model mismatch, closed loop | `layer/L2` → `main` (270fb2b) | **approved, pushed** to origin/main 2026-10-08 | round 2: APPROVE (m1, m2 fixed on `layer/L3`) |
 | L3 stochastic disturbances | `layer/L3` → `main` | **approved, pushed** to origin/main 2026-10-08 | round 2: APPROVE (nit: truncation definition, on `layer/L5`) |
 | L4 learning / adaptation | `layer/L4` → `main` | **approved, pushed** to origin/main 2026-10-08 | round 1: APPROVE (minors fixed in 66f6cb3) |
-| L5 reinforcement learning | `layer/L5` (published for reading) | done; review requested | – |
+| L5 reinforcement learning | `layer/L5` (published for reading) | results withdrawn (single training run not reproducible); redo with several seeds and a validation set | review in progress |
 
 ## L0 summary
 
