@@ -88,6 +88,15 @@ Figures are not expected to be byte-identical across versions.
 * Result-producing runs use a detached worktree `../F1-Race-wt-L6-run` pinned at the commit
   named in `results/L6/RUN_COMMIT` there, so that development on `layer/L6` cannot change code
   under a running pool; its `results/L6` is copied back for the report.
+* Runs in progress (started 2026-10-09; check the `chain_*.log` files):
+  * `../F1-Race-wt-L6-run` (20b314b): `results/L6/chain_round1.sh` – 1a (first controllers ran
+    in `../F1-Race-wt-L6`, copied over), 1a additions, 1b at 60 → 30 → 10 ms, angle ablation;
+    then `chain_round23.sh` checks out a5dacce and runs the RL sweep on the nominal car,
+    round 3 and round 2;
+  * `../F1-Race-wt-L6-run311` (20b314b, `.venv-311`, 3 workers): `chain_env311.sh` – the
+    second-environment check (1a, and nmpc / identified / oracle_struct at 60 ms);
+  * the RL baseline at 10 / 30 / 60 ms is done (`../F1-Race-wt-L6-run/results/L6/rl.jsonl`).
+  The reviewer cleared 1b after amendments A1–A8 and expects a results review request.
 * Pipeline: `python scripts/run_l6.py round1 ...` (resumable: finished laps in
   `results/L6/round1.jsonl` are skipped; errors in `results/L6/errors.log`), RL baseline
   `scripts/l6_rl.py` in `.venv-rl`, tables `python scripts/run_l6.py report`.
