@@ -168,3 +168,58 @@ def test_lag_aware_controller_with_measured_angle(track):
     r = LaggedSim(track, veh, 0.06, 0.01, observe="angle").run(wrapped, x0_from_plan(o, path), t_max=1.0)
     c_true = r.state[1:, 7]
     assert np.max(np.abs(np.array(seen)[: len(c_true)] - c_true)) < 1e-12
+
+
+@pytest.mark.skipif(not CACHE.exists(), reason="run scripts/run_l1.py first")
+def test_parametric_tightening_and_zero_residual_match_the_plain_mpc(track):
+    """Tightening passed as NLP parameters, and a residual that is zero, give the same
+    solution as the formulation without these options (L3-style constants)."""
+    import casadi as ca
+
+    from f1race.control.nmpc import FrenetMPC
+    from f1race.experiments.l1 import dyn_reference
+    from f1race.experiments.l2 import ref_from_plan, x0_from_plan
+    from f1race.control.nmpc import MPCController
+
+    o, veh = _plan(), DynVehicle()
+    path, _ = dyn_reference(track, veh, o)
+    N = 10
+    eta = np.linspace(0.95, 0.90, N)
+    b = np.r_[0.0, np.linspace(0.1, 0.5, N)]
+    z = ca.SX.sym("z", 7)
+    zero = ca.Function("zero", [z], [ca.DM.zeros(3) * z[0]])
+    a = FrenetMPC(track, veh, ref_from_plan(o), N=N, dt=0.05, eta=eta, backoff=b)
+    p = FrenetMPC(track, veh, ref_from_plan(o), N=N, dt=0.05, eta=0.95, param_tightening=True, residual=zero)
+    xf = MPCController(a, 0.01).frenet(x0_from_plan(o, path))
+    u_prev = np.array([0.0, 1000.0, 0.0])
+    ua, _ = a.solve(xf, u_prev)
+    up, _ = p.solve(xf, u_prev, eta=eta, backoff=b)
+    assert np.allclose(ua, up, rtol=1e-5, atol=1e-3)
+    assert np.allclose(a.z[a.Xi], p.z[p.Xi], atol=1e-5)
+
+
+@pytest.mark.skipif(not CACHE.exists(), reason="run scripts/run_l1.py first")
+def test_ekf_reduces_the_noise_bias(track):
+    """With the L3 sensor noise on the logged states, the EKF estimate is closer to the
+    true parameters than the least squares on the raw data (and is exact-ish without noise)."""
+    from dataclasses import replace
+
+    from f1race.control.dyn_tracking import DynTracker
+    from f1race.estimation.ekf import ekf_identify
+    from f1race.estimation.identify import data_from_run, identify, theta_of
+    from f1race.experiments.l1 import dyn_reference
+    from f1race.experiments.l2 import sample_plants, x0_from_plan
+    from f1race.sim.dynamic import DynamicSim
+    from f1race.sim.stochastic import NOISE_SIGMA
+
+    o, nom = _plan(), DynVehicle()
+    info, plant = sample_plants(nom, 4, 0)[3]
+    path, ff = dyn_reference(track, nom, o)
+    ctl = DynTracker(path, ff, nom, 0.01, k_p=0.06, x_la=12.0, k_r=0.05, kv=8.0)
+    r = DynamicSim(track, plant, 0.01).run(ctl, x0_from_plan(o, path), t_max=20.0)
+    true = theta_of(info)
+    noisy = replace(r, state=r.state + NOISE_SIGMA * np.random.default_rng(7).standard_normal(r.state.shape))
+    ls = identify(data_from_run(noisy, 0.01), nom)["theta"]
+    ekf = ekf_identify(noisy.state, noisy.inputs, noisy.usage, 0.01, nom, NOISE_SIGMA)["theta"]
+    assert np.abs(ekf - true).max() < 0.5 * np.abs(ls - true).max()
+    assert np.abs(ekf - true).max() < 0.1

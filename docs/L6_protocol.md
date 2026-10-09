@@ -217,3 +217,21 @@ made while 1a was running and **before 1b started**:
   model extended from {0.5, 1, 2, 4} to {0.5, 1, 2, 4, 8, 16}: in a smoke test of
   the code on one 1a exploration lap (nominal car, 90 ms) the evidence chose the
   largest candidate, 4. No lap was driven with a residual model.
+
+Code checks before rounds 2 and 3 (disclosed; nothing was changed because of
+them):
+
+* the round-2 job end to end on the nominal car at 30 ms (from its 1a
+  exploration lap): `residual` and `residual_cautious` both off track at about
+  470 m; held-out one-step coverage 0.62 / 0.74 / 0.69 (v_x', v_y', r'),
+  closed-loop 0.87 / 0.94 / 0.96 on 500 samples; 1.1 s per solve (a full lap
+  takes about 30 min). This lap is a result of round 2 and will be re-run
+  identically in the round;
+* the EKF and the smoothed least squares on 25 s of an exploration-like lap of
+  car 5 at τ = 0 with one noise draw (not the round-3 data): largest parameter
+  error 0.015 (EKF), 0.61 (least squares raw and smoothed: inertia on its
+  bound).
+* Identification notes: the samples where the plant's tyres are saturated are
+  excluded with the plant's true ellipse usage, as in L4 (privileged
+  information, disclosed there); the same rule is used by the lag
+  identification and the EKF.

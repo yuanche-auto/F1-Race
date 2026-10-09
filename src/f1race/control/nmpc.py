@@ -30,6 +30,12 @@ gets the commanded angle as an eighth entry, the input moves it, and the angle
 in the tyre model follows with delta' = (delta_cmd - delta) / tau. The lag is
 integrated exactly within each MPC step (the rate is constant there), the rest
 of the state by RK4 with the exact steering angle at the RK4 nodes.
+
+``residual`` (L6, round 2): a CasADi function z -> 3 added to (v_x', v_y', r') of
+the model, z = (v_x, v_y, r, delta, delta_rate, F_drive, F_brake) – learned residual
+dynamics. ``param_tightening``: the per-stage friction factors and track back-offs
+become parameters of the NLP, set at every solve (``solve(..., eta=, backoff=)``).
+The formulation without these options is unchanged.
 """
 from __future__ import annotations
 
@@ -56,7 +62,8 @@ class FrenetMPC:
     def __init__(self, track: Track, veh: DynVehicle, ref: dict, mode: str = "track",
                  N: int = 30, dt: float = 0.05, eta=0.97, margin: float = 0.3,
                  weights: dict | None = None, max_iter: int = 500, soft_limits: bool | int = True,
-                 backoff=None, steer_lag: float | None = None):
+                 backoff=None, steer_lag: float | None = None, residual=None,
+                 param_tightening: bool = False):
         """``ref``: arrays over centre-line arclength ref['s'] with keys n, xi, vx (the
         reference trajectory, e.g. an L1 plan; in MPCC mode only vx is used, as a
         terminal speed bound). ``eta``: friction factor, a number or one value per
@@ -72,6 +79,7 @@ class FrenetMPC:
         b_k = np.zeros(N + 1) if backoff is None else np.asarray(backoff, float)
         self.track, self.veh, self.mode, self.N, self.dt = track, veh, mode, N, dt
         self.steer_lag = steer_lag
+        self.param_tightening = bool(param_tightening)
         nx = 7 if steer_lag is None else 8
         self.nxs = nx
         self.eta, self.eta_k, self.backoff = eta, eta_k, b_k
@@ -93,6 +101,9 @@ class FrenetMPC:
         k = kap(s)
         F = tyre_forces(veh, vx, vy, r, d, u[1] * FS, u[2] * FS, lib=ca)
         dvx, dvy, dr = body_accel(veh, vx, vy, r, d, F, lib=ca)
+        if residual is not None:
+            rz = residual(ca.vertcat(vx, vy, r, d, u[0], u[1] * FS, u[2] * FS))
+            dvx, dvy, dr = dvx + rz[0], dvy + rz[1], dr + rz[2]
         sdot = (vx * ca.cos(xi) - vy * ca.sin(xi)) / (1 - n * k)
         f = ca.Function("f", [x, u], [ca.vertcat(sdot, vx * ca.sin(xi) + vy * ca.cos(xi),
                                                  r - k * sdot, dvx, dvy, dr, u[0])])
@@ -121,7 +132,9 @@ class FrenetMPC:
         S = ca.SX.sym("S", 2, N + 1)                  # track-limit slacks (front, rear points)
         n_soft = N if soft_limits is True else int(soft_limits)
         T = ca.SX.sym("T", 4, n_soft)                   # ellipse (front, rear) and slip slacks
-        P = ca.SX.sym("P", nx + 3)                    # initial state, previous input
+        npar = nx + 3 + (2 * N + 1 if self.param_tightening else 0)
+        P = ca.SX.sym("P", npar)                      # initial state, previous input (, eta_k, b_k)
+        pt = self.param_tightening
         g, lbg, ubg = [], [], []
         J = 0
         g.append(X[:, 0] - P[:nx]); lbg += [0] * nx; ubg += [0] * nx
@@ -139,14 +152,27 @@ class FrenetMPC:
                 g += [uf2 - T[0, i], ur2 - T[1, i], Fi["af"] - ap * T[2, i], Fi["af"] + ap * T[2, i],
                       Fi["ar"] - ap * T[3, i], Fi["ar"] + ap * T[3, i], U[1, i] * FS * X[3, i],
                       Fi["fxf"] / (veh.mu_x * Fi["fzf"]), Fi["fxr"] / (veh.mu_x * Fi["fzr"])]
-                lbg += [-ca.inf, -ca.inf, -ca.inf, -ap, -ca.inf, -ap, -ca.inf, -ek, -ek]
-                ubg += [ek**2, ek**2, ap, ca.inf, ap, ca.inf, veh.P_max, ek, ek]
+                if pt:                                  # the same rows with eta_k a parameter
+                    ek = P[nx + 3 + i]
+                    g[-9:] = [g[-9] - ek**2, g[-8] - ek**2] + g[-7:-2] + [g[-2] - ek, g[-2] + ek,
+                                                                         g[-1] - ek, g[-1] + ek]
+                    lbg += [-ca.inf, -ca.inf, -ca.inf, -ap, -ca.inf, -ap, -ca.inf, -ca.inf, 0.0, -ca.inf, 0.0]
+                    ubg += [0.0, 0.0, ap, ca.inf, ap, ca.inf, veh.P_max, 0.0, ca.inf, 0.0, ca.inf]
+                else:
+                    lbg += [-ca.inf, -ca.inf, -ca.inf, -ap, -ca.inf, -ap, -ca.inf, -ek, -ek]
+                    ubg += [ek**2, ek**2, ap, ca.inf, ap, ca.inf, veh.P_max, ek, ek]
                 J += w["limit_slack"] * h * (ca.sumsqr(T[:, i]) + 10.0 * ca.sum1(T[:, i]))
             else:
-                g += [uf2, ur2, Fi["af"], Fi["ar"], U[1, i] * FS * X[3, i]]
-                lbg += [-ca.inf, -ca.inf, -veh.alpha_peak, -veh.alpha_peak, -ca.inf]
-                ubg += [eta_k[i]**2, eta_k[i]**2, veh.alpha_peak, veh.alpha_peak, veh.P_max]
-            du = U[:, i] - (P[nx:] if i == 0 else U[:, i - 1])
+                if pt:
+                    ek = P[nx + 3 + i]
+                    g += [uf2 - ek**2, ur2 - ek**2, Fi["af"], Fi["ar"], U[1, i] * FS * X[3, i]]
+                    lbg += [-ca.inf, -ca.inf, -veh.alpha_peak, -veh.alpha_peak, -ca.inf]
+                    ubg += [0.0, 0.0, veh.alpha_peak, veh.alpha_peak, veh.P_max]
+                else:
+                    g += [uf2, ur2, Fi["af"], Fi["ar"], U[1, i] * FS * X[3, i]]
+                    lbg += [-ca.inf, -ca.inf, -veh.alpha_peak, -veh.alpha_peak, -ca.inf]
+                    ubg += [eta_k[i]**2, eta_k[i]**2, veh.alpha_peak, veh.alpha_peak, veh.P_max]
+            du = U[:, i] - (P[nx:nx + 3] if i == 0 else U[:, i - 1])
             J += h * (w["drate"] * U[0, i] ** 2 + w["dF"] * (du[1] ** 2 + du[2] ** 2) / h)
         for i in range(1, N + 1):
             si, ni, xii = X[0, i], X[1, i], X[2, i]
@@ -154,8 +180,13 @@ class FrenetMPC:
             for j, arm in enumerate((veh.lf, -veh.lr)):
                 chord = 0.5 * arm**2 * ca.fabs(ki)
                 na = ni + arm * ca.sin(xii)
-                g += [na + (wr(si) - body - chord) + S[j, i], (wl(si) - body - chord) - na + S[j, i]]
-                lbg += [b_k[i], b_k[i]]; ubg += [ca.inf, ca.inf]
+                if pt:
+                    bk = P[nx + 3 + N + i]
+                    g += [na + (wr(si) - body - chord) + S[j, i] - bk, (wl(si) - body - chord) - na + S[j, i] - bk]
+                    lbg += [0.0, 0.0]; ubg += [ca.inf, ca.inf]
+                else:
+                    g += [na + (wr(si) - body - chord) + S[j, i], (wl(si) - body - chord) - na + S[j, i]]
+                    lbg += [b_k[i], b_k[i]]; ubg += [ca.inf, ca.inf]
             J += w["slack"] * h * ca.sumsqr(S[:, i]) + 10 * w["slack"] * h * ca.sum1(S[:, i])
             if mode == "track":
                 J += h * (w["n"] * (ni - nref(si)) ** 2 + w["xi"] * (xii - xiref(si)) ** 2
@@ -209,8 +240,16 @@ class FrenetMPC:
             z[self.Ui[i]] = [0.0, u0[1] / FS, u0[2] / FS]
         return z
 
-    def solve(self, x0: np.ndarray, u_prev: np.ndarray) -> tuple[np.ndarray, dict]:
+    def solve(self, x0: np.ndarray, u_prev: np.ndarray, eta=None, backoff=None) -> tuple[np.ndarray, dict]:
+        """``eta`` (N) and ``backoff`` (N + 1): per-solve tightening (``param_tightening``
+        only; default: the values given at construction)."""
         p = np.concatenate([x0, [u_prev[0], u_prev[1] / FS, u_prev[2] / FS]])
+        if self.param_tightening:
+            e = self.eta_k if eta is None else np.asarray(eta, float)
+            b = self.backoff if backoff is None else np.asarray(backoff, float)
+            p = np.concatenate([p, e, b])
+        elif eta is not None or backoff is not None:
+            raise ValueError("per-solve tightening needs param_tightening=True")
         if self.z is None:
             z0 = self.initial_guess(x0, u_prev)
             args = {}
@@ -361,4 +400,63 @@ class LagAwareMPCController(MPCController):
         if self.tc_eta is not None:                    # traction control at the predicted angle
             d_next = d_act + (d_cmd - d_act) * (1.0 - np.exp(-self.sim_dt / self.tau))
             fd, fb = traction_limit(veh, xa, d_next, fd, fb, self.tc_eta)
+        return drate, fd, fb
+
+
+class CautiousMPCController(MPCController):
+    """L6 round 2: tightening from the predictive spread of a learned residual model
+    (``estimation/residual.py``). Before every solve, the spread sigma_k of the lateral
+    acceleration (v_y') is evaluated along the previous solution shifted by one step
+    (the constant initial guess for the first solve) and turned into
+
+        eta_k = clip(eta0 - kappa m sigma_k / (mu_y F_z,k), eta_min, eta0)
+        b_k   = kappa sum_{j<k} (k - j - 1/2) h^2 sigma_j      (errors fully correlated)
+
+    with F_z,k = m g + downforce at the stage's speed."""
+
+    def __init__(self, mpc: FrenetMPC, sim_dt: float, residual_model, eta0: float = 0.95,
+                 eta_min: float = 0.80, kappa: float = 1.96, tc_eta: float | None = 0.99,
+                 record: bool = False):
+        if not mpc.param_tightening:
+            raise ValueError("the MPC needs param_tightening=True")
+        super().__init__(mpc, sim_dt, tc_eta, record)
+        self.model, self.eta0, self.eta_min, self.kappa = residual_model, eta0, eta_min, kappa
+        self.tightening: list[tuple[float, np.ndarray, np.ndarray]] = []
+
+    def _tightening(self, xf: np.ndarray):
+        mpc, veh, N, h = self.mpc, self.mpc.veh, self.mpc.N, self.mpc.dt
+        if mpc.z is None:
+            X = np.tile(xf, (N, 1))
+            U = np.tile(self.u, (N, 1))
+        else:
+            Xp, Up = mpc.z[mpc.Xi], mpc.z[mpc.Ui] * np.array([1.0, FS, FS])
+            X = np.vstack([Xp[1:N], Xp[N:N + 1]])
+            U = np.vstack([Up[1:], Up[-1:]])
+        Z = np.column_stack([X[:, 3:7], U])
+        sig = self.model.predict(Z)[1][:, 1]
+        v2 = X[:, 3] ** 2 + X[:, 4] ** 2
+        fz = veh.m * 9.81 + veh.q_lift * v2
+        eta = np.clip(self.eta0 - self.kappa * veh.m * sig / (veh.mu_y * fz), self.eta_min, self.eta0)
+        b = np.zeros(N + 1)
+        for k in range(1, N + 1):
+            j = np.arange(k)
+            b[k] = self.kappa * np.sum((k - j - 0.5) * h * h * sig[:k])
+        return eta, b
+
+    def __call__(self, t: float, x: np.ndarray):
+        xf = self.frenet(x)
+        if t + 1e-9 >= self.t_next:
+            eta, b = self._tightening(xf)
+            u, info = self.mpc.solve(xf, self.u, eta=eta, backoff=b)
+            self.u = u
+            self.t_next = t + self.mpc.dt
+            self.log.append((t, xf[0], xf[1], info["time"], info["status"], info["slack"]))
+            self.tightening.append((t, eta, b))
+            if self.record:
+                self.predictions.append((t, *self.mpc.prediction()))
+        drate, fd, fb = float(self.u[0]), float(self.u[1]), float(self.u[2])
+        if self.tc_eta is not None:
+            veh = self.mpc.veh
+            d_next = x[6] + np.clip(drate, -veh.delta_rate_max, veh.delta_rate_max) * self.sim_dt
+            fd, fb = traction_limit(veh, x, d_next, fd, fb, self.tc_eta)
         return drate, fd, fb

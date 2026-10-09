@@ -32,7 +32,7 @@ from dataclasses import asdict, dataclass, replace
 import numpy as np
 
 from ..control.dyn_tracking import DynTracker
-from ..control.nmpc import FrenetMPC, LagAwareMPCController, MPCController
+from ..control.nmpc import CautiousMPCController, FrenetMPC, LagAwareMPCController, MPCController
 from ..dynamics import DynVehicle
 from ..estimation.identify import data_from_run, identify, theta_of
 from ..sim.dynamic import DynamicSim
@@ -101,9 +101,12 @@ def prediction_errors(track: Track, ctl, r, stages=HORIZON_STAGES) -> dict:
 
 
 def drive(track: Track, plant: DynVehicle, model: DynVehicle, plan, eta: float, tau: float, cfg: dict,
-          lag_model: float | None = None, backoff=None, observe: str | None = None, tracker: bool = False):
+          lag_model: float | None = None, backoff=None, observe: str | None = None, tracker: bool = False,
+          residual=None, cautious: bool = False):
     """One lap of the plant (with steering lag tau) under an NMPC (or the tracker) built
-    on ``model``; ``lag_model``: steering lag in the controller's model."""
+    on ``model``; ``lag_model``: steering lag in the controller's model; ``residual``: a
+    fitted ``ResidualModel`` whose mean is added to the model (round 2), ``cautious``: and
+    whose spread tightens the constraints (``CautiousMPCController``)."""
     path, ff = dyn_reference(track, model, plan)
     x0 = x0_from_plan(plan, path)
     sim = make_sim(track, plant, tau, cfg, observe)
@@ -112,8 +115,12 @@ def drive(track: Track, plant: DynVehicle, model: DynVehicle, plan, eta: float, 
         ctl = DynTracker(path, ff, model, cfg["dt"], **cfg["tracker"])
     else:
         mpc = FrenetMPC(track, model, ref_from_plan(plan), mode="track", N=cfg["N"], dt=cfg["mpc_dt"],
-                        eta=eta, backoff=backoff, steer_lag=lag_model)
-        if lag_model:
+                        eta=eta, backoff=backoff, steer_lag=lag_model,
+                        residual=None if residual is None else residual.casadi_mean(),
+                        param_tightening=cautious)
+        if cautious:
+            ctl = CautiousMPCController(mpc, cfg["dt"], residual, eta0=eta, record=True)
+        elif lag_model:
             ctl = LagAwareMPCController(mpc, cfg["dt"], record=True,
                                         observe=sim.observe_mode if isinstance(sim, LaggedSim) else "command")
         else:
@@ -131,6 +138,12 @@ def drive(track: Track, plant: DynVehicle, model: DynVehicle, plan, eta: float, 
         out.update({"solve_ms_mean": float(np.mean([s["time"] for s in st]) * 1e3),
                     "fallbacks": int(sum(s["fallback"] for s in st)), "solves": len(st),
                     "prediction_error_n": prediction_errors(track, ctl, r)})
+        if cautious:
+            tb = np.array([b for _, _, b in ctl.tightening])
+            te = np.array([e for _, e, _ in ctl.tightening])
+            out.update({"kstep": kstep_coverage(track, ctl, r), "eta_k_mean": float(te.mean()),
+                        "eta_k_min": float(te.min()),
+                        "backoff_mean": {str(k): float(tb[:, k].mean()) for k in (10, 20, 30)}})
     return r, sim, out
 
 
@@ -281,3 +294,159 @@ def paired(results: list[dict], tau: float, a: str, b: str, observe: str = "comm
 
 
 __all__ = ["L6Config", "CONTROLLERS", "run_job", "oracle_plan_job", "summarize", "paired", "theta_of"]
+
+
+# -- round 2: residual learning with uncertainty ---------------------------------------
+NEAR_LIMIT = 0.85            # model friction-ellipse usage (the L3 calibration threshold)
+TRUNCATE_S = 2.0             # dropped before the end of a failed lap (L3 definition)
+
+
+def _cut(run, t_end: float):
+    """The run up to time t_end (the samples of the last seconds of a failed lap dropped)."""
+    from types import SimpleNamespace
+
+    k = int(np.searchsorted(run.t, t_end, side="right"))
+    return SimpleNamespace(t=run.t[:k], state=run.state[:k], inputs=run.inputs[:k], usage=run.usage[:k])
+
+
+def coverage_report(model, d, veh: DynVehicle) -> dict:
+    """One-step coverage of the 95 % intervals: all samples and near-limit samples."""
+    from ..dynamics import ellipse_usage, tyre_forces
+    from ..estimation.residual import coverage, inputs_of, targets_of
+
+    Z, Y = inputs_of(d), targets_of(d, veh)
+    if len(Z) == 0:
+        return {"n": 0}
+    c = coverage(model, Z, Y)
+    F = tyre_forces(veh, *d.state[:, 3:7].T, d.inputs[:, 1], d.inputs[:, 2])
+    u = np.maximum(*ellipse_usage(veh, F))
+    near = u >= NEAR_LIMIT
+    out = {"n": c["n"], "coverage": c["coverage"], "rms_error": c["rms_error"], "mean_sd": c["mean_sd"],
+           "inside": c["inside"].sum(axis=0).tolist(), "n_near": int(near.sum()),
+           "inside_near": c["inside"][near].sum(axis=0).tolist()}
+    return out
+
+
+def kstep_coverage(track: Track, ctl, r, stages=(10, 20)) -> dict:
+    """Coverage of the k-step lateral-position intervals +-b_k of a cautious controller:
+    predicted n at stage k against the realised one; on a failed lap the predictions
+    whose horizon reaches into the last TRUNCATE_S seconds are dropped."""
+    t, X = r.t, r.state
+    _, n_real = track.project(X[:, 0], X[:, 1])
+    dt, N = ctl.mpc.dt, ctl.mpc.N
+    t_ok = t[-1] - (0.0 if r.completed else TRUNCATE_S)
+    out = {}
+    for k in stages:
+        inside, n = 0, 0
+        for (t0, Xp, _), (_, _, b) in zip(ctl.predictions, ctl.tightening):
+            if t0 + N * dt > t_ok:
+                continue
+            j = int(round((t0 + k * dt - t[0]) / (t[1] - t[0])))
+            if j >= len(t):
+                continue
+            n += 1
+            inside += abs(Xp[k, 1] - n_real[j]) <= b[k]
+        out[str(k)] = {"n": n, "inside": int(inside)}
+    return out
+
+
+def run_round2_job(args) -> list[dict]:
+    """Worker: per (car, tau) the residual model from the exploration lap of round 1, the
+    held-out check, the re-planned identified plan, and the laps of ``residual`` and
+    ``residual_cautious``."""
+    from types import SimpleNamespace
+
+    from ..estimation.identify import Data, data_from_run, identify
+    from ..estimation.residual import ResidualModel, inputs_of, targets_of
+
+    job, cfg = args
+    track = Track.load(cfg["track"])
+    nom = DynVehicle()
+    plant, tau, plans, eta, obs = job["plant"], job["tau"], job["plans"], cfg["eta"], job["observe"]
+    base = {"round": 2, "car": job["car"], "plant": job["info"], "tau": tau, "observe": obs}
+    t0 = time.time()
+    z = np.load(job["explore_file"])
+    run = SimpleNamespace(t=z["t"], state=z["state"], inputs=z["inputs"], usage=z["usage"])
+    d = data_from_run(run, cfg["dt"])
+    ident = identify(d, nom)
+    veh = ident["vehicle"]
+    d5 = Data(d.state[::5], d.inputs[::5], d.accel[::5])
+    Z, Y = inputs_of(d5), targets_of(d5, veh)
+    n80 = int(0.8 * len(Z))
+    m80 = ResidualModel().fit(Z[:n80], Y[:n80])
+    held = coverage_report(m80, Data(d5.state[n80:], d5.inputs[n80:], d5.accel[n80:]), veh)
+    held["model"] = m80.summary()
+    model = ResidualModel().fit(Z, Y)
+    common = {"identification": {"theta": ident["theta"].tolist(), "rms": ident["rms"]},
+              "residual_model": model.summary(), "heldout": held,
+              "target_sd": Y.std(axis=0).tolist() if len(Y) else None}
+    o, log = replan(track, veh, [("nominal plan", plans[eta]), ("ideal plan", plans[1.0])], eta)
+    recs = []
+    for name, cautious in (("residual", False), ("residual_cautious", True)):
+        rec = dict(base, controller=name, **common)
+        if o is None:
+            rec.update({"completed": False, "stop_reason": "plan failed", "lap_time": float("nan"),
+                        "distance": 0.0, "plan_log": log})
+            recs.append(rec)
+            continue
+        t1 = time.time()
+        r, sim, out = drive(track, plant, veh, o, eta, tau, cfg, observe=obs, residual=model,
+                            cautious=cautious)
+        ro = observed_run(r, sim)
+        cut = ro if r.completed else _cut(ro, ro.t[-1] - TRUNCATE_S)
+        out["closed_loop"] = coverage_report(model, data_from_run(cut, cfg["dt"]), veh)
+        out.update({"plan_lap_time": o.lap_time, "plan_log": log, "lap_s": time.time() - t1})
+        rec.update(out)
+        recs.append(rec)
+    for rec in recs:
+        rec["job_s"] = time.time() - t0
+    return recs
+
+
+# -- round 3: noise only (tau = 0) -------------------------------------------------------
+NOISY_METHODS = ("noisy_ls", "noisy_ls_smooth", "noisy_ekf")
+
+
+def run_round3_job(args) -> list[dict]:
+    """Worker: the exploration lap of L4 (no lag) re-simulated, the L3 sensor noise added
+    to the logged states (seed 1000 + car: the draw of the L4 noise study), the parameters
+    identified by least squares on the raw data (L4), on smoothed data, and by the EKF;
+    each re-planned and driven with the NMPC (the controllers see the true state, as in
+    L4, so that only the identification is affected)."""
+    from dataclasses import replace as dc_replace
+
+    from ..estimation.ekf import ekf_identify
+    from ..estimation.identify import LO, HI, smoothed
+    from ..sim.stochastic import NOISE_SIGMA
+
+    job, cfg = args
+    track = Track.load(cfg["track"])
+    nom = DynVehicle()
+    plant, plans, eta, car = job["plant"], job["plans"], cfg["eta"], job["car"]
+    t0 = time.time()
+    r_exp, _, _ = drive(track, plant, nom, plans[cfg["explore_eta"]], cfg["explore_eta"], 0.0, cfg)
+    rng = np.random.default_rng(1000 + car)
+    noisy = dc_replace(r_exp, state=r_exp.state + NOISE_SIGMA * rng.standard_normal(r_exp.state.shape))
+    true = theta_of(job["info"])
+    idents = {"noisy_ls": identify(data_from_run(noisy, cfg["dt"]), nom),
+              "noisy_ls_smooth": identify(data_from_run(smoothed(noisy), cfg["dt"]), nom),
+              "noisy_ekf": ekf_identify(noisy.state, noisy.inputs, noisy.usage, cfg["dt"], nom, NOISE_SIGMA)}
+    recs = []
+    for name, ident in idents.items():
+        th = np.asarray(ident["theta"], float)
+        rec = {"round": 3, "car": car, "plant": job["info"], "tau": 0.0, "observe": "command", "controller": name,
+               "identification": {"theta": th.tolist(), "error": (th - true).tolist(),
+                                  "max_abs_error": float(np.abs(th - true).max()),
+                                  "on_bounds": int(np.sum(np.isclose(th, LO) | np.isclose(th, HI)))}}
+        o, log = replan(track, ident["vehicle"], [("nominal plan", plans[eta]), ("ideal plan", plans[1.0])], eta)
+        if o is None:
+            rec.update({"completed": False, "stop_reason": "plan failed", "lap_time": float("nan"),
+                        "distance": 0.0, "plan_log": log})
+        else:
+            _, _, out = drive(track, plant, ident["vehicle"], o, eta, 0.0, cfg)
+            out.update({"plan_lap_time": o.lap_time, "plan_log": log})
+            rec.update(out)
+        recs.append(rec)
+    for rec in recs:
+        rec["job_s"] = time.time() - t0
+    return recs

@@ -139,3 +139,18 @@ def identify_with_lag(run, dt: float, nominal: DynVehicle, usage_max: float = 0.
             "rms_without_lag": plain["rms"], "samples": int(keep.sum()),
             "vehicle": vehicle_from(theta, nominal), "on_bounds": [bool(np.isclose(v, l) or np.isclose(v, h))
                                                                   for v, l, h in zip(best.x, lo, hi)]}
+
+
+def smoothed(run, window: int = 11, order: int = 3):
+    """The run with the logged velocities and steering angle smoothed (Savitzky–Golay)
+    before the accelerations are differenced (L6, round 3)."""
+    from dataclasses import is_dataclass
+    from types import SimpleNamespace
+
+    from scipy.signal import savgol_filter
+
+    st = run.state.copy()
+    st[:, 3:7] = savgol_filter(st[:, 3:7], window, order, axis=0)
+    if is_dataclass(run):
+        return replace(run, state=st)
+    return SimpleNamespace(**{**vars(run), "state": st})
