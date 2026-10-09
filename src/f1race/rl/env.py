@@ -254,7 +254,8 @@ class RacingEnv(gym.Env):
         self.s_prev, _, _ = self.margins(self.x)
         self.progress = 0.0
         self.ctl(0.0, self.x)               # initialises the tracker (no noise draw: the noise
-        o = self._obs(self.x)                # sequence then matches the L3 simulator's)
+        self._meas = self.x                  # sequence then matches the L3 simulator's)
+        o = self._obs(self._meas)
         self._hist = [o] * self.history
         self._last_a = np.zeros(2, np.float32)
         return self._stacked(), {}
@@ -265,9 +266,10 @@ class RacingEnv(gym.Env):
         return np.concatenate(self._hist + [self._last_a]).astype(np.float32)
 
     def _measure(self, x):
-        if self.noise is None:
-            return x
-        return x + self.noise * self.noise_rng.standard_normal(len(x))
+        """The state the controller sees (with the L3 measurement noise if enabled); the
+        policy observes the same measurement as the tracker, never the true state."""
+        self._meas = x if self.noise is None else x + self.noise * self.noise_rng.standard_normal(len(x))
+        return self._meas
 
     def step(self, action):
         a = np.clip(np.asarray(action, float), -1.0, 1.0)
@@ -299,7 +301,7 @@ class RacingEnv(gym.Env):
         if crashed:
             obs = np.zeros(self.observation_space.shape, np.float32)
         else:
-            self._hist = self._hist[1:] + [self._obs(self.x)]
+            self._hist = self._hist[1:] + [self._obs(self._meas)]   # last measurement, no extra noise draw
             self._last_a = a.astype(np.float32)
             obs = self._stacked()
         return obs, float(reward), crashed, truncated, info
