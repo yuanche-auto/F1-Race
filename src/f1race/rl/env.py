@@ -4,7 +4,9 @@ The base controller is the L1 feed-forward/feedback tracker on the nominal 5 %
 plan. Every 50 ms the policy chooses two corrections, held until the next
 decision:
 
-* a steering offset (up to +-``steer_max`` rad) added to the tracker's command,
+* a steering offset (up to +-``steer_max`` rad, or with ``steer_mode="lateral"`` also at
+  most the offset that changes the lateral acceleration by ``a_corr``) added to the
+  tracker's command,
 * a factor on the reference speed (between ``1 - speed_down`` and ``1 + speed_up``):
   the policy can learn where to keep a reserve and where it can go faster.
 
@@ -183,7 +185,8 @@ class RacingEnv(gym.Env):
                  disturbances: bool = False, dt: float = 0.01, ctrl_every: int = 5,
                  episode_s: float = 20.0, steer_max: float = 0.02, speed_down: float = 0.15,
                  speed_up: float = 0.05, crash_penalty: float = 50.0, tracker: dict | None = None,
-                 history: int = 1, seed: int | None = None):
+                 history: int = 1, steer_mode: str = "angle", a_corr: float = 4.0,
+                 seed: int | None = None):
         super().__init__()
         self.track = Track.load(track)
         self.nominal = DynVehicle()
@@ -193,6 +196,9 @@ class RacingEnv(gym.Env):
         self.dt, self.ctrl_every, self.episode_s = dt, ctrl_every, episode_s
         self.steer_max, self.speed_down, self.speed_up = steer_max, speed_down, speed_up
         self.crash_penalty = crash_penalty
+        # "angle": steering offset within +-steer_max; "lateral": additionally limited so that
+        # it changes the lateral acceleration by at most a_corr (v^2 delta / L <= a_corr)
+        self.steer_mode, self.a_corr = steer_mode, a_corr
         self.tracker_gains = tracker or {"k_p": 0.06, "x_la": 12.0, "k_r": 0.05, "kv": 8.0}
         self.rng = np.random.default_rng(seed)
         self.action_space = gym.spaces.Box(-1.0, 1.0, (2,), np.float32)
@@ -273,7 +279,11 @@ class RacingEnv(gym.Env):
 
     def step(self, action):
         a = np.clip(np.asarray(action, float), -1.0, 1.0)
-        self.ctl.d_offset = self.steer_max * a[0]
+        bound = self.steer_max
+        if self.steer_mode == "lateral":
+            v = max(float(self._meas[3]), 1.0)
+            bound = min(bound, self.a_corr * self.nominal.L / (v * v))
+        self.ctl.d_offset = bound * a[0]
         self.ctl.v_scale = 1.0 + (self.speed_up if a[1] > 0 else self.speed_down) * a[1]
         tr = self.track
         ds_total, crashed, reason = 0.0, False, ""
