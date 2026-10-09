@@ -23,6 +23,8 @@ from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 from multiprocessing import get_context
 from pathlib import Path
 
+import numpy as np
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
@@ -258,7 +260,108 @@ def report() -> None:
                         lines.append(f"| {1000 * t:.0f} ms | {a} vs {b} | {pr['only_a']} | {pr['only_b']} | {pr['p']:.3g} |")
             lines.append("")
     (OUT / "tables_round1.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print("\n".join(lines))
+    more = report_round2() + report_round3()
+    if more:
+        (OUT / "tables_rounds23.md").write_text("\n".join(more) + "\n", encoding="utf-8")
+    print("\n".join(lines + more))
+
+
+def _pool(recs, key):
+    """Pooled (inside, n) per output of the coverage reports ``key`` of the records."""
+    ins, n, ins_near, n_near = np.zeros(3), 0, np.zeros(3), 0
+    for r in recs:
+        c = r.get(key) or {}
+        if not c.get("n"):
+            continue
+        ins += np.asarray(c["inside"]); n += c["n"]
+        ins_near += np.asarray(c.get("inside_near", [0, 0, 0])); n_near += c.get("n_near", 0)
+    return ins, n, ins_near, n_near
+
+
+def _fmt_cov(ins, n) -> str:
+    return " / ".join(f"{100 * x / n:.1f}" for x in ins) if n else "–"
+
+
+def report_round2() -> list[str]:
+    r1 = load_jsonl(OUT / "round1.jsonl")
+    r2 = load_jsonl(OUT / "round2.jsonl")
+    if not r2:
+        return []
+    res = r1 + r2
+    lines = ["### Round 2 – residual learning (25 cars, laps completed, mean lap)", ""]
+    taus = sorted({r["tau"] for r in r2})
+    names = ["identified", "residual", "residual_cautious", "lag_identified", "oracle_struct"]
+    lines += ["| controller | " + " | ".join(f"τ = {1000 * t:.0f} ms" for t in taus) + " |",
+              "|---|" + "---|" * len(taus)]
+    summ = summarize(res)
+    for c in names:
+        cells = []
+        for t in taus:
+            s_ = summ.get(f"{t}|command|{c}")
+            cells.append("–" if s_ is None else
+                         f"{s_['completed']}/{s_['runs']}" + (f", {s_['lap_mean']:.2f} s" if s_["lap_mean"] else ""))
+        lines.append(f"| {c} | " + " | ".join(cells) + " |")
+    lines += ["", "Coverage of the 95 % intervals in % (v_x' / v_y' / r'), pooled over the cars:", "",
+              "| τ | held-out (exploration lap) | closed loop, `residual` | near-limit, `residual` | "
+              "closed loop, `residual_cautious` | k-step ±b_k (k = 10 / 20), `residual_cautious` | go? |",
+              "|---|---|---|---|---|---|---|"]
+    verdicts = []
+    for t in taus:
+        rr = [r for r in r2 if r["tau"] == t and r["controller"] == "residual"]
+        rc = [r for r in r2 if r["tau"] == t and r["controller"] == "residual_cautious"]
+        h_i, h_n, _, _ = _pool(rr, "heldout")
+        c_i, c_n, cn_i, cn_n = _pool(rr, "closed_loop")
+        q_i, q_n, _, _ = _pool(rc, "closed_loop")
+        ks = []
+        for k in ("10", "20"):
+            n = sum((r.get("kstep") or {}).get(k, {}).get("n", 0) for r in rc)
+            i = sum((r.get("kstep") or {}).get(k, {}).get("inside", 0) for r in rc)
+            ks.append(f"{100 * i / n:.1f}" if n else "–")
+        ok = (c_n > 0 and cn_n > 0 and all(0.90 <= x / c_n <= 0.98 for x in c_i)
+              and all(0.90 <= x / cn_n <= 0.98 for x in cn_i))
+        verdicts.append(ok)
+        lines.append(f"| {1000 * t:.0f} ms | {_fmt_cov(h_i, h_n)} (n = {h_n}) | {_fmt_cov(c_i, c_n)} (n = {c_n}) | "
+                     f"{_fmt_cov(cn_i, cn_n)} (n = {cn_n}) | {_fmt_cov(q_i, q_n)} | {' / '.join(ks)} | "
+                     f"{'go' if ok else 'no-go'} |")
+    lines += ["", f"Go / no-go for L7 (protocol section 5, A4): **{'go' if verdicts and all(verdicts) else 'no-go'}**.", ""]
+    lines += ["| τ | comparison (same cars) | only the first | only the second | exact McNemar p |",
+              "|---|---|---|---|---|"]
+    for t in taus:
+        for a, b in (("residual", "identified"), ("residual_cautious", "residual"),
+                     ("oracle_struct", "residual"), ("lag_identified", "residual")):
+            pr = paired(res, t, a, b)
+            if pr["cars"]:
+                lines.append(f"| {1000 * t:.0f} ms | {a} vs {b} | {pr['only_a']} | {pr['only_b']} | {pr['p']:.3g} |")
+    return lines + [""]
+
+
+def report_round3() -> list[str]:
+    from f1race.estimation.identify import PARAMS
+
+    r3 = load_jsonl(OUT / "round3.jsonl")
+    if not r3:
+        return []
+    summ = summarize(r3)
+    lines = ["### Round 3 – noise only (τ = 0, 25 cars)", "",
+             "| identification | laps completed | mean lap | largest parameter error (median over cars) | "
+             "cars with a factor on its bound | mean error per factor (" + ", ".join(PARAMS) + ") |",
+             "|---|---|---|---|---|---|"]
+    for c in ("noisy_ls", "noisy_ls_smooth", "noisy_ekf"):
+        rs = [r for r in r3 if r["controller"] == c]
+        if not rs:
+            continue
+        s_ = summ[f"0.0|command|{c}"]
+        err = np.array([r["identification"]["error"] for r in rs])
+        mx = np.median([r["identification"]["max_abs_error"] for r in rs])
+        nb = sum(r["identification"]["on_bounds"] > 0 for r in rs)
+        lap = f"{s_['lap_mean']:.2f} s" if s_["lap_mean"] else "–"
+        lines.append(f"| {c} | {s_['completed']}/{s_['runs']} | {lap} | {mx:.3f} | {nb} | "
+                     + ", ".join(f"{e:+.3f}" for e in err.mean(axis=0)) + " |")
+    lines += ["", "| comparison (same cars) | only the first | only the second | exact McNemar p |", "|---|---|---|---|"]
+    for a, b in (("noisy_ls_smooth", "noisy_ls"), ("noisy_ekf", "noisy_ls")):
+        pr = paired(r3, 0.0, a, b)
+        lines.append(f"| {a} vs {b} | {pr['only_a']} | {pr['only_b']} | {pr['p']:.3g} |")
+    return lines + [""]
 
 
 def main() -> None:
@@ -269,7 +372,11 @@ def main() -> None:
     ap.add_argument("--cars", default="all")
     ap.add_argument("--observe", default="command")
     ap.add_argument("--workers", type=int, default=int(os.environ.get("L6_WORKERS", 8)))
+    ap.add_argument("--results", default=None, help="results directory (default results/L6)")
     a = ap.parse_args()
+    if a.results:
+        global OUT
+        OUT = Path(a.results)
     cfg = L6Config(workers=a.workers)
     if a.what == "plans":
         oracle_plans(cfg, base_plans())
