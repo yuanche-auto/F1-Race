@@ -13,7 +13,7 @@ after APPROVE. Workflow: [docs/workflow.md](docs/workflow.md).
 | L2 model mismatch, closed loop | `layer/L2` → `main` (270fb2b) | **approved, pushed** to origin/main 2026-10-08 | round 2: APPROVE (m1, m2 fixed on `layer/L3`) |
 | L3 stochastic disturbances | `layer/L3` → `main` | **approved, pushed** to origin/main 2026-10-08 | round 2: APPROVE (nit: truncation definition, on `layer/L5`) |
 | L4 learning / adaptation | `layer/L4` → `main` | **approved, pushed** to origin/main 2026-10-08 | round 1: APPROVE (minors fixed in 66f6cb3) |
-| L5 reinforcement learning | `layer/L5` | first results withdrawn; multi-seed redo running (docs/L5_protocol.md, started 2026-10-08 21:55) | review in progress |
+| L5 reinforcement learning | `layer/L5` | redo done (9 runs: final checkpoints 19–50/51, selected 51/51 and 30/30); review requested | review in progress |
 
 ## L0 summary
 
@@ -50,7 +50,7 @@ Figures are not expected to be byte-identical across versions.
 * **Q1 (2026-10-07):** keep the author e-mail `yuanche@umich.edu`; push each layer to `main` as
   soon as the reviewer approves it.
 
-## L5 redo (running while the user is away)
+## L5 redo (ran while the user was away; finished 2026-10-09 05:25)
 
 * Protocol, fixed before the runs: [docs/L5_protocol.md](docs/L5_protocol.md) (groups A/B/C,
   seeds 1–3, validation set, selection rule, reporting).

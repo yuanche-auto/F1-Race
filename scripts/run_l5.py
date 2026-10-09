@@ -1,7 +1,8 @@
 """Evaluate the L5 residual RL policy against the bare tracker on the L2 cars and the L3
 disturbance seeds (the same test sets as the model-based controllers of L2 and L3).
 
-    python scripts/run_l5.py [model name]      # results/L5/<name>.zip, else the trained policies in models/L5/
+    python scripts/run_l5.py [model name]      # results/L5/<name>.zip, else models/L5/<name>.zip
+    L5_STEER_MODE=lateral python scripts/run_l5.py C_s2_450k     # policies of group C (speed-dependent bound)
 """
 from __future__ import annotations
 
@@ -36,7 +37,8 @@ def _job(args):
         dim = model.observation_space.shape[0]
         history = 1 if dim == 19 else (dim - 2) // 19
         policy = lambda obs: model.predict(obs, deterministic=True)[0]      # noqa: E731
-    env = RacingEnv(plan, randomize_plant=False, history=history)
+    env = RacingEnv(plan, randomize_plant=False, history=history,
+                    steer_mode=__import__("os").environ.get("L5_STEER_MODE", "angle"))
     if which == "L2":
         info, plant = sample_plants(DynVehicle(), 50, 0)[idx]
         r = evaluate_lap(policy, env, plant=plant)

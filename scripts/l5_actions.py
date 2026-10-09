@@ -27,8 +27,10 @@ def lap_actions(name: str | None):
     plan = pickle.load(open(ROOT / "results" / "L1" / "l1_plans.pkl", "rb"))["plans"][0.95]
     history, model = 1, None
     if name:
-        path = ROOT / "results" / "L5" / name
-        model = SAC.load(path if path.with_suffix(".zip").exists() else ROOT / "models" / "L5" / name, device="cpu")
+        path = ROOT / "models" / "L5" / name
+        if not path.with_suffix(".zip").exists():
+            path = ROOT / "results" / "L5" / "multiseed" / name
+        model = SAC.load(path, device="cpu")
         dim = model.observation_space.shape[0]
         history = 1 if dim == 19 else (dim - 2) // 19
     env = RacingEnv(plan, randomize_plant=False, history=history, episode_s=120.0)
@@ -47,8 +49,8 @@ def main() -> None:
     out = ROOT / "docs" / "figures" / "L5"
     out.mkdir(parents=True, exist_ok=True)
     fig, axs = plt.subplots(3, 1, figsize=(12, 8), sharex=True)
-    for name, label in ((None, "tracker (no policy)"), ("sac_residual", "residual RL"),
-                        ("sac_history8", "residual RL with history")):
+    for name, label in ((None, "tracker (no policy)"), ("B_s1_500k", "RL, selected checkpoint (B, seed 1, 500k)"),
+                        ("A_s3_600k", "RL, median run of group A (seed 3, final)")):
         s, k, d, v, t = lap_actions(name)
         axs[0].plot(s, v * 3.6, lw=0.8, label=f"{label}: {t:.2f} s")
         if name:
