@@ -84,3 +84,58 @@ def identify(d: Data, nominal: DynVehicle, x0=None) -> dict:
     return {"theta": sol.x, "std": std, "rms": float(np.sqrt(2.0 * sol.cost / J.shape[0])),
             "samples": int(len(d.accel)), "max_usage_in_data": float(np.max(np.maximum(uf, ur))),
             "vehicle": veh}
+
+
+def lag_filter(dc: np.ndarray, h: float, tau: float, a0: float | None = None) -> np.ndarray:
+    """Road-wheel angle of a first-order steering lag driven by the sampled commanded
+    angle ``dc`` (a ramp between samples, exact): a[i+1] = E a[i] + b0 dc[i+1] + b1 dc[i]."""
+    from scipy.signal import lfilter, lfiltic
+
+    tau = max(float(tau), 1e-6)
+    E = np.exp(-h / tau)
+    q = tau * (1.0 - E) / h
+    b, a = [1.0 - q, q - E], [1.0, -E]
+    y0 = dc[0] if a0 is None else a0
+    zi = lfiltic(b, a, [y0], [dc[0]])
+    return lfilter(b, a, dc, zi=zi)[0] if len(dc) else dc
+
+
+def identify_with_lag(run, dt: float, nominal: DynVehicle, usage_max: float = 0.98, skip_end: int = 20,
+                      tau_starts=(0.005, 0.01, 0.02, 0.04, 0.08, 0.16), tau_max: float = 0.3) -> dict:
+    """The L4 identification on the model with the correct structure (L6): the steering
+    slot of the logged state is the commanded angle, the model's road-wheel angle follows
+    it with a first-order lag whose time constant is identified together with the seven
+    parameter factors. ``run``: the run as the controller logged it (7-dim states). The
+    least squares is started from each of ``tau_starts`` (the other factors from the
+    identification without lag); the best fit is kept."""
+    X, U = run.state, run.inputs
+    i = np.arange(0, max(len(X) - skip_end - 1, 0))
+    acc = (X[i + 1, 3:6] - X[i, 3:6]) / dt
+    keep = ((run.usage[i].max(axis=1) < usage_max) & (run.usage[i + 1].max(axis=1) < usage_max)
+            & (X[i, 3] > 5.0))
+    mid = 0.5 * (X[i] + X[i + 1])
+    dc = X[:, 6]
+    scale = np.maximum(acc[keep].std(axis=0), 1e-3)
+
+    def data_for(tau):
+        a = lag_filter(dc, dt, tau)
+        st = mid.copy()
+        st[:, 6] = 0.5 * (a[i] + a[i + 1])
+        return Data(st[keep], U[i][keep], acc[keep])
+
+    def res(p):
+        d = data_for(p[-1])
+        return ((model_accel(vehicle_from(p[:-1], nominal), d) - d.accel) / scale).ravel()
+
+    plain = identify(Data(mid[keep], U[i][keep], acc[keep]), nominal)
+    lo, hi = np.append(LO, 1e-4), np.append(HI, tau_max)
+    best = None
+    for t0 in tau_starts:
+        sol = least_squares(res, np.append(plain["theta"], t0), bounds=(lo, hi), x_scale="jac")
+        if best is None or sol.cost < best.cost:
+            best = sol
+    theta, tau = best.x[:-1], float(best.x[-1])
+    return {"theta": theta, "tau": tau, "rms": float(np.sqrt(2.0 * best.cost / best.fun.size)),
+            "rms_without_lag": plain["rms"], "samples": int(keep.sum()),
+            "vehicle": vehicle_from(theta, nominal), "on_bounds": [bool(np.isclose(v, l) or np.isclose(v, h))
+                                                                  for v, l, h in zip(best.x, lo, hi)]}

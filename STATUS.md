@@ -36,6 +36,7 @@ Figures are not expected to be byte-identical across versions.
 
 | Date | Commit | Scope | Verdict | Notes |
 |---|---|---|---|---|
+| 2026-10-09 | 75865d8 | L6 design (roadmap, protocol, lag plant, lag-aware NMPC) | design review, no verdict yet | code verified line by line; MAJOR-1 (structure knowledge = exact τ) → `lag_identified`, τ-mismatch runs; stats rule, coverage details, naming, second-env scope; all fixed as protocol amendments A1–A7 before 1b; attribution of the roadmap critique corrected |
 | 2026-10-09 | 4354579 | L5 redo | **APPROVE** | protocol followed (written before the runs); selection, median seeds, paired tests and blind spots recomputed; evaluation reproduced in Python 3.11; wording minors m1–m4 fixed in 4fec887 |
 | 2026-10-08 | 6552180 | L5 | (preliminary) | first results withdrawn: single training run not reproducible; reviewer asked for non-learning and slowed-NMPC baselines and a multi-seed protocol |
 | 2026-10-08 | 9ce0b25 | L3 fixes | **APPROVE** | recomputed from runs.json / failures.json; four calibrations 28–30/30; honest event rates; nit: truncation by prediction time vs horizon overlap |
@@ -69,7 +70,7 @@ Figures are not expected to be byte-identical across versions.
 
 ## L6–L10 (started 2026-10-09, user away; decisions recorded here)
 
-* The user asked for an L6–L10 plan, had it criticised by the reviewer and asked for a revised
+* The user asked for an L6–L10 plan, had it criticised (a written critique the user forwarded; not from the repository's review session) and asked for a revised
   plan "with critical inheritance"; then: save it and start. Roadmap:
   [docs/ROADMAP_L6-L10.md](docs/ROADMAP_L6-L10.md) (what was taken from the review and what not;
   the cited literature was checked, all five works exist as cited).
@@ -84,6 +85,9 @@ Figures are not expected to be byte-identical across versions.
     nominal car and 10 / 30 / 60 ms on the 25 cars;
   * the protocol is sent to the reviewer and round 1 starts at the same time (as for the L5 redo);
     if the review changes the design, the affected runs are repeated.
+* Result-producing runs use a detached worktree `../F1-Race-wt-L6-run` pinned at the commit
+  named in `results/L6/RUN_COMMIT` there, so that development on `layer/L6` cannot change code
+  under a running pool; its `results/L6` is copied back for the report.
 * Pipeline: `python scripts/run_l6.py round1 ...` (resumable: finished laps in
   `results/L6/round1.jsonl` are skipped; errors in `results/L6/errors.log`), RL baseline
   `scripts/l6_rl.py` in `.venv-rl`, tables `python scripts/run_l6.py report`.

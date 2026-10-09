@@ -116,3 +116,55 @@ def test_env_with_lag_reproduces_the_tracker(track):
     ref = LaggedSim(track, veh, 0.03, 0.01).run(ctl, x0_from_plan(o, path), t_max=60.0)
     assert r["stop_reason"] == ref.stop_reason
     assert abs(r["distance"] - ref.progress[-1]) < 4.0
+
+
+@pytest.mark.skipif(not CACHE.exists(), reason="run scripts/run_l1.py first")
+def test_lag_identification_recovers_tau_and_parameters(track):
+    """The lag filter reproduces the plant's road-wheel angle from the commanded angle, and
+    the identification on the model with the lag recovers tau and the parameters, while the
+    identification without it does not."""
+    from f1race.control.dyn_tracking import DynTracker
+    from f1race.experiments.l1 import dyn_reference
+    from f1race.experiments.l2 import sample_plants, x0_from_plan
+    from f1race.estimation.identify import data_from_run, identify, identify_with_lag, lag_filter, theta_of
+    from f1race.experiments.l6 import observed_run
+    from f1race.sim.lagged import LaggedSim
+
+    o, nom = _plan(), DynVehicle()
+    info, plant = sample_plants(nom, 3, 0)[2]
+    path, ff = dyn_reference(track, nom, o)
+    sim = LaggedSim(track, plant, 0.04, 0.01)
+    ctl = DynTracker(path, ff, nom, 0.01, k_p=0.06, x_la=12.0, k_r=0.05, kv=8.0)
+    r = sim.run(ctl, x0_from_plan(o, path), t_max=12.0)
+    assert np.max(np.abs(lag_filter(r.state[:, 7], 0.01, 0.04) - r.state[:, 6])) < 1e-9
+    ro = observed_run(r, sim)
+    ident = identify_with_lag(ro, 0.01, nom)
+    assert abs(ident["tau"] - 0.04) < 1e-3
+    assert np.max(np.abs(ident["theta"] - theta_of(info))) < 0.02
+    plain = identify(data_from_run(ro, 0.01), nom)
+    assert plain["rms"] > 20 * ident["rms"]
+
+
+@pytest.mark.skipif(not CACHE.exists(), reason="run scripts/run_l1.py first")
+def test_lag_aware_controller_with_measured_angle(track):
+    """With the road-wheel angle measured, the controller's own commanded angle (from its
+    rate commands and the actuator limits) equals the plant's."""
+    from f1race.control.nmpc import FrenetMPC, LagAwareMPCController
+    from f1race.experiments.l1 import dyn_reference
+    from f1race.experiments.l2 import ref_from_plan, x0_from_plan
+    from f1race.sim.lagged import LaggedSim
+
+    o, veh = _plan(), DynVehicle()
+    mpc = FrenetMPC(track, veh, ref_from_plan(o), N=8, dt=0.05, eta=0.95, steer_lag=0.06)
+    ctl = LagAwareMPCController(mpc, 0.01, observe="angle")
+    path, _ = dyn_reference(track, veh, o)
+    seen = []
+
+    def wrapped(t, y):
+        u = ctl(t, y)
+        seen.append(ctl.c_hat)
+        return u
+
+    r = LaggedSim(track, veh, 0.06, 0.01, observe="angle").run(wrapped, x0_from_plan(o, path), t_max=1.0)
+    c_true = r.state[1:, 7]
+    assert np.max(np.abs(np.array(seen)[: len(c_true)] - c_true)) < 1e-12

@@ -14,7 +14,12 @@ the steering slot (``observe="command"``) unless stated otherwise. Controllers
                      controller logged it, re-planned, NMPC with the identified model
 * ``oracle_param``   true parameters (re-planned), no lag in the model
 * ``lag_nominal``    nominal parameters, the correct lag in the model
-* ``oracle_struct``  true parameters and the correct lag (upper bound)
+* ``oracle_struct``  true parameters and the correct lag (reference: the correct structure;
+                     not a strict upper bound, its plan has no lag)
+* ``lag_identified`` the correct structure with tau identified together with the seven
+                     parameter factors from the exploration lap (review MAJOR-1)
+* ``lag_half``, ``lag_double``  nominal parameters, lag model with 0.5 tau / 2 tau
+                     (sensitivity to a wrong time constant; nominal car)
 
 The L5 policy is evaluated separately (``scripts/l6_rl.py``, needs the RL extras).
 """
@@ -38,7 +43,8 @@ from .l2 import ref_from_plan, x0_from_plan
 from .l4 import replan
 
 CONTROLLERS = ("tracker", "nmpc", "explore", "smpc", "identified", "oracle_param", "lag_nominal",
-               "oracle_struct")
+               "oracle_struct", "lag_identified")
+NEEDS_EXPLORE = ("identified", "lag_identified")
 HORIZON_STAGES = (5, 10, 20, 30)
 
 
@@ -107,8 +113,11 @@ def drive(track: Track, plant: DynVehicle, model: DynVehicle, plan, eta: float, 
     else:
         mpc = FrenetMPC(track, model, ref_from_plan(plan), mode="track", N=cfg["N"], dt=cfg["mpc_dt"],
                         eta=eta, backoff=backoff, steer_lag=lag_model)
-        cls = LagAwareMPCController if lag_model else MPCController
-        ctl = cls(mpc, cfg["dt"], record=True)
+        if lag_model:
+            ctl = LagAwareMPCController(mpc, cfg["dt"], record=True,
+                                        observe=sim.observe_mode if isinstance(sim, LaggedSim) else "command")
+        else:
+            ctl = MPCController(mpc, cfg["dt"], record=True)
     r = sim.run(ctl, x0, t_max=cfg["t_max"])
     out = {"lap_time": r.lap_time, "completed": r.completed, "stop_reason": r.stop_reason,
            "distance": float(r.progress[-1]), "max_usage": r.max_usage, "min_edge_margin": r.min_margin,
@@ -150,7 +159,15 @@ def run_job(args) -> dict:
     elif name == "explore":
         r, sim, out = drive(track, plant, nom, plans[cfg["explore_eta"]], cfg["explore_eta"], tau, cfg,
                             observe=obs)
-        ident = identify(data_from_run(observed_run(r, sim), cfg["dt"]), nom)
+        ro = observed_run(r, sim)
+        if job.get("save_dir"):                     # the logged lap, for the residual model (round 2)
+            from pathlib import Path
+
+            d = Path(job["save_dir"])
+            d.mkdir(parents=True, exist_ok=True)
+            np.savez_compressed(d / f"explore_{job['car']}_{tau}_{obs}.npz", t=ro.t, state=ro.state,
+                                inputs=ro.inputs, usage=ro.usage, plant_state=r.state)
+        ident = identify(data_from_run(ro, cfg["dt"]), nom)
         out["identification"] = {"theta": ident["theta"].tolist(), "std": ident["std"].tolist(),
                                  "rms": ident["rms"], "samples": ident["samples"],
                                  "max_usage_in_data": ident["max_usage_in_data"]}
@@ -160,6 +177,31 @@ def run_job(args) -> dict:
                           backoff=sp["backoff"], observe=obs)
     elif name == "lag_nominal":
         _, _, out = drive(track, plant, nom, plans[eta], eta, tau, cfg, lag_model=lag, observe=obs)
+    elif name in ("lag_half", "lag_double"):
+        f = 0.5 if name == "lag_half" else 2.0
+        _, _, out = drive(track, plant, nom, plans[eta], eta, tau, cfg, lag_model=f * tau, observe=obs)
+        out["model_tau"] = f * tau
+    elif name == "lag_identified":
+        from types import SimpleNamespace
+
+        from ..estimation.identify import identify_with_lag
+
+        z = np.load(job["explore_file"])
+        ident = identify_with_lag(SimpleNamespace(state=z["state"], inputs=z["inputs"], usage=z["usage"]),
+                                  cfg["dt"], nom)
+        veh, tau_hat = ident["vehicle"], ident["tau"]
+        info = {"theta": ident["theta"].tolist(), "tau": tau_hat, "rms": ident["rms"],
+                "rms_without_lag": ident["rms_without_lag"], "samples": ident["samples"],
+                "on_bounds": ident["on_bounds"]}
+        o, log = replan(track, veh, [("nominal plan", plans[eta]), ("ideal plan", plans[1.0])], eta)
+        if o is None:
+            out = {"completed": False, "stop_reason": "plan failed", "lap_time": float("nan"),
+                   "distance": 0.0, "plan_log": log}
+        else:
+            _, _, out = drive(track, plant, veh, o, eta, tau, cfg, observe=obs,
+                              lag_model=max(tau_hat, 1e-4))
+            out.update({"plan_lap_time": o.lap_time, "plan_log": log})
+        out["identification_lag"] = info
     elif name in ("oracle_param", "oracle_struct"):
         o = job["oracle_plan"]
         if o is None:

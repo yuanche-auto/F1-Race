@@ -34,7 +34,9 @@ with the correct structure?
   own commanded angle in the steering slot of the state; the road-wheel angle
   is not measured, the lag is hidden in the car's response (a servo without
   feedback, or tyre forces building up behind a measured angle). The
-  identification of L4 therefore sees δ_c as the steering angle.
+  identification of L4 therefore sees δ_c as the steering angle. This is the
+  harder of the two settings: many real cars measure the rack or road-wheel
+  angle.
 * Ablation ("angle"): the road-wheel angle is measured instead (section 4).
 * Everything else as in L4: no disturbances, true state otherwise (noise is
   round 3), 10 ms simulator step, NMPC every 50 ms over 30 steps.
@@ -50,7 +52,9 @@ with the correct structure?
 | `identified` | identified from the `explore` lap as logged (δ_c) | no | re-planned, 5 % | L4 pipeline unchanged |
 | `oracle_param` | true | no | re-planned with the true car, 5 % | what parameter knowledge buys (L4 "oracle") |
 | `lag_nominal` | nominal | yes, true τ | 5 % | what structure knowledge buys |
-| `oracle_struct` | true | yes, true τ | true-car plan, 5 % | **upper bound** |
+| `oracle_struct` | true | yes, true τ | true-car plan, 5 % | **correct-structure reference** (not a strict upper bound: its plan has no lag) |
+| `lag_identified` | identified with τ from the `explore` lap (8 unknowns) | yes, identified τ | re-planned, 5 % | the correct structure with τ to be identified (A1) |
+| `lag_half`, `lag_double` | nominal | yes, 0.5 τ / 2 τ | 5 % | sensitivity to a wrong time constant (A1; 1a only) |
 | `rl` | – | – | 5 % | the selected L5 policy B_s1_500k, unchanged; observes δ_c |
 
 The lag-aware MPCs integrate the lag exactly within each MPC step and
@@ -58,22 +62,30 @@ reconstruct the road-wheel angle with an open-loop observer from their own
 commands (exact without noise; `LagAwareMPCController`). The plans are the
 minimum-time plans without a lag (references for the tracking MPC).
 `oracle_param` and `lag_nominal` together with `nmpc` and `oracle_struct` form a
-2 × 2 design (parameters × structure).
+2 × 2 design (parameters × structure); there "structure" means the correct
+structure *with the exact τ*, so it overstates what knowing the structure buys
+in practice – `lag_identified` and the τ-mismatch runs measure that (A1). A
+true upper bound would need a minimum-time plan with the lag (optional, not
+planned).
 
 ## 4. Runs of round 1
 
 **1a – lag sweep on the nominal car** (the lag is the only error): τ = 5, 10,
 15, 20, 30, 45, 60, 90, 120 ms; `tracker`, `nmpc`, `explore`, `smpc`,
-`identified`, `lag_nominal` (on the nominal car the same as `oracle_struct`) and
-`rl`. Shows up to which lag each controller works.
+`identified`, `lag_nominal` (on the nominal car the same as `oracle_struct`),
+`lag_identified`, `lag_half`, `lag_double` and `rl`. Shows up to which lag each
+controller works.
 
 **1b – the 25 cars** (lag and parameter errors): τ = 10, 30 and 60 ms (60 ms is
-the main level of the later rounds), all controllers of section 3.
+the main level of the later rounds), all controllers of section 3 except
+`lag_half` / `lag_double`.
 
 Order of the runs: 1a, then 1b at 60, 30, 10 ms.
 
-Ablation: observation "angle" at τ = 60 ms for `tracker` and `nmpc` on the 25
-cars.
+Ablation: observation "angle" at τ = 60 ms on the 25 cars for `tracker`, `nmpc`,
+`explore`, `identified` (the identification then sees the road-wheel angle)
+and `lag_nominal` (the controller keeps its commanded angle from its own rate
+commands) (A3).
 
 Reference τ = 0 (parameter error only): the L4 results for `nmpc`, `explore`,
 `identified`, `oracle_param` on the same cars (same code); `tracker` and
@@ -92,7 +104,7 @@ data as the identification, every 5th sample, i.e. one per 50 ms):
   features of a squared-exponential kernel (fixed seed 0);
 * Bayesian linear regression per output, prior precision and noise precision
   by evidence maximisation, the common length scale chosen from
-  {0.5, 1, 2, 4} by the evidence – no tuning on laps;
+  {0.5, 1, 2, 4, 8, 16} by the evidence – no tuning on laps (A8);
 * `residual`: the identified model plus the residual mean in the NMPC dynamics;
 * `residual_cautious`: in addition, per-stage tightening from the predictive
   standard deviation σ of the lateral acceleration at the previous solution's
@@ -104,11 +116,20 @@ data as the identification, every 5th sample, i.e. one per 50 ms):
 the nominal 95 % prediction interval of each acceleration on (i) the last
 20 % of the exploration lap, held out from fitting (a separate fit on the
 first 80 %), and (ii) the closed-loop laps driven by `residual` (the
-distribution the controller actually visits). **Go** for L7 if the pooled
-coverage of (ii) lies in 90–98 % at every τ of round 2; otherwise **no-go**:
+distribution the controller actually visits). On a failed closed-loop lap the
+samples of the last 2 s before the failure are dropped, and for the k-step
+intervals every prediction whose horizon overlaps those 2 s (the definition of
+the L3 truncation). **Go** for L7 if, at every τ of round 2, the pooled
+coverage of (ii) lies in 90–98 % **and** so does the coverage on the
+near-limit samples of (ii) (friction-ellipse usage of the model ≥ 0.85 on
+either axle, the threshold of the L3 calibration) (A4); otherwise **no-go**:
 L7 may not use this uncertainty directly (it would need recalibration, e.g.
-empirical back-offs as in L3 or conformal intervals). Coverage per car is
-reported too.
+empirical back-offs as in L3 or conformal intervals). Also reported, as a
+secondary check: coverage of the k-step lateral-position intervals of
+`residual_cautious` (±b_k, k = 10 and 20) on its own laps – the tightening uses
+these propagated intervals, not the one-step ones; if they cover less than
+90 % while the one-step check passes, the go is conditional (L7 then needs
+horizon-calibrated back-offs). Coverage per car is reported too.
 
 **Round 3 – noise only** (τ = 0, the L3 sensor noise on the logged
 exploration lap, one noise draw per car as in L4): identification by the L4
@@ -128,7 +149,7 @@ identification error, not on laps, fixed before round 4 runs).
 
 * Laps completed out of 25 with exact (Clopper–Pearson) 95 % intervals; mean
   lap time of completed laps; lap time on the nominal car; stop reasons.
-* Lap time against the upper bound on cars both complete (paired).
+* Lap time against `oracle_struct` on cars both complete (paired).
 * Identification: identified parameters against the true ones per τ,
   parameters on their bounds, residual rms.
 * Model quality: mean and 95th percentile of the lateral-position error of the
@@ -136,11 +157,14 @@ identification error, not on laps, fixed before round 4 runs).
 * Steering: largest gap between commanded and road-wheel angle.
 * Pre-registered paired comparisons (exact McNemar, same cars, per τ):
   `oracle_struct`–`oracle_param` (value of the structure), `lag_nominal`–`nmpc`,
+  `lag_identified`–`identified`, `oracle_struct`–`lag_identified`,
   `identified`–`nmpc`, `identified`–`oracle_param` (does identification absorb
   the lag?), `oracle_param`–`nmpc`, `smpc`–`nmpc`, `rl`–`nmpc`; round 2:
   `residual`–`identified`, `residual_cautious`–`residual`,
-  `oracle_struct`–`residual`. p-values without correction; a conclusion needs
-  p < 0.01 or the same direction at every τ.
+  `oracle_struct`–`residual`, `lag_identified`–`residual`. p-values without
+  correction; a conclusion needs p < 0.01 at a single τ, or an exact sign test
+  with p < 0.01 on the discordant pairs pooled over the τ levels together with
+  the same direction at every τ (A5).
 
 ## 7. Expectations (written down to be checked, not criteria)
 
@@ -155,15 +179,41 @@ identification error, not on laps, fixed before round 4 runs).
 ## 8. Reproduction
 
 `.venv` (Python 3.12) is the reference. In the second environment `.venv-311`
-(Python 3.11, numpy 2.4.6, scipy 1.17.1): the lag sweep 1a, and `nmpc` and
-`oracle_struct` on the 25 cars at τ = 60 ms. Differences are reported; the main claims must hold in both.
+(Python 3.11, numpy 2.4.6, scipy 1.17.1): the lag sweep 1a, and `nmpc`,
+`oracle_struct` and `identified` on the 25 cars at τ = 60 ms (A6: the
+identification and the first re-planning solve are the most
+environment-sensitive steps). Differences are reported; the main claims must hold in both.
 
 ## 9. Compute
 
 About 8–11 min per NMPC lap with 8 processes (L4 and the feasibility check),
-15 min per re-plan. Round 1: about 45 laps and 9 re-plans (1a) and 525 laps
-and 100 re-plans (1b), 14–16 h on 8 processes.
+15 min per re-plan. Round 1: about 70 laps and 18 re-plans (1a) and about
+700 laps and 200 re-plans (1b with A1 and A3), about 20 h on 8 processes.
 
-## Deviations
+## Deviations and amendments
 
-(none yet)
+Amendments A1–A7, 2026-10-09, after the reviewer's design review of 75865d8,
+made while 1a was running and **before 1b started**:
+
+* **A1** (review MAJOR-1: "knowing the structure" was "knowing the structure
+  and the exact τ"): added `lag_identified` (1a and 1b) and `lag_half` /
+  `lag_double` (1a). Disclosure: before adding it, the identification with τ
+  was tried on the two exploration laps of 1a that had already ended (nominal
+  car, 45 and 60 ms; both off track after about 465 m): τ recovered to 0.2 %,
+  the parameters to 0.2 %; the identification without the lag put three
+  factors on their bounds (inertia, mass, aero balance).
+* **A2**: `oracle_struct` is described as the correct-structure reference, not
+  an upper bound (its plan has no lag); a plan with the lag is optional.
+* **A3**: the "angle" ablation extended to `explore`, `identified` and
+  `lag_nominal`.
+* **A4**: coverage check – truncation of failed laps fixed (L3 definition),
+  near-limit coverage added to the go criterion, k-step position-interval
+  coverage added as a secondary check.
+* **A5**: statistical rule tightened. It was "p < 0.01 or the same direction at
+  every τ" (too loose: 1:0 at every τ would count).
+* **A6**: `identified` at 60 ms added to the second-environment check.
+* **A7**: the "command" condition is stated to be the harder setting.
+* **A8** (2026-10-09, before round 2): the length-scale grid of the residual
+  model extended from {0.5, 1, 2, 4} to {0.5, 1, 2, 4, 8, 16}: in a smoke test of
+  the code on one 1a exploration lap (nominal car, 90 ms) the evidence chose the
+  largest candidate, 4. No lap was driven with a residual model.

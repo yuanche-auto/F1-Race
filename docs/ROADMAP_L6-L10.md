@@ -1,9 +1,10 @@
 # Roadmap L6–L10
 
-Written 2026-10-09 after L0–L5 were merged. A first draft was criticised by
-the reviewer; this version keeps what held up, takes over most of the
-criticism, and says where it does not (section 3). It is the reference for
-the reviews of L6–L10. Each layer still gets its own pre-registered protocol
+Written 2026-10-09 after L0–L5 were merged. A first draft was criticised in
+a written critique that the user forwarded (it did not come from the review
+session that reviews this repository's commits); this version keeps what held
+up, takes over most of the criticism, and says where it does not (section 3).
+It is the reference for the reviews of L6–L10. Each layer still gets its own pre-registered protocol
 (`docs/L<k>_protocol.md`) before any result-producing run.
 
 ## 1. What L0–L5 left open
@@ -34,9 +35,9 @@ the reviews of L6–L10. Each layer still gets its own pre-registered protocol
 6. **Literature check at the start of each layer**, before its contribution
    is claimed (section 5).
 
-## 3. Points of the review taken over, and points not
+## 3. Points of the critique taken over, and points not
 
-| Review point | Decision | Reason |
+| Point of the critique | Decision | Reason |
 |---|---|---|
 | Keep this L6–L10 frame, put "reliable learning" in L7 | taken over | keeps the "remove one idealisation per layer" structure and makes L6 → L7 one line of method |
 | L6: separate parameter, noise and structure errors; add one structural error first; an upper bound with the correct structure | taken over | otherwise nothing can be attributed; the L4 noise study already had an inertia estimate on its bound – stable but physically wrong |
@@ -145,7 +146,8 @@ distillation only as a control.
 
 ## 5. Literature check (2026-10-09)
 
-The works cited by the review exist as cited:
+The works cited by the critique exist as cited (checked by the builder; the
+repository's reviewer independently checked SGTP and DKMGP):
 
 * J. Ning, M. Behl, *DKMGP: A Gaussian Process Approach to Multi-Task and
   Multi-Step Vehicle Dynamics Modeling in Autonomous Racing*, L4DC 2025,

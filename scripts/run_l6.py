@@ -16,6 +16,7 @@ import os
 import pickle
 import sys
 import traceback
+from collections import deque
 from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 from multiprocessing import get_context
 from pathlib import Path
@@ -25,8 +26,8 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from f1race.dynamics import DynVehicle  # noqa: E402
 from f1race.experiments.l2 import sample_plants  # noqa: E402
-from f1race.experiments.l6 import (CONTROLLERS, L6Config, config_dict, key_of, load_jsonl,  # noqa: E402
-                                   oracle_plan_job, paired, run_job, smpc_spec, summarize)
+from f1race.experiments.l6 import (CONTROLLERS, NEEDS_EXPLORE, L6Config, config_dict, key_of,  # noqa: E402
+                                   load_jsonl, oracle_plan_job, paired, run_job, smpc_spec, summarize)
 
 OUT = ROOT / "results" / "L6"
 
@@ -68,7 +69,7 @@ def round1(cfg: L6Config, taus, controllers, cars, observe: str) -> None:
     def job(car, tau, name, **extra):
         info, plant = plants[car]
         j = {"car": car, "info": info, "plant": plant, "tau": tau, "observe": observe, "controller": name,
-             "plans": plans, "smpc": sp, "round": 1}
+             "plans": plans, "smpc": sp, "round": 1, "save_dir": str(OUT / "explore")}
         if name in ("oracle_param", "oracle_struct"):
             j["oracle_plan"] = orc[car]["plan"]
         j.update(extra)
@@ -77,18 +78,47 @@ def round1(cfg: L6Config, taus, controllers, cars, observe: str) -> None:
     def k(car, tau, name):
         return f"{car}|{tau}|{observe}|{name}"
 
-    order = [c for c in ("explore",) + CONTROLLERS if c in controllers and c != "identified"]
+    dependent = [c for c in NEEDS_EXPLORE if c in controllers]
+    if dependent and "explore" not in controllers:
+        controllers = ["explore"] + list(controllers)
+    order = [c for c in ("explore",) + CONTROLLERS + ("lag_half", "lag_double")
+             if c in controllers and c not in NEEDS_EXPLORE]
     order = list(dict.fromkeys(order))
-    jobs = [job(c, t, n) for n in order for t in taus for c in cars if k(c, t, n) not in done]
-    want_id = "identified" in controllers
+    # tau-major order (the first tau of the list is finished first); at most `workers` jobs are
+    # in flight, and the laps that need an exploration lap go to the front of the queue
+    jobs = [job(c, t, n) for t in taus for n in order for c in cars if k(c, t, n) not in done]
+
+    def after_explore(rec):
+        """Jobs that use an exploration lap (its identified parameters or its saved data)."""
+        out = []
+        f = OUT / "explore" / f"explore_{rec['car']}_{rec['tau']}_{rec['observe']}.npz"
+        for n in dependent:
+            if k(rec["car"], rec["tau"], n) in done:
+                continue
+            if n == "identified":
+                out.append(job(rec["car"], rec["tau"], n, theta=rec["identification"]["theta"]))
+            elif f.exists():
+                out.append(job(rec["car"], rec["tau"], n, explore_file=str(f)))
+            else:
+                print("no saved exploration lap for", n, rec["car"], rec["tau"], flush=True)
+        return out
+
     for r in existing:                                       # exploration laps already run
-        if (want_id and r["controller"] == "explore" and r["tau"] in taus and r["car"] in cars
-                and r["observe"] == observe and k(r["car"], r["tau"], "identified") not in done):
-            jobs.insert(0, job(r["car"], r["tau"], "identified", theta=r["identification"]["theta"]))
+        if (r["controller"] == "explore" and r["tau"] in taus and r["car"] in cars
+                and r["observe"] == observe):
+            jobs = after_explore(r) + jobs
     print(f"{len(jobs)} jobs (+ identification laps after the exploration laps)", flush=True)
+    pending = deque(jobs)
     with ProcessPoolExecutor(cfg.workers, mp_context=get_context("spawn")) as ex, \
             open(path, "a", encoding="utf-8") as f:
-        futs = {ex.submit(run_job, (j, cfgd)): j for j in jobs}
+        futs = {}
+
+        def fill():
+            while pending and len(futs) < cfg.workers:
+                nj = pending.popleft()
+                futs[ex.submit(run_job, (nj, cfgd))] = nj
+
+        fill()
         while futs:
             fin, _ = wait(futs, return_when=FIRST_COMPLETED)
             for fu in fin:
@@ -100,22 +130,26 @@ def round1(cfg: L6Config, taus, controllers, cars, observe: str) -> None:
                     print("FAILED", j["car"], j["tau"], j["controller"], msg, flush=True)
                     with open(OUT / "errors.log", "a", encoding="utf-8") as fe:
                         fe.write(f"{j['car']} {j['tau']} {j['controller']}\n{msg}\n")
+                    fill()
                     continue
                 f.write(json.dumps(rec) + "\n")
                 f.flush()
                 print(f"tau {rec['tau']:.3f} car {rec['car']:2d} {rec['controller']:13s} {rec['stop_reason']:14s} "
                       f"lap {rec['lap_time']:.3f} dist {rec['distance']:.0f} ({rec['job_s']:.0f} s)", flush=True)
-                if want_id and rec["controller"] == "explore" and k(rec["car"], rec["tau"], "identified") not in done:
-                    nj = job(rec["car"], rec["tau"], "identified", theta=rec["identification"]["theta"])
-                    futs[ex.submit(run_job, (nj, cfgd))] = nj
+                if rec["controller"] == "explore":
+                    pending.extendleft(reversed(after_explore(rec)))
+            fill()
 
 
-PAIRS = [("oracle_struct", "oracle_param"), ("lag_nominal", "nmpc"), ("identified", "nmpc"),
+PAIRS = [("oracle_struct", "oracle_param"), ("lag_nominal", "nmpc"), ("lag_identified", "identified"),
+         ("oracle_struct", "lag_identified"), ("identified", "nmpc"),
          ("identified", "oracle_param"), ("oracle_param", "nmpc"), ("smpc", "nmpc"), ("rl", "nmpc")]
 LABELS = {"tracker": "L1 tracker, 5 % plan", "nmpc": "NMPC, nominal model, 5 %",
+          "lag_identified": "NMPC, lag + parameters identified", "lag_half": "NMPC, nominal + lag model 0.5 τ",
+          "lag_double": "NMPC, nominal + lag model 2 τ",
           "explore": "NMPC, nominal model, uniform 12 %", "smpc": "SMPC ε = 0.01 (L3)",
           "identified": "NMPC, identified model (L4)", "oracle_param": "NMPC, true parameters, no lag",
-          "lag_nominal": "NMPC, nominal parameters + lag", "oracle_struct": "NMPC, true parameters + lag (upper bound)",
+          "lag_nominal": "NMPC, nominal parameters + lag", "oracle_struct": "NMPC, true parameters + lag (correct structure)",
           "rl": "residual RL (L5, B_s1_500k)", "rl_env_tracker": "tracker in the RL environment (check)"}
 
 

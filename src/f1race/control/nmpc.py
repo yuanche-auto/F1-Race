@@ -296,20 +296,28 @@ class MPCController:
 
 
 class LagAwareMPCController(MPCController):
-    """Controller for an MPC with ``steer_lag`` (the correct structure, L6). It
-    receives the 7-dim state with its own commanded angle in the steering slot and
-    reconstructs the road-wheel angle with an open-loop observer of the lag (exact
-    in the noise-free case: the angle is a deterministic function of the commands)."""
+    """Controller for an MPC with ``steer_lag`` (the correct structure, L6).
+
+    ``observe="command"``: it receives the 7-dim state with its own commanded angle in
+    the steering slot and reconstructs the road-wheel angle with an open-loop observer
+    of the lag (exact in the noise-free case: the angle is a deterministic function of
+    the commands). ``observe="angle"``: it receives the measured road-wheel angle and
+    keeps its commanded angle by integrating its own rate commands with the actuator's
+    rate and angle limits (as ``LaggedSim.apply_limits``)."""
 
     def __init__(self, mpc: FrenetMPC, sim_dt: float, tc_eta: float | None = 0.99,
-                 record: bool = False):
+                 record: bool = False, observe: str = "command"):
         if mpc.steer_lag is None:
             raise ValueError("the MPC has no steering lag")
+        if observe not in ("command", "angle"):
+            raise ValueError(observe)
         super().__init__(mpc, sim_dt, tc_eta, record)
         self.tau = float(mpc.steer_lag)
+        self.observe_mode = observe
         self.d_hat = None
         self.c_prev = None
         self.t_prev = None
+        self.c_hat = None
 
     def observe(self, t: float, dc: float) -> float:
         """Advance the road-wheel angle estimate to time t (commanded angle dc now);
@@ -326,10 +334,16 @@ class LagAwareMPCController(MPCController):
         return self.d_hat
 
     def __call__(self, t: float, x: np.ndarray):
-        d_hat = self.observe(t, float(x[6]))
+        if self.observe_mode == "command":
+            d_act, d_cmd = self.observe(t, float(x[6])), float(x[6])
+        else:
+            d_act = float(x[6])
+            if self.c_hat is None:
+                self.c_hat = d_act                     # start in steady steering
+            d_cmd = self.c_hat
         xa = np.array(x, float)
-        xa[6] = d_hat
-        xf = np.concatenate([self.frenet(xa), [x[6]]])
+        xa[6] = d_act
+        xf = np.concatenate([self.frenet(xa), [d_cmd]])
         if t + 1e-9 >= self.t_next:
             u, info = self.mpc.solve(xf, self.u)
             self.u = u
@@ -338,7 +352,13 @@ class LagAwareMPCController(MPCController):
             if self.record:
                 self.predictions.append((t, *self.mpc.prediction()))
         drate, fd, fb = float(self.u[0]), float(self.u[1]), float(self.u[2])
+        veh = self.mpc.veh
+        if self.observe_mode == "angle":               # own commanded angle, with the actuator limits
+            dr = float(np.clip(drate, -veh.delta_rate_max, veh.delta_rate_max))
+            if (d_cmd >= veh.delta_max and dr > 0) or (d_cmd <= -veh.delta_max and dr < 0):
+                dr = 0.0
+            self.c_hat = float(np.clip(d_cmd + dr * self.sim_dt, -veh.delta_max, veh.delta_max))
         if self.tc_eta is not None:                    # traction control at the predicted angle
-            d_next = d_hat + (x[6] - d_hat) * (1.0 - np.exp(-self.sim_dt / self.tau))
-            fd, fb = traction_limit(self.mpc.veh, xa, d_next, fd, fb, self.tc_eta)
+            d_next = d_act + (d_cmd - d_act) * (1.0 - np.exp(-self.sim_dt / self.tau))
+            fd, fb = traction_limit(veh, xa, d_next, fd, fb, self.tc_eta)
         return drate, fd, fb
