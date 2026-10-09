@@ -11,9 +11,9 @@ after APPROVE. Workflow: [docs/workflow.md](docs/workflow.md).
 | L0 deterministic kinematic | `layer/L0` → `main` (18a7a58) | **approved, pushed** to origin/main 2026-10-07 | round 2: APPROVE |
 | L1 dynamic single-track + Pacejka | `layer/L1` → `main` (571a982) | **approved, pushed** to origin/main 2026-10-07 | round 2: APPROVE (m4, m5 fixed on `layer/L2`) |
 | L2 model mismatch, closed loop | `layer/L2` → `main` (270fb2b) | **approved, pushed** to origin/main 2026-10-08 | round 2: APPROVE (m1, m2 fixed on `layer/L3`) |
-| L3 stochastic disturbances | `layer/L3` → `main` | **approved, pushed** to origin/main 2026-10-08 | round 2: APPROVE (nit: truncation definition, on `layer/L5`) |
+| L3 stochastic disturbances | `layer/L3` → `main` | **approved, pushed** to origin/main 2026-10-08 | round 2: APPROVE (nit: truncation definition, fixed on `layer/L5`) |
 | L4 learning / adaptation | `layer/L4` → `main` | **approved, pushed** to origin/main 2026-10-08 | round 1: APPROVE (minors fixed in 66f6cb3) |
-| L5 reinforcement learning | `layer/L5` (published for reading) | results withdrawn (single training run not reproducible); redo with several seeds and a validation set | review in progress |
+| L5 reinforcement learning | `layer/L5` → `main` | **approved, pushed** to origin/main 2026-10-09 | APPROVE after the multi-seed redo (wording minors fixed in 4fec887) |
 
 ## L0 summary
 
@@ -35,6 +35,8 @@ Figures are not expected to be byte-identical across versions.
 
 | Date | Commit | Scope | Verdict | Notes |
 |---|---|---|---|---|
+| 2026-10-09 | 4354579 | L5 redo | **APPROVE** | protocol followed (written before the runs); selection, median seeds, paired tests and blind spots recomputed; evaluation reproduced in Python 3.11; wording minors m1–m4 fixed in 4fec887 |
+| 2026-10-08 | 6552180 | L5 | (preliminary) | first results withdrawn: single training run not reproducible; reviewer asked for non-learning and slowed-NMPC baselines and a multi-seed protocol |
 | 2026-10-08 | 9ce0b25 | L3 fixes | **APPROVE** | recomputed from runs.json / failures.json; four calibrations 28–30/30; honest event rates; nit: truncation by prediction time vs horizon overlap |
 | 2026-10-08 | 6ebbab7 | L4 | **APPROVE** | minors: bounds hit in the noise study, saturation filter uses the true usage (no effect), docstring; fixed in 66f6cb3 |
 | 2026-10-08 | 6ec6007 | L3 | CHANGES_REQUESTED | MAJOR-1 back-offs calibrated on mostly failed laps, sensitive to the environment -> truncated / iterated / other-environment calibrations; minors: per-stage semantics, failure analysis, ablation scope |
@@ -49,6 +51,20 @@ Figures are not expected to be byte-identical across versions.
 
 * **Q1 (2026-10-07):** keep the author e-mail `yuanche@umich.edu`; push each layer to `main` as
   soon as the reviewer approves it.
+
+## L5 redo (ran while the user was away; finished 2026-10-09 05:25; approved)
+
+* Protocol, fixed before the runs: [docs/L5_protocol.md](docs/L5_protocol.md) (groups A/B/C,
+  seeds 1–3, validation set, selection rule, reporting).
+* Pipeline: `scripts/l5_multiseed.py` (worktree `../F1-Race-wt-L5`, venv `.venv-rl`); log
+  `results/L5/multiseed/driver.log`. It is resumable: re-running it skips finished training
+  runs (all 12 checkpoints present) and finished evaluations. If a training run was cut
+  off, delete its partial checkpoints before re-running.
+* Decisions taken without the user (also in the protocol): plain policy not retrained
+  (more seeds instead); a_c = 4 m/s² fixed by physics, not tuned; 3 training runs in
+  parallel with 8 environments each (unchanged training settings).
+* After it finishes: write docs/L5.md from results/L5/multiseed/tables.md and the
+  baselines, request the review, merge to main and push after APPROVE (user's rule).
 
 ## Notes for resuming
 

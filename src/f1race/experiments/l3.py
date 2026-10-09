@@ -156,7 +156,9 @@ def event_rates(smp: dict, spec: dict, cfg: dict) -> dict:
 
 
 def _truncate(s: dict, drop: float) -> dict:
-    """Drop the predictions made in the last ``drop`` seconds before a failure."""
+    """Drop the predictions made in the last ``drop`` seconds before a failure (by the
+    time the prediction was made; predictions made earlier whose horizon reaches into
+    that window are kept)."""
     if drop <= 0.0 or s.get("completed", True) or "t" not in s:
         return s
     keep = np.asarray(s["t"]) <= float(s["t_end"]) - drop

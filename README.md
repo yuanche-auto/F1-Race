@@ -11,7 +11,7 @@ compares several solution methods on the same problem:
 | **L2** | closed loop with model mismatch | offline plan + tracking vs NMPC, constraint tightening, Monte Carlo and one-at-a-time sensitivity | ✅ done ([docs/L2.md](docs/L2.md)) |
 | **L3** | stochastic disturbances (friction varying along the track, gusts, sensor noise) | NMPC with uniform reserves vs stochastic MPC with back-offs calibrated from measured prediction errors (four calibrations); ablations | ✅ done ([docs/L3.md](docs/L3.md)) |
 | **L4** | learning the car | identify the parameters from an exploration lap (least squares on the logged dynamics), re-plan, drive with the identified model; noise sensitivity | ✅ done ([docs/L4.md](docs/L4.md)) |
-| **L5** | reinforcement learning | residual soft actor-critic on top of the L1 tracker, with and without an observation history, trained on randomised cars and disturbances | ⚠️ results under revision ([branch `layer/L5`](https://github.com/yuanche-auto/F1-Race/tree/layer/L5)) |
+| **L5** | reinforcement learning | residual soft actor-critic on top of the L1 tracker with an observation history, trained on randomised cars and disturbances; nine training runs, checkpoints selected on full validation laps; compared on the L2 and L3 test sets | ✅ done ([docs/L5.md](docs/L5.md)) |
 
 The guiding question of the whole series: *in which settings does a
 learning-based controller beat a model-based one, and why?*
@@ -30,6 +30,7 @@ python scripts/run_l2.py                             # ~3 h (8 processes); Monte
 python scripts/l2_studies.py                         # ~20 min; one parameter at a time
 python scripts/run_l3.py                             # ~8 h (12 processes) incl. calibrate / iterate / failures; 18 controllers x 30 seeds
 python scripts/run_l4.py                             # ~3 h (7 processes); identify + re-plan on 25 cars (noise: run_l4.py noise)
+pip install -e .[rl] && python scripts/l5_multiseed.py   # L5: 9 training runs, validation, tests (~8 h; selected policies in models/L5)
 pytest -m "not slow"                                 # ~2 min (full suite ~12 min, ~30 min if the first L1 guess fails)
 ```
 
@@ -107,20 +108,25 @@ knows the car (12 to 0 against the nominal model, p = 0.0005). With realistic
 sensor noise the naive estimate is biased but still completes 22 of 25. See
 [docs/L4.md](docs/L4.md).
 
-## Work in review (L5) – results under revision
+## L5 results (residual reinforcement learning, same test sets as L2 and L3)
 
-**The L5 numbers published earlier (51 of 51 cars, 30 of 30 disturbed laps for
-the residual RL policy) are withdrawn.** They came from a single training run.
-Retraining with the same settings – plus one correction, the policy now
-observes the noisy measured state instead of the true state – produced
-policies that leave the track systematically at one corner, whatever the car
-(0 of 51 and 13 of 51 cars), although their training curves looked the same.
-One training run is therefore no evidence for or against the method. L5 is
-being redone with several training seeds, checkpoints chosen on a separate
-validation set of full laps, and the distribution over seeds reported; until
-then L5 has no result. The baselines computed so far stand: the tracker with a
-constant 15 % slow-down completes 16 of 51 cars and 14 of 30 laps, the NMPC
-with a large uniform reserve (η = 0.82, 1.3 m) 29 of 51 and 17 of 30.
+| Controller | L2: 51 cars | L3: 30 disturbed laps |
+|---|---|---|
+| tracker alone; with a fixed 15 % slow-down | 3 / 51; 16 / 51 | 0 / 30; 14 / 30 |
+| NMPC, nominal model (L2) / SMPC ε = 0.01 (L3) | 22 / 51, 76.3 s | 30 / 30, 79.2 s |
+| NMPC slowed down by a uniform reserve | 29 / 51, 84.0 s | 17 / 30, 85.7 s |
+| RL, final checkpoints of nine training runs | 19–50 / 51 (median runs 30–46) | 14–30 / 30 (median runs 27–29) |
+| **RL, checkpoint selected on validation laps** | **51 / 51**, 81.2 s | **30 / 30**, 81.2 s |
+
+A learned policy can be more robust than the model-based controller without a
+model of the actual car, but a single training run is not enough: almost every
+run beats the nominal NMPC, only about one in three beats an NMPC slowed to its
+pace, and most runs have a blind spot, one corner where they fail on almost
+every car, invisible in training. With several runs and a validation on full
+laps each design yielded a good policy; it is still slower than the
+model-based controllers that identify the car (L4, in a favourable setting) or
+calibrate their reserves (L3). See
+[docs/L5.md](docs/L5.md).
 
 ## Repository layout
 
@@ -136,6 +142,7 @@ src/f1race/
   sim/              time-domain simulator with constraint monitoring; stochastic
                     disturbances (L3)
   estimation/       parameter identification from driving data (L4)
+  rl/               Gymnasium environment for residual RL on the tracker (L5)
   experiments/      one module per layer
 scripts/            data download and per-layer reproduction scripts
 tests/              pytest suite
