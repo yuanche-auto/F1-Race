@@ -68,7 +68,11 @@ Test sets as before: the 51 L2 cars (seed 0) and the 30 L3 seeds (0–29).
   difference shows the selection bias);
 * (b) the final checkpoint (600 000) of every seed on the test sets – the
   unselected distribution;
-* (c) the median seed of each group by (b).
+* (c) the median seed of each group by (b): seeds ranked by the total number of
+  completed test laps (L2 + L3, 81 laps), ties by the lower mean lap time of
+  the completed test laps, then by the lower seed number. (This ranking rule
+  was added after the runs had started and before any result existed, at the
+  reviewer's request.)
 
 Conclusions rest on (b) and (c); (a) is secondary. Paired comparisons with the
 baselines use exact McNemar tests as in L2–L4.

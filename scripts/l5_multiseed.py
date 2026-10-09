@@ -177,9 +177,12 @@ def report() -> str:
             n, lap = score([r for r in val if r["checkpoint"] == stem])
             l2 = [r for r in test if r["checkpoint"] == stem and r["case"][0] == "test_car"]
             l3 = [r for r in test if r["checkpoint"] == stem and r["case"][0] == "test_dist"]
-            finals[(g, s)] = sum(r["completed"] for r in l2) + sum(r["completed"] for r in l3)
+            laps = [r["lap_time"] for r in l2 + l3 if r["completed"]]
+            # median-seed ranking (protocol): total completed test laps, then mean lap time
+            finals[(g, s)] = (sum(r["completed"] for r in l2 + l3), -(float(np.mean(laps)) if laps else 1e9), -s)
             lines.append(f"| {g} | {s} | {n}/20 | {test_score(stem, 'test_car')} | {test_score(stem, 'test_dist')} |")
-    lines += ["", "**(c) median seed per group** (by completed test laps of the final checkpoint)", ""]
+    lines += ["", "**(c) median seed per group** (completed test laps of the final checkpoint, L2 + L3; "
+              "ties: lower mean lap time, then lower seed)", ""]
     for g in GROUPS:
         order = sorted(SEEDS, key=lambda s: finals[(g, s)])
         med = order[1]
