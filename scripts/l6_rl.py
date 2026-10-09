@@ -2,6 +2,7 @@
 environment) on the L6 cars with a steering lag. Needs the RL extras (`pip install -e .[rl]`).
 
     python scripts/l6_rl.py [tau ...]        # default 0.03 0.06 0.12 -> results/L6/rl.jsonl
+    L6_CARS=0 python scripts/l6_rl.py 0.005 0.015   # only some cars (the lag sweep 1a: the nominal car)
 """
 from __future__ import annotations
 
@@ -52,7 +53,8 @@ def main() -> None:
         for line in open(path, encoding="utf-8"):
             r = json.loads(line)
             done.add((r["car"], r["tau"], r["controller"]))
-    jobs = [(c, t, p) for t in taus for c in range(N_CARS) for p in (True, False)
+    cars = [int(c) for c in os.environ["L6_CARS"].split(",")] if os.environ.get("L6_CARS") else range(N_CARS)
+    jobs = [(c, t, p) for t in taus for c in cars for p in (True, False)
             if (c, t, "rl" if p else "rl_env_tracker") not in done]
     with get_context("spawn").Pool(int(os.environ.get("L6_WORKERS", 8))) as pool, open(path, "a", encoding="utf-8") as f:
         for r in pool.imap_unordered(_job, jobs):
