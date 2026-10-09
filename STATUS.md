@@ -1,4 +1,4 @@
-# STATUS — F1-Race (L0–L5)
+# STATUS — F1-Race (L0–L5 done, L6 in progress)
 
 Builder session: "F1-Race 施工者（L0–L5 builder）" [f92a84]. Reviewer: "独立审查员身份和职责".
 Rule: work on branch `layer/Lk`, request review by commit hash, merge to `main` and push only
@@ -14,6 +14,7 @@ after APPROVE. Workflow: [docs/workflow.md](docs/workflow.md).
 | L3 stochastic disturbances | `layer/L3` → `main` | **approved, pushed** to origin/main 2026-10-08 | round 2: APPROVE (nit: truncation definition, fixed on `layer/L5`) |
 | L4 learning / adaptation | `layer/L4` → `main` | **approved, pushed** to origin/main 2026-10-08 | round 1: APPROVE (minors fixed in 66f6cb3) |
 | L5 reinforcement learning | `layer/L5` → `main` | **approved, pushed** to origin/main 2026-10-09 | APPROVE after the multi-seed redo (wording minors fixed in 4fec887) |
+| L6 model mismatch with a structural error | `layer/L6` (worktree `../F1-Race-wt-L6`) | **in progress**: roadmap and protocol written, round 1 running | protocol sent for review |
 
 ## L0 summary
 
@@ -65,6 +66,27 @@ Figures are not expected to be byte-identical across versions.
   parallel with 8 environments each (unchanged training settings).
 * After it finishes: write docs/L5.md from results/L5/multiseed/tables.md and the
   baselines, request the review, merge to main and push after APPROVE (user's rule).
+
+## L6–L10 (started 2026-10-09, user away; decisions recorded here)
+
+* The user asked for an L6–L10 plan, had it criticised by the reviewer and asked for a revised
+  plan "with critical inheritance"; then: save it and start. Roadmap:
+  [docs/ROADMAP_L6-L10.md](docs/ROADMAP_L6-L10.md) (what was taken from the review and what not;
+  the cited literature was checked, all five works exist as cited).
+* L6 protocol: [docs/L6_protocol.md](docs/L6_protocol.md), written before the result-producing runs.
+  Decisions taken without the user:
+  * structural error = first-order steering actuator lag; main observation condition: the
+    controllers see their own commanded angle (the lag is hidden in the car's response); the
+    measured-angle case is an ablation;
+  * the τ grid was changed from the roadmap's 30 / 60 / 120 ms after a feasibility check on the
+    nominal car (disclosed in the protocol): every lag-unaware controller fails there already at
+    30 ms, while the lag-aware NMPC laps at 76.0–76.1 s at every τ; hence a sweep 5–120 ms on the
+    nominal car and 10 / 30 / 60 ms on the 25 cars;
+  * the protocol is sent to the reviewer and round 1 starts at the same time (as for the L5 redo);
+    if the review changes the design, the affected runs are repeated.
+* Pipeline: `python scripts/run_l6.py round1 ...` (resumable: finished laps in
+  `results/L6/round1.jsonl` are skipped; errors in `results/L6/errors.log`), RL baseline
+  `scripts/l6_rl.py` in `.venv-rl`, tables `python scripts/run_l6.py report`.
 
 ## Notes for resuming
 

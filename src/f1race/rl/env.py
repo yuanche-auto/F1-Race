@@ -31,6 +31,7 @@ from ..dynamics import DynVehicle, tyre_forces
 from ..experiments.l1 import dyn_reference
 from ..experiments.l2 import PERTURBATION
 from ..sim.dynamic import DynamicSim
+from ..sim.lagged import LaggedSim
 from ..sim.stochastic import StochasticSim, sample_disturbances
 from ..track import Track
 
@@ -186,7 +187,7 @@ class RacingEnv(gym.Env):
                  episode_s: float = 20.0, steer_max: float = 0.02, speed_down: float = 0.15,
                  speed_up: float = 0.05, crash_penalty: float = 50.0, tracker: dict | None = None,
                  history: int = 1, steer_mode: str = "angle", a_corr: float = 4.0,
-                 seed: int | None = None):
+                 seed: int | None = None, steer_lag: float | None = None, observe: str = "command"):
         super().__init__()
         self.track = Track.load(track)
         self.nominal = DynVehicle()
@@ -200,6 +201,9 @@ class RacingEnv(gym.Env):
         # it changes the lateral acceleration by at most a_corr (v^2 delta / L <= a_corr)
         self.steer_mode, self.a_corr = steer_mode, a_corr
         self.tracker_gains = tracker or {"k_p": 0.06, "x_la": 12.0, "k_r": 0.05, "kv": 8.0}
+        # L6: steering actuator lag of the plant (sim/lagged.py); the tracker and the policy
+        # see the 7-dim state of ``LaggedSim.observe``
+        self.steer_lag, self.observe = steer_lag, observe
         self.rng = np.random.default_rng(seed)
         self.action_space = gym.spaces.Box(-1.0, 1.0, (2,), np.float32)
         # history > 1: the last `history` observations and the last action, so that the
@@ -252,15 +256,21 @@ class RacingEnv(gym.Env):
             self.noise = dist.noise_sigma
             self.noise_rng = np.random.default_rng(dist.noise_seed)
         else:
-            self.sim = DynamicSim(self.track, plant, self.dt)
             self.noise = None
+            lag = options.get("steer_lag", self.steer_lag)
+            if lag:
+                self.sim = LaggedSim(self.track, plant, lag, self.dt, observe=options.get("observe", self.observe))
+            else:
+                self.sim = DynamicSim(self.track, plant, self.dt)
         self.x = self._state_on_plan(i0)
+        if isinstance(self.sim, LaggedSim):
+            self.x = self.sim.lift(self.x)
         self.t = 0.0
         self.margins = FastMargins(self.track, plant)
         self.s_prev, _, _ = self.margins(self.x)
         self.progress = 0.0
-        self.ctl(0.0, self.x)               # initialises the tracker (no noise draw: the noise
-        self._meas = self.x                  # sequence then matches the L3 simulator's)
+        self.ctl(0.0, self._view(self.x))   # initialises the tracker (no noise draw: the noise
+        self._meas = self._view(self.x)      # sequence then matches the L3 simulator's)
         o = self._obs(self._meas)
         self._hist = [o] * self.history
         self._last_a = np.zeros(2, np.float32)
@@ -270,6 +280,9 @@ class RacingEnv(gym.Env):
         if self.history == 1:
             return self._hist[-1]
         return np.concatenate(self._hist + [self._last_a]).astype(np.float32)
+
+    def _view(self, x):
+        return self.sim.observe(x) if isinstance(self.sim, LaggedSim) else x
 
     def _measure(self, x):
         """The state the controller sees (with the L3 measurement noise if enabled); the
@@ -288,7 +301,7 @@ class RacingEnv(gym.Env):
         tr = self.track
         ds_total, crashed, reason = 0.0, False, ""
         for _ in range(self.ctrl_every):
-            u = self.sim.apply_limits(self.x, self.ctl(self.t, self._measure(self.x)))
+            u = self.sim.apply_limits(self.x, self.ctl(self.t, self._measure(self._view(self.x))))
             self.x = self.sim.step(self.x, u)
             self.t += self.dt
             s, mr, mf = self.margins(self.x)
@@ -318,13 +331,16 @@ class RacingEnv(gym.Env):
 
 
 def evaluate_lap(policy, env: RacingEnv, plant=None, disturbances: bool = False, dist_seed: int = 0,
-                 t_max: float = 120.0) -> dict:
+                 t_max: float = 120.0, steer_lag: float | None = None) -> dict:
     """One flying lap from the start of the plan with a deterministic policy (``policy``:
-    obs -> action, or None for the bare tracker)."""
+    obs -> action, or None for the bare tracker); ``steer_lag``: plant steering lag (L6)."""
     episode_s = env.episode_s
     env.episode_s = t_max
-    obs, _ = env.reset(options={"plant": plant if plant is not None else env.nominal, "start_index": 0,
-                                "disturbances": disturbances, "dist_seed": dist_seed})
+    opts = {"plant": plant if plant is not None else env.nominal, "start_index": 0,
+            "disturbances": disturbances, "dist_seed": dist_seed}
+    if steer_lag is not None:
+        opts["steer_lag"] = steer_lag
+    obs, _ = env.reset(options=opts)
     L = env.track.length
     done, info = False, {}
     while not done:

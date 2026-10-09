@@ -24,6 +24,12 @@ the slip angles at stage 0, fixed by the measured state, can no longer make the
 problem infeasible (``soft_limits=False`` restores the hard version, kept as an
 ablation). Multiple shooting with one RK4 step per MPC step, IPOPT with warm
 start; if a solve fails, the shifted previous plan is applied instead.
+
+``steer_lag=tau`` (L6) gives the model a first-order steering actuator: the state
+gets the commanded angle as an eighth entry, the input moves it, and the angle
+in the tyre model follows with delta' = (delta_cmd - delta) / tau. The lag is
+integrated exactly within each MPC step (the rate is constant there), the rest
+of the state by RK4 with the exact steering angle at the RK4 nodes.
 """
 from __future__ import annotations
 
@@ -50,7 +56,7 @@ class FrenetMPC:
     def __init__(self, track: Track, veh: DynVehicle, ref: dict, mode: str = "track",
                  N: int = 30, dt: float = 0.05, eta=0.97, margin: float = 0.3,
                  weights: dict | None = None, max_iter: int = 500, soft_limits: bool | int = True,
-                 backoff=None):
+                 backoff=None, steer_lag: float | None = None):
         """``ref``: arrays over centre-line arclength ref['s'] with keys n, xi, vx (the
         reference trajectory, e.g. an L1 plan; in MPCC mode only vx is used, as a
         terminal speed bound). ``eta``: friction factor, a number or one value per
@@ -60,10 +66,14 @@ class FrenetMPC:
         the measured state is already past a limit: the slip angles at stage 0 depend on
         the measured state only). ``backoff``: optional extra distance [m] kept from the
         track edges per predicted state (N + 1 values, the first unused), e.g.
-        stochastic constraint tightening (L3)."""
+        stochastic constraint tightening (L3). ``steer_lag``: steering actuator time
+        constant [s] of the model (L6); the state is then 8-dim (see module doc)."""
         eta_k = np.broadcast_to(np.asarray(eta, float), (N,)).copy()
         b_k = np.zeros(N + 1) if backoff is None else np.asarray(backoff, float)
         self.track, self.veh, self.mode, self.N, self.dt = track, veh, mode, N, dt
+        self.steer_lag = steer_lag
+        nx = 7 if steer_lag is None else 8
+        self.nxs = nx
         self.eta, self.eta_k, self.backoff = eta, eta_k, b_k
         w = {"n": 1.0, "xi": 10.0, "v": 0.2, "drate": 1.0, "dF": 0.5, "slack": 1e4, "progress": 1.0,
              "limit_slack": 1e6}           # physics limits cost far more than track limits
@@ -87,21 +97,37 @@ class FrenetMPC:
         f = ca.Function("f", [x, u], [ca.vertcat(sdot, vx * ca.sin(xi) + vy * ca.cos(xi),
                                                  r - k * sdot, dvx, dvy, dr, u[0])])
         h = dt
-        k1 = f(x, u); k2 = f(x + h / 2 * k1, u); k3 = f(x + h / 2 * k2, u); k4 = f(x + h * k3, u)
-        step = ca.Function("step", [x, u], [x + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)])
+        if steer_lag is None:
+            k1 = f(x, u); k2 = f(x + h / 2 * k1, u); k3 = f(x + h / 2 * k2, u); k4 = f(x + h * k3, u)
+            step = ca.Function("step", [x, u], [x + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)])
+        else:
+            xl = ca.SX.sym("xl", 8)
+            tau, a0, c0, rho = float(steer_lag), xl[6], xl[7], u[0]
 
-        X = ca.SX.sym("X", 7, N + 1)
+            def d_at(t):                                # exact lag response to a ramp command
+                return c0 + rho * (t - tau) + (a0 - c0 + rho * tau) * ca.exp(-t / tau)
+
+            def f6(z, dd):                              # first six rates at steering angle dd
+                return f(ca.vertcat(z, dd), u)[:6]
+
+            z0 = xl[:6]
+            k1 = f6(z0, a0); k2 = f6(z0 + h / 2 * k1, d_at(h / 2))
+            k3 = f6(z0 + h / 2 * k2, d_at(h / 2)); k4 = f6(z0 + h * k3, d_at(h))
+            step = ca.Function("step", [xl, u], [ca.vertcat(z0 + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4),
+                                                            d_at(h), c0 + rho * h)])
+
+        X = ca.SX.sym("X", nx, N + 1)
         U = ca.SX.sym("U", 3, N)
         S = ca.SX.sym("S", 2, N + 1)                  # track-limit slacks (front, rear points)
         n_soft = N if soft_limits is True else int(soft_limits)
         T = ca.SX.sym("T", 4, n_soft)                   # ellipse (front, rear) and slip slacks
-        P = ca.SX.sym("P", 7 + 3)                     # initial state, previous input
+        P = ca.SX.sym("P", nx + 3)                    # initial state, previous input
         g, lbg, ubg = [], [], []
         J = 0
-        g.append(X[:, 0] - P[:7]); lbg += [0] * 7; ubg += [0] * 7
+        g.append(X[:, 0] - P[:nx]); lbg += [0] * nx; ubg += [0] * nx
         body = veh.half_width + margin
         for i in range(N):
-            g.append(X[:, i + 1] - step(X[:, i], U[:, i])); lbg += [0] * 7; ubg += [0] * 7
+            g.append(X[:, i + 1] - step(X[:, i], U[:, i])); lbg += [0] * nx; ubg += [0] * nx
             Fi = tyre_forces(veh, X[3, i], X[4, i], X[5, i], X[6, i], U[1, i] * FS, U[2, i] * FS, lib=ca)
             uf2 = (Fi["fxf"] / (veh.mu_x * Fi["fzf"])) ** 2 + (Fi["fyf"] / (veh.mu_y * Fi["fzf"])) ** 2
             ur2 = (Fi["fxr"] / (veh.mu_x * Fi["fzr"])) ** 2 + (Fi["fyr"] / (veh.mu_y * Fi["fzr"])) ** 2
@@ -120,7 +146,7 @@ class FrenetMPC:
                 g += [uf2, ur2, Fi["af"], Fi["ar"], U[1, i] * FS * X[3, i]]
                 lbg += [-ca.inf, -ca.inf, -veh.alpha_peak, -veh.alpha_peak, -ca.inf]
                 ubg += [eta_k[i]**2, eta_k[i]**2, veh.alpha_peak, veh.alpha_peak, veh.P_max]
-            du = U[:, i] - (P[7:] if i == 0 else U[:, i - 1])
+            du = U[:, i] - (P[nx:] if i == 0 else U[:, i - 1])
             J += h * (w["drate"] * U[0, i] ** 2 + w["dF"] * (du[1] ** 2 + du[2] ** 2) / h)
         for i in range(1, N + 1):
             si, ni, xii = X[0, i], X[1, i], X[2, i]
@@ -139,15 +165,17 @@ class FrenetMPC:
             g.append(X[3, N] - vref(X[0, N])); lbg.append(-ca.inf); ubg.append(0.0)
 
         z = ca.vertcat(ca.vec(X), ca.vec(U), ca.vec(S), ca.vec(T))
-        self.nx = 7 * (N + 1)
+        self.nx = nx * (N + 1)
         self.nu = 3 * N
         lbz = np.full(z.shape[0], -np.inf)
         ubz = np.full(z.shape[0], np.inf)
-        Xi = np.arange(self.nx).reshape(N + 1, 7)          # vec() is column-major: X[:, i] contiguous
+        Xi = np.arange(self.nx).reshape(N + 1, nx)         # vec() is column-major: X[:, i] contiguous
         Ui = self.nx + np.arange(self.nu).reshape(N, 3)
         Si = self.nx + self.nu + np.arange(2 * (N + 1)).reshape(N + 1, 2)
         lbz[Xi[:, 3]] = 2.0
         lbz[Xi[:, 6]], ubz[Xi[:, 6]] = -veh.delta_max, veh.delta_max
+        if nx == 8:                                     # the commanded angle is the limited one
+            lbz[Xi[:, 7]], ubz[Xi[:, 7]] = -veh.delta_max, veh.delta_max
         lbz[Ui[:, 0]], ubz[Ui[:, 0]] = -veh.delta_rate_max, veh.delta_rate_max
         lbz[Ui[:, 1]], ubz[Ui[:, 1]] = 0.0, np.inf
         lbz[Ui[:, 2]], ubz[Ui[:, 2]] = -np.inf, 0.0
@@ -214,7 +242,7 @@ class FrenetMPC:
 
 
     def prediction(self) -> tuple[np.ndarray, np.ndarray]:
-        """Predicted states (N + 1, 7) and inputs (N, 3, forces in N) of the last solve."""
+        """Predicted states (N + 1, 7 or 8) and inputs (N, 3, forces in N) of the last solve."""
         return self.z[self.Xi].copy(), self.z[self.Ui] * np.array([1.0, FS, FS])
 
 
@@ -264,4 +292,53 @@ class MPCController:
             veh = self.mpc.veh
             d_next = x[6] + np.clip(drate, -veh.delta_rate_max, veh.delta_rate_max) * self.sim_dt
             fd, fb = traction_limit(veh, x, d_next, fd, fb, self.tc_eta)
+        return drate, fd, fb
+
+
+class LagAwareMPCController(MPCController):
+    """Controller for an MPC with ``steer_lag`` (the correct structure, L6). It
+    receives the 7-dim state with its own commanded angle in the steering slot and
+    reconstructs the road-wheel angle with an open-loop observer of the lag (exact
+    in the noise-free case: the angle is a deterministic function of the commands)."""
+
+    def __init__(self, mpc: FrenetMPC, sim_dt: float, tc_eta: float | None = 0.99,
+                 record: bool = False):
+        if mpc.steer_lag is None:
+            raise ValueError("the MPC has no steering lag")
+        super().__init__(mpc, sim_dt, tc_eta, record)
+        self.tau = float(mpc.steer_lag)
+        self.d_hat = None
+        self.c_prev = None
+        self.t_prev = None
+
+    def observe(self, t: float, dc: float) -> float:
+        """Advance the road-wheel angle estimate to time t (commanded angle dc now);
+        the command is a ramp between two calls."""
+        if self.d_hat is None:
+            self.d_hat = dc                            # start in steady steering
+        else:
+            h = t - self.t_prev
+            if h > 0.0:
+                rho = (dc - self.c_prev) / h
+                tau = self.tau
+                self.d_hat = dc - rho * tau + (self.d_hat - self.c_prev + rho * tau) * np.exp(-h / tau)
+        self.c_prev, self.t_prev = dc, t
+        return self.d_hat
+
+    def __call__(self, t: float, x: np.ndarray):
+        d_hat = self.observe(t, float(x[6]))
+        xa = np.array(x, float)
+        xa[6] = d_hat
+        xf = np.concatenate([self.frenet(xa), [x[6]]])
+        if t + 1e-9 >= self.t_next:
+            u, info = self.mpc.solve(xf, self.u)
+            self.u = u
+            self.t_next = t + self.mpc.dt
+            self.log.append((t, xf[0], xf[1], info["time"], info["status"], info["slack"]))
+            if self.record:
+                self.predictions.append((t, *self.mpc.prediction()))
+        drate, fd, fb = float(self.u[0]), float(self.u[1]), float(self.u[2])
+        if self.tc_eta is not None:                    # traction control at the predicted angle
+            d_next = d_hat + (x[6] - d_hat) * (1.0 - np.exp(-self.sim_dt / self.tau))
+            fd, fb = traction_limit(self.mpc.veh, xa, d_next, fd, fb, self.tc_eta)
         return drate, fd, fb
