@@ -27,7 +27,9 @@ from __future__ import annotations
 
 import json
 import time
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass, replace
+from pathlib import Path
 
 import numpy as np
 
@@ -40,7 +42,70 @@ from ..sim.lagged import LaggedSim
 from ..track import Track
 from .l1 import dyn_reference
 from .l2 import ref_from_plan, x0_from_plan
-from .l4 import replan
+from .l4 import replan as _replan
+
+def _alive(pid: int) -> bool:
+    """Whether a process exists (without signalling it: os.kill would terminate it on Windows)."""
+    import os
+
+    if os.name == "nt":
+        import ctypes
+
+        k = ctypes.windll.kernel32
+        h = k.OpenProcess(0x1000, False, pid)          # PROCESS_QUERY_LIMITED_INFORMATION
+        if not h:
+            return False
+        code = ctypes.c_ulong()
+        k.GetExitCodeProcess(h, ctypes.byref(code))
+        k.CloseHandle(h)
+        return code.value == 259                        # STILL_ACTIVE
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False
+
+
+@contextmanager
+def replan_slot():
+    """Machine-wide limit on simultaneous re-plans: one minimum-time OCP solve needs about
+    5.5 GB, and too many at once ran the machine out of memory (2026-10-10). At most
+    ``L6_REPLAN_SLOTS`` (default 2) hold a lock file in ``L6_SLOT_DIR`` (default: the
+    temp directory); a lock whose process has died is removed."""
+    import os
+    import tempfile
+
+    d = Path(os.environ.get("L6_SLOT_DIR", Path(tempfile.gettempdir()) / "f1race_replan_slots"))
+    d.mkdir(parents=True, exist_ok=True)
+    n = int(os.environ.get("L6_REPLAN_SLOTS", 2))
+    while True:
+        for i in range(n):
+            f = d / f"slot{i}"
+            try:
+                fd = os.open(f, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            except FileExistsError:
+                try:
+                    pid = int(f.read_text() or 0)
+                except (OSError, ValueError):
+                    pid = 0
+                if pid and not _alive(pid):
+                    f.unlink(missing_ok=True)
+                continue
+            os.write(fd, str(os.getpid()).encode())
+            os.close(fd)
+            try:
+                yield
+            finally:
+                f.unlink(missing_ok=True)
+            return
+        time.sleep(5.0)
+
+
+def replan(*args, **kwargs):
+    """``l4.replan`` within a re-plan slot (results unchanged)."""
+    with replan_slot():
+        return _replan(*args, **kwargs)
+
 
 CONTROLLERS = ("tracker", "nmpc", "explore", "smpc", "identified", "oracle_param", "lag_nominal",
                "oracle_struct", "lag_identified")
