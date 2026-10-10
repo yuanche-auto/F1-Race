@@ -121,8 +121,15 @@ Figures are not expected to be byte-identical across versions.
   round 2 (ran during the overload) and the other affected records.
 * 2026-10-10 14:40 the machine was shut down (angle ablation finished at 12:20, round 3 at 24 of
   25 cars, round 4 not started). The low-memory guard (`../F1-Race-wt-L6-rerun/results/memguard.sh`)
-  had reduced re-plans to one at a time at 12:02. User 15:05: continue. Running since 15:15
-  (`../F1-Race-wt-L6-rerun/results/lanes3.sh`): round 3 car 24 and round 4 (7 workers).
+  had reduced re-plans to one at a time at 12:02. User 15:05: continue. Restarted 15:15; within
+  minutes 15 round-4 jobs and the round-3 job failed with `bad_alloc` / numpy `MemoryError` while
+  8–9 GB were physically free. **Root cause:** a worker that has solved a minimum-time OCP keeps
+  ~3 GB of committed (private) memory, and pool workers are reused, so the commit limit (RAM +
+  page file, 50 GB, ~21 GB of it free for these runs) was exhausted – also the likely cause of
+  the morning's overload. Fix 09fd8f4: a fresh worker process per job (`maxtasksperchild=1`),
+  one re-plan at a time by default. Running since 15:24 (`../F1-Race-wt-L6-rerun/results/lanes3b.sh`,
+  failed jobs retried once): round 3 car 24, round 4 (7 workers); the memory log now also
+  records the free commit (`free_virtual_MB`).
 * Pipeline: `python scripts/run_l6.py round1 ...` (resumable: finished laps in
   `results/L6/round1.jsonl` are skipped; errors in `results/L6/errors.log`), RL baseline
   `scripts/l6_rl.py` in `.venv-rl`, tables `python scripts/run_l6.py report`.
