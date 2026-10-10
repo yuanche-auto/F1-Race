@@ -24,7 +24,7 @@ LAP = 4315.0
 STYLE = {"tracker": ("L1 tracker", "tab:gray", "x"), "nmpc": ("NMPC, nominal", "tab:blue", "o"),
          "explore": ("NMPC, 12 % reserve", "tab:cyan", "s"), "smpc": ("SMPC (L3)", "tab:purple", "D"),
          "identified": ("NMPC, identified (L4)", "tab:orange", "^"),
-         "lag_nominal": ("NMPC + lag model (true τ)", "tab:green", "v"),
+         "lag_nominal": ("NMPC, nominal param. + lag model", "tab:green", "v"),
          "lag_identified": ("NMPC + lag, τ identified", "tab:olive", "P"),
          "lag_half": ("NMPC + lag model 0.5 τ", "yellowgreen", "<"),
          "lag_double": ("NMPC + lag model 2 τ", "darkgreen", ">"),
