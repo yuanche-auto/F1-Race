@@ -91,11 +91,15 @@ Figures are not expected to be byte-identical across versions.
 * Runs in progress (started 2026-10-09; check the `chain_*.log` files):
   * `../F1-Race-wt-L6-run` (20b314b): `results/L6/chain_round1.sh` – 1a (first controllers ran
     in `../F1-Race-wt-L6`, copied over), 1a additions, 1b at 60 → 30 → 10 ms, angle ablation;
-    then `chain_round23.sh` checks out a5dacce and runs the RL sweep on the nominal car,
-    round 3 and round 2;
   * `../F1-Race-wt-L6-run311` (20b314b, `.venv-311`, 3 workers): `chain_env311.sh` – the
     second-environment check (1a, and nmpc / identified / oracle_struct at 60 ms);
   * the RL baseline at 10 / 30 / 60 ms is done (`../F1-Race-wt-L6-run/results/L6/rl.jsonl`).
+  * 2026-10-10 00:45, user: the machine is free tonight, use more of the CPU. Rounds 3 and 2
+    (60 and 30 ms) were started right away in `../F1-Race-wt-L6-run23` (be9cdb6; same run code as
+    a5dacce), 4 workers each, next to the 8 of round 1; `chain_round23.sh` was stopped. After
+    round 1, `chain_after_round1.sh` there runs the RL sweep on the nominal car and round 2 at
+    10 ms (8 workers, `results/L6_tau10`). Solve times recorded from now on are under full
+    load (16 processes on 8 cores) and are not comparable to the earlier ones.
   The reviewer cleared 1b after amendments A1–A8 and expects a results review request.
 * Pipeline: `python scripts/run_l6.py round1 ...` (resumable: finished laps in
   `results/L6/round1.jsonl` are skipped; errors in `results/L6/errors.log`), RL baseline
