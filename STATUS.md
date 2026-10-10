@@ -101,6 +101,17 @@ Figures are not expected to be byte-identical across versions.
     10 ms (8 workers, `results/L6_tau10`). Solve times recorded from now on are under full
     load (16 processes on 8 cores) and are not comparable to the earlier ones.
   The reviewer cleared 1b after amendments A1–A8 and expects a results review request.
+* **Overload, 2026-10-10 03:00–09:00**: after round 1, round 2 at 10 ms (8 workers) started next
+  to rounds 2 and 3 (4 + 4) and the RL sweep – about 18 processes, out of memory (`std::bad_alloc`);
+  the angle ablation failed, round 3 aborted after 12 of 25 cars, the machine froze and the user
+  quit the session. My mistake: too many parallel pools for ~12 GB of free memory. Kept: round 1
+  (finished before), the RL sweep (no solver). Re-run in `../F1-Race-wt-L6-rerun` (fa7ba35: failing
+  jobs no longer abort a pool), at most 8 processes in two lanes (`results/lanes.sh`, memory log
+  `results/memlog.txt`): the whole angle ablation; round 3 for the 13 missing cars and cars 6
+  and 7 (the two with solver fallbacks); round 2 at 60 and 30 ms entirely and the 8 jobs at 10 ms
+  with solver fallbacks; the 8 round-1 laps at 10 ms with solver fallbacks. Records without any
+  solver fallback or retried re-plan are deterministic and kept; every re-run is compared with
+  the original (a determinism check).
 * Pipeline: `python scripts/run_l6.py round1 ...` (resumable: finished laps in
   `results/L6/round1.jsonl` are skipped; errors in `results/L6/errors.log`), RL baseline
   `scripts/l6_rl.py` in `.venv-rl`, tables `python scripts/run_l6.py report`.
