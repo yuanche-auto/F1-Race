@@ -316,7 +316,7 @@ def report() -> None:
                         lines.append(f"| {1000 * t:.0f} ms | {a} vs {b} | {pr['only_a']} | {pr['only_b']} | {pr['p']:.3g} |")
             lines.append("")
     (OUT / "tables_round1.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
-    more = report_round2() + report_round3()
+    more = report_round2() + report_round3() + report_round4()
     if more:
         (OUT / "tables_rounds23.md").write_text("\n".join(more) + "\n", encoding="utf-8")
     print("\n".join(lines + more))
@@ -417,6 +417,42 @@ def report_round3() -> list[str]:
     for a, b in (("noisy_ls_smooth", "noisy_ls"), ("noisy_ekf", "noisy_ls")):
         pr = paired(r3, 0.0, a, b)
         lines.append(f"| {a} vs {b} | {pr['only_a']} | {pr['only_b']} | {pr['p']:.3g} |")
+    return lines + [""]
+
+
+def report_round4() -> list[str]:
+    from f1race.estimation.identify import PARAMS
+
+    r4 = load_jsonl(OUT / "round4.jsonl")
+    if not r4:
+        return []
+    r1 = load_jsonl(OUT / "round1.jsonl")
+    tau = r4[0]["tau"]
+    lines = [f"### Round 4 – lag ({1000 * tau:.0f} ms), parameter errors and sensor noise (25 cars)", "",
+             "| identification | laps completed | mean lap | identified τ (median, range) | largest parameter "
+             "error (median) | cars with a factor on its bound |", "|---|---|---|---|---|---|"]
+    for c in ("noisy_lag_ls", "noisy_lag_ekf"):
+        rs = [r for r in r4 if r["controller"] == c]
+        done = [r for r in rs if r["completed"]]
+        t = np.array([r["identification"]["tau"] for r in rs]) * 1000
+        lines.append(f"| {c} | {len(done)}/{len(rs)} | "
+                     + (f"{np.mean([r['lap_time'] for r in done]):.2f} s" if done else "–")
+                     + f" | {np.median(t):.1f} ms ({t.min():.1f}–{t.max():.1f}) | "
+                     f"{np.median([r['identification']['max_abs_error'] for r in rs]):.3f} | "
+                     f"{sum(r['identification']['on_bounds'] > 0 for r in rs)} |")
+    res = r4 + [r for r in r1 if r["tau"] == tau and r["observe"] == "command"]
+    lines += ["", "| comparison (same cars) | only the first | only the second | exact McNemar p |", "|---|---|---|---|"]
+    for a, b in (("noisy_lag_ekf", "noisy_lag_ls"), ("noisy_lag_ekf", "lag_identified"),
+                 ("noisy_lag_ekf", "oracle_struct")):
+        pr = paired(res, tau, a, b)
+        lines.append(f"| {a} vs {b} | {pr['only_a']} | {pr['only_b']} | {pr['p']:.3g} |")
+    idx = {(r["car"], r["controller"]): r for r in res}
+    for b in ("lag_identified", "oracle_struct"):
+        d = [idx[(c, "noisy_lag_ekf")]["lap_time"] - idx[(c, b)]["lap_time"] for c in range(25)
+             if (c, b) in idx and idx[(c, "noisy_lag_ekf")]["completed"] and idx[(c, b)]["completed"]]
+        if d:
+            lines.append(f"\nLap time noisy_lag_ekf minus {b} on the {len(d)} cars both complete: "
+                         f"mean {np.mean(d):+.2f} s, range {np.min(d):+.2f} to {np.max(d):+.2f} s.")
     return lines + [""]
 
 
