@@ -71,14 +71,19 @@ def replan_slot():
     """Machine-wide limit on simultaneous re-plans: one minimum-time OCP solve needs about
     5.5 GB, and too many at once ran the machine out of memory (2026-10-10). At most
     ``L6_REPLAN_SLOTS`` (default 1) hold a lock file in ``L6_SLOT_DIR`` (default: the
-    temp directory); a lock whose process has died is removed."""
+    temp directory); a lock whose process has died is removed. A file ``limit`` in that
+    directory overrides the number while the runs are going."""
     import os
     import tempfile
 
     d = Path(os.environ.get("L6_SLOT_DIR", Path(tempfile.gettempdir()) / "f1race_replan_slots"))
     d.mkdir(parents=True, exist_ok=True)
-    n = int(os.environ.get("L6_REPLAN_SLOTS", 1))
     while True:
+        n = int(os.environ.get("L6_REPLAN_SLOTS", 1))
+        try:                                            # adjustable while running: <dir>/limit
+            n = int((d / "limit").read_text())
+        except (OSError, ValueError):
+            pass
         for i in range(n):
             f = d / f"slot{i}"
             try:
