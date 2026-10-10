@@ -38,6 +38,9 @@ from f1race.experiments.l6 import (CONTROLLERS, NEEDS_EXPLORE, L6Config, config_
                                    summarize)
 
 OUT = ROOT / "results" / "L6"
+# Every job runs in a fresh worker process (maxtasksperchild=1): a process that has solved a
+# minimum-time OCP keeps ~3 GB of committed memory, and reused workers exhausted the commit
+# limit on 2026-10-10.
 NL = chr(10)
 
 
@@ -53,7 +56,7 @@ def oracle_plans(cfg: L6Config, plans: dict) -> dict:
     cars = sample_plants(DynVehicle(), cfg.n_plants, cfg.seed)
     todo = [(k, v, plans, config_dict(cfg)) for k, (_, v) in enumerate(cars) if k not in have]
     if todo:
-        with get_context("spawn").Pool(min(cfg.workers, len(todo))) as pool:
+        with get_context("spawn").Pool(min(cfg.workers, len(todo)), maxtasksperchild=1) as pool:
             for k, o, log in pool.imap_unordered(oracle_plan_job, todo):
                 have[k] = {"plan": o, "log": log}
                 print("oracle plan", k, log, flush=True)
@@ -118,7 +121,7 @@ def round1(cfg: L6Config, taus, controllers, cars, observe: str) -> None:
             jobs = after_explore(r) + jobs
     print(f"{len(jobs)} jobs (+ identification laps after the exploration laps)", flush=True)
     pending = deque(jobs)
-    with ProcessPoolExecutor(cfg.workers, mp_context=get_context("spawn")) as ex, \
+    with ProcessPoolExecutor(cfg.workers, mp_context=get_context("spawn"), max_tasks_per_child=1) as ex, \
             open(path, "a", encoding="utf-8") as f:
         futs = {}
 
@@ -180,7 +183,7 @@ def round2(cfg: L6Config, taus, cars, observe: str) -> None:
                          "plans": plans, "explore_file": str(f)})
     print(f"{len(jobs)} round-2 jobs", flush=True)
     cfgd = config_dict(cfg)
-    with get_context("spawn").Pool(cfg.workers) as pool, open(path, "a", encoding="utf-8") as fo:
+    with get_context("spawn").Pool(cfg.workers, maxtasksperchild=1) as pool, open(path, "a", encoding="utf-8") as fo:
         for recs in pool.imap_unordered(safe_job, [(run_round2_job, (j, cfgd)) for j in jobs]):
             if _errors(recs):
                 continue
@@ -202,7 +205,7 @@ def round3(cfg: L6Config, cars) -> None:
     jobs = [({"car": c, "info": plants[c][0], "plant": plants[c][1], "plans": plans}, config_dict(cfg))
             for c in cars if c not in done]
     print(f"{len(jobs)} round-3 jobs", flush=True)
-    with get_context("spawn").Pool(cfg.workers) as pool, open(path, "a", encoding="utf-8") as fo:
+    with get_context("spawn").Pool(cfg.workers, maxtasksperchild=1) as pool, open(path, "a", encoding="utf-8") as fo:
         for recs in pool.imap_unordered(safe_job, [(run_round3_job, j) for j in jobs]):
             if _errors(recs):
                 continue
@@ -230,7 +233,7 @@ def round4(cfg: L6Config, cars, tau: float = 0.06) -> None:
         jobs.append(({"car": c, "info": plants[c][0], "plant": plants[c][1], "plans": plans, "tau": tau,
                       "explore_file": str(f)}, config_dict(cfg)))
     print(f"{len(jobs)} round-4 jobs", flush=True)
-    with get_context("spawn").Pool(cfg.workers) as pool, open(path, "a", encoding="utf-8") as fo:
+    with get_context("spawn").Pool(cfg.workers, maxtasksperchild=1) as pool, open(path, "a", encoding="utf-8") as fo:
         for recs in pool.imap_unordered(safe_job, [(run_round4_job, j) for j in jobs]):
             if _errors(recs):
                 continue
