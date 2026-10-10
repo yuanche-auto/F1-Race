@@ -119,6 +119,10 @@ Figures are not expected to be byte-identical across versions.
   `../F1-Race-wt-L6-r4/results/L6/chain_round4.sh` (round 4, amendment A9; 8 workers). Replays done
   before the change: 6 round-1 laps at 10 ms, all identical. Pending decision of the user: replay
   round 2 (ran during the overload) and the other affected records.
+* 2026-10-10 14:40 the machine was shut down (angle ablation finished at 12:20, round 3 at 24 of
+  25 cars, round 4 not started). The low-memory guard (`../F1-Race-wt-L6-rerun/results/memguard.sh`)
+  had reduced re-plans to one at a time at 12:02. User 15:05: continue. Running since 15:15
+  (`../F1-Race-wt-L6-rerun/results/lanes3.sh`): round 3 car 24 and round 4 (7 workers).
 * Pipeline: `python scripts/run_l6.py round1 ...` (resumable: finished laps in
   `results/L6/round1.jsonl` are skipped; errors in `results/L6/errors.log`), RL baseline
   `scripts/l6_rl.py` in `.venv-rl`, tables `python scripts/run_l6.py report`.
