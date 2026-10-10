@@ -82,3 +82,74 @@ def ekf_identify(state: np.ndarray, inputs: np.ndarray, usage: np.ndarray, dt: f
     theta = s[4:]
     return {"theta": theta, "std": np.sqrt(np.diag(P)[4:]), "vehicle": vehicle_from(theta, nominal),
             "skipped": skipped, "samples": len(state) - 1 - skipped}
+
+
+TAU_LO, TAU_HI = 0.005, 0.3
+
+
+def _lag_step_function(nominal: DynVehicle, h: float) -> ca.Function:
+    """One step of the model with the steering lag: s = (v_x, v_y, r, delta_cmd, delta,
+    theta_1..7, tau); the lag is integrated exactly for the ramp command, the body states by
+    RK4 with the exact road-wheel angle at the nodes (as in ``FrenetMPC``)."""
+    p = len(PARAMS)
+    s = ca.SX.sym("s", 5 + p + 1)
+    u = ca.SX.sym("u", 3)
+    fac = dict(zip(PARAMS, [s[5 + i] for i in range(p)]))
+    veh = replace(nominal, mu_x=nominal.mu_x * fac["mu"], mu_y=nominal.mu_y * fac["mu"], m=nominal.m * fac["m"],
+                  ClA=nominal.ClA * fac["ClA"], CdA=nominal.CdA * fac["CdA"], Iz=nominal.Iz * fac["Iz"],
+                  B=nominal.B * fac["B"], aero_front=nominal.aero_front + fac["aero_front"])
+    tau = ca.fmax(s[5 + p], TAU_LO)
+    c0, a0, rho = s[3], s[4], u[0]
+
+    def d_at(t):
+        return c0 + rho * (t - tau) + (a0 - c0 + rho * tau) * ca.exp(-t / tau)
+
+    def f(z, d):
+        F = tyre_forces(veh, z[0], z[1], z[2], d, u[1], u[2], lib=ca)
+        return ca.vertcat(*body_accel(veh, z[0], z[1], z[2], d, F, lib=ca))
+
+    z = s[:3]
+    k1 = f(z, a0); k2 = f(z + h / 2 * k1, d_at(h / 2)); k3 = f(z + h / 2 * k2, d_at(h / 2)); k4 = f(z + h * k3, d_at(h))
+    sn = ca.vertcat(z + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4), c0 + rho * h, d_at(h), s[5:])
+    return ca.Function("lag_step", [s, u], [sn, ca.jacobian(sn, s)])
+
+
+def ekf_identify_lag(state: np.ndarray, inputs: np.ndarray, usage: np.ndarray, dt: float, nominal: DynVehicle,
+                     sigma: np.ndarray, tau0: float = 0.05, accel_sd: float = 0.5, yaw_accel_sd: float = 0.05,
+                     theta_walk_sd: float = 1e-5, tau_walk_sd: float = 1e-5, usage_max: float = 0.98) -> dict:
+    """``ekf_identify`` on the model with the correct structure (L6, round 4): the steering
+    slot of the logged state is the commanded angle, the road-wheel angle is a hidden state
+    of the filter and the lag's time constant is estimated with the parameter factors."""
+    step = _lag_step_function(nominal, dt)
+    p = len(PARAMS)
+    n = 5 + p + 1
+    sig = np.asarray(sigma, float)
+    R = np.diag(sig[3:7] ** 2)
+    H = np.zeros((4, n)); H[:, :4] = np.eye(4)
+    Q = np.diag(np.r_[(accel_sd * dt) ** 2, (accel_sd * dt) ** 2, (yaw_accel_sd * dt) ** 2, 1e-12, 1e-12,
+                      np.full(p, theta_walk_sd ** 2), tau_walk_sd ** 2])
+    s = np.r_[state[0, 3:7], state[0, 6], X0, tau0]
+    P = np.diag(np.r_[sig[3:7] ** 2, sig[6] ** 2, ((HI - LO) / 4.0) ** 2, ((TAU_HI - TAU_LO) / 4.0) ** 2])
+    skipped = 0
+    for k in range(len(state) - 1):
+        sn, F = step(s, inputs[k])
+        s, F = np.asarray(sn).ravel(), np.asarray(F)
+        P = F @ P @ F.T + Q
+        y = state[k + 1, 3:7]
+        if max(usage[k].max(), usage[k + 1].max()) >= usage_max or state[k, 3] <= 5.0:
+            s[:3] = y[:3]                               # no information on the parameters here
+            s[3] = y[3]
+            P[:4, :] = 0.0; P[:, :4] = 0.0
+            P[:4, :4] = R
+            skipped += 1
+            continue
+        S = H @ P @ H.T + R
+        K = np.linalg.solve(S, H @ P).T
+        s = s + K @ (y - s[:4])
+        P = (np.eye(n) - K @ H) @ P
+        P = 0.5 * (P + P.T)
+        s[5:5 + p] = np.clip(s[5:5 + p], LO, HI)
+        s[5 + p] = np.clip(s[5 + p], TAU_LO, TAU_HI)
+    theta, tau = s[5:5 + p], float(s[5 + p])
+    return {"theta": theta, "tau": tau, "std": np.sqrt(np.diag(P)[5:]), "vehicle": vehicle_from(theta, nominal),
+            "skipped": skipped, "samples": len(state) - 1 - skipped}

@@ -528,3 +528,53 @@ def safe_job(args):
     except Exception:                                   # noqa: BLE001
         job = job_args[0]
         return [{"error": traceback.format_exc(), "car": job.get("car"), "tau": job.get("tau", 0.0)}]
+
+
+# -- round 4: lag + parameter errors + sensor noise (tau = 60 ms) ----------------------
+ROUND4 = ("noisy_lag_ls", "noisy_lag_ekf")
+
+
+def run_round4_job(args) -> list[dict]:
+    """Worker: the saved exploration lap of round 1 (tau, as the controller logged it), the
+    L3 sensor noise added (seed 1000 + car), the lag and the parameters identified by least
+    squares (``identify_with_lag``) and by the EKF with the lag (``ekf_identify_lag``), each
+    re-planned and driven by the lag-aware NMPC with the identified tau (the controllers
+    see the noise-free state, as in L4 and round 3)."""
+    from types import SimpleNamespace
+
+    from ..estimation.ekf import ekf_identify_lag
+    from ..estimation.identify import HI, LO, identify_with_lag
+    from ..sim.stochastic import NOISE_SIGMA
+
+    job, cfg = args
+    track = Track.load(cfg["track"])
+    nom = DynVehicle()
+    plant, plans, eta, car, tau = job["plant"], job["plans"], cfg["eta"], job["car"], job["tau"]
+    t0 = time.time()
+    z = np.load(job["explore_file"])
+    rng = np.random.default_rng(1000 + car)
+    noisy = SimpleNamespace(t=z["t"], state=z["state"] + NOISE_SIGMA * rng.standard_normal(z["state"].shape),
+                            inputs=z["inputs"], usage=z["usage"])
+    true = theta_of(job["info"])
+    idents = {"noisy_lag_ls": identify_with_lag(noisy, cfg["dt"], nom),
+              "noisy_lag_ekf": ekf_identify_lag(noisy.state, noisy.inputs, noisy.usage, cfg["dt"], nom, NOISE_SIGMA)}
+    recs = []
+    for name, ident in idents.items():
+        th = np.asarray(ident["theta"], float)
+        rec = {"round": 4, "car": car, "plant": job["info"], "tau": tau, "observe": "command", "controller": name,
+               "identification": {"theta": th.tolist(), "tau": ident["tau"], "error": (th - true).tolist(),
+                                  "max_abs_error": float(np.abs(th - true).max()),
+                                  "tau_rel_error": float(ident["tau"] / tau - 1.0),
+                                  "on_bounds": int(np.sum(np.isclose(th, LO) | np.isclose(th, HI)))}}
+        o, log = replan(track, ident["vehicle"], [("nominal plan", plans[eta]), ("ideal plan", plans[1.0])], eta)
+        if o is None:
+            rec.update({"completed": False, "stop_reason": "plan failed", "lap_time": float("nan"),
+                        "distance": 0.0, "plan_log": log})
+        else:
+            _, _, out = drive(track, plant, ident["vehicle"], o, eta, tau, cfg, lag_model=max(ident["tau"], 1e-4))
+            out.update({"plan_lap_time": o.lap_time, "plan_log": log})
+            rec.update(out)
+        recs.append(rec)
+    for rec in recs:
+        rec["job_s"] = time.time() - t0
+    return recs

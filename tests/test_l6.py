@@ -223,3 +223,33 @@ def test_ekf_reduces_the_noise_bias(track):
     ekf = ekf_identify(noisy.state, noisy.inputs, noisy.usage, 0.01, nom, NOISE_SIGMA)["theta"]
     assert np.abs(ekf - true).max() < 0.5 * np.abs(ls - true).max()
     assert np.abs(ekf - true).max() < 0.1
+
+
+@pytest.mark.skipif(not CACHE.exists(), reason="run scripts/run_l1.py first")
+def test_ekf_with_lag_recovers_tau_under_noise(track):
+    """Round 4: with the sensor noise, the EKF with the lag structure finds tau and the
+    parameters; the least squares with the lag (differenced noisy velocities) is biased."""
+    from dataclasses import replace
+
+    from f1race.control.dyn_tracking import DynTracker
+    from f1race.estimation.ekf import ekf_identify_lag
+    from f1race.estimation.identify import identify_with_lag, theta_of
+    from f1race.experiments.l1 import dyn_reference
+    from f1race.experiments.l2 import sample_plants, x0_from_plan
+    from f1race.experiments.l6 import observed_run
+    from f1race.sim.lagged import LaggedSim
+    from f1race.sim.stochastic import NOISE_SIGMA
+
+    o, nom = _plan(), DynVehicle()
+    info, plant = sample_plants(nom, 4, 0)[3]
+    path, ff = dyn_reference(track, nom, o)
+    sim = LaggedSim(track, plant, 0.06, 0.01)
+    r = sim.run(DynTracker(path, ff, nom, 0.01, k_p=0.06, x_la=12.0, k_r=0.05, kv=8.0), x0_from_plan(o, path),
+                t_max=25.0)
+    ro = observed_run(r, sim)
+    noisy = replace(ro, state=ro.state + NOISE_SIGMA * np.random.default_rng(3).standard_normal(ro.state.shape))
+    e = ekf_identify_lag(noisy.state, noisy.inputs, noisy.usage, 0.01, nom, NOISE_SIGMA)
+    ls = identify_with_lag(noisy, 0.01, nom)
+    true = theta_of(info)
+    assert abs(e["tau"] / 0.06 - 1.0) < 0.05 and np.abs(e["theta"] - true).max() < 0.05
+    assert np.abs(ls["theta"] - true).max() > 2 * np.abs(e["theta"] - true).max()

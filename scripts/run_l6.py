@@ -9,6 +9,7 @@ Needs the L1 plans, the 12 % plan of L2 and the L3 calibration (results/L3/calib
     python scripts/run_l6.py report                      # tables from round1.jsonl and rl.jsonl
     python scripts/run_l6.py round2 --taus 0.06,0.03,0.01  # residual models + laps -> results/L6/round2.jsonl
     python scripts/run_l6.py round3                      # noise only: LS raw / smoothed / EKF -> round3.jsonl
+    python scripts/run_l6.py round4                      # lag + noise at 60 ms: LS / EKF with the lag -> round4.jsonl
 """
 from __future__ import annotations
 
@@ -31,7 +32,8 @@ sys.path.insert(0, str(ROOT / "src"))
 from f1race.dynamics import DynVehicle  # noqa: E402
 from f1race.experiments.l2 import sample_plants  # noqa: E402
 from f1race.experiments.l6 import (CONTROLLERS, NEEDS_EXPLORE, L6Config, config_dict, key_of,  # noqa: E402
-                                   load_jsonl, oracle_plan_job, paired, run_job, run_round2_job, run_round3_job, safe_job,
+                                   load_jsonl, oracle_plan_job, paired, run_job, run_round2_job, run_round3_job, run_round4_job,
+                                   safe_job,
                                    smpc_spec,
                                    summarize)
 
@@ -211,6 +213,35 @@ def round3(cfg: L6Config, cars) -> None:
             fo.flush()
 
 
+def round4(cfg: L6Config, cars, tau: float = 0.06) -> None:
+    """Lag, parameter errors and sensor noise: noisy identification with the lag."""
+    plans = base_plans()
+    plants = sample_plants(DynVehicle(), cfg.n_plants, cfg.seed)
+    path = OUT / "round4.jsonl"
+    done = {r["car"] for r in load_jsonl(path)}
+    jobs = []
+    for c in cars:
+        f = OUT / "explore" / f"explore_{c}_{tau}_command.npz"
+        if c in done:
+            continue
+        if not f.exists():
+            print("missing exploration lap", f, flush=True)
+            continue
+        jobs.append(({"car": c, "info": plants[c][0], "plant": plants[c][1], "plans": plans, "tau": tau,
+                      "explore_file": str(f)}, config_dict(cfg)))
+    print(f"{len(jobs)} round-4 jobs", flush=True)
+    with get_context("spawn").Pool(cfg.workers) as pool, open(path, "a", encoding="utf-8") as fo:
+        for recs in pool.imap_unordered(safe_job, [(run_round4_job, j) for j in jobs]):
+            if _errors(recs):
+                continue
+            for rec in recs:
+                fo.write(json.dumps(rec) + NL)
+                print(f"car {rec['car']:2d} {rec['controller']:14s} {rec['stop_reason']:14s} lap {rec['lap_time']:.3f} "
+                      f"tau {rec['identification']['tau']:.4f} max parameter error "
+                      f"{rec['identification']['max_abs_error']:.3f}", flush=True)
+            fo.flush()
+
+
 PAIRS = [("oracle_struct", "oracle_param"), ("lag_nominal", "nmpc"), ("lag_identified", "identified"),
          ("oracle_struct", "lag_identified"), ("identified", "nmpc"),
          ("identified", "oracle_param"), ("oracle_param", "nmpc"), ("smpc", "nmpc"), ("rl", "nmpc")]
@@ -381,7 +412,7 @@ def report_round3() -> list[str]:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=["plans", "round1", "round2", "round3", "report"])
+    ap.add_argument("what", choices=["plans", "round1", "round2", "round3", "round4", "report"])
     ap.add_argument("--taus", default="0.03,0.06,0.12")
     ap.add_argument("--controllers", default=",".join(CONTROLLERS))
     ap.add_argument("--cars", default="all")
@@ -395,6 +426,8 @@ def main() -> None:
     cfg = L6Config(workers=a.workers)
     if a.what == "plans":
         oracle_plans(cfg, base_plans())
+    elif a.what == "round4":
+        round4(cfg, list(range(cfg.n_plants + 1)) if a.cars == "all" else [int(c) for c in a.cars.split(",")])
     elif a.what == "round3":
         round3(cfg, list(range(cfg.n_plants + 1)) if a.cars == "all" else [int(c) for c in a.cars.split(",")])
     elif a.what in ("round1", "round2"):

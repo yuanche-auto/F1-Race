@@ -143,7 +143,14 @@ parameters on their bounds, completion and lap time after re-planning.
 **Round 4 – combined** (τ = 60 ms, noise, the L2 parameter errors): the
 methods of rounds 2 and 3 composed; the noise-robust identification used there
 is the one with the smaller parameter error in round 3 (a choice on
-identification error, not on laps, fixed before round 4 runs).
+identification error, not on laps, fixed before round 4 runs). Fixed in A9:
+the L3 sensor noise (seed 1000 + car) on the saved 60 ms exploration laps of
+round 1; `noisy_lag_ls` (least squares with the lag on the noisy data) and
+`noisy_lag_ekf` (the EKF of round 3 extended by the lag: the road-wheel angle a
+hidden state, τ estimated with the parameters); each re-planned and driven by
+the lag-aware NMPC with its identified τ; the controllers see the noise-free
+state. Metrics: τ and parameter errors, completion, lap time against
+`lag_identified` and `oracle_struct` of round 1 (paired).
 
 ## 6. Metrics and statistics
 
@@ -235,3 +242,30 @@ them):
   excluded with the plant's true ellipse usage, as in L4 (privileged
   information, disclosed there); the same rule is used by the lag
   identification and the EKF.
+
+* **A9** (2026-10-10, before round 4 ran; round 3 had finished 12 of 25 cars):
+  round 4 fixed as written in section 5. The choice of the EKF follows the rule
+  of section 5 on the 12 cars available (median largest parameter error 0.006
+  against 0.41 smoothed and 0.54 raw least squares; it will be checked on all
+  25 cars). Two deviations from "the methods of rounds 2 and 3 composed":
+  (1) no identification without the lag – at 60 ms even the true parameters
+  without a lag model completed 0 of 25 in round 1; (2) the residual model is
+  deferred: round 2 ran during an overload of the machine (A10), its results
+  are not yet verified, and whether it is added to round 4 is decided after
+  that verification. Code check before the run (disclosed): on 25 s of a
+  simulated tracker lap of car 3 with one noise draw, the EKF with the lag found
+  τ = 60.3 ms (true 60) and the parameters to 0.009, at 30 ms τ = 26.6 ms and
+  0.11; the least squares with the lag 41.7 / 17.2 ms and 0.56.
+* **A10** (2026-10-10): overload. After round 1, too many pools ran at once
+  (about 18 processes; one minimum-time OCP solve needs about 5.5 GB) and the
+  machine ran out of memory between about 03:00 and 09:00: the angle ablation
+  failed, round 3 stopped after 12 of 25 cars, the machine froze. Round 1
+  (finished before) and the RL runs are unaffected. Since then at most 8
+  processes and at most two simultaneous re-plans (`replan_slot`), and a failing
+  job no longer aborts a pool. Records with a solver fallback or a retried
+  re-plan that were produced during the overload can be affected (a memory
+  failure inside IPOPT looks like a solver failure); records without either are
+  deterministic and valid. Round 2 ran entirely during the overload. Per the
+  user's instruction the unfinished parts are completed first; which of the
+  affected records are replayed is decided afterwards. Replays done so far: 6
+  round-1 laps at 10 ms, all identical to the originals.
