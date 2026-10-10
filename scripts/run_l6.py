@@ -31,7 +31,8 @@ sys.path.insert(0, str(ROOT / "src"))
 from f1race.dynamics import DynVehicle  # noqa: E402
 from f1race.experiments.l2 import sample_plants  # noqa: E402
 from f1race.experiments.l6 import (CONTROLLERS, NEEDS_EXPLORE, L6Config, config_dict, key_of,  # noqa: E402
-                                   load_jsonl, oracle_plan_job, paired, run_job, run_round2_job, run_round3_job, smpc_spec,
+                                   load_jsonl, oracle_plan_job, paired, run_job, run_round2_job, run_round3_job, safe_job,
+                                   smpc_spec,
                                    summarize)
 
 OUT = ROOT / "results" / "L6"
@@ -147,6 +148,16 @@ def round1(cfg: L6Config, taus, controllers, cars, observe: str) -> None:
             fill()
 
 
+def _errors(recs) -> bool:
+    """Log failed jobs (error records of ``safe_job``); they are re-run on the next call."""
+    bad = [r for r in recs if "error" in r]
+    for r in bad:
+        print("FAILED", r["car"], r["tau"], r["error"].splitlines()[-1], flush=True)
+        with open(OUT / "errors.log", "a", encoding="utf-8") as fe:
+            fe.write(f"{r['car']} {r['tau']}" + NL + r["error"] + NL)
+    return bool(bad)
+
+
 def round2(cfg: L6Config, taus, cars, observe: str) -> None:
     """Residual models from the saved exploration laps of round 1, and their laps."""
     plans = base_plans()
@@ -168,7 +179,9 @@ def round2(cfg: L6Config, taus, cars, observe: str) -> None:
     print(f"{len(jobs)} round-2 jobs", flush=True)
     cfgd = config_dict(cfg)
     with get_context("spawn").Pool(cfg.workers) as pool, open(path, "a", encoding="utf-8") as fo:
-        for recs in pool.imap_unordered(run_round2_job, [(j, cfgd) for j in jobs]):
+        for recs in pool.imap_unordered(safe_job, [(run_round2_job, (j, cfgd)) for j in jobs]):
+            if _errors(recs):
+                continue
             for rec in recs:
                 fo.write(json.dumps(rec) + "\n")
                 cl = rec.get("closed_loop", {})
@@ -188,7 +201,9 @@ def round3(cfg: L6Config, cars) -> None:
             for c in cars if c not in done]
     print(f"{len(jobs)} round-3 jobs", flush=True)
     with get_context("spawn").Pool(cfg.workers) as pool, open(path, "a", encoding="utf-8") as fo:
-        for recs in pool.imap_unordered(run_round3_job, jobs):
+        for recs in pool.imap_unordered(safe_job, [(run_round3_job, j) for j in jobs]):
+            if _errors(recs):
+                continue
             for rec in recs:
                 fo.write(json.dumps(rec) + NL)
                 print(f"car {rec['car']:2d} {rec['controller']:16s} {rec['stop_reason']:14s} lap {rec['lap_time']:.3f} "

@@ -450,3 +450,16 @@ def run_round3_job(args) -> list[dict]:
     for rec in recs:
         rec["job_s"] = time.time() - t0
     return recs
+
+
+def safe_job(args):
+    """Worker wrapper for rounds 2 and 3: a job that raises (e.g. out of memory) returns an
+    error record instead of aborting the whole pool."""
+    import traceback
+
+    fn, job_args = args
+    try:
+        return fn(job_args)
+    except Exception:                                   # noqa: BLE001
+        job = job_args[0]
+        return [{"error": traceback.format_exc(), "car": job.get("car"), "tau": job.get("tau", 0.0)}]
