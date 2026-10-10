@@ -112,6 +112,13 @@ Figures are not expected to be byte-identical across versions.
   with solver fallbacks; the 8 round-1 laps at 10 ms with solver fallbacks. Records without any
   solver fallback or retried re-plan are deterministic and kept; every re-run is compared with
   the original (a determinism check).
+  **Changed the same morning on the user's instruction: finish the unfinished parts first, no
+  replays until the user has looked at the results.** A re-plan needs ~5.5 GB, so at most two run
+  at once machine-wide (d783f90, `replan_slot`). Running now: `../F1-Race-wt-L6-rerun/results/lanes2.sh`
+  (angle ablation + the 13 missing round-3 cars, 4 + 4 workers), then
+  `../F1-Race-wt-L6-r4/results/L6/chain_round4.sh` (round 4, amendment A9; 8 workers). Replays done
+  before the change: 6 round-1 laps at 10 ms, all identical. Pending decision of the user: replay
+  round 2 (ran during the overload) and the other affected records.
 * Pipeline: `python scripts/run_l6.py round1 ...` (resumable: finished laps in
   `results/L6/round1.jsonl` are skipped; errors in `results/L6/errors.log`), RL baseline
   `scripts/l6_rl.py` in `.venv-rl`, tables `python scripts/run_l6.py report`.
