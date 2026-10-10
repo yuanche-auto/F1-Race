@@ -130,6 +130,13 @@ Figures are not expected to be byte-identical across versions.
   one re-plan at a time by default. Running since 15:24 (`../F1-Race-wt-L6-rerun/results/lanes3b.sh`,
   failed jobs retried once): round 3 car 24, round 4 (7 workers); the memory log now also
   records the free commit (`free_virtual_MB`).
+* That was not enough: fresh workers still committed 1–3 GB each – numpy's and scipy's own
+  OpenBLAS reserve ~0.5 GB each with 16 threads. Single-threaded BLAS (afe6160) brings a worker to
+  ~140 MB; checked bit-identical on four nominal-car laps at 10 ms (NMPC, exploration +
+  identification, identified with re-plan, lag model), and the laps run about a third faster. An
+  OCP re-plan still needs ~6.8 GB (5.8 GB resident), so only one at a time (limit file
+  `<temp>/f1race_replan_slots/limit` = 1, 4db4e39). Running since 15:53:
+  `../F1-Race-wt-L6-rerun/results/lanes3c.sh` (round 3 car 24, round 4; two passes each).
 * Pipeline: `python scripts/run_l6.py round1 ...` (resumable: finished laps in
   `results/L6/round1.jsonl` are skipped; errors in `results/L6/errors.log`), RL baseline
   `scripts/l6_rl.py` in `.venv-rl`, tables `python scripts/run_l6.py report`.
