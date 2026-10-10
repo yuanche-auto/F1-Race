@@ -137,6 +137,13 @@ Figures are not expected to be byte-identical across versions.
   OCP re-plan still needs ~6.8 GB (5.8 GB resident), so only one at a time (limit file
   `<temp>/f1race_replan_slots/limit` = 1, 4db4e39). Running since 15:53:
   `../F1-Race-wt-L6-rerun/results/lanes3c.sh` (round 3 car 24, round 4; two passes each).
+* **2026-10-10 18:12: all L6 runs finished** (round 4: 25/25 cars in the first pass). All results
+  merged in `results/L6_final/` of this worktree (git-ignored; `SOURCES.txt` lists where each part
+  ran), tables `python scripts/run_l6.py report --results results/L6_final`, docs/L6.md written
+  (3c057a1). **Waiting for the user's decision on replays** of records produced during the overload:
+  round 2 (52 of 75 jobs with solver fallbacks or retried re-plans; or all 75), round 3 cars 6 and 7
+  (least squares, fallbacks), round 1 at 10 ms: 5 laps not yet replayed (lag_nominal cars 16, 18,
+  22, 23; nmpc car 13). Then the results review request to the reviewer.
 * Pipeline: `python scripts/run_l6.py round1 ...` (resumable: finished laps in
   `results/L6/round1.jsonl` are skipped; errors in `results/L6/errors.log`), RL baseline
   `scripts/l6_rl.py` in `.venv-rl`, tables `python scripts/run_l6.py report`.
