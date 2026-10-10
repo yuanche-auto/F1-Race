@@ -20,6 +20,13 @@ import pickle
 import sys
 import traceback
 from collections import deque
+
+# Single-threaded BLAS in this process and the spawned workers (set before numpy is imported):
+# numpy's and scipy's OpenBLAS each commit ~0.5 GB with 16 threads, which with many workers
+# exhausted the commit limit (2026-10-10). The laps are bit-identical either way (checked on
+# the nominal car at 10 ms: NMPC, exploration, identification and re-plan, lag model).
+for _v in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS"):
+    os.environ.setdefault(_v, "1")
 from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 from multiprocessing import get_context
 from pathlib import Path
