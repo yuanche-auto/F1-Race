@@ -1,4 +1,4 @@
-# STATUS — F1-Race (L0–L5)
+# STATUS — F1-Race (L0–L6 done)
 
 Builder session: "F1-Race 施工者（L0–L5 builder）" [f92a84]. Reviewer: "独立审查员身份和职责".
 Rule: work on branch `layer/Lk`, request review by commit hash, merge to `main` and push only
@@ -14,6 +14,7 @@ after APPROVE. Workflow: [docs/workflow.md](docs/workflow.md).
 | L3 stochastic disturbances | `layer/L3` → `main` | **approved, pushed** to origin/main 2026-10-08 | round 2: APPROVE (nit: truncation definition, fixed on `layer/L5`) |
 | L4 learning / adaptation | `layer/L4` → `main` | **approved, pushed** to origin/main 2026-10-08 | round 1: APPROVE (minors fixed in 66f6cb3) |
 | L5 reinforcement learning | `layer/L5` → `main` | **approved, pushed** to origin/main 2026-10-09 | APPROVE after the multi-seed redo (wording minors fixed in 4fec887) |
+| L6 model mismatch with a structural error | `layer/L6` → `main` | **approved, pushed** to origin/main 2026-10-10 | results review: APPROVE (minors m1–m4 fixed) |
 
 ## L0 summary
 
@@ -35,6 +36,8 @@ Figures are not expected to be byte-identical across versions.
 
 | Date | Commit | Scope | Verdict | Notes |
 |---|---|---|---|---|
+| 2026-10-10 | 284a0e3 | L6 results | **APPROVE** | held-out coverage recomputed in Python 3.11 (identical for 75/75 cases); the 12 lag_nominal failures = the 12 L4 failures; tables checked; minors: no-go basis as amendment A11 + held-out near-limit coverage (m1), SMPC 60 ms only on the nominal car (m2), closed-loop coverage valid but secondary (m3), conformal calibration separate from L7 evaluation laps and round-2 replay before using the residual mean (m4) – fixed in 7f744d3 (table only) and the next commit |
+| 2026-10-09 | 75865d8 | L6 design (roadmap, protocol, lag plant, lag-aware NMPC) | design review, no verdict yet | code verified line by line; MAJOR-1 (structure knowledge = exact τ) → `lag_identified`, τ-mismatch runs; stats rule, coverage details, naming, second-env scope; all fixed as protocol amendments A1–A7 before 1b; attribution of the roadmap critique corrected |
 | 2026-10-09 | 4354579 | L5 redo | **APPROVE** | protocol followed (written before the runs); selection, median seeds, paired tests and blind spots recomputed; evaluation reproduced in Python 3.11; wording minors m1–m4 fixed in 4fec887 |
 | 2026-10-08 | 6552180 | L5 | (preliminary) | first results withdrawn: single training run not reproducible; reviewer asked for non-learning and slowed-NMPC baselines and a multi-seed protocol |
 | 2026-10-08 | 9ce0b25 | L3 fixes | **APPROVE** | recomputed from runs.json / failures.json; four calibrations 28–30/30; honest event rates; nit: truncation by prediction time vs horizon overlap |
@@ -65,6 +68,93 @@ Figures are not expected to be byte-identical across versions.
   parallel with 8 environments each (unchanged training settings).
 * After it finishes: write docs/L5.md from results/L5/multiseed/tables.md and the
   baselines, request the review, merge to main and push after APPROVE (user's rule).
+
+## L6–L10 (started 2026-10-09, user away; decisions recorded here)
+
+* The user asked for an L6–L10 plan, had it criticised (a written critique the user forwarded; not from the repository's review session) and asked for a revised
+  plan "with critical inheritance"; then: save it and start. Roadmap:
+  [docs/ROADMAP_L6-L10.md](docs/ROADMAP_L6-L10.md) (what was taken from the review and what not;
+  the cited literature was checked, all five works exist as cited).
+* L6 protocol: [docs/L6_protocol.md](docs/L6_protocol.md), written before the result-producing runs.
+  Decisions taken without the user:
+  * structural error = first-order steering actuator lag; main observation condition: the
+    controllers see their own commanded angle (the lag is hidden in the car's response); the
+    measured-angle case is an ablation;
+  * the τ grid was changed from the roadmap's 30 / 60 / 120 ms after a feasibility check on the
+    nominal car (disclosed in the protocol): every lag-unaware controller fails there already at
+    30 ms, while the lag-aware NMPC laps at 76.0–76.1 s at every τ; hence a sweep 5–120 ms on the
+    nominal car and 10 / 30 / 60 ms on the 25 cars;
+  * the protocol is sent to the reviewer and round 1 starts at the same time (as for the L5 redo);
+    if the review changes the design, the affected runs are repeated.
+* Result-producing runs use a detached worktree `../F1-Race-wt-L6-run` pinned at the commit
+  named in `results/L6/RUN_COMMIT` there, so that development on `layer/L6` cannot change code
+  under a running pool; its `results/L6` is copied back for the report.
+* Runs in progress (started 2026-10-09; check the `chain_*.log` files):
+  * `../F1-Race-wt-L6-run` (20b314b): `results/L6/chain_round1.sh` – 1a (first controllers ran
+    in `../F1-Race-wt-L6`, copied over), 1a additions, 1b at 60 → 30 → 10 ms, angle ablation;
+  * `../F1-Race-wt-L6-run311` (20b314b, `.venv-311`, 3 workers): `chain_env311.sh` – the
+    second-environment check (1a, and nmpc / identified / oracle_struct at 60 ms);
+  * the RL baseline at 10 / 30 / 60 ms is done (`../F1-Race-wt-L6-run/results/L6/rl.jsonl`).
+  * 2026-10-10 00:45, user: the machine is free tonight, use more of the CPU. Rounds 3 and 2
+    (60 and 30 ms) were started right away in `../F1-Race-wt-L6-run23` (be9cdb6; same run code as
+    a5dacce), 4 workers each, next to the 8 of round 1; `chain_round23.sh` was stopped. After
+    round 1, `chain_after_round1.sh` there runs the RL sweep on the nominal car and round 2 at
+    10 ms (8 workers, `results/L6_tau10`). Solve times recorded from now on are under full
+    load (16 processes on 8 cores) and are not comparable to the earlier ones.
+  The reviewer cleared 1b after amendments A1–A8 and expects a results review request.
+* **Overload, 2026-10-10 03:00–09:00**: after round 1, round 2 at 10 ms (8 workers) started next
+  to rounds 2 and 3 (4 + 4) and the RL sweep – about 18 processes, out of memory (`std::bad_alloc`);
+  the angle ablation failed, round 3 aborted after 12 of 25 cars, the machine froze and the user
+  quit the session. My mistake: too many parallel pools for ~12 GB of free memory. Kept: round 1
+  (finished before), the RL sweep (no solver). Re-run in `../F1-Race-wt-L6-rerun` (fa7ba35: failing
+  jobs no longer abort a pool), at most 8 processes in two lanes (`results/lanes.sh`, memory log
+  `results/memlog.txt`): the whole angle ablation; round 3 for the 13 missing cars and cars 6
+  and 7 (the two with solver fallbacks); round 2 at 60 and 30 ms entirely and the 8 jobs at 10 ms
+  with solver fallbacks; the 8 round-1 laps at 10 ms with solver fallbacks. Records without any
+  solver fallback or retried re-plan are deterministic and kept; every re-run is compared with
+  the original (a determinism check).
+  **Changed the same morning on the user's instruction: finish the unfinished parts first, no
+  replays until the user has looked at the results.** A re-plan needs ~5.5 GB, so at most two run
+  at once machine-wide (d783f90, `replan_slot`). Running now: `../F1-Race-wt-L6-rerun/results/lanes2.sh`
+  (angle ablation + the 13 missing round-3 cars, 4 + 4 workers), then
+  `../F1-Race-wt-L6-r4/results/L6/chain_round4.sh` (round 4, amendment A9; 8 workers). Replays done
+  before the change: 6 round-1 laps at 10 ms, all identical. Pending decision of the user: replay
+  round 2 (ran during the overload) and the other affected records.
+* 2026-10-10 14:40 the machine was shut down (angle ablation finished at 12:20, round 3 at 24 of
+  25 cars, round 4 not started). The low-memory guard (`../F1-Race-wt-L6-rerun/results/memguard.sh`)
+  had reduced re-plans to one at a time at 12:02. User 15:05: continue. Restarted 15:15; within
+  minutes 15 round-4 jobs and the round-3 job failed with `bad_alloc` / numpy `MemoryError` while
+  8–9 GB were physically free. **Root cause:** a worker that has solved a minimum-time OCP keeps
+  ~3 GB of committed (private) memory, and pool workers are reused, so the commit limit (RAM +
+  page file, 50 GB, ~21 GB of it free for these runs) was exhausted – also the likely cause of
+  the morning's overload. Fix 09fd8f4: a fresh worker process per job (`maxtasksperchild=1`),
+  one re-plan at a time by default. Running since 15:24 (`../F1-Race-wt-L6-rerun/results/lanes3b.sh`,
+  failed jobs retried once): round 3 car 24, round 4 (7 workers); the memory log now also
+  records the free commit (`free_virtual_MB`).
+* That was not enough: fresh workers still committed 1–3 GB each – numpy's and scipy's own
+  OpenBLAS reserve ~0.5 GB each with 16 threads. Single-threaded BLAS (afe6160) brings a worker to
+  ~140 MB; checked bit-identical on four nominal-car laps at 10 ms (NMPC, exploration +
+  identification, identified with re-plan, lag model), and the laps run about a third faster. An
+  OCP re-plan still needs ~6.8 GB (5.8 GB resident), so only one at a time (limit file
+  `<temp>/f1race_replan_slots/limit` = 1, 4db4e39). Running since 15:53:
+  `../F1-Race-wt-L6-rerun/results/lanes3c.sh` (round 3 car 24, round 4; two passes each).
+* **2026-10-10 18:12: all L6 runs finished** (round 4: 25/25 cars in the first pass). All results
+  merged in `results/L6_final/` of this worktree (git-ignored; `SOURCES.txt` lists where each part
+  ran), tables `python scripts/run_l6.py report --results results/L6_final`, docs/L6.md written
+  (3c057a1). **Waiting for the user's decision on replays** of records produced during the overload:
+  round 2 (52 of 75 jobs with solver fallbacks or retried re-plans; or all 75), round 3 cars 6 and 7
+  (least squares, fallbacks), round 1 at 10 ms: 5 laps not yet replayed (lag_nominal cars 16, 18,
+  22, 23; nmpc car 13). Then the results review request to the reviewer.
+* 2026-10-10 evening, user: send for review now; if the existing results support the conclusions,
+  update the strategy instead of re-running. Done: docs/L6.md separates what the overload cannot have
+  changed (held-out coverage → no-go) from what it can (round-2 laps, not claimed); review request
+  `docs/reviews/L6_results_review_request.md` (3a79314), scope up to 284a0e3 (roadmap section 7,
+  strategy update for L7). The reviewer's session was offline after the reboot: the message is
+  queued (Remote Control session "独立审查员身份和职责" [13ef37]); if it does not answer, the user may
+  need to reopen it. No re-runs until the review asks for them.
+* Pipeline: `python scripts/run_l6.py round1 ...` (resumable: finished laps in
+  `results/L6/round1.jsonl` are skipped; errors in `results/L6/errors.log`), RL baseline
+  `scripts/l6_rl.py` in `.venv-rl`, tables `python scripts/run_l6.py report`.
 
 ## Notes for resuming
 

@@ -12,6 +12,7 @@ compares several solution methods on the same problem:
 | **L3** | stochastic disturbances (friction varying along the track, gusts, sensor noise) | NMPC with uniform reserves vs stochastic MPC with back-offs calibrated from measured prediction errors (four calibrations); ablations | ✅ done ([docs/L3.md](docs/L3.md)) |
 | **L4** | learning the car | identify the parameters from an exploration lap (least squares on the logged dynamics), re-plan, drive with the identified model; noise sensitivity | ✅ done ([docs/L4.md](docs/L4.md)) |
 | **L5** | reinforcement learning | residual soft actor-critic on top of the L1 tracker with an observation history, trained on randomised cars and disturbances; nine training runs, checkpoints selected on full validation laps; compared on the L2 and L3 test sets | ✅ done ([docs/L5.md](docs/L5.md)) |
+| **L6** | structural model error (steering actuator lag) | the fixed baselines of L1–L5; parameter identification vs identification of the lag; correct-structure NMPC; learned residual dynamics with uncertainty; EKF under sensor noise | ✅ done ([docs/L6.md](docs/L6.md); roadmap L6–L10: [docs/ROADMAP_L6-L10.md](docs/ROADMAP_L6-L10.md)) |
 
 The guiding question of the whole series: *in which settings does a
 learning-based controller beat a model-based one, and why?*
