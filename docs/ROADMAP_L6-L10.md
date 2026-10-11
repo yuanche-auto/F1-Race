@@ -198,3 +198,37 @@ L6 first round: steering lag only, three strengths, fixed baselines and the
 upper bound – no RL, little computation, and its result decides whether the
 L7 safety layer can rely on learned uncertainty. Then L6 rounds 2–4 (see
 `docs/L6_protocol.md`), the safety-filter solve-time benchmark, L7.
+
+## 7. Strategy update after L6 (2026-10-10, before the L6 review verdict)
+
+L6 answered the question that L7 depended on, without needing the unverified
+round-2 laps: the learned residual's uncertainty is not calibrated (held-out
+coverage 67–79 % of nominal 95 % intervals), so the L7 safety layer cannot use it
+as it is. The user's direction: where the existing results suffice, update the
+strategy instead of re-running. Changes:
+
+1. **Risk estimate for the L7 safety layer.** Instead of the raw residual
+   uncertainty, in this order: (a) the identified structure – L6 showed that the
+   lag and the parameters can be identified from one exploration lap, also under
+   noise (EKF); (b) empirically calibrated back-offs as in L3, which already made
+   the SMPC the most robust model-based controller without the right model;
+   (c) a recalibrated residual uncertainty (split-conformal intervals on held-out
+   laps) – the cheapest way to keep a learned component honest. The go / no-go
+   check of L6 is kept as the acceptance test for whichever is used.
+2. **Numerical robustness first.** The last failures of the model-based path in
+   L6 were numerical: re-plans that did not converge from either warm start and
+   bursts of failed NMPC solves. Before L7: a re-plan with continuation in the
+   friction margin (as in L1) and more warm starts, and a fallback that is safer
+   than the shifted previous plan. This also benefits a model-based safety filter.
+3. **Compute.** One minimum-time OCP re-plan needs ~6.8 GB and limits how many
+   can run at once on this machine (~14–16 GB free). Profile and reduce it (the
+   expression graph and its derivatives, not BLAS) before L7–L8, which need many
+   re-plans; single-threaded BLAS and a fresh worker per job are now the default
+   for runs.
+4. **RL in L7.** The residual RL policy coped with the lag up to 120 ms without
+   any model of it (L6) and with the parameter errors (L5) – the safety-layer
+   study of L7 starts from it as planned; its cost is 4–4.5 s per lap against the
+   correct-structure NMPC, the number a safety layer plus a better policy has to
+   beat.
+5. **Round 2 of L6** stays reported as "laps not verified"; it is replayed only if
+   the review asks for it.
