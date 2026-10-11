@@ -14,7 +14,7 @@ after APPROVE. Workflow: [docs/workflow.md](docs/workflow.md).
 | L3 stochastic disturbances | `layer/L3` → `main` | **approved, pushed** to origin/main 2026-10-08 | round 2: APPROVE (nit: truncation definition, fixed on `layer/L5`) |
 | L4 learning / adaptation | `layer/L4` → `main` | **approved, pushed** to origin/main 2026-10-08 | round 1: APPROVE (minors fixed in 66f6cb3) |
 | L5 reinforcement learning | `layer/L5` → `main` | **approved, pushed** to origin/main 2026-10-09 | APPROVE after the multi-seed redo (wording minors fixed in 4fec887) |
-| L6 model mismatch with a structural error | `layer/L6` (worktree `../F1-Race-wt-L6`) | **in progress**: roadmap and protocol written, round 1 running | protocol sent for review |
+| L6 model mismatch with a structural error | `layer/L6` (worktree `../F1-Race-wt-L6`) | **runs finished, in review** (284a0e3) | design reviewed; results review requested 2026-10-10 |
 
 ## L0 summary
 
@@ -144,6 +144,13 @@ Figures are not expected to be byte-identical across versions.
   round 2 (52 of 75 jobs with solver fallbacks or retried re-plans; or all 75), round 3 cars 6 and 7
   (least squares, fallbacks), round 1 at 10 ms: 5 laps not yet replayed (lag_nominal cars 16, 18,
   22, 23; nmpc car 13). Then the results review request to the reviewer.
+* 2026-10-10 evening, user: send for review now; if the existing results support the conclusions,
+  update the strategy instead of re-running. Done: docs/L6.md separates what the overload cannot have
+  changed (held-out coverage → no-go) from what it can (round-2 laps, not claimed); review request
+  `docs/reviews/L6_results_review_request.md` (3a79314), scope up to 284a0e3 (roadmap section 7,
+  strategy update for L7). The reviewer's session was offline after the reboot: the message is
+  queued (Remote Control session "独立审查员身份和职责" [13ef37]); if it does not answer, the user may
+  need to reopen it. No re-runs until the review asks for them.
 * Pipeline: `python scripts/run_l6.py round1 ...` (resumable: finished laps in
   `results/L6/round1.jsonl` are skipped; errors in `results/L6/errors.log`), RL baseline
   `scripts/l6_rl.py` in `.venv-rl`, tables `python scripts/run_l6.py report`.
