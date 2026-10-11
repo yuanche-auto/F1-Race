@@ -21,7 +21,8 @@ all four rounds, the write-up and the code added for rounds 2–4.
 ## Claims (docs/L6.md)
 
 1. Without the lag in the model every controller has a lag it cannot take (tracker
-   from 15 ms, NMPC from 30 ms on the nominal car); the L3 SMPC tolerates 60 ms.
+   from 15 ms, NMPC from 30 ms on the nominal car); the L3 SMPC tolerates 60 ms
+   on the nominal car (on the 25 cars 22/22/9 of 25 at 10/30/60 ms).
 2. Identifying parameters in the wrong structure hurts: the lag goes into the yaw
    inertia (on its bound from 15–30 ms); the identified NMPC fails earlier than the
    nominal one. Measuring the road-wheel angle removes the bias, not the failure.

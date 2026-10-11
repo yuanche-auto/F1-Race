@@ -1,4 +1,4 @@
-# STATUS — F1-Race (L0–L5 done, L6 in progress)
+# STATUS — F1-Race (L0–L6 done)
 
 Builder session: "F1-Race 施工者（L0–L5 builder）" [f92a84]. Reviewer: "独立审查员身份和职责".
 Rule: work on branch `layer/Lk`, request review by commit hash, merge to `main` and push only
@@ -14,7 +14,7 @@ after APPROVE. Workflow: [docs/workflow.md](docs/workflow.md).
 | L3 stochastic disturbances | `layer/L3` → `main` | **approved, pushed** to origin/main 2026-10-08 | round 2: APPROVE (nit: truncation definition, fixed on `layer/L5`) |
 | L4 learning / adaptation | `layer/L4` → `main` | **approved, pushed** to origin/main 2026-10-08 | round 1: APPROVE (minors fixed in 66f6cb3) |
 | L5 reinforcement learning | `layer/L5` → `main` | **approved, pushed** to origin/main 2026-10-09 | APPROVE after the multi-seed redo (wording minors fixed in 4fec887) |
-| L6 model mismatch with a structural error | `layer/L6` (worktree `../F1-Race-wt-L6`) | **runs finished, in review** (284a0e3) | design reviewed; results review requested 2026-10-10 |
+| L6 model mismatch with a structural error | `layer/L6` → `main` | **approved, pushed** to origin/main 2026-10-10 | results review: APPROVE (minors m1–m4 fixed) |
 
 ## L0 summary
 
@@ -36,6 +36,7 @@ Figures are not expected to be byte-identical across versions.
 
 | Date | Commit | Scope | Verdict | Notes |
 |---|---|---|---|---|
+| 2026-10-10 | 284a0e3 | L6 results | **APPROVE** | held-out coverage recomputed in Python 3.11 (identical for 75/75 cases); the 12 lag_nominal failures = the 12 L4 failures; tables checked; minors: no-go basis as amendment A11 + held-out near-limit coverage (m1), SMPC 60 ms only on the nominal car (m2), closed-loop coverage valid but secondary (m3), conformal calibration separate from L7 evaluation laps and round-2 replay before using the residual mean (m4) – fixed in 7f744d3 (table only) and the next commit |
 | 2026-10-09 | 75865d8 | L6 design (roadmap, protocol, lag plant, lag-aware NMPC) | design review, no verdict yet | code verified line by line; MAJOR-1 (structure knowledge = exact τ) → `lag_identified`, τ-mismatch runs; stats rule, coverage details, naming, second-env scope; all fixed as protocol amendments A1–A7 before 1b; attribution of the roadmap critique corrected |
 | 2026-10-09 | 4354579 | L5 redo | **APPROVE** | protocol followed (written before the runs); selection, median seeds, paired tests and blind spots recomputed; evaluation reproduced in Python 3.11; wording minors m1–m4 fixed in 4fec887 |
 | 2026-10-08 | 6552180 | L5 | (preliminary) | first results withdrawn: single training run not reproducible; reviewer asked for non-learning and slowed-NMPC baselines and a multi-seed protocol |

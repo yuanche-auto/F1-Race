@@ -213,7 +213,10 @@ strategy instead of re-running. Changes:
    noise (EKF); (b) empirically calibrated back-offs as in L3, which already made
    the SMPC the most robust model-based controller without the right model;
    (c) a recalibrated residual uncertainty (split-conformal intervals on held-out
-   laps) – the cheapest way to keep a learned component honest. The go / no-go
+   laps) – the cheapest way to keep a learned component honest. Its calibration
+   laps must be separate from the L7 evaluation laps, and if the residual mean
+   goes into the dynamics, round 2 of L6 is replayed first (at least at 10 ms,
+   the only τ with discordant cars). The go / no-go
    check of L6 is kept as the acceptance test for whichever is used.
 2. **Numerical robustness first.** The last failures of the model-based path in
    L6 were numerical: re-plans that did not converge from either warm start and
@@ -230,5 +233,5 @@ strategy instead of re-running. Changes:
    study of L7 starts from it as planned; its cost is 4–4.5 s per lap against the
    correct-structure NMPC, the number a safety layer plus a better policy has to
    beat.
-5. **Round 2 of L6** stays reported as "laps not verified"; it is replayed only if
-   the review asks for it.
+5. **Round 2 of L6** stays reported as "laps not verified" (review: APPROVE with
+   that wording; no L7 decision may rest on its lap outcomes).

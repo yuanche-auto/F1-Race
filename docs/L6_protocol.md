@@ -269,3 +269,13 @@ them):
   user's instruction the unfinished parts are completed first; which of the
   affected records are replayed is decided afterwards. Replays done so far: 6
   round-1 laps at 10 ms, all identical to the originals.
+* **A11** (2026-10-10, results review): the go / no-go for L7 is decided on the
+  held-out coverage (criterion (i) of section 5, plus its near-limit subset)
+  instead of the closed-loop coverage (ii), because the round-2 laps ran during
+  the overload and are not replayed. Justification: a no-go is the conservative
+  direction, and failing on held-out data from the training distribution is a
+  failure of a necessary condition; the held-out coverage is computed offline
+  from exploration logs recorded before the overload (recomputed by the
+  reviewer: identical). The closed-loop coverage is reported as secondary. No L7
+  design decision may rest on the round-2 lap outcomes; if L7 puts the residual
+  mean into the dynamics, round 2 is replayed first (at least at 10 ms).
