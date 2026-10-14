@@ -1,0 +1,20 @@
+{
+ "A": {
+  "checkpoint": "A_s2_600k",
+  "val_completed": 20,
+  "val_laps": 20,
+  "val_lap_mean": 81.38936770656917
+ },
+ "B": {
+  "checkpoint": "B_s1_500k",
+  "val_completed": 20,
+  "val_laps": 20,
+  "val_lap_mean": 81.26574190462398
+ },
+ "C": {
+  "checkpoint": "C_s2_450k",
+  "val_completed": 19,
+  "val_laps": 20,
+  "val_lap_mean": 82.16099081554393
+ }
+}

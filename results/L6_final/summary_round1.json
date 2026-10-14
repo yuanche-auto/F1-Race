@@ -1,0 +1,1798 @@
+{
+ "0.005|command|explore": {
+  "tau": 0.005,
+  "observe": "command",
+  "controller": "explore",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 78.88614493573604,
+  "lap_nominal_car": 78.88614493573604,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.005|command|identified": {
+  "tau": 0.005,
+  "observe": "command",
+  "controller": "identified",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.06250108741538,
+  "lap_nominal_car": 76.06250108741538,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.005|command|lag_double": {
+  "tau": 0.005,
+  "observe": "command",
+  "controller": "lag_double",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.08477172347082,
+  "lap_nominal_car": 76.08477172347082,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.005|command|lag_half": {
+  "tau": 0.005,
+  "observe": "command",
+  "controller": "lag_half",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.0341898374222,
+  "lap_nominal_car": 76.0341898374222,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.005|command|lag_identified": {
+  "tau": 0.005,
+  "observe": "command",
+  "controller": "lag_identified",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.07725074343166,
+  "lap_nominal_car": 76.07725074343166,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.005|command|lag_nominal": {
+  "tau": 0.005,
+  "observe": "command",
+  "controller": "lag_nominal",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.0072786163975,
+  "lap_nominal_car": 76.0072786163975,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.005|command|nmpc": {
+  "tau": 0.005,
+  "observe": "command",
+  "controller": "nmpc",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.04501055614764,
+  "lap_nominal_car": 76.04501055614764,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.005|command|rl": {
+  "tau": 0.005,
+  "observe": "command",
+  "controller": "rl",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 80.83433406280193,
+  "lap_nominal_car": 80.83433406280193,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.005|command|rl_env_tracker": {
+  "tau": 0.005,
+  "observe": "command",
+  "controller": "rl_env_tracker",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 75.57864080392973,
+  "lap_nominal_car": 75.57864080392973,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.005|command|smpc": {
+  "tau": 0.005,
+  "observe": "command",
+  "controller": "smpc",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 78.88301309957929,
+  "lap_nominal_car": 78.88301309957929,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.005|command|tracker": {
+  "tau": 0.005,
+  "observe": "command",
+  "controller": "tracker",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 75.57862764712598,
+  "lap_nominal_car": 75.57862764712598,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.01|command|explore": {
+  "tau": 0.01,
+  "observe": "command",
+  "controller": "explore",
+  "runs": 25,
+  "completed": 16,
+  "completed_ci95": [
+   0.42520634955384945,
+   0.8202831794163447
+  ],
+  "lap_mean": 79.30025530479618,
+  "lap_nominal_car": 78.77623622770535,
+  "stop_reasons": {
+   "lap completed": 16,
+   "off track": 9
+  }
+ },
+ "0.01|command|identified": {
+  "tau": 0.01,
+  "observe": "command",
+  "controller": "identified",
+  "runs": 25,
+  "completed": 22,
+  "completed_ci95": [
+   0.6878096927137647,
+   0.9745346033522668
+  ],
+  "lap_mean": 76.73008949816656,
+  "lap_nominal_car": 76.20859278674021,
+  "stop_reasons": {
+   "lap completed": 22,
+   "off track": 3
+  }
+ },
+ "0.01|command|lag_double": {
+  "tau": 0.01,
+  "observe": "command",
+  "controller": "lag_double",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.02177143445712,
+  "lap_nominal_car": 76.02177143445712,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.01|command|lag_half": {
+  "tau": 0.01,
+  "observe": "command",
+  "controller": "lag_half",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.04915769331895,
+  "lap_nominal_car": 76.04915769331895,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.01|command|lag_identified": {
+  "tau": 0.01,
+  "observe": "command",
+  "controller": "lag_identified",
+  "runs": 25,
+  "completed": 25,
+  "completed_ci95": [
+   0.8628148284692874,
+   1.0
+  ],
+  "lap_mean": 76.77709819689818,
+  "lap_nominal_car": 75.99632102300872,
+  "stop_reasons": {
+   "lap completed": 25
+  }
+ },
+ "0.01|command|lag_nominal": {
+  "tau": 0.01,
+  "observe": "command",
+  "controller": "lag_nominal",
+  "runs": 25,
+  "completed": 13,
+  "completed_ci95": [
+   0.31305704445703214,
+   0.7220319903300535
+  ],
+  "lap_mean": 76.33933080393783,
+  "lap_nominal_car": 76.02763893830354,
+  "stop_reasons": {
+   "lap completed": 13,
+   "off track": 12
+  }
+ },
+ "0.01|command|nmpc": {
+  "tau": 0.01,
+  "observe": "command",
+  "controller": "nmpc",
+  "runs": 25,
+  "completed": 12,
+  "completed_ci95": [
+   0.27796800966994656,
+   0.6869429555429679
+  ],
+  "lap_mean": 76.36847344416641,
+  "lap_nominal_car": 76.11004342055463,
+  "stop_reasons": {
+   "lap completed": 12,
+   "off track": 13
+  }
+ },
+ "0.01|command|oracle_param": {
+  "tau": 0.01,
+  "observe": "command",
+  "controller": "oracle_param",
+  "runs": 25,
+  "completed": 25,
+  "completed_ci95": [
+   0.8628148284692874,
+   1.0
+  ],
+  "lap_mean": 76.93465302040364,
+  "lap_nominal_car": 76.09198454526629,
+  "stop_reasons": {
+   "lap completed": 25
+  }
+ },
+ "0.01|command|oracle_struct": {
+  "tau": 0.01,
+  "observe": "command",
+  "controller": "oracle_struct",
+  "runs": 25,
+  "completed": 25,
+  "completed_ci95": [
+   0.8628148284692874,
+   1.0
+  ],
+  "lap_mean": 76.84042002111183,
+  "lap_nominal_car": 76.02682316405703,
+  "stop_reasons": {
+   "lap completed": 25
+  }
+ },
+ "0.01|command|rl": {
+  "tau": 0.01,
+  "observe": "command",
+  "controller": "rl",
+  "runs": 25,
+  "completed": 25,
+  "completed_ci95": [
+   0.8628148284692874,
+   1.0
+  ],
+  "lap_mean": 81.102612888513,
+  "lap_nominal_car": 80.87657586715949,
+  "stop_reasons": {
+   "lap completed": 25
+  }
+ },
+ "0.01|command|rl_env_tracker": {
+  "tau": 0.01,
+  "observe": "command",
+  "controller": "rl_env_tracker",
+  "runs": 25,
+  "completed": 2,
+  "completed_ci95": [
+   0.009839590018797513,
+   0.26030584210521424
+  ],
+  "lap_mean": 75.57945057886317,
+  "lap_nominal_car": 75.57982029116154,
+  "stop_reasons": {
+   "lap completed": 2,
+   "off track": 11,
+   "spin": 12
+  }
+ },
+ "0.01|command|smpc": {
+  "tau": 0.01,
+  "observe": "command",
+  "controller": "smpc",
+  "runs": 25,
+  "completed": 22,
+  "completed_ci95": [
+   0.6878096927137647,
+   0.9745346033522668
+  ],
+  "lap_mean": 79.10805826275201,
+  "lap_nominal_car": 78.91592829102305,
+  "stop_reasons": {
+   "lap completed": 22,
+   "off track": 3
+  }
+ },
+ "0.01|command|tracker": {
+  "tau": 0.01,
+  "observe": "command",
+  "controller": "tracker",
+  "runs": 25,
+  "completed": 2,
+  "completed_ci95": [
+   0.009839590018797513,
+   0.26030584210521424
+  ],
+  "lap_mean": 75.57943853867746,
+  "lap_nominal_car": 75.57980877411235,
+  "stop_reasons": {
+   "lap completed": 2,
+   "off track": 11,
+   "spin": 12
+  }
+ },
+ "0.015|command|explore": {
+  "tau": 0.015,
+  "observe": "command",
+  "controller": "explore",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 78.84492113716489,
+  "lap_nominal_car": 78.84492113716489,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.015|command|identified": {
+  "tau": 0.015,
+  "observe": "command",
+  "controller": "identified",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 1
+  }
+ },
+ "0.015|command|lag_double": {
+  "tau": 0.015,
+  "observe": "command",
+  "controller": "lag_double",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.05529847092792,
+  "lap_nominal_car": 76.05529847092792,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.015|command|lag_half": {
+  "tau": 0.015,
+  "observe": "command",
+  "controller": "lag_half",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.07815466134599,
+  "lap_nominal_car": 76.07815466134599,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.015|command|lag_identified": {
+  "tau": 0.015,
+  "observe": "command",
+  "controller": "lag_identified",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.17866174749054,
+  "lap_nominal_car": 76.17866174749054,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.015|command|lag_nominal": {
+  "tau": 0.015,
+  "observe": "command",
+  "controller": "lag_nominal",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.02930089669303,
+  "lap_nominal_car": 76.02930089669303,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.015|command|nmpc": {
+  "tau": 0.015,
+  "observe": "command",
+  "controller": "nmpc",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.27118193489943,
+  "lap_nominal_car": 76.27118193489943,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.015|command|rl": {
+  "tau": 0.015,
+  "observe": "command",
+  "controller": "rl",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 80.93224784379686,
+  "lap_nominal_car": 80.93224784379686,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.015|command|rl_env_tracker": {
+  "tau": 0.015,
+  "observe": "command",
+  "controller": "rl_env_tracker",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 1
+  }
+ },
+ "0.015|command|smpc": {
+  "tau": 0.015,
+  "observe": "command",
+  "controller": "smpc",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 78.83953905452472,
+  "lap_nominal_car": 78.83953905452472,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.015|command|tracker": {
+  "tau": 0.015,
+  "observe": "command",
+  "controller": "tracker",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 1
+  }
+ },
+ "0.02|command|explore": {
+  "tau": 0.02,
+  "observe": "command",
+  "controller": "explore",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 78.98484874068983,
+  "lap_nominal_car": 78.98484874068983,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.02|command|identified": {
+  "tau": 0.02,
+  "observe": "command",
+  "controller": "identified",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 1
+  }
+ },
+ "0.02|command|lag_double": {
+  "tau": 0.02,
+  "observe": "command",
+  "controller": "lag_double",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.10155959548503,
+  "lap_nominal_car": 76.10155959548503,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.02|command|lag_half": {
+  "tau": 0.02,
+  "observe": "command",
+  "controller": "lag_half",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.35054753371124,
+  "lap_nominal_car": 76.35054753371124,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.02|command|lag_identified": {
+  "tau": 0.02,
+  "observe": "command",
+  "controller": "lag_identified",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.0339536957852,
+  "lap_nominal_car": 76.0339536957852,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.02|command|lag_nominal": {
+  "tau": 0.02,
+  "observe": "command",
+  "controller": "lag_nominal",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.01329588196754,
+  "lap_nominal_car": 76.01329588196754,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.02|command|nmpc": {
+  "tau": 0.02,
+  "observe": "command",
+  "controller": "nmpc",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.93120918883912,
+  "lap_nominal_car": 76.93120918883912,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.02|command|rl": {
+  "tau": 0.02,
+  "observe": "command",
+  "controller": "rl",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 80.97906984466158,
+  "lap_nominal_car": 80.97906984466158,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.02|command|rl_env_tracker": {
+  "tau": 0.02,
+  "observe": "command",
+  "controller": "rl_env_tracker",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 1
+  }
+ },
+ "0.02|command|smpc": {
+  "tau": 0.02,
+  "observe": "command",
+  "controller": "smpc",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 78.92338328810662,
+  "lap_nominal_car": 78.92338328810662,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.02|command|tracker": {
+  "tau": 0.02,
+  "observe": "command",
+  "controller": "tracker",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 1
+  }
+ },
+ "0.03|command|explore": {
+  "tau": 0.03,
+  "observe": "command",
+  "controller": "explore",
+  "runs": 25,
+  "completed": 8,
+  "completed_ci95": [
+   0.14949542261356963,
+   0.5350007174973723
+  ],
+  "lap_mean": 79.45523464102678,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "lap completed": 8,
+   "off track": 17
+  }
+ },
+ "0.03|command|identified": {
+  "tau": 0.03,
+  "observe": "command",
+  "controller": "identified",
+  "runs": 25,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.1371851715307125
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 25
+  }
+ },
+ "0.03|command|lag_double": {
+  "tau": 0.03,
+  "observe": "command",
+  "controller": "lag_double",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.4193673520591,
+  "lap_nominal_car": 76.4193673520591,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.03|command|lag_half": {
+  "tau": 0.03,
+  "observe": "command",
+  "controller": "lag_half",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.39670020256943,
+  "lap_nominal_car": 76.39670020256943,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.03|command|lag_identified": {
+  "tau": 0.03,
+  "observe": "command",
+  "controller": "lag_identified",
+  "runs": 25,
+  "completed": 25,
+  "completed_ci95": [
+   0.8628148284692874,
+   1.0
+  ],
+  "lap_mean": 76.89573397581943,
+  "lap_nominal_car": 76.03290042806518,
+  "stop_reasons": {
+   "lap completed": 25
+  }
+ },
+ "0.03|command|lag_nominal": {
+  "tau": 0.03,
+  "observe": "command",
+  "controller": "lag_nominal",
+  "runs": 25,
+  "completed": 13,
+  "completed_ci95": [
+   0.31305704445703214,
+   0.7220319903300535
+  ],
+  "lap_mean": 76.36919969118561,
+  "lap_nominal_car": 76.07573147084788,
+  "stop_reasons": {
+   "lap completed": 13,
+   "off track": 12
+  }
+ },
+ "0.03|command|nmpc": {
+  "tau": 0.03,
+  "observe": "command",
+  "controller": "nmpc",
+  "runs": 25,
+  "completed": 3,
+  "completed_ci95": [
+   0.025465396647733205,
+   0.31219030728623537
+  ],
+  "lap_mean": 76.48704126948934,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "lap completed": 3,
+   "off track": 22
+  }
+ },
+ "0.03|command|oracle_param": {
+  "tau": 0.03,
+  "observe": "command",
+  "controller": "oracle_param",
+  "runs": 25,
+  "completed": 4,
+  "completed_ci95": [
+   0.0453794523717096,
+   0.3608284544592721
+  ],
+  "lap_mean": 77.68135729882206,
+  "lap_nominal_car": 77.37473487341765,
+  "stop_reasons": {
+   "lap completed": 4,
+   "off track": 21
+  }
+ },
+ "0.03|command|oracle_struct": {
+  "tau": 0.03,
+  "observe": "command",
+  "controller": "oracle_struct",
+  "runs": 25,
+  "completed": 24,
+  "completed_ci95": [
+   0.796483086077586,
+   0.9989878003006891
+  ],
+  "lap_mean": 76.76048260165845,
+  "lap_nominal_car": 76.09164960870794,
+  "stop_reasons": {
+   "lap completed": 24,
+   "off track": 1
+  }
+ },
+ "0.03|command|rl": {
+  "tau": 0.03,
+  "observe": "command",
+  "controller": "rl",
+  "runs": 25,
+  "completed": 24,
+  "completed_ci95": [
+   0.796483086077586,
+   0.9989878003006891
+  ],
+  "lap_mean": 81.06824718455127,
+  "lap_nominal_car": 81.0285207941193,
+  "stop_reasons": {
+   "lap completed": 24,
+   "off track": 1
+  }
+ },
+ "0.03|command|rl_env_tracker": {
+  "tau": 0.03,
+  "observe": "command",
+  "controller": "rl_env_tracker",
+  "runs": 25,
+  "completed": 1,
+  "completed_ci95": [
+   0.0010121996993108452,
+   0.20351691392241403
+  ],
+  "lap_mean": 75.62810364818574,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "lap completed": 1,
+   "off track": 11,
+   "spin": 13
+  }
+ },
+ "0.03|command|smpc": {
+  "tau": 0.03,
+  "observe": "command",
+  "controller": "smpc",
+  "runs": 25,
+  "completed": 22,
+  "completed_ci95": [
+   0.6878096927137647,
+   0.9745346033522668
+  ],
+  "lap_mean": 79.14358452231535,
+  "lap_nominal_car": 78.86232849252204,
+  "stop_reasons": {
+   "lap completed": 22,
+   "off track": 3
+  }
+ },
+ "0.03|command|tracker": {
+  "tau": 0.03,
+  "observe": "command",
+  "controller": "tracker",
+  "runs": 25,
+  "completed": 1,
+  "completed_ci95": [
+   0.0010121996993108452,
+   0.20351691392241403
+  ],
+  "lap_mean": 75.62808971234819,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "lap completed": 1,
+   "off track": 11,
+   "spin": 13
+  }
+ },
+ "0.045|command|explore": {
+  "tau": 0.045,
+  "observe": "command",
+  "controller": "explore",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 1
+  }
+ },
+ "0.045|command|identified": {
+  "tau": 0.045,
+  "observe": "command",
+  "controller": "identified",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 1
+  }
+ },
+ "0.045|command|lag_double": {
+  "tau": 0.045,
+  "observe": "command",
+  "controller": "lag_double",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 77.05228817501145,
+  "lap_nominal_car": 77.05228817501145,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.045|command|lag_half": {
+  "tau": 0.045,
+  "observe": "command",
+  "controller": "lag_half",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.4939414262529,
+  "lap_nominal_car": 76.4939414262529,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.045|command|lag_identified": {
+  "tau": 0.045,
+  "observe": "command",
+  "controller": "lag_identified",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.04740147636437,
+  "lap_nominal_car": 76.04740147636437,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.045|command|lag_nominal": {
+  "tau": 0.045,
+  "observe": "command",
+  "controller": "lag_nominal",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.06200071691185,
+  "lap_nominal_car": 76.06200071691185,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.045|command|nmpc": {
+  "tau": 0.045,
+  "observe": "command",
+  "controller": "nmpc",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 1
+  }
+ },
+ "0.045|command|rl": {
+  "tau": 0.045,
+  "observe": "command",
+  "controller": "rl",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 81.02333704563394,
+  "lap_nominal_car": 81.02333704563394,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.045|command|rl_env_tracker": {
+  "tau": 0.045,
+  "observe": "command",
+  "controller": "rl_env_tracker",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "spin": 1
+  }
+ },
+ "0.045|command|smpc": {
+  "tau": 0.045,
+  "observe": "command",
+  "controller": "smpc",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 78.8185603008299,
+  "lap_nominal_car": 78.8185603008299,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.045|command|tracker": {
+  "tau": 0.045,
+  "observe": "command",
+  "controller": "tracker",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "spin": 1
+  }
+ },
+ "0.06|angle|explore": {
+  "tau": 0.06,
+  "observe": "angle",
+  "controller": "explore",
+  "runs": 25,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.1371851715307125
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 16,
+   "spin": 9
+  }
+ },
+ "0.06|angle|identified": {
+  "tau": 0.06,
+  "observe": "angle",
+  "controller": "identified",
+  "runs": 25,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.1371851715307125
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 13,
+   "spin": 12
+  }
+ },
+ "0.06|angle|lag_nominal": {
+  "tau": 0.06,
+  "observe": "angle",
+  "controller": "lag_nominal",
+  "runs": 25,
+  "completed": 13,
+  "completed_ci95": [
+   0.31305704445703214,
+   0.7220319903300535
+  ],
+  "lap_mean": 76.43439371888033,
+  "lap_nominal_car": 76.0527770948358,
+  "stop_reasons": {
+   "lap completed": 13,
+   "off track": 12
+  }
+ },
+ "0.06|angle|nmpc": {
+  "tau": 0.06,
+  "observe": "angle",
+  "controller": "nmpc",
+  "runs": 25,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.1371851715307125
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 17,
+   "spin": 8
+  }
+ },
+ "0.06|angle|tracker": {
+  "tau": 0.06,
+  "observe": "angle",
+  "controller": "tracker",
+  "runs": 25,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.1371851715307125
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 5,
+   "spin": 20
+  }
+ },
+ "0.06|command|explore": {
+  "tau": 0.06,
+  "observe": "command",
+  "controller": "explore",
+  "runs": 25,
+  "completed": 1,
+  "completed_ci95": [
+   0.0010121996993108452,
+   0.20351691392241403
+  ],
+  "lap_mean": 79.77330696736358,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "lap completed": 1,
+   "off track": 24
+  }
+ },
+ "0.06|command|identified": {
+  "tau": 0.06,
+  "observe": "command",
+  "controller": "identified",
+  "runs": 25,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.1371851715307125
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 25
+  }
+ },
+ "0.06|command|lag_double": {
+  "tau": 0.06,
+  "observe": "command",
+  "controller": "lag_double",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 77.0436307479476,
+  "lap_nominal_car": 77.0436307479476,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.06|command|lag_half": {
+  "tau": 0.06,
+  "observe": "command",
+  "controller": "lag_half",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 1
+  }
+ },
+ "0.06|command|lag_identified": {
+  "tau": 0.06,
+  "observe": "command",
+  "controller": "lag_identified",
+  "runs": 25,
+  "completed": 24,
+  "completed_ci95": [
+   0.796483086077586,
+   0.9989878003006891
+  ],
+  "lap_mean": 77.39066805588206,
+  "lap_nominal_car": 76.02235400527134,
+  "stop_reasons": {
+   "lap completed": 24,
+   "plan failed": 1
+  }
+ },
+ "0.06|command|lag_nominal": {
+  "tau": 0.06,
+  "observe": "command",
+  "controller": "lag_nominal",
+  "runs": 25,
+  "completed": 13,
+  "completed_ci95": [
+   0.31305704445703214,
+   0.7220319903300535
+  ],
+  "lap_mean": 76.37253784295176,
+  "lap_nominal_car": 76.01981076090782,
+  "stop_reasons": {
+   "lap completed": 13,
+   "off track": 12
+  }
+ },
+ "0.06|command|nmpc": {
+  "tau": 0.06,
+  "observe": "command",
+  "controller": "nmpc",
+  "runs": 25,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.1371851715307125
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 25
+  }
+ },
+ "0.06|command|oracle_param": {
+  "tau": 0.06,
+  "observe": "command",
+  "controller": "oracle_param",
+  "runs": 25,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.1371851715307125
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 25
+  }
+ },
+ "0.06|command|oracle_struct": {
+  "tau": 0.06,
+  "observe": "command",
+  "controller": "oracle_struct",
+  "runs": 25,
+  "completed": 23,
+  "completed_ci95": [
+   0.7396941578947859,
+   0.9901604099812025
+  ],
+  "lap_mean": 76.72898089538076,
+  "lap_nominal_car": 76.03835299362233,
+  "stop_reasons": {
+   "lap completed": 23,
+   "off track": 2
+  }
+ },
+ "0.06|command|rl": {
+  "tau": 0.06,
+  "observe": "command",
+  "controller": "rl",
+  "runs": 25,
+  "completed": 23,
+  "completed_ci95": [
+   0.7396941578947859,
+   0.9901604099812025
+  ],
+  "lap_mean": 81.05953694065742,
+  "lap_nominal_car": 81.01473934613162,
+  "stop_reasons": {
+   "lap completed": 23,
+   "off track": 2
+  }
+ },
+ "0.06|command|rl_env_tracker": {
+  "tau": 0.06,
+  "observe": "command",
+  "controller": "rl_env_tracker",
+  "runs": 25,
+  "completed": 2,
+  "completed_ci95": [
+   0.009839590018797513,
+   0.26030584210521424
+  ],
+  "lap_mean": 75.59405324730764,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "lap completed": 2,
+   "off track": 4,
+   "spin": 19
+  }
+ },
+ "0.06|command|smpc": {
+  "tau": 0.06,
+  "observe": "command",
+  "controller": "smpc",
+  "runs": 25,
+  "completed": 9,
+  "completed_ci95": [
+   0.17971682058365537,
+   0.5747936504461505
+  ],
+  "lap_mean": 79.20806515520475,
+  "lap_nominal_car": 78.95520303628946,
+  "stop_reasons": {
+   "lap completed": 9,
+   "off track": 10,
+   "spin": 6
+  }
+ },
+ "0.06|command|tracker": {
+  "tau": 0.06,
+  "observe": "command",
+  "controller": "tracker",
+  "runs": 25,
+  "completed": 2,
+  "completed_ci95": [
+   0.009839590018797513,
+   0.26030584210521424
+  ],
+  "lap_mean": 75.59401681325625,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "lap completed": 2,
+   "off track": 4,
+   "spin": 19
+  }
+ },
+ "0.09|command|explore": {
+  "tau": 0.09,
+  "observe": "command",
+  "controller": "explore",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 1
+  }
+ },
+ "0.09|command|identified": {
+  "tau": 0.09,
+  "observe": "command",
+  "controller": "identified",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 1
+  }
+ },
+ "0.09|command|lag_double": {
+  "tau": 0.09,
+  "observe": "command",
+  "controller": "lag_double",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 1
+  }
+ },
+ "0.09|command|lag_half": {
+  "tau": 0.09,
+  "observe": "command",
+  "controller": "lag_half",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 1
+  }
+ },
+ "0.09|command|lag_identified": {
+  "tau": 0.09,
+  "observe": "command",
+  "controller": "lag_identified",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 75.99887611467618,
+  "lap_nominal_car": 75.99887611467618,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.09|command|lag_nominal": {
+  "tau": 0.09,
+  "observe": "command",
+  "controller": "lag_nominal",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.0687103103306,
+  "lap_nominal_car": 76.0687103103306,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.09|command|nmpc": {
+  "tau": 0.09,
+  "observe": "command",
+  "controller": "nmpc",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 1
+  }
+ },
+ "0.09|command|rl": {
+  "tau": 0.09,
+  "observe": "command",
+  "controller": "rl",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 81.05396694164696,
+  "lap_nominal_car": 81.05396694164696,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.09|command|rl_env_tracker": {
+  "tau": 0.09,
+  "observe": "command",
+  "controller": "rl_env_tracker",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "spin": 1
+  }
+ },
+ "0.09|command|smpc": {
+  "tau": 0.09,
+  "observe": "command",
+  "controller": "smpc",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "spin": 1
+  }
+ },
+ "0.09|command|tracker": {
+  "tau": 0.09,
+  "observe": "command",
+  "controller": "tracker",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "spin": 1
+  }
+ },
+ "0.12|command|explore": {
+  "tau": 0.12,
+  "observe": "command",
+  "controller": "explore",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 1
+  }
+ },
+ "0.12|command|identified": {
+  "tau": 0.12,
+  "observe": "command",
+  "controller": "identified",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 1
+  }
+ },
+ "0.12|command|lag_double": {
+  "tau": 0.12,
+  "observe": "command",
+  "controller": "lag_double",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 1
+  }
+ },
+ "0.12|command|lag_half": {
+  "tau": 0.12,
+  "observe": "command",
+  "controller": "lag_half",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 1
+  }
+ },
+ "0.12|command|lag_identified": {
+  "tau": 0.12,
+  "observe": "command",
+  "controller": "lag_identified",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 1
+  }
+ },
+ "0.12|command|lag_nominal": {
+  "tau": 0.12,
+  "observe": "command",
+  "controller": "lag_nominal",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 76.05216529239966,
+  "lap_nominal_car": 76.05216529239966,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.12|command|nmpc": {
+  "tau": 0.12,
+  "observe": "command",
+  "controller": "nmpc",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "off track": 1
+  }
+ },
+ "0.12|command|rl": {
+  "tau": 0.12,
+  "observe": "command",
+  "controller": "rl",
+  "runs": 1,
+  "completed": 1,
+  "completed_ci95": [
+   0.025000000000000022,
+   1.0
+  ],
+  "lap_mean": 81.27092764711965,
+  "lap_nominal_car": 81.27092764711965,
+  "stop_reasons": {
+   "lap completed": 1
+  }
+ },
+ "0.12|command|rl_env_tracker": {
+  "tau": 0.12,
+  "observe": "command",
+  "controller": "rl_env_tracker",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "spin": 1
+  }
+ },
+ "0.12|command|smpc": {
+  "tau": 0.12,
+  "observe": "command",
+  "controller": "smpc",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "spin": 1
+  }
+ },
+ "0.12|command|tracker": {
+  "tau": 0.12,
+  "observe": "command",
+  "controller": "tracker",
+  "runs": 1,
+  "completed": 0,
+  "completed_ci95": [
+   0.0,
+   0.975
+  ],
+  "lap_mean": null,
+  "lap_nominal_car": NaN,
+  "stop_reasons": {
+   "spin": 1
+  }
+ }
+}

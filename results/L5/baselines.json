@@ -1,0 +1,3476 @@
+[
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2727.186987460555,
+  "plant": {
+   "mu": 0.9336711604149521,
+   "m": 1.0335312207346816,
+   "ClA": 1.02943790231485,
+   "CdA": 1.0230770222962509,
+   "Iz": 0.965103266278565,
+   "B": 1.1491629807367632,
+   "aero_front": 0.028850120326573803
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3783.489557910238,
+  "plant": {
+   "mu": 0.9954096182928764,
+   "m": 1.0325229638133908,
+   "ClA": 1.037689346114188,
+   "CdA": 0.9777842847958208,
+   "Iz": 0.8905289515067233,
+   "B": 1.0664465020582243,
+   "aero_front": 0.0015212593485435522
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3778.5997977852794,
+  "plant": {
+   "mu": 0.99006578560536,
+   "m": 1.0134893356881935,
+   "ClA": 0.908194704787239,
+   "CdA": 0.9033055271057059,
+   "Iz": 1.0939810717600817,
+   "B": 1.1238266731833164,
+   "aero_front": 0.00639814654603079
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3785.9655011185287,
+  "plant": {
+   "nominal": true
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.85369870008567,
+  "stop_reason": "lap completed",
+  "distance": 4318.741114925555,
+  "plant": {
+   "mu": 1.000262099107294,
+   "m": 1.008782781030128,
+   "ClA": 1.0726357844699774,
+   "CdA": 1.0082922440498183,
+   "Iz": 0.9399135671612154,
+   "B": 0.9768061663592975,
+   "aero_front": -0.02830081973127222
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.87088521512145,
+  "stop_reason": "lap completed",
+  "distance": 4317.624794799542,
+  "plant": {
+   "mu": 1.00024462170824,
+   "m": 1.027181249573271,
+   "ClA": 1.0870144847575538,
+   "CdA": 1.0631707108243065,
+   "Iz": 0.8508215500510444,
+   "B": 1.1072212829762706,
+   "aero_front": -0.027984865481672137
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.8860464939857,
+  "stop_reason": "lap completed",
+  "distance": 4316.6426929597565,
+  "plant": {
+   "mu": 0.9541266063114852,
+   "m": 1.0242917679415895,
+   "ClA": 1.0778975668698,
+   "CdA": 1.0868087031912501,
+   "Iz": 0.957338559012721,
+   "B": 1.0214589492189283,
+   "aero_front": -0.01068783653544347
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3779.360844836692,
+  "plant": {
+   "mu": 0.9892018966693681,
+   "m": 1.0463577276533935,
+   "ClA": 0.9880754309431569,
+   "CdA": 1.0909180987381475,
+   "Iz": 0.9999687441062941,
+   "B": 0.9775685874547226,
+   "aero_front": 0.007212807120922669
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.88161315159803,
+  "stop_reason": "lap completed",
+  "distance": 4316.929805892834,
+  "plant": {
+   "mu": 0.9853730033219666,
+   "m": 1.0168955612753567,
+   "ClA": 0.9783238001056322,
+   "CdA": 1.0780548704009585,
+   "Iz": 0.9181472780600138,
+   "B": 1.0369561434058125,
+   "aero_front": -0.02495907938505691
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.814577196224,
+  "stop_reason": "lap completed",
+  "distance": 4318.036109877864,
+  "plant": {
+   "mu": 0.9695373303314216,
+   "m": 1.0398162135143647,
+   "ClA": 0.9461284417987496,
+   "CdA": 0.9104042602128819,
+   "Iz": 0.9713655519464583,
+   "B": 0.9095539133527766,
+   "aero_front": -0.024554817262852684
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.82392281718144,
+  "stop_reason": "lap completed",
+  "distance": 4317.429539379547,
+  "plant": {
+   "mu": 0.9838365624585537,
+   "m": 1.014934806640946,
+   "ClA": 1.034398975591272,
+   "CdA": 0.9399030887936427,
+   "Iz": 1.1326339331519493,
+   "B": 0.9595330504734485,
+   "aero_front": -0.023670283225786227
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.88164818952995,
+  "stop_reason": "lap completed",
+  "distance": 4316.927405095825,
+  "plant": {
+   "mu": 1.0115908562418738,
+   "m": 1.0393549153744341,
+   "ClA": 0.9478738885985905,
+   "CdA": 1.0752968461621408,
+   "Iz": 0.8675704104415582,
+   "B": 0.950835118163698,
+   "aero_front": -0.020983231986309657
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2732.0457355394674,
+  "plant": {
+   "mu": 0.9656121434291238,
+   "m": 1.0367241785894366,
+   "ClA": 1.0422285755979501,
+   "CdA": 1.0864119373226757,
+   "Iz": 0.8844797899842716,
+   "B": 1.0687045351228928,
+   "aero_front": 0.025645435717473596
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3778.626854376264,
+  "plant": {
+   "mu": 1.0294606155758856,
+   "m": 1.0474471837468884,
+   "ClA": 0.9920090278618192,
+   "CdA": 1.0515457690616583,
+   "Iz": 0.9992268086462857,
+   "B": 1.0087936480590312,
+   "aero_front": 0.017147142042828446
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3781.2099587406356,
+  "plant": {
+   "mu": 1.026471880891711,
+   "m": 1.0007353152482685,
+   "ClA": 1.0727280180491152,
+   "CdA": 1.096239008013269,
+   "Iz": 1.137163053883289,
+   "B": 0.8946292036697493,
+   "aero_front": 0.028357728829377295
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3780.7953356239286,
+  "plant": {
+   "mu": 0.9991141750109415,
+   "m": 1.0007995864761785,
+   "ClA": 1.0515902004712856,
+   "CdA": 1.0025517446524157,
+   "Iz": 1.1287312662391018,
+   "B": 0.8698247490172224,
+   "aero_front": 0.020479036776742995
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.81000632012993,
+  "stop_reason": "lap completed",
+  "distance": 4318.33220388914,
+  "plant": {
+   "mu": 1.0178929111292574,
+   "m": 1.0411186913771535,
+   "ClA": 0.9959975847615665,
+   "CdA": 0.9464745839278608,
+   "Iz": 1.0905641736154923,
+   "B": 1.1270590479350409,
+   "aero_front": -0.014032183662462446
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.8063460985125,
+  "stop_reason": "lap completed",
+  "distance": 4318.570918534279,
+  "plant": {
+   "mu": 0.9792827848384406,
+   "m": 1.0221376414487267,
+   "ClA": 1.0862034631962312,
+   "CdA": 0.9081021422376869,
+   "Iz": 1.0696018586969682,
+   "B": 1.0343119740846989,
+   "aero_front": -0.028298078093188735
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3786.0103750249123,
+  "plant": {
+   "mu": 0.9273359009643812,
+   "m": 1.0172154989402062,
+   "ClA": 0.9860597463895667,
+   "CdA": 1.0932124161568142,
+   "Iz": 1.018669552668537,
+   "B": 0.9276593779512796,
+   "aero_front": -0.015499457154339301
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3778.0400669625183,
+  "plant": {
+   "mu": 1.0176930152725099,
+   "m": 1.0112934714208661,
+   "ClA": 0.9249109411670567,
+   "CdA": 0.9576661514015156,
+   "Iz": 1.0258369194438197,
+   "B": 1.0162271506519802,
+   "aero_front": 0.018582646554766664
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3783.6443727418155,
+  "plant": {
+   "mu": 0.9816523547206805,
+   "m": 1.0144210607215605,
+   "ClA": 0.9825792685361786,
+   "CdA": 1.0636241941941822,
+   "Iz": 1.037951938725926,
+   "B": 1.1377232928092327,
+   "aero_front": -0.007835735334499147
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3785.4033280945914,
+  "plant": {
+   "mu": 1.0104976908199652,
+   "m": 1.0207692018685612,
+   "ClA": 1.0659607970556206,
+   "CdA": 0.9019909121614584,
+   "Iz": 0.9595138473274811,
+   "B": 0.8735890111496919,
+   "aero_front": 0.009156874580198308
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.80966228953497,
+  "stop_reason": "lap completed",
+  "distance": 4318.3549910006695,
+  "plant": {
+   "mu": 0.9807872661573416,
+   "m": 1.0296962100806584,
+   "ClA": 1.069658241655012,
+   "CdA": 0.9290947076373064,
+   "Iz": 0.971953101024438,
+   "B": 1.122987688498689,
+   "aero_front": -0.027415986685907747
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3786.581511729371,
+  "plant": {
+   "mu": 0.9501234008459514,
+   "m": 1.0351326035329893,
+   "ClA": 1.0887602853884182,
+   "CdA": 0.9253634204522496,
+   "Iz": 1.1094334886202322,
+   "B": 0.8678392454801015,
+   "aero_front": -0.007153769501346635
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3777.744165253562,
+  "plant": {
+   "mu": 0.9672751467296434,
+   "m": 1.0244424773416732,
+   "ClA": 1.095292464387209,
+   "CdA": 1.0551382376203657,
+   "Iz": 0.9426572088157783,
+   "B": 0.93095103565024,
+   "aero_front": 0.021787212251359066
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3778.8426995087275,
+  "plant": {
+   "mu": 1.016943789001146,
+   "m": 1.0255353252771824,
+   "ClA": 0.968859146192465,
+   "CdA": 1.0989834696321836,
+   "Iz": 0.9447830636103101,
+   "B": 0.9048137136779687,
+   "aero_front": 0.02280588727824418
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2733.9472955482524,
+  "plant": {
+   "mu": 0.9355371212591135,
+   "m": 1.033503092465747,
+   "ClA": 1.0429237073309505,
+   "CdA": 0.9334105857564545,
+   "Iz": 0.9686671819314627,
+   "B": 1.1230767298648163,
+   "aero_front": 0.003684046053013375
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3020.3788225526773,
+  "plant": {
+   "mu": 0.9207049770930742,
+   "m": 1.0386324600612695,
+   "ClA": 1.0956531427680292,
+   "CdA": 1.0179740056641902,
+   "Iz": 0.9459044908847994,
+   "B": 0.9062523147183354,
+   "aero_front": 0.010351598035012156
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.87757437965699,
+  "stop_reason": "lap completed",
+  "distance": 4317.191098012368,
+  "plant": {
+   "mu": 1.009356893792238,
+   "m": 1.0333944702785676,
+   "ClA": 1.0916827263555904,
+   "CdA": 1.0851429154428838,
+   "Iz": 1.0744745509905262,
+   "B": 1.1082104228643033,
+   "aero_front": -0.015171195580673551
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3778.527149090066,
+  "plant": {
+   "mu": 0.98361695064189,
+   "m": 1.0097064886445397,
+   "ClA": 1.005204449723575,
+   "CdA": 1.004686945478984,
+   "Iz": 0.8766806920738816,
+   "B": 1.1445828079380118,
+   "aero_front": 0.004283736027346462
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2728.9725865785376,
+  "plant": {
+   "mu": 0.9414618138302486,
+   "m": 1.028884394625893,
+   "ClA": 1.0204478352759252,
+   "CdA": 1.0924846186248762,
+   "Iz": 0.871679579658963,
+   "B": 0.9999918470975855,
+   "aero_front": 0.014645848756958894
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3016.6248387039227,
+  "plant": {
+   "mu": 0.9394949414522125,
+   "m": 1.0194033365892259,
+   "ClA": 0.9125790996909943,
+   "CdA": 1.0451761727551554,
+   "Iz": 0.876330366027846,
+   "B": 0.9685275125073902,
+   "aero_front": 0.02241135786724393
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.8986036457879,
+  "stop_reason": "lap completed",
+  "distance": 4315.8305499543385,
+  "plant": {
+   "mu": 0.9719530370425014,
+   "m": 1.0456310966820443,
+   "ClA": 1.0531834235477746,
+   "CdA": 1.0830647920223533,
+   "Iz": 0.8882209027146719,
+   "B": 0.8720688715991896,
+   "aero_front": -0.025780424785846915
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3018.2641948350597,
+  "plant": {
+   "mu": 0.9737730639742186,
+   "m": 1.049434766668391,
+   "ClA": 0.9365886649351438,
+   "CdA": 1.0926038280248536,
+   "Iz": 1.0902751109825826,
+   "B": 0.9943781489725805,
+   "aero_front": 0.01881204385077813
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3780.5219194965916,
+  "plant": {
+   "mu": 1.0155739723782051,
+   "m": 1.0317034989673721,
+   "ClA": 0.9993143387597707,
+   "CdA": 0.9327086832392961,
+   "Iz": 1.052120031318182,
+   "B": 0.9454052163537394,
+   "aero_front": 0.012652791795956693
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3779.704480717452,
+  "plant": {
+   "mu": 0.9706390861754057,
+   "m": 1.0253734930272265,
+   "ClA": 1.0579331464919741,
+   "CdA": 0.9185490951046762,
+   "Iz": 1.0236275509970507,
+   "B": 0.9091704841887606,
+   "aero_front": 0.01848820510881409
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.80649316676472,
+  "stop_reason": "lap completed",
+  "distance": 4318.561083650584,
+  "plant": {
+   "mu": 0.9863133795765229,
+   "m": 1.032756053199569,
+   "ClA": 1.0827381525414779,
+   "CdA": 0.9130540832822583,
+   "Iz": 1.10049646118752,
+   "B": 0.9645444339898716,
+   "aero_front": -0.010467263033957733
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3782.6060899167464,
+  "plant": {
+   "mu": 1.0293429448330982,
+   "m": 1.039059525103819,
+   "ClA": 0.9971070277559176,
+   "CdA": 0.9845256792849563,
+   "Iz": 1.1132586717615387,
+   "B": 0.8760444616644683,
+   "aero_front": 0.01250512541483196
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3776.3214359714184,
+  "plant": {
+   "mu": 0.9974164346193478,
+   "m": 1.041055154419732,
+   "ClA": 1.096365664574359,
+   "CdA": 1.0687581124737453,
+   "Iz": 0.9772319456332038,
+   "B": 1.143906612552897,
+   "aero_front": 0.028439064291141306
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.84055134327441,
+  "stop_reason": "lap completed",
+  "distance": 4316.3515678779695,
+  "plant": {
+   "mu": 0.9754044677120637,
+   "m": 1.0376723269291952,
+   "ClA": 1.0827675335346327,
+   "CdA": 0.9952294143937507,
+   "Iz": 1.1091358723291254,
+   "B": 1.0604705698185617,
+   "aero_front": -0.012364544641526542
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3782.5321312855262,
+  "plant": {
+   "mu": 1.006807008607566,
+   "m": 1.0399598189858057,
+   "ClA": 0.9644573449479664,
+   "CdA": 1.059327836549211,
+   "Iz": 0.9175985325626995,
+   "B": 0.9586923851453707,
+   "aero_front": -0.0049531132677372094
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.79483186752607,
+  "stop_reason": "lap completed",
+  "distance": 4316.074878208938,
+  "plant": {
+   "mu": 0.9795550981993182,
+   "m": 1.0056306832770279,
+   "ClA": 0.9813895601278613,
+   "CdA": 0.9000601380213846,
+   "Iz": 1.0733142179042197,
+   "B": 1.105562773670277,
+   "aero_front": -0.021664099252788144
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2729.7136354365966,
+  "plant": {
+   "mu": 0.9666111187267492,
+   "m": 1.0293150176795391,
+   "ClA": 0.9245381320352147,
+   "CdA": 1.0867537819913686,
+   "Iz": 1.0552151344225098,
+   "B": 1.0971344075178315,
+   "aero_front": 0.02380807393582559
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3780.9285647961706,
+  "plant": {
+   "mu": 1.0044417496981821,
+   "m": 1.028534239292975,
+   "ClA": 0.9187690306866613,
+   "CdA": 0.9782760852609329,
+   "Iz": 0.8721223040193418,
+   "B": 0.9928500889650986,
+   "aero_front": -0.00428762351142457
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3778.615737999206,
+  "plant": {
+   "mu": 0.9841652051615823,
+   "m": 1.00201091104523,
+   "ClA": 1.0422973648235516,
+   "CdA": 1.0138051708526716,
+   "Iz": 1.0977871666511196,
+   "B": 1.0096481420423031,
+   "aero_front": 0.018794645721851543
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3018.7884180846413,
+  "plant": {
+   "mu": 0.9340094319113839,
+   "m": 1.0363061755466991,
+   "ClA": 0.9560164803732999,
+   "CdA": 0.9381235120808037,
+   "Iz": 1.1088849995749583,
+   "B": 1.0193238463361782,
+   "aero_front": -0.0009300634592249793
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3782.944024635703,
+  "plant": {
+   "mu": 1.0296711322379741,
+   "m": 1.0175277405683945,
+   "ClA": 0.9342042880041348,
+   "CdA": 0.9783349598907806,
+   "Iz": 1.0759149969597028,
+   "B": 0.9817686795574919,
+   "aero_front": 0.005302806565752889
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3018.2795392897237,
+  "plant": {
+   "mu": 0.956288541574333,
+   "m": 1.0471838882614595,
+   "ClA": 0.9398596681358973,
+   "CdA": 1.002434731567547,
+   "Iz": 0.8572039602014048,
+   "B": 0.8990104273410868,
+   "aero_front": 0.023005124018013717
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3777.120014090101,
+  "plant": {
+   "mu": 1.0068172303077945,
+   "m": 1.0278417745026995,
+   "ClA": 0.9444906791982721,
+   "CdA": 1.0115495165242614,
+   "Iz": 0.8536439578340838,
+   "B": 1.063898089281376,
+   "aero_front": 0.013005040833823686
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.82051977964466,
+  "stop_reason": "lap completed",
+  "distance": 4317.6500679379415,
+  "plant": {
+   "mu": 1.0188706141773334,
+   "m": 1.0043006218030501,
+   "ClA": 1.0392308900681786,
+   "CdA": 0.9655964579529206,
+   "Iz": 0.9026229249955243,
+   "B": 1.0524395949901837,
+   "aero_front": -0.008230682948223832
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3018.2286795440937,
+  "plant": {
+   "mu": 0.9910649525922991,
+   "m": 1.03056693421376,
+   "ClA": 0.9147432865249076,
+   "CdA": 0.9492811938101952,
+   "Iz": 1.0223134144293795,
+   "B": 0.9682560298086692,
+   "aero_front": 0.0295213937148867
+  },
+  "controller": "tracker_0.85",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3016.735334256897,
+  "seed": 3,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3781.374355400566,
+  "seed": 0,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.84073810539996,
+  "stop_reason": "lap completed",
+  "distance": 4316.339570207899,
+  "seed": 1,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3778.579054048327,
+  "seed": 2,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.83539098657654,
+  "stop_reason": "lap completed",
+  "distance": 4316.685731807455,
+  "seed": 5,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.83880474306223,
+  "stop_reason": "lap completed",
+  "distance": 4316.4648639790175,
+  "seed": 4,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3780.7493363804856,
+  "seed": 6,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3781.1983574373553,
+  "seed": 8,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.84569845425438,
+  "stop_reason": "lap completed",
+  "distance": 4316.018653287001,
+  "seed": 7,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.84347000814918,
+  "stop_reason": "lap completed",
+  "distance": 4316.162940043131,
+  "seed": 9,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.84082607021442,
+  "stop_reason": "lap completed",
+  "distance": 4316.334004694758,
+  "seed": 10,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.84283593997833,
+  "stop_reason": "lap completed",
+  "distance": 4316.203772994265,
+  "seed": 11,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.84471065920796,
+  "stop_reason": "lap completed",
+  "distance": 4316.082630845631,
+  "seed": 12,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.83650408319696,
+  "stop_reason": "lap completed",
+  "distance": 4316.613347122278,
+  "seed": 13,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3779.8450507296543,
+  "seed": 15,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3784.846248836949,
+  "seed": 16,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.83830750036253,
+  "stop_reason": "lap completed",
+  "distance": 4316.49630606248,
+  "seed": 14,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.84517554323148,
+  "stop_reason": "lap completed",
+  "distance": 4316.052378263712,
+  "seed": 17,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3780.79451637087,
+  "seed": 18,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3779.711848668273,
+  "seed": 19,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3778.7191231706347,
+  "seed": 21,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3780.5933462211888,
+  "seed": 22,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.83891376948365,
+  "stop_reason": "lap completed",
+  "distance": 4316.457542035202,
+  "seed": 20,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3779.6929066684625,
+  "seed": 23,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3781.1535179513485,
+  "seed": 24,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3018.7235329839427,
+  "plant": {
+   "nominal": true
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.8348952281444,
+  "stop_reason": "lap completed",
+  "distance": 4316.717825130929,
+  "seed": 25,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3019.947050880161,
+  "seed": 27,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2758.362836234038,
+  "plant": {
+   "mu": 0.99006578560536,
+   "m": 1.0134893356881935,
+   "ClA": 0.908194704787239,
+   "CdA": 0.9033055271057059,
+   "Iz": 1.0939810717600817,
+   "B": 1.1238266731833164,
+   "aero_front": 0.00639814654603079
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 88.83900429869003,
+  "stop_reason": "lap completed",
+  "distance": 4316.45218795799,
+  "seed": 26,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.96608107426268,
+  "stop_reason": "lap completed",
+  "distance": 4318.065579272965,
+  "plant": {
+   "mu": 1.00024462170824,
+   "m": 1.027181249573271,
+   "ClA": 1.0870144847575538,
+   "CdA": 1.0631707108243065,
+   "Iz": 0.8508215500510444,
+   "B": 1.1072212829762706,
+   "aero_front": -0.027984865481672137
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2693.421437984251,
+  "plant": {
+   "mu": 0.9336711604149521,
+   "m": 1.0335312207346816,
+   "ClA": 1.02943790231485,
+   "CdA": 1.0230770222962509,
+   "Iz": 0.965103266278565,
+   "B": 1.1491629807367632,
+   "aero_front": 0.028850120326573803
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3779.873180364655,
+  "seed": 28,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.94973335869133,
+  "stop_reason": "lap completed",
+  "distance": 4315.758567297029,
+  "plant": {
+   "mu": 1.000262099107294,
+   "m": 1.008782781030128,
+   "ClA": 1.0726357844699774,
+   "CdA": 1.0082922440498183,
+   "Iz": 0.9399135671612154,
+   "B": 0.9768061663592975,
+   "aero_front": -0.02830081973127222
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2734.3338486697726,
+  "plant": {
+   "mu": 0.9541266063114852,
+   "m": 1.0242917679415895,
+   "ClA": 1.0778975668698,
+   "CdA": 1.0868087031912501,
+   "Iz": 0.957338559012721,
+   "B": 1.0214589492189283,
+   "aero_front": -0.01068783653544347
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2729.6957648583043,
+  "plant": {
+   "mu": 0.9954096182928764,
+   "m": 1.0325229638133908,
+   "ClA": 1.037689346114188,
+   "CdA": 0.9777842847958208,
+   "Iz": 0.8905289515067233,
+   "B": 1.0664465020582243,
+   "aero_front": 0.0015212593485435522
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3782.8256869052766,
+  "seed": 29,
+  "controller": "tracker_0.85",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3787.873813435315,
+  "plant": {
+   "mu": 0.9853730033219666,
+   "m": 1.0168955612753567,
+   "ClA": 0.9783238001056322,
+   "CdA": 1.0780548704009585,
+   "Iz": 0.9181472780600138,
+   "B": 1.0369561434058125,
+   "aero_front": -0.02495907938505691
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3787.0326937321956,
+  "plant": {
+   "mu": 1.0115908562418738,
+   "m": 1.0393549153744341,
+   "ClA": 0.9478738885985905,
+   "CdA": 1.0752968461621408,
+   "Iz": 0.8675704104415582,
+   "B": 0.950835118163698,
+   "aero_front": -0.020983231986309657
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.91245946051514,
+  "stop_reason": "lap completed",
+  "distance": 4318.317099793185,
+  "plant": {
+   "mu": 0.9695373303314216,
+   "m": 1.0398162135143647,
+   "ClA": 0.9461284417987496,
+   "CdA": 0.9104042602128819,
+   "Iz": 0.9713655519464583,
+   "B": 0.9095539133527766,
+   "aero_front": -0.024554817262852684
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3017.695755866778,
+  "plant": {
+   "mu": 0.9892018966693681,
+   "m": 1.0463577276533935,
+   "ClA": 0.9880754309431569,
+   "CdA": 1.0909180987381475,
+   "Iz": 0.9999687441062941,
+   "B": 0.9775685874547226,
+   "aero_front": 0.007212807120922669
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2731.8464747059256,
+  "plant": {
+   "mu": 1.0294606155758856,
+   "m": 1.0474471837468884,
+   "ClA": 0.9920090278618192,
+   "CdA": 1.0515457690616583,
+   "Iz": 0.9992268086462857,
+   "B": 1.0087936480590312,
+   "aero_front": 0.017147142042828446
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2731.87227367288,
+  "plant": {
+   "mu": 0.9656121434291238,
+   "m": 1.0367241785894366,
+   "ClA": 1.0422285755979501,
+   "CdA": 1.0864119373226757,
+   "Iz": 0.8844797899842716,
+   "B": 1.0687045351228928,
+   "aero_front": 0.025645435717473596
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2734.641452312095,
+  "plant": {
+   "mu": 1.026471880891711,
+   "m": 1.0007353152482685,
+   "ClA": 1.0727280180491152,
+   "CdA": 1.096239008013269,
+   "Iz": 1.137163053883289,
+   "B": 0.8946292036697493,
+   "aero_front": 0.028357728829377295
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.92099242541602,
+  "stop_reason": "lap completed",
+  "distance": 4317.730392874787,
+  "plant": {
+   "mu": 0.9838365624585537,
+   "m": 1.014934806640946,
+   "ClA": 1.034398975591272,
+   "CdA": 0.9399030887936427,
+   "Iz": 1.1326339331519493,
+   "B": 0.9595330504734485,
+   "aero_front": -0.023670283225786227
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3019.391050511012,
+  "plant": {
+   "mu": 1.0178929111292574,
+   "m": 1.0411186913771535,
+   "ClA": 0.9959975847615665,
+   "CdA": 0.9464745839278608,
+   "Iz": 1.0905641736154923,
+   "B": 1.1270590479350409,
+   "aero_front": -0.014032183662462446
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3040.189282438678,
+  "plant": {
+   "mu": 0.9273359009643812,
+   "m": 1.0172154989402062,
+   "ClA": 0.9860597463895667,
+   "CdA": 1.0932124161568142,
+   "Iz": 1.018669552668537,
+   "B": 0.9276593779512796,
+   "aero_front": -0.015499457154339301
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2735.4067318692546,
+  "plant": {
+   "mu": 0.9816523547206805,
+   "m": 1.0144210607215605,
+   "ClA": 0.9825792685361786,
+   "CdA": 1.0636241941941822,
+   "Iz": 1.037951938725926,
+   "B": 1.1377232928092327,
+   "aero_front": -0.007835735334499147
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3783.524754301137,
+  "plant": {
+   "mu": 0.9991141750109415,
+   "m": 1.0007995864761785,
+   "ClA": 1.0515902004712856,
+   "CdA": 1.0025517446524157,
+   "Iz": 1.1287312662391018,
+   "B": 0.8698247490172224,
+   "aero_front": 0.020479036776742995
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3016.704283661695,
+  "plant": {
+   "mu": 1.0176930152725099,
+   "m": 1.0112934714208661,
+   "ClA": 0.9249109411670567,
+   "CdA": 0.9576661514015156,
+   "Iz": 1.0258369194438197,
+   "B": 1.0162271506519802,
+   "aero_front": 0.018582646554766664
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.90350004047066,
+  "stop_reason": "lap completed",
+  "distance": 4318.93378894657,
+  "plant": {
+   "mu": 0.9792827848384406,
+   "m": 1.0221376414487267,
+   "ClA": 1.0862034631962312,
+   "CdA": 0.9081021422376869,
+   "Iz": 1.0696018586969682,
+   "B": 1.0343119740846989,
+   "aero_front": -0.028298078093188735
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3845.858241874723,
+  "plant": {
+   "mu": 0.9501234008459514,
+   "m": 1.0351326035329893,
+   "ClA": 1.0887602853884182,
+   "CdA": 0.9253634204522496,
+   "Iz": 1.1094334886202322,
+   "B": 0.8678392454801015,
+   "aero_front": -0.007153769501346635
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2733.0686068834316,
+  "plant": {
+   "mu": 0.9672751467296434,
+   "m": 1.0244424773416732,
+   "ClA": 1.095292464387209,
+   "CdA": 1.0551382376203657,
+   "Iz": 0.9426572088157783,
+   "B": 0.93095103565024,
+   "aero_front": 0.021787212251359066
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3782.3293130884363,
+  "plant": {
+   "mu": 1.0104976908199652,
+   "m": 1.0207692018685612,
+   "ClA": 1.0659607970556206,
+   "CdA": 0.9019909121614584,
+   "Iz": 0.9595138473274811,
+   "B": 0.8735890111496919,
+   "aero_front": 0.009156874580198308
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3018.8868572887673,
+  "plant": {
+   "mu": 1.016943789001146,
+   "m": 1.0255353252771824,
+   "ClA": 0.968859146192465,
+   "CdA": 1.0989834696321836,
+   "Iz": 0.9447830636103101,
+   "B": 0.9048137136779687,
+   "aero_front": 0.02280588727824418
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.90625117983019,
+  "stop_reason": "lap completed",
+  "distance": 4318.743841534747,
+  "plant": {
+   "mu": 0.9807872661573416,
+   "m": 1.0296962100806584,
+   "ClA": 1.069658241655012,
+   "CdA": 0.9290947076373064,
+   "Iz": 0.971953101024438,
+   "B": 1.122987688498689,
+   "aero_front": -0.027415986685907747
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.97143226538535,
+  "stop_reason": "lap completed",
+  "distance": 4317.697818731905,
+  "plant": {
+   "mu": 1.009356893792238,
+   "m": 1.0333944702785676,
+   "ClA": 1.0916827263555904,
+   "CdA": 1.0851429154428838,
+   "Iz": 1.0744745509905262,
+   "B": 1.1082104228643033,
+   "aero_front": -0.015171195580673551
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2751.099687976785,
+  "plant": {
+   "mu": 0.9355371212591135,
+   "m": 1.033503092465747,
+   "ClA": 1.0429237073309505,
+   "CdA": 0.9334105857564545,
+   "Iz": 0.9686671819314627,
+   "B": 1.1230767298648163,
+   "aero_front": 0.003684046053013375
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2730.384269197512,
+  "plant": {
+   "mu": 0.98361695064189,
+   "m": 1.0097064886445397,
+   "ClA": 1.005204449723575,
+   "CdA": 1.004686945478984,
+   "Iz": 0.8766806920738816,
+   "B": 1.1445828079380118,
+   "aero_front": 0.004283736027346462
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3022.397113245843,
+  "plant": {
+   "mu": 0.9207049770930742,
+   "m": 1.0386324600612695,
+   "ClA": 1.0956531427680292,
+   "CdA": 1.0179740056641902,
+   "Iz": 0.9459044908847994,
+   "B": 0.9062523147183354,
+   "aero_front": 0.010351598035012156
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2757.1610165891548,
+  "plant": {
+   "mu": 0.9414618138302486,
+   "m": 1.028884394625893,
+   "ClA": 1.0204478352759252,
+   "CdA": 1.0924846186248762,
+   "Iz": 0.871679579658963,
+   "B": 0.9999918470975855,
+   "aero_front": 0.014645848756958894
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2714.6225083301915,
+  "plant": {
+   "mu": 0.9394949414522125,
+   "m": 1.0194033365892259,
+   "ClA": 0.9125790996909943,
+   "CdA": 1.0451761727551554,
+   "Iz": 0.876330366027846,
+   "B": 0.9685275125073902,
+   "aero_front": 0.02241135786724393
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 84.01218850189215,
+  "stop_reason": "lap completed",
+  "distance": 4318.33226556747,
+  "plant": {
+   "mu": 0.9719530370425014,
+   "m": 1.0456310966820443,
+   "ClA": 1.0531834235477746,
+   "CdA": 1.0830647920223533,
+   "Iz": 0.8882209027146719,
+   "B": 0.8720688715991896,
+   "aero_front": -0.025780424785846915
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3019.7958754114516,
+  "plant": {
+   "mu": 1.0155739723782051,
+   "m": 1.0317034989673721,
+   "ClA": 0.9993143387597707,
+   "CdA": 0.9327086832392961,
+   "Iz": 1.052120031318182,
+   "B": 0.9454052163537394,
+   "aero_front": 0.012652791795956693
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2768.6702534065416,
+  "plant": {
+   "mu": 0.9737730639742186,
+   "m": 1.049434766668391,
+   "ClA": 0.9365886649351438,
+   "CdA": 1.0926038280248536,
+   "Iz": 1.0902751109825826,
+   "B": 0.9943781489725805,
+   "aero_front": 0.01881204385077813
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3019.856134491047,
+  "plant": {
+   "mu": 0.9706390861754057,
+   "m": 1.0253734930272265,
+   "ClA": 1.0579331464919741,
+   "CdA": 0.9185490951046762,
+   "Iz": 1.0236275509970507,
+   "B": 0.9091704841887606,
+   "aero_front": 0.01848820510881409
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3785.1338785615085,
+  "plant": {
+   "mu": 0.9863133795765229,
+   "m": 1.032756053199569,
+   "ClA": 1.0827381525414779,
+   "CdA": 0.9130540832822583,
+   "Iz": 1.10049646118752,
+   "B": 0.9645444339898716,
+   "aero_front": -0.010467263033957733
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3785.1346444239334,
+  "plant": {
+   "mu": 1.0293429448330982,
+   "m": 1.039059525103819,
+   "ClA": 0.9971070277559176,
+   "CdA": 0.9845256792849563,
+   "Iz": 1.1132586717615387,
+   "B": 0.8760444616644683,
+   "aero_front": 0.01250512541483196
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3019.175996767236,
+  "plant": {
+   "mu": 1.006807008607566,
+   "m": 1.0399598189858057,
+   "ClA": 0.9644573449479664,
+   "CdA": 1.059327836549211,
+   "Iz": 0.9175985325626995,
+   "B": 0.9586923851453707,
+   "aero_front": -0.0049531132677372094
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2725.7964165587077,
+  "plant": {
+   "mu": 0.9974164346193478,
+   "m": 1.041055154419732,
+   "ClA": 1.096365664574359,
+   "CdA": 1.0687581124737453,
+   "Iz": 0.9772319456332038,
+   "B": 1.143906612552897,
+   "aero_front": 0.028439064291141306
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3018.399181880656,
+  "plant": {
+   "mu": 0.9795550981993182,
+   "m": 1.0056306832770279,
+   "ClA": 0.9813895601278613,
+   "CdA": 0.9000601380213846,
+   "Iz": 1.0733142179042197,
+   "B": 1.105562773670277,
+   "aero_front": -0.021664099252788144
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3019.215621332474,
+  "plant": {
+   "mu": 0.9754044677120637,
+   "m": 1.0376723269291952,
+   "ClA": 1.0827675335346327,
+   "CdA": 0.9952294143937507,
+   "Iz": 1.1091358723291254,
+   "B": 1.0604705698185617,
+   "aero_front": -0.012364544641526542
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2730.7260723413765,
+  "plant": {
+   "mu": 0.9841652051615823,
+   "m": 1.00201091104523,
+   "ClA": 1.0422973648235516,
+   "CdA": 1.0138051708526716,
+   "Iz": 1.0977871666511196,
+   "B": 1.0096481420423031,
+   "aero_front": 0.018794645721851543
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3017.996907807958,
+  "plant": {
+   "mu": 1.0044417496981821,
+   "m": 1.028534239292975,
+   "ClA": 0.9187690306866613,
+   "CdA": 0.9782760852609329,
+   "Iz": 0.8721223040193418,
+   "B": 0.9928500889650986,
+   "aero_front": -0.00428762351142457
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2759.8594000955663,
+  "plant": {
+   "mu": 0.9666111187267492,
+   "m": 1.0293150176795391,
+   "ClA": 0.9245381320352147,
+   "CdA": 1.0867537819913686,
+   "Iz": 1.0552151344225098,
+   "B": 1.0971344075178315,
+   "aero_front": 0.02380807393582559
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3020.4356097390505,
+  "plant": {
+   "mu": 1.0296711322379741,
+   "m": 1.0175277405683945,
+   "ClA": 0.9342042880041348,
+   "CdA": 0.9783349598907806,
+   "Iz": 1.0759149969597028,
+   "B": 0.9817686795574919,
+   "aero_front": 0.005302806565752889
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3024.286692041944,
+  "plant": {
+   "mu": 0.9340094319113839,
+   "m": 1.0363061755466991,
+   "ClA": 0.9560164803732999,
+   "CdA": 0.9381235120808037,
+   "Iz": 1.1088849995749583,
+   "B": 1.0193238463361782,
+   "aero_front": -0.0009300634592249793
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2773.5007544115992,
+  "plant": {
+   "mu": 0.956288541574333,
+   "m": 1.0471838882614595,
+   "ClA": 0.9398596681358973,
+   "CdA": 1.002434731567547,
+   "Iz": 0.8572039602014048,
+   "B": 0.8990104273410868,
+   "aero_front": 0.023005124018013717
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3782.288414645211,
+  "plant": {
+   "mu": 1.0188706141773334,
+   "m": 1.0043006218030501,
+   "ClA": 1.0392308900681786,
+   "CdA": 0.9655964579529206,
+   "Iz": 0.9026229249955243,
+   "B": 1.0524395949901837,
+   "aero_front": -0.008230682948223832
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2732.491791739926,
+  "plant": {
+   "mu": 1.0068172303077945,
+   "m": 1.0278417745026995,
+   "ClA": 0.9444906791982721,
+   "CdA": 1.0115495165242614,
+   "Iz": 0.8536439578340838,
+   "B": 1.063898089281376,
+   "aero_front": 0.013005040833823686
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2768.8584543653155,
+  "plant": {
+   "mu": 0.9910649525922991,
+   "m": 1.03056693421376,
+   "ClA": 0.9147432865249076,
+   "CdA": 0.9492811938101952,
+   "Iz": 1.0223134144293795,
+   "B": 0.9682560298086692,
+   "aero_front": 0.0295213937148867
+  },
+  "controller": "tracker_0.90",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2732.354101869083,
+  "seed": 1,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3017.6428632184693,
+  "seed": 2,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2729.862944080658,
+  "seed": 3,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2729.7529348083617,
+  "seed": 5,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3778.9539843952657,
+  "seed": 0,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3019.812768067393,
+  "seed": 4,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3016.4538322981643,
+  "seed": 6,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2730.130448619209,
+  "seed": 8,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2728.280673938179,
+  "seed": 9,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2733.738636246045,
+  "seed": 11,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3781.668784449642,
+  "seed": 7,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3780.9563856266864,
+  "seed": 10,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3783.5191333730822,
+  "seed": 12,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3018.283732437811,
+  "seed": 13,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2732.9241346592294,
+  "seed": 15,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3018.155482851892,
+  "seed": 17,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3018.306958884388,
+  "seed": 14,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3782.078205347163,
+  "seed": 16,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3023.2491053524573,
+  "seed": 18,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3035.187807097769,
+  "seed": 21,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2730.3313917739733,
+  "seed": 19,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2730.7219970215338,
+  "seed": 20,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2727.9764581277605,
+  "seed": 22,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3781.942599526964,
+  "seed": 23,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3780.9736453284613,
+  "seed": 24,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3020.225768581521,
+  "seed": 27,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3018.13204490501,
+  "seed": 26,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3781.4575628628268,
+  "seed": 25,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3784.942256562012,
+  "seed": 29,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3018.7330418627357,
+  "seed": 28,
+  "controller": "tracker_0.90",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.47248895894096,
+  "stop_reason": "lap completed",
+  "distance": 4315.556644975673,
+  "fallbacks": 0,
+  "plant": {
+   "nominal": true
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.46991295783495,
+  "stop_reason": "lap completed",
+  "distance": 4315.011108872768,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 1.000262099107294,
+   "m": 1.008782781030128,
+   "ClA": 1.0726357844699774,
+   "CdA": 1.0082922440498183,
+   "Iz": 0.9399135671612154,
+   "B": 0.9768061663592975,
+   "aero_front": -0.02830081973127222
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 84.27905249919752,
+  "stop_reason": "lap completed",
+  "distance": 4315.078818499076,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.9336711604149521,
+   "m": 1.0335312207346816,
+   "ClA": 1.02943790231485,
+   "CdA": 1.0230770222962509,
+   "Iz": 0.965103266278565,
+   "B": 1.1491629807367632,
+   "aero_front": 0.028850120326573803
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.19589219858183,
+  "stop_reason": "lap completed",
+  "distance": 4315.303572048324,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.99006578560536,
+   "m": 1.0134893356881935,
+   "ClA": 0.908194704787239,
+   "CdA": 0.9033055271057059,
+   "Iz": 1.0939810717600817,
+   "B": 1.1238266731833164,
+   "aero_front": 0.00639814654603079
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.91708622184433,
+  "stop_reason": "lap completed",
+  "distance": 4315.2234346662035,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 1.00024462170824,
+   "m": 1.027181249573271,
+   "ClA": 1.0870144847575538,
+   "CdA": 1.0631707108243065,
+   "Iz": 0.8508215500510444,
+   "B": 1.1072212829762706,
+   "aero_front": -0.027984865481672137
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.69011899390944,
+  "stop_reason": "lap completed",
+  "distance": 4315.731562271483,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.9954096182928764,
+   "m": 1.0325229638133908,
+   "ClA": 1.037689346114188,
+   "CdA": 0.9777842847958208,
+   "Iz": 0.8905289515067233,
+   "B": 1.0664465020582243,
+   "aero_front": 0.0015212593485435522
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 468.97178056403754,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.9695373303314216,
+   "m": 1.0398162135143647,
+   "ClA": 0.9461284417987496,
+   "CdA": 0.9104042602128819,
+   "Iz": 0.9713655519464583,
+   "B": 0.9095539133527766,
+   "aero_front": -0.024554817262852684
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2723.8360986276944,
+  "fallbacks": 1,
+  "plant": {
+   "mu": 1.0115908562418738,
+   "m": 1.0393549153744341,
+   "ClA": 0.9478738885985905,
+   "CdA": 1.0752968461621408,
+   "Iz": 0.8675704104415582,
+   "B": 0.950835118163698,
+   "aero_front": -0.020983231986309657
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2746.0983881358015,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.9892018966693681,
+   "m": 1.0463577276533935,
+   "ClA": 0.9880754309431569,
+   "CdA": 1.0909180987381475,
+   "Iz": 0.9999687441062941,
+   "B": 0.9775685874547226,
+   "aero_front": 0.007212807120922669
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 84.56132962546391,
+  "stop_reason": "lap completed",
+  "distance": 4315.643724497744,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.9541266063114852,
+   "m": 1.0242917679415895,
+   "ClA": 1.0778975668698,
+   "CdA": 1.0868087031912501,
+   "Iz": 0.957338559012721,
+   "B": 1.0214589492189283,
+   "aero_front": -0.01068783653544347
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.84506067734866,
+  "stop_reason": "lap completed",
+  "distance": 4315.371077421529,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.9853730033219666,
+   "m": 1.0168955612753567,
+   "ClA": 0.9783238001056322,
+   "CdA": 1.0780548704009585,
+   "Iz": 0.9181472780600138,
+   "B": 1.0369561434058125,
+   "aero_front": -0.02495907938505691
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 84.88452481547036,
+  "stop_reason": "lap completed",
+  "distance": 4315.406371658991,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.9838365624585537,
+   "m": 1.014934806640946,
+   "ClA": 1.034398975591272,
+   "CdA": 0.9399030887936427,
+   "Iz": 1.1326339331519493,
+   "B": 0.9595330504734485,
+   "aero_front": -0.023670283225786227
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 84.59869198819382,
+  "stop_reason": "lap completed",
+  "distance": 4315.109349098205,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 1.0294606155758856,
+   "m": 1.0474471837468884,
+   "ClA": 0.9920090278618192,
+   "CdA": 1.0515457690616583,
+   "Iz": 0.9992268086462857,
+   "B": 1.0087936480590312,
+   "aero_front": 0.017147142042828446
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 84.5795549046952,
+  "stop_reason": "lap completed",
+  "distance": 4315.047535569311,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.9656121434291238,
+   "m": 1.0367241785894366,
+   "ClA": 1.0422285755979501,
+   "CdA": 1.0864119373226757,
+   "Iz": 0.8844797899842716,
+   "B": 1.0687045351228928,
+   "aero_front": 0.025645435717473596
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2743.5031068509206,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.9991141750109415,
+   "m": 1.0007995864761785,
+   "ClA": 1.0515902004712856,
+   "CdA": 1.0025517446524157,
+   "Iz": 1.1287312662391018,
+   "B": 0.8698247490172224,
+   "aero_front": 0.020479036776742995
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.66097414684137,
+  "stop_reason": "lap completed",
+  "distance": 4315.668581598493,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 1.0178929111292574,
+   "m": 1.0411186913771535,
+   "ClA": 0.9959975847615665,
+   "CdA": 0.9464745839278608,
+   "Iz": 1.0905641736154923,
+   "B": 1.1270590479350409,
+   "aero_front": -0.014032183662462446
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.53393471996527,
+  "stop_reason": "lap completed",
+  "distance": 4315.449004284431,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.9792827848384406,
+   "m": 1.0221376414487267,
+   "ClA": 1.0862034631962312,
+   "CdA": 0.9081021422376869,
+   "Iz": 1.0696018586969682,
+   "B": 1.0343119740846989,
+   "aero_front": -0.028298078093188735
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 84.94962971960622,
+  "stop_reason": "lap completed",
+  "distance": 4315.038774023707,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 1.026471880891711,
+   "m": 1.0007353152482685,
+   "ClA": 1.0727280180491152,
+   "CdA": 1.096239008013269,
+   "Iz": 1.137163053883289,
+   "B": 0.8946292036697493,
+   "aero_front": 0.028357728829377295
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2714.491981775246,
+  "fallbacks": 2,
+  "plant": {
+   "mu": 0.9273359009643812,
+   "m": 1.0172154989402062,
+   "ClA": 0.9860597463895667,
+   "CdA": 1.0932124161568142,
+   "Iz": 1.018669552668537,
+   "B": 0.9276593779512796,
+   "aero_front": -0.015499457154339301
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 467.13356348756406,
+  "fallbacks": 1,
+  "plant": {
+   "mu": 0.9501234008459514,
+   "m": 1.0351326035329893,
+   "ClA": 1.0887602853884182,
+   "CdA": 0.9253634204522496,
+   "Iz": 1.1094334886202322,
+   "B": 0.8678392454801015,
+   "aero_front": -0.007153769501346635
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2725.7781820200066,
+  "fallbacks": 1,
+  "plant": {
+   "mu": 1.0104976908199652,
+   "m": 1.0207692018685612,
+   "ClA": 1.0659607970556206,
+   "CdA": 0.9019909121614584,
+   "Iz": 0.9595138473274811,
+   "B": 0.8735890111496919,
+   "aero_front": 0.009156874580198308
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.58944558486955,
+  "stop_reason": "lap completed",
+  "distance": 4315.042410611381,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 1.0176930152725099,
+   "m": 1.0112934714208661,
+   "ClA": 0.9249109411670567,
+   "CdA": 0.9576661514015156,
+   "Iz": 1.0258369194438197,
+   "B": 1.0162271506519802,
+   "aero_front": 0.018582646554766664
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2738.835187645363,
+  "fallbacks": 2,
+  "plant": {
+   "mu": 1.016943789001146,
+   "m": 1.0255353252771824,
+   "ClA": 0.968859146192465,
+   "CdA": 1.0989834696321836,
+   "Iz": 0.9447830636103101,
+   "B": 0.9048137136779687,
+   "aero_front": 0.02280588727824418
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2732.8355571033535,
+  "fallbacks": 4,
+  "plant": {
+   "mu": 0.9672751467296434,
+   "m": 1.0244424773416732,
+   "ClA": 1.095292464387209,
+   "CdA": 1.0551382376203657,
+   "Iz": 0.9426572088157783,
+   "B": 0.93095103565024,
+   "aero_front": 0.021787212251359066
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.62837804718775,
+  "stop_reason": "lap completed",
+  "distance": 4315.121587041926,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.9807872661573416,
+   "m": 1.0296962100806584,
+   "ClA": 1.069658241655012,
+   "CdA": 0.9290947076373064,
+   "Iz": 0.971953101024438,
+   "B": 1.122987688498689,
+   "aero_front": -0.027415986685907747
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 467.9718407334035,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.9207049770930742,
+   "m": 1.0386324600612695,
+   "ClA": 1.0956531427680292,
+   "CdA": 1.0179740056641902,
+   "Iz": 0.9459044908847994,
+   "B": 0.9062523147183354,
+   "aero_front": 0.010351598035012156
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.67204056676486,
+  "stop_reason": "lap completed",
+  "distance": 4315.590963861568,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.9816523547206805,
+   "m": 1.0144210607215605,
+   "ClA": 0.9825792685361786,
+   "CdA": 1.0636241941941822,
+   "Iz": 1.037951938725926,
+   "B": 1.1377232928092327,
+   "aero_front": -0.007835735334499147
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2219.4442722330846,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.9719530370425014,
+   "m": 1.0456310966820443,
+   "ClA": 1.0531834235477746,
+   "CdA": 1.0830647920223533,
+   "Iz": 0.8882209027146719,
+   "B": 0.8720688715991896,
+   "aero_front": -0.025780424785846915
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2734.927827913263,
+  "fallbacks": 1,
+  "plant": {
+   "mu": 0.9414618138302486,
+   "m": 1.028884394625893,
+   "ClA": 1.0204478352759252,
+   "CdA": 1.0924846186248762,
+   "Iz": 0.871679579658963,
+   "B": 0.9999918470975855,
+   "aero_front": 0.014645848756958894
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 84.09631388336398,
+  "stop_reason": "lap completed",
+  "distance": 4315.281466433795,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 1.009356893792238,
+   "m": 1.0333944702785676,
+   "ClA": 1.0916827263555904,
+   "CdA": 1.0851429154428838,
+   "Iz": 1.0744745509905262,
+   "B": 1.1082104228643033,
+   "aero_front": -0.015171195580673551
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 84.27978519087857,
+  "stop_reason": "lap completed",
+  "distance": 4315.018960194524,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.9355371212591135,
+   "m": 1.033503092465747,
+   "ClA": 1.0429237073309505,
+   "CdA": 0.9334105857564545,
+   "Iz": 0.9686671819314627,
+   "B": 1.1230767298648163,
+   "aero_front": 0.003684046053013375
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2716.578063646482,
+  "fallbacks": 1,
+  "plant": {
+   "mu": 0.9394949414522125,
+   "m": 1.0194033365892259,
+   "ClA": 0.9125790996909943,
+   "CdA": 1.0451761727551554,
+   "Iz": 0.876330366027846,
+   "B": 0.9685275125073902,
+   "aero_front": 0.02241135786724393
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.35265756925948,
+  "stop_reason": "lap completed",
+  "distance": 4315.544509809366,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.98361695064189,
+   "m": 1.0097064886445397,
+   "ClA": 1.005204449723575,
+   "CdA": 1.004686945478984,
+   "Iz": 0.8766806920738816,
+   "B": 1.1445828079380118,
+   "aero_front": 0.004283736027346462
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2713.96226570087,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.9706390861754057,
+   "m": 1.0253734930272265,
+   "ClA": 1.0579331464919741,
+   "CdA": 0.9185490951046762,
+   "Iz": 1.0236275509970507,
+   "B": 0.9091704841887606,
+   "aero_front": 0.01848820510881409
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2715.527990194335,
+  "fallbacks": 1,
+  "plant": {
+   "mu": 0.9737730639742186,
+   "m": 1.049434766668391,
+   "ClA": 0.9365886649351438,
+   "CdA": 1.0926038280248536,
+   "Iz": 1.0902751109825826,
+   "B": 0.9943781489725805,
+   "aero_front": 0.01881204385077813
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2735.742584299352,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 1.0155739723782051,
+   "m": 1.0317034989673721,
+   "ClA": 0.9993143387597707,
+   "CdA": 0.9327086832392961,
+   "Iz": 1.052120031318182,
+   "B": 0.9454052163537394,
+   "aero_front": 0.012652791795956693
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2707.0513591072267,
+  "fallbacks": 1,
+  "plant": {
+   "mu": 1.0293429448330982,
+   "m": 1.039059525103819,
+   "ClA": 0.9971070277559176,
+   "CdA": 0.9845256792849563,
+   "Iz": 1.1132586717615387,
+   "B": 0.8760444616644683,
+   "aero_front": 0.01250512541483196
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2739.2198949005033,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 1.006807008607566,
+   "m": 1.0399598189858057,
+   "ClA": 0.9644573449479664,
+   "CdA": 1.059327836549211,
+   "Iz": 0.9175985325626995,
+   "B": 0.9586923851453707,
+   "aero_front": -0.0049531132677372094
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 85.55635509344647,
+  "stop_reason": "lap completed",
+  "distance": 4315.271919015235,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.9863133795765229,
+   "m": 1.032756053199569,
+   "ClA": 1.0827381525414779,
+   "CdA": 0.9130540832822583,
+   "Iz": 1.10049646118752,
+   "B": 0.9645444339898716,
+   "aero_front": -0.010467263033957733
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2740.1388377910644,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 1.0044417496981821,
+   "m": 1.028534239292975,
+   "ClA": 0.9187690306866613,
+   "CdA": 0.9782760852609329,
+   "Iz": 0.8721223040193418,
+   "B": 0.9928500889650986,
+   "aero_front": -0.00428762351142457
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.00111849056093,
+  "stop_reason": "lap completed",
+  "distance": 4315.657346479539,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.9795550981993182,
+   "m": 1.0056306832770279,
+   "ClA": 0.9813895601278613,
+   "CdA": 0.9000601380213846,
+   "Iz": 1.0733142179042197,
+   "B": 1.105562773670277,
+   "aero_front": -0.021664099252788144
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 84.1448702689232,
+  "stop_reason": "lap completed",
+  "distance": 4315.386414275377,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.9974164346193478,
+   "m": 1.041055154419732,
+   "ClA": 1.096365664574359,
+   "CdA": 1.0687581124737453,
+   "Iz": 0.9772319456332038,
+   "B": 1.143906612552897,
+   "aero_front": 0.028439064291141306
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 84.00992990846733,
+  "stop_reason": "lap completed",
+  "distance": 4315.013328335222,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.9754044677120637,
+   "m": 1.0376723269291952,
+   "ClA": 1.0827675335346327,
+   "CdA": 0.9952294143937507,
+   "Iz": 1.1091358723291254,
+   "B": 1.0604705698185617,
+   "aero_front": -0.012364544641526542
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 466.88518660894715,
+  "fallbacks": 1,
+  "plant": {
+   "mu": 0.956288541574333,
+   "m": 1.0471838882614595,
+   "ClA": 0.9398596681358973,
+   "CdA": 1.002434731567547,
+   "Iz": 0.8572039602014048,
+   "B": 0.8990104273410868,
+   "aero_front": 0.023005124018013717
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.68123089498339,
+  "stop_reason": "lap completed",
+  "distance": 4315.649641060326,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.9841652051615823,
+   "m": 1.00201091104523,
+   "ClA": 1.0422973648235516,
+   "CdA": 1.0138051708526716,
+   "Iz": 1.0977871666511196,
+   "B": 1.0096481420423031,
+   "aero_front": 0.018794645721851543
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 85.01469178856308,
+  "stop_reason": "lap completed",
+  "distance": 4315.399329865245,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 0.9666111187267492,
+   "m": 1.0293150176795391,
+   "ClA": 0.9245381320352147,
+   "CdA": 1.0867537819913686,
+   "Iz": 1.0552151344225098,
+   "B": 1.0971344075178315,
+   "aero_front": 0.02380807393582559
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2714.0459432593047,
+  "fallbacks": 3,
+  "plant": {
+   "mu": 0.9340094319113839,
+   "m": 1.0363061755466991,
+   "ClA": 0.9560164803732999,
+   "CdA": 0.9381235120808037,
+   "Iz": 1.1088849995749583,
+   "B": 1.0193238463361782,
+   "aero_front": -0.0009300634592249793
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.21240172842317,
+  "stop_reason": "lap completed",
+  "distance": 4315.562711289572,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 1.0188706141773334,
+   "m": 1.0043006218030501,
+   "ClA": 1.0392308900681786,
+   "CdA": 0.9655964579529206,
+   "Iz": 0.9026229249955243,
+   "B": 1.0524395949901837,
+   "aero_front": -0.008230682948223832
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.85447375620588,
+  "stop_reason": "lap completed",
+  "distance": 4315.410603518412,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 1.0296711322379741,
+   "m": 1.0175277405683945,
+   "ClA": 0.9342042880041348,
+   "CdA": 0.9783349598907806,
+   "Iz": 1.0759149969597028,
+   "B": 0.9817686795574919,
+   "aero_front": 0.005302806565752889
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2718.963623669425,
+  "fallbacks": 1,
+  "plant": {
+   "mu": 0.9910649525922991,
+   "m": 1.03056693421376,
+   "ClA": 0.9147432865249076,
+   "CdA": 0.9492811938101952,
+   "Iz": 1.0223134144293795,
+   "B": 0.9682560298086692,
+   "aero_front": 0.0295213937148867
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 84.21613933783311,
+  "stop_reason": "lap completed",
+  "distance": 4315.290198478809,
+  "fallbacks": 0,
+  "plant": {
+   "mu": 1.0068172303077945,
+   "m": 1.0278417745026995,
+   "ClA": 0.9444906791982721,
+   "CdA": 1.0115495165242614,
+   "Iz": 0.8536439578340838,
+   "B": 1.063898089281376,
+   "aero_front": 0.013005040833823686
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 85.83365759406655,
+  "stop_reason": "lap completed",
+  "distance": 4315.481438872011,
+  "fallbacks": 0,
+  "seed": 0,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2735.012957763421,
+  "fallbacks": 1,
+  "seed": 2,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 85.41926495926187,
+  "stop_reason": "lap completed",
+  "distance": 4315.071151559496,
+  "fallbacks": 0,
+  "seed": 1,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 463.25714407072974,
+  "fallbacks": 4,
+  "seed": 7,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 461.972159899879,
+  "fallbacks": 4,
+  "seed": 9,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 461.7101453197679,
+  "fallbacks": 5,
+  "seed": 10,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 86.49314402603716,
+  "stop_reason": "lap completed",
+  "distance": 4315.51113046423,
+  "fallbacks": 0,
+  "seed": 4,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 86.79057680658299,
+  "stop_reason": "lap completed",
+  "distance": 4315.698720100345,
+  "fallbacks": 1,
+  "seed": 3,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 85.31110553389792,
+  "stop_reason": "lap completed",
+  "distance": 4315.660228450577,
+  "fallbacks": 0,
+  "seed": 5,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 85.4963881166177,
+  "stop_reason": "lap completed",
+  "distance": 4315.279806083141,
+  "fallbacks": 0,
+  "seed": 6,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 85.65333906437601,
+  "stop_reason": "lap completed",
+  "distance": 4315.497582949305,
+  "fallbacks": 0,
+  "seed": 8,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2740.551871642872,
+  "fallbacks": 0,
+  "seed": 11,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3805.6655140167004,
+  "fallbacks": 1,
+  "seed": 12,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 84.95284231442615,
+  "stop_reason": "lap completed",
+  "distance": 4315.540120170917,
+  "fallbacks": 0,
+  "seed": 13,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 84.99956309736329,
+  "stop_reason": "lap completed",
+  "distance": 4315.049852129543,
+  "fallbacks": 0,
+  "seed": 14,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 85.20839390014537,
+  "stop_reason": "lap completed",
+  "distance": 4315.140002788247,
+  "fallbacks": 0,
+  "seed": 15,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 85.17543983622636,
+  "stop_reason": "lap completed",
+  "distance": 4315.3507839491085,
+  "fallbacks": 0,
+  "seed": 17,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 85.6214310168841,
+  "stop_reason": "lap completed",
+  "distance": 4315.6426471195555,
+  "fallbacks": 3,
+  "seed": 16,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 463.44682078284404,
+  "fallbacks": 1,
+  "seed": 21,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 462.6541742044924,
+  "fallbacks": 1,
+  "seed": 24,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 461.97220174964514,
+  "fallbacks": 0,
+  "seed": 25,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3815.712682347345,
+  "fallbacks": 2,
+  "seed": 18,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 85.95677525978914,
+  "stop_reason": "lap completed",
+  "distance": 4315.267964721662,
+  "fallbacks": 0,
+  "seed": 19,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 465.3047074952533,
+  "fallbacks": 1,
+  "seed": 28,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2213.5468555136504,
+  "fallbacks": 11,
+  "seed": 23,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 85.7650203254087,
+  "stop_reason": "lap completed",
+  "distance": 4315.380591068679,
+  "fallbacks": 0,
+  "seed": 20,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2216.1563853185817,
+  "fallbacks": 1,
+  "seed": 26,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 85.31807314638823,
+  "stop_reason": "lap completed",
+  "distance": 4315.157160415053,
+  "fallbacks": 0,
+  "seed": 22,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 86.4573444161332,
+  "stop_reason": "lap completed",
+  "distance": 4315.22204286167,
+  "fallbacks": 2,
+  "seed": 27,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ },
+ {
+  "completed": true,
+  "lap_time": 85.93412519425027,
+  "stop_reason": "lap completed",
+  "distance": 4315.446471273146,
+  "fallbacks": 0,
+  "seed": 29,
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L3"
+ }
+]

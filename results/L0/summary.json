@@ -1,0 +1,43 @@
+{
+  "config": {
+    "track": "Spielberg",
+    "margin": 0.3,
+    "eta_plan": 0.97,
+    "ocp_ds": 2.0,
+    "qss_ds": 0.5,
+    "dt": 0.02,
+    "mincurv_step": 3
+  },
+  "centreline_qss": 77.88859243821531,
+  "mincurv_qss_ideal": 72.13867093914719,
+  "mincurv_qss_plan": 72.89184268691852,
+  "ocp_ideal": 71.26203387743055,
+  "ocp_plan": 72.07253751533801,
+  "closed_loop": {
+    "mincurv_qss": {
+      "lap_time": 72.90286093086048,
+      "completed": true,
+      "stop_reason": "lap completed",
+      "max_usage": 0.995,
+      "min_edge_margin": 0.24486911012483858,
+      "max_abs_e": 0.040181134661623985,
+      "max_dv": 0.5480087375678124
+    },
+    "ocp": {
+      "lap_time": 72.10488973368871,
+      "completed": true,
+      "stop_reason": "lap completed",
+      "max_usage": 0.9950000000000002,
+      "min_edge_margin": 0.2618746493254154,
+      "max_abs_e": 0.07245760725138678,
+      "max_dv": 0.5417202327772088
+    }
+  },
+  "timing": {
+    "mincurv_s": 11.476455211639404,
+    "ocp_s": 23.514552354812622,
+    "sim_mincurv_qss_s": 1.1363766193389893,
+    "sim_ocp_s": 1.1116716861724854,
+    "total_s": 38.26463031768799
+  }
+}

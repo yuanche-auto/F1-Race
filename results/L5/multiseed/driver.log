@@ -1,0 +1,79 @@
+21:55 started A_s1
+21:55 started B_s1
+21:55 started C_s1
+00:12 finished B_s1 exit 0
+00:12 started A_s2
+00:14 finished A_s1 exit 0
+00:14 started B_s2
+00:20 finished C_s1 exit 0
+00:20 started C_s2
+02:13 finished A_s2 exit 0
+02:13 started A_s3
+02:14 finished B_s2 exit 0
+02:14 started B_s3
+02:20 finished C_s2 exit 0
+02:20 started C_s3
+04:19 finished B_s3 exit 0
+04:22 finished A_s3 exit 0
+04:23 finished C_s3 exit 0
+{
+ "A": {
+  "checkpoint": "A_s2_600k",
+  "val_completed": 20,
+  "val_laps": 20,
+  "val_lap_mean": 81.38936770656917
+ },
+ "B": {
+  "checkpoint": "B_s1_500k",
+  "val_completed": 20,
+  "val_laps": 20,
+  "val_lap_mean": 81.26574190462398
+ },
+ "C": {
+  "checkpoint": "C_s2_450k",
+  "val_completed": 19,
+  "val_laps": 20,
+  "val_lap_mean": 82.16099081554393
+ }
+}
+**(b) final checkpoint of every seed (no selection)**
+
+| group | seed | validation | L2 test (51 cars) | L3 test (30 laps) |
+|---|---|---|---|---|
+| A | 1 | 12/20 | 39/51, 81.31 s | 23/30, 81.21 s |
+| A | 2 | 20/20 | 47/51, 81.37 s | 29/30, 81.26 s |
+| A | 3 | 16/20 | 36/51, 81.67 s | 28/30, 81.61 s |
+| B | 1 | 18/20 | 46/51, 81.91 s | 29/30, 81.99 s |
+| B | 2 | 11/20 | 19/51, 81.19 s | 14/30, 80.75 s |
+| B | 3 | 20/20 | 50/51, 81.82 s | 30/30, 81.80 s |
+| C | 1 | 13/20 | 35/51, 81.02 s | 25/30, 81.04 s |
+| C | 2 | 15/20 | 30/51, 82.04 s | 27/30, 81.89 s |
+| C | 3 | 13/20 | 31/51, 80.07 s | 22/30, 79.98 s |
+
+**(c) median seed per group** (by completed test laps of the final checkpoint)
+
+* A: seed 3: L2 36/51, 81.67 s, L3 28/30, 81.61 s
+* B: seed 1: L2 46/51, 81.91 s, L3 29/30, 81.99 s
+* C: seed 2: L2 30/51, 82.04 s, L3 27/30, 81.89 s
+
+**(a) checkpoint selected on the validation set**
+
+| group | checkpoint | validation | L2 test | L3 test |
+|---|---|---|---|---|
+| A | A_s2_600k | 20/20, 81.39 s | 47/51, 81.37 s | 29/30, 81.26 s |
+| B | B_s1_500k | 20/20, 81.27 s | 51/51, 81.19 s | 30/30, 81.23 s |
+| C | C_s2_450k | 19/20, 82.16 s | 49/51, 82.22 s | 30/30, 82.05 s |
+
+**Validation laps completed per checkpoint** (columns: 50k бн 600k)
+
+| run | 50k | 100k | 150k | 200k | 250k | 300k | 350k | 400k | 450k | 500k | 550k | 600k |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| A_s1 | 0 | 0 | 0 | 15 | 5 | 11 | 8 | 17 | 17 | 12 | 14 | 12 |
+| A_s2 | 0 | 0 | 12 | 5 | 1 | 19 | 17 | 18 | 19 | 18 | 19 | 20 |
+| A_s3 | 0 | 1 | 0 | 16 | 0 | 20 | 18 | 19 | 18 | 18 | 16 | 16 |
+| B_s1 | 0 | 0 | 0 | 2 | 13 | 9 | 16 | 17 | 12 | 20 | 19 | 18 |
+| B_s2 | 0 | 0 | 1 | 0 | 0 | 0 | 19 | 16 | 12 | 19 | 15 | 11 |
+| B_s3 | 0 | 0 | 0 | 13 | 20 | 18 | 18 | 19 | 19 | 18 | 20 | 20 |
+| C_s1 | 0 | 0 | 0 | 0 | 14 | 8 | 2 | 17 | 17 | 14 | 15 | 13 |
+| C_s2 | 0 | 0 | 1 | 5 | 6 | 8 | 5 | 12 | 19 | 16 | 15 | 15 |
+| C_s3 | 0 | 0 | 14 | 12 | 4 | 12 | 11 | 13 | 11 | 7 | 10 | 13 |

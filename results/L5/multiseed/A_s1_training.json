@@ -1,0 +1,362 @@
+[
+ {
+  "steps": 10000,
+  "minutes": 1.929887596766154,
+  "ep_reward_mean": 32.511083189189186,
+  "ep_len_mean": 127.20270270270271
+ },
+ {
+  "steps": 20000,
+  "minutes": 4.571254416306814,
+  "ep_reward_mean": 15.938228429999999,
+  "ep_len_mean": 106.92
+ },
+ {
+  "steps": 30000,
+  "minutes": 7.1079295635223385,
+  "ep_reward_mean": 19.08200455,
+  "ep_len_mean": 109.81
+ },
+ {
+  "steps": 40000,
+  "minutes": 9.654875679810841,
+  "ep_reward_mean": 23.983945910000003,
+  "ep_len_mean": 116.74
+ },
+ {
+  "steps": 50000,
+  "minutes": 12.255002331733703,
+  "ep_reward_mean": 24.64602789,
+  "ep_len_mean": 117.65
+ },
+ {
+  "steps": 60000,
+  "minutes": 14.905595616499584,
+  "ep_reward_mean": 27.78060159,
+  "ep_len_mean": 130.6
+ },
+ {
+  "steps": 70000,
+  "minutes": 17.642912129561108,
+  "ep_reward_mean": 33.30381733,
+  "ep_len_mean": 141.55
+ },
+ {
+  "steps": 80000,
+  "minutes": 20.278983378410338,
+  "ep_reward_mean": 39.728695859999995,
+  "ep_len_mean": 153.15
+ },
+ {
+  "steps": 90000,
+  "minutes": 22.852378578980765,
+  "ep_reward_mean": 41.020689350000005,
+  "ep_len_mean": 156.83
+ },
+ {
+  "steps": 100000,
+  "minutes": 25.55573444366455,
+  "ep_reward_mean": 59.63091335,
+  "ep_len_mean": 183.63
+ },
+ {
+  "steps": 110000,
+  "minutes": 28.058718784650168,
+  "ep_reward_mean": 87.5954378,
+  "ep_len_mean": 225.78
+ },
+ {
+  "steps": 120000,
+  "minutes": 30.484011916319528,
+  "ep_reward_mean": 108.38358603,
+  "ep_len_mean": 255.55
+ },
+ {
+  "steps": 130000,
+  "minutes": 32.94015794197718,
+  "ep_reward_mean": 110.77963887,
+  "ep_len_mean": 259.59
+ },
+ {
+  "steps": 140000,
+  "minutes": 35.694318044185636,
+  "ep_reward_mean": 108.53556128,
+  "ep_len_mean": 255.3
+ },
+ {
+  "steps": 150000,
+  "minutes": 37.890625365575154,
+  "ep_reward_mean": 107.06131056,
+  "ep_len_mean": 255.08
+ },
+ {
+  "steps": 160000,
+  "minutes": 40.09056166013082,
+  "ep_reward_mean": 114.74567732,
+  "ep_len_mean": 267.29
+ },
+ {
+  "steps": 170000,
+  "minutes": 42.226035034656526,
+  "ep_reward_mean": 126.95090678000001,
+  "ep_len_mean": 289.54
+ },
+ {
+  "steps": 180000,
+  "minutes": 44.36715731223424,
+  "ep_reward_mean": 124.91941891,
+  "ep_len_mean": 280.49
+ },
+ {
+  "steps": 190000,
+  "minutes": 46.49043587843577,
+  "ep_reward_mean": 119.31821859,
+  "ep_len_mean": 269.03
+ },
+ {
+  "steps": 200000,
+  "minutes": 48.72529839674632,
+  "ep_reward_mean": 126.82717134,
+  "ep_len_mean": 279.34
+ },
+ {
+  "steps": 210000,
+  "minutes": 51.03900026082992,
+  "ep_reward_mean": 139.50896183,
+  "ep_len_mean": 298.12
+ },
+ {
+  "steps": 220000,
+  "minutes": 53.26169844865799,
+  "ep_reward_mean": 152.23938086,
+  "ep_len_mean": 319.04
+ },
+ {
+  "steps": 230000,
+  "minutes": 55.41588279803594,
+  "ep_reward_mean": 160.65462381999998,
+  "ep_len_mean": 328.2
+ },
+ {
+  "steps": 240000,
+  "minutes": 57.92122356096903,
+  "ep_reward_mean": 168.37510299999997,
+  "ep_len_mean": 341.96
+ },
+ {
+  "steps": 250000,
+  "minutes": 60.333480823040006,
+  "ep_reward_mean": 162.01553542,
+  "ep_len_mean": 333.6
+ },
+ {
+  "steps": 260000,
+  "minutes": 62.5331164598465,
+  "ep_reward_mean": 169.95423014,
+  "ep_len_mean": 345.22
+ },
+ {
+  "steps": 270000,
+  "minutes": 64.75256222089132,
+  "ep_reward_mean": 166.7737299,
+  "ep_len_mean": 340.9
+ },
+ {
+  "steps": 280000,
+  "minutes": 66.94135214885075,
+  "ep_reward_mean": 164.07270084,
+  "ep_len_mean": 336.04
+ },
+ {
+  "steps": 290000,
+  "minutes": 69.11488690376282,
+  "ep_reward_mean": 148.31785661,
+  "ep_len_mean": 313.83
+ },
+ {
+  "steps": 300000,
+  "minutes": 71.32868732213974,
+  "ep_reward_mean": 139.96448651999998,
+  "ep_len_mean": 299.76
+ },
+ {
+  "steps": 310000,
+  "minutes": 73.57389965057374,
+  "ep_reward_mean": 135.26567517,
+  "ep_len_mean": 291.74
+ },
+ {
+  "steps": 320000,
+  "minutes": 75.7940015633901,
+  "ep_reward_mean": 147.05388806000002,
+  "ep_len_mean": 308.5
+ },
+ {
+  "steps": 330000,
+  "minutes": 77.96758300463358,
+  "ep_reward_mean": 154.96467246,
+  "ep_len_mean": 320.79
+ },
+ {
+  "steps": 340000,
+  "minutes": 80.37070167064667,
+  "ep_reward_mean": 164.56078939,
+  "ep_len_mean": 335.31
+ },
+ {
+  "steps": 350000,
+  "minutes": 82.83862907489141,
+  "ep_reward_mean": 157.66662936,
+  "ep_len_mean": 325.53
+ },
+ {
+  "steps": 360000,
+  "minutes": 85.2512252608935,
+  "ep_reward_mean": 150.4621694,
+  "ep_len_mean": 314.76
+ },
+ {
+  "steps": 370000,
+  "minutes": 87.63544645706813,
+  "ep_reward_mean": 150.00225166,
+  "ep_len_mean": 314.78
+ },
+ {
+  "steps": 380000,
+  "minutes": 89.89007971286773,
+  "ep_reward_mean": 151.1083519,
+  "ep_len_mean": 314.48
+ },
+ {
+  "steps": 390000,
+  "minutes": 92.04698842763901,
+  "ep_reward_mean": 146.79402687,
+  "ep_len_mean": 307.55
+ },
+ {
+  "steps": 400000,
+  "minutes": 94.31550024350484,
+  "ep_reward_mean": 135.51066959,
+  "ep_len_mean": 294.73
+ },
+ {
+  "steps": 410000,
+  "minutes": 96.49092626174291,
+  "ep_reward_mean": 133.21755723,
+  "ep_len_mean": 294.0
+ },
+ {
+  "steps": 420000,
+  "minutes": 98.74320387045542,
+  "ep_reward_mean": 137.03036661,
+  "ep_len_mean": 301.24
+ },
+ {
+  "steps": 430000,
+  "minutes": 101.00799080928167,
+  "ep_reward_mean": 139.97185693,
+  "ep_len_mean": 303.37
+ },
+ {
+  "steps": 440000,
+  "minutes": 103.18139196236929,
+  "ep_reward_mean": 155.88091194999998,
+  "ep_len_mean": 324.61
+ },
+ {
+  "steps": 450000,
+  "minutes": 105.45889027516047,
+  "ep_reward_mean": 147.2218133,
+  "ep_len_mean": 310.41
+ },
+ {
+  "steps": 460000,
+  "minutes": 107.5938552459081,
+  "ep_reward_mean": 154.29052072000002,
+  "ep_len_mean": 319.86
+ },
+ {
+  "steps": 470000,
+  "minutes": 109.73273528416952,
+  "ep_reward_mean": 153.16377739,
+  "ep_len_mean": 316.12
+ },
+ {
+  "steps": 480000,
+  "minutes": 111.83283955256144,
+  "ep_reward_mean": 158.10517934,
+  "ep_len_mean": 321.77
+ },
+ {
+  "steps": 490000,
+  "minutes": 113.99758460919062,
+  "ep_reward_mean": 164.40610755999998,
+  "ep_len_mean": 328.45
+ },
+ {
+  "steps": 500000,
+  "minutes": 116.12037258942922,
+  "ep_reward_mean": 152.79831787999998,
+  "ep_len_mean": 310.75
+ },
+ {
+  "steps": 510000,
+  "minutes": 118.26626775662105,
+  "ep_reward_mean": 142.007505,
+  "ep_len_mean": 299.87
+ },
+ {
+  "steps": 520000,
+  "minutes": 120.38154101769129,
+  "ep_reward_mean": 137.0889471,
+  "ep_len_mean": 292.51
+ },
+ {
+  "steps": 530000,
+  "minutes": 122.48677080472311,
+  "ep_reward_mean": 146.81601671,
+  "ep_len_mean": 306.69
+ },
+ {
+  "steps": 540000,
+  "minutes": 124.62788755098978,
+  "ep_reward_mean": 159.91220471999998,
+  "ep_len_mean": 322.9
+ },
+ {
+  "steps": 550000,
+  "minutes": 126.7950589021047,
+  "ep_reward_mean": 158.20448292999998,
+  "ep_len_mean": 321.23
+ },
+ {
+  "steps": 560000,
+  "minutes": 128.9427913705508,
+  "ep_reward_mean": 156.80241129,
+  "ep_len_mean": 323.14
+ },
+ {
+  "steps": 570000,
+  "minutes": 131.09953723748524,
+  "ep_reward_mean": 158.05709293,
+  "ep_len_mean": 325.73
+ },
+ {
+  "steps": 580000,
+  "minutes": 133.2447652498881,
+  "ep_reward_mean": 166.77731372,
+  "ep_len_mean": 336.63
+ },
+ {
+  "steps": 590000,
+  "minutes": 135.39684371948243,
+  "ep_reward_mean": 153.10450067,
+  "ep_len_mean": 317.33
+ },
+ {
+  "steps": 600000,
+  "minutes": 137.39362658262252,
+  "ep_reward_mean": 147.55486076,
+  "ep_len_mean": 307.3
+ }
+]

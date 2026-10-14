@@ -1,0 +1,10694 @@
+[
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 4018.154907135885,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   4
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4128.4773682834875,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   3
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.73963786286942,
+  "stop_reason": "lap completed",
+  "distance": 4316.526673689308,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   9
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.74722039450067,
+  "stop_reason": "lap completed",
+  "distance": 4315.948131355374,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   11
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.7399693344225,
+  "stop_reason": "lap completed",
+  "distance": 4316.501967651922,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   10
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.11220593208552,
+  "stop_reason": "lap completed",
+  "distance": 4318.60886485608,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   0
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.27522541538745,
+  "stop_reason": "lap completed",
+  "distance": 4317.605571468928,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   2
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.29337092210545,
+  "stop_reason": "lap completed",
+  "distance": 4316.241857257341,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   5
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.32474315601492,
+  "stop_reason": "lap completed",
+  "distance": 4317.6223747126805,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   8
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.30591697995317,
+  "stop_reason": "lap completed",
+  "distance": 4319.130978076981,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   1
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.75200075929165,
+  "stop_reason": "lap completed",
+  "distance": 4319.351645785266,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   6
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.62218222183425,
+  "stop_reason": "lap completed",
+  "distance": 4317.838840612229,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   7
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3838.1223510468403,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   18
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.92579187482265,
+  "stop_reason": "lap completed",
+  "distance": 4317.579651931264,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   15
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.17265921666898,
+  "stop_reason": "lap completed",
+  "distance": 4317.780829347689,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   13
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.61618539463474,
+  "stop_reason": "lap completed",
+  "distance": 4318.2767652404455,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   12
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4131.7689170371295,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   22
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4132.109398266672,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   16
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.33364376121241,
+  "stop_reason": "lap completed",
+  "distance": 4316.984253006607,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   19
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.79584029622076,
+  "stop_reason": "lap completed",
+  "distance": 4316.0539517359975,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   20
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.43266200356845,
+  "stop_reason": "lap completed",
+  "distance": 4317.043687628552,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   14
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.94170074780227,
+  "stop_reason": "lap completed",
+  "distance": 4316.3717421092115,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   17
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.88555775646982,
+  "stop_reason": "lap completed",
+  "distance": 4316.842273368461,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   21
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.4542815762112,
+  "stop_reason": "lap completed",
+  "distance": 4319.208109673144,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   23
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3117.8092117491387,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   31
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3822.0801163521332,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   29
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.877737906988,
+  "stop_reason": "lap completed",
+  "distance": 4317.414411378817,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   24
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.29711402967476,
+  "stop_reason": "lap completed",
+  "distance": 4315.956753464335,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   26
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.48549012933891,
+  "stop_reason": "lap completed",
+  "distance": 4316.843472609527,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   28
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.47180387981989,
+  "stop_reason": "lap completed",
+  "distance": 4317.85127244658,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   25
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.69911416129348,
+  "stop_reason": "lap completed",
+  "distance": 4315.807625714545,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   27
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.23581798962982,
+  "stop_reason": "lap completed",
+  "distance": 4316.798713120925,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   32
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.08829916444866,
+  "stop_reason": "lap completed",
+  "distance": 4316.598999160411,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   30
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.75182295093363,
+  "stop_reason": "lap completed",
+  "distance": 4319.4040844214605,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   33
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.82856674524264,
+  "stop_reason": "lap completed",
+  "distance": 4317.374609455757,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   34
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.7404390997965,
+  "stop_reason": "lap completed",
+  "distance": 4316.449491713473,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   35
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3044.501935384967,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   40
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.63107079348173,
+  "stop_reason": "lap completed",
+  "distance": 4317.179461422066,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   36
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3769.534231663183,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   39
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.93575840605854,
+  "stop_reason": "lap completed",
+  "distance": 4316.812422639156,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   37
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.23886689693767,
+  "stop_reason": "lap completed",
+  "distance": 4316.57773846266,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   38
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3825.7388214306666,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   46
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 4025.781695518594,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   43
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.26493075222598,
+  "stop_reason": "lap completed",
+  "distance": 4318.402009041349,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   41
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.01670571442877,
+  "stop_reason": "lap completed",
+  "distance": 4318.274906861596,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   42
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.95781863570613,
+  "stop_reason": "lap completed",
+  "distance": 4318.941968839263,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   45
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.53070963499536,
+  "stop_reason": "lap completed",
+  "distance": 4317.201504965575,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   44
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.7785568083073,
+  "stop_reason": "lap completed",
+  "distance": 4317.374746123105,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   47
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3114.7876619595077,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   48
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.60855888558834,
+  "stop_reason": "lap completed",
+  "distance": 4318.878611803857,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   49
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.10213990565718,
+  "stop_reason": "lap completed",
+  "distance": 4319.3745614060135,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   50
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4132.252308079686,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   0
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3883.4402587016766,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   7
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4132.856125050579,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   1
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.4905418056704,
+  "stop_reason": "lap completed",
+  "distance": 4316.460207259254,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   2
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.23015713065597,
+  "stop_reason": "lap completed",
+  "distance": 4317.246510745106,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   4
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4139.385332787826,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   8
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.32864213160336,
+  "stop_reason": "lap completed",
+  "distance": 4317.360187577798,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   3
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.21545496723076,
+  "stop_reason": "lap completed",
+  "distance": 4318.373373546807,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   5
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.03492020290776,
+  "stop_reason": "lap completed",
+  "distance": 4316.882431220168,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   6
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.81254359315528,
+  "stop_reason": "lap completed",
+  "distance": 4318.583743852903,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   9
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3885.7835886827324,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   11
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.63971823635525,
+  "stop_reason": "lap completed",
+  "distance": 4316.518752420923,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   10
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4147.020643958975,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   14
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.47834455321966,
+  "stop_reason": "lap completed",
+  "distance": 4317.379143832726,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   12
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.78130710969555,
+  "stop_reason": "lap completed",
+  "distance": 4317.154947388497,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   13
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.35808013370875,
+  "stop_reason": "lap completed",
+  "distance": 4318.921507227646,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   15
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.31374169950767,
+  "stop_reason": "lap completed",
+  "distance": 4318.496612685546,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   16
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.04924891673525,
+  "stop_reason": "lap completed",
+  "distance": 4315.797454852837,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   17
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.85787932774235,
+  "stop_reason": "lap completed",
+  "distance": 4318.928856563177,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   19
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.21184481590019,
+  "stop_reason": "lap completed",
+  "distance": 4318.648523159989,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   18
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.99194137628805,
+  "stop_reason": "lap completed",
+  "distance": 4316.352196121861,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   20
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.0932347458632,
+  "stop_reason": "lap completed",
+  "distance": 4316.255505215588,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   22
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.66483164645977,
+  "stop_reason": "lap completed",
+  "distance": 4318.411543688238,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   21
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.26505293371946,
+  "stop_reason": "lap completed",
+  "distance": 4318.410733977951,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   23
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.88053007855798,
+  "stop_reason": "lap completed",
+  "distance": 4317.231018020473,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   1
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.11142761043645,
+  "stop_reason": "lap completed",
+  "distance": 4318.6774472515035,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   0
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.03845404603305,
+  "stop_reason": "lap completed",
+  "distance": 4316.609091549878,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   2
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2842.34013053547,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   25
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.92694690564721,
+  "stop_reason": "lap completed",
+  "distance": 4317.492036259476,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   3
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.01817753634259,
+  "stop_reason": "lap completed",
+  "distance": 4318.1259275253105,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   4
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.08559037036353,
+  "stop_reason": "lap completed",
+  "distance": 4316.832353818174,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   5
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.752506670929,
+  "stop_reason": "lap completed",
+  "distance": 4319.302161833608,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   6
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.3117114538041,
+  "stop_reason": "lap completed",
+  "distance": 4318.620294376293,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   7
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.58233741555894,
+  "stop_reason": "lap completed",
+  "distance": 4317.063118368602,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   8
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2839.1421831470393,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   9
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.26945560430485,
+  "stop_reason": "lap completed",
+  "distance": 4318.061769721549,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   24
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.17417375870116,
+  "stop_reason": "lap completed",
+  "distance": 4317.701275629737,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   26
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.30266906582143,
+  "stop_reason": "lap completed",
+  "distance": 4319.342852924521,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   27
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.81258709072262,
+  "stop_reason": "lap completed",
+  "distance": 4318.576914226969,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   28
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.49778963740484,
+  "stop_reason": "lap completed",
+  "distance": 4315.907795229672,
+  "checkpoint": "A_s1_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   29
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.64917978458053,
+  "stop_reason": "lap completed",
+  "distance": 4315.802886186787,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   10
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.84553162054314,
+  "stop_reason": "lap completed",
+  "distance": 4316.073214401174,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   11
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.40854142743139,
+  "stop_reason": "lap completed",
+  "distance": 4318.854371444224,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   12
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2839.8878793464696,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   18
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.9013379619289,
+  "stop_reason": "lap completed",
+  "distance": 4319.376839750659,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   13
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.80435750389918,
+  "stop_reason": "lap completed",
+  "distance": 4319.216903424782,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   15
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.38718122632751,
+  "stop_reason": "lap completed",
+  "distance": 4316.721855193407,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   16
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.45712099586932,
+  "stop_reason": "lap completed",
+  "distance": 4318.972104154904,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   14
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.34428098953184,
+  "stop_reason": "lap completed",
+  "distance": 4316.174557837835,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   17
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2841.0114874042447,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   23
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.05141292993633,
+  "stop_reason": "lap completed",
+  "distance": 4319.450384138585,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   19
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.36085271896121,
+  "stop_reason": "lap completed",
+  "distance": 4318.690234108155,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   20
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.42439408229644,
+  "stop_reason": "lap completed",
+  "distance": 4317.6949385291955,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   21
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.89063497217825,
+  "stop_reason": "lap completed",
+  "distance": 4316.457707274974,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   22
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.68338767276857,
+  "stop_reason": "lap completed",
+  "distance": 4316.987779374429,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   24
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.75508844472047,
+  "stop_reason": "lap completed",
+  "distance": 4319.105140740938,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   25
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2840.083947449461,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   32
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.30330441551145,
+  "stop_reason": "lap completed",
+  "distance": 4319.248478110962,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   26
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.37338878473727,
+  "stop_reason": "lap completed",
+  "distance": 4317.759611929503,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   27
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.11844577769382,
+  "stop_reason": "lap completed",
+  "distance": 4318.135187902881,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   28
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.24493366434895,
+  "stop_reason": "lap completed",
+  "distance": 4316.11975092243,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   29
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.27441220269043,
+  "stop_reason": "lap completed",
+  "distance": 4317.646952387794,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   30
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.42914473469558,
+  "stop_reason": "lap completed",
+  "distance": 4317.299562567712,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   31
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.04088760033915,
+  "stop_reason": "lap completed",
+  "distance": 4316.434211708252,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   33
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.17283637974353,
+  "stop_reason": "lap completed",
+  "distance": 4317.812475571217,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   34
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.27581770109242,
+  "stop_reason": "lap completed",
+  "distance": 4317.537082795109,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   35
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.85481868930624,
+  "stop_reason": "lap completed",
+  "distance": 4319.195585967436,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   36
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.32749297196062,
+  "stop_reason": "lap completed",
+  "distance": 4317.443745283466,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   37
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.33159944966941,
+  "stop_reason": "lap completed",
+  "distance": 4317.154072516564,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   39
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.58272619672651,
+  "stop_reason": "lap completed",
+  "distance": 4317.035535988809,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   38
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.41291803523183,
+  "stop_reason": "lap completed",
+  "distance": 4318.522007418948,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   40
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.17067212901479,
+  "stop_reason": "lap completed",
+  "distance": 4317.957718354458,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   41
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.28074281999785,
+  "stop_reason": "lap completed",
+  "distance": 4317.199699527813,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   42
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.16932701544019,
+  "stop_reason": "lap completed",
+  "distance": 4318.02725288605,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   43
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.27357909548677,
+  "stop_reason": "lap completed",
+  "distance": 4317.744687119488,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   44
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.0905782761273,
+  "stop_reason": "lap completed",
+  "distance": 4316.456326433472,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   45
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.82949503155241,
+  "stop_reason": "lap completed",
+  "distance": 4317.290342093978,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   46
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.70824718611169,
+  "stop_reason": "lap completed",
+  "distance": 4318.935781773496,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   47
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.33838826361946,
+  "stop_reason": "lap completed",
+  "distance": 4316.6097428822195,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   48
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.29883113128486,
+  "stop_reason": "lap completed",
+  "distance": 4315.8285018078695,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   49
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.60090671993899,
+  "stop_reason": "lap completed",
+  "distance": 4319.467090748099,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   50
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.26575460683104,
+  "stop_reason": "lap completed",
+  "distance": 4318.349218494173,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   0
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.44161272983783,
+  "stop_reason": "lap completed",
+  "distance": 4316.377031897035,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   2
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.29897620138163,
+  "stop_reason": "lap completed",
+  "distance": 4315.81817256029,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   3
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.22090355489998,
+  "stop_reason": "lap completed",
+  "distance": 4317.959950386549,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   1
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.22419930071136,
+  "stop_reason": "lap completed",
+  "distance": 4317.700307945312,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   4
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.14479938041933,
+  "stop_reason": "lap completed",
+  "distance": 4316.135956882165,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   6
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.1125810621169,
+  "stop_reason": "lap completed",
+  "distance": 4318.584294174796,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   5
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.54861751907995,
+  "stop_reason": "lap completed",
+  "distance": 4315.844795432031,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   7
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.09887221704682,
+  "stop_reason": "lap completed",
+  "distance": 4315.8262212551745,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   8
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.35041457420579,
+  "stop_reason": "lap completed",
+  "distance": 4319.522864152566,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   9
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.30650113697199,
+  "stop_reason": "lap completed",
+  "distance": 4319.04366326297,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   10
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.28787800045248,
+  "stop_reason": "lap completed",
+  "distance": 4316.6619989558785,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   11
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.33268950294577,
+  "stop_reason": "lap completed",
+  "distance": 4317.054960983634,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   12
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.09850976197,
+  "stop_reason": "lap completed",
+  "distance": 4315.853498298837,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   13
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.27426262705197,
+  "stop_reason": "lap completed",
+  "distance": 4317.699536363906,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   14
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.13815285080811,
+  "stop_reason": "lap completed",
+  "distance": 4316.639831658253,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   15
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2843.6876157698466,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   23
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.27012317222614,
+  "stop_reason": "lap completed",
+  "distance": 4318.007583827326,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   17
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.1479746877882,
+  "stop_reason": "lap completed",
+  "distance": 4315.894243152497,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   16
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.18550973968753,
+  "stop_reason": "lap completed",
+  "distance": 4316.840455651571,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   18
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.24890912895353,
+  "stop_reason": "lap completed",
+  "distance": 4315.823071988136,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   19
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.28044946071522,
+  "stop_reason": "lap completed",
+  "distance": 4317.224996753224,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   20
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.36150542803439,
+  "stop_reason": "lap completed",
+  "distance": 4318.671222984629,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   21
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.25874466704884,
+  "stop_reason": "lap completed",
+  "distance": 4318.877715386132,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   22
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3265.2926641460876,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   1
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.51210442724859,
+  "stop_reason": "lap completed",
+  "distance": 4318.630588433121,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   0
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.45335717968419,
+  "stop_reason": "lap completed",
+  "distance": 4319.261747652473,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   2
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3043.7093984419303,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   4
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.43279110394597,
+  "stop_reason": "lap completed",
+  "distance": 4317.049091010337,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   3
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.39291077757822,
+  "stop_reason": "lap completed",
+  "distance": 4316.278242964564,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   5
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.03851325416963,
+  "stop_reason": "lap completed",
+  "distance": 4316.601515712633,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   6
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.87987770123446,
+  "stop_reason": "lap completed",
+  "distance": 4317.254857907124,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   7
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.18964688710062,
+  "stop_reason": "lap completed",
+  "distance": 4316.525900588573,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   25
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.29766313799904,
+  "stop_reason": "lap completed",
+  "distance": 4315.917732211041,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   24
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.96962456621007,
+  "stop_reason": "lap completed",
+  "distance": 4318.0202202230885,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   8
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.14517797449972,
+  "stop_reason": "lap completed",
+  "distance": 4316.107069164232,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   27
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.24889744956477,
+  "stop_reason": "lap completed",
+  "distance": 4315.824139798978,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   26
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.42263088753948,
+  "stop_reason": "lap completed",
+  "distance": 4317.834681704808,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   10
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.78802541863911,
+  "stop_reason": "lap completed",
+  "distance": 4316.652181114374,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   9
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.16284709195087,
+  "stop_reason": "lap completed",
+  "distance": 4318.572306854241,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   28
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.48088435811349,
+  "stop_reason": "lap completed",
+  "distance": 4317.192082629825,
+  "checkpoint": "A_s2_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   29
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.16579276169645,
+  "stop_reason": "lap completed",
+  "distance": 4318.296110883566,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   11
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3044.5113602000783,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   14
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3258.942337682983,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   13
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.66136903061371,
+  "stop_reason": "lap completed",
+  "distance": 4318.645929732841,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   12
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3298.8500733884634,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   20
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.22482268373527,
+  "stop_reason": "lap completed",
+  "distance": 4317.658754771572,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   15
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.22011395092768,
+  "stop_reason": "lap completed",
+  "distance": 4318.034238039008,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   16
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.68656788680615,
+  "stop_reason": "lap completed",
+  "distance": 4316.761939616166,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   17
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.62792230166765,
+  "stop_reason": "lap completed",
+  "distance": 4317.385131534418,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   18
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.47007241893081,
+  "stop_reason": "lap completed",
+  "distance": 4318.026072751971,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   19
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.17041326840634,
+  "stop_reason": "lap completed",
+  "distance": 4318.003349684588,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   21
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.35611975318768,
+  "stop_reason": "lap completed",
+  "distance": 4319.112370774875,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   22
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3044.7370101281367,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   24
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.86410979202037,
+  "stop_reason": "lap completed",
+  "distance": 4318.474346220604,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   23
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3268.463093259193,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   27
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.57208082641851,
+  "stop_reason": "lap completed",
+  "distance": 4317.838361496846,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   26
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.08270157091506,
+  "stop_reason": "lap completed",
+  "distance": 4317.035980247411,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   25
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3044.1319618114653,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   30
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3268.7566827359665,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   28
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3229.134546515646,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   31
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3044.3521653307243,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   34
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.42499207759677,
+  "stop_reason": "lap completed",
+  "distance": 4317.616035548512,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   29
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3043.883373137663,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   35
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.29588161163822,
+  "stop_reason": "lap completed",
+  "distance": 4316.047905788646,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   32
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.3948969358084,
+  "stop_reason": "lap completed",
+  "distance": 4316.129442073441,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   33
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.34988690190278,
+  "stop_reason": "lap completed",
+  "distance": 4315.748948494637,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   36
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3043.6893515158977,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   43
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.7007107588115,
+  "stop_reason": "lap completed",
+  "distance": 4319.481245914564,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   37
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.94146272328557,
+  "stop_reason": "lap completed",
+  "distance": 4316.381080263098,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   38
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.24660349966392,
+  "stop_reason": "lap completed",
+  "distance": 4316.001533998493,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   39
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.66721487102042,
+  "stop_reason": "lap completed",
+  "distance": 4318.202218107865,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   40
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.50723833792411,
+  "stop_reason": "lap completed",
+  "distance": 4318.981348592967,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   41
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.62165413098896,
+  "stop_reason": "lap completed",
+  "distance": 4317.892547219355,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   42
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.56366238042762,
+  "stop_reason": "lap completed",
+  "distance": 4318.502952035799,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   44
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.0888107722083,
+  "stop_reason": "lap completed",
+  "distance": 4316.585508398744,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   46
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.44499475911253,
+  "stop_reason": "lap completed",
+  "distance": 4316.121216398806,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   45
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.14333499082852,
+  "stop_reason": "lap completed",
+  "distance": 4316.250108362402,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   47
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3226.257634075981,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   48
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3043.4086959761585,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   50
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.64650701211538,
+  "stop_reason": "lap completed",
+  "distance": 4316.004249314582,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_car",
+   49
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.62919781345816,
+  "stop_reason": "lap completed",
+  "distance": 4317.3264027943205,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   0
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.52005726304763,
+  "stop_reason": "lap completed",
+  "distance": 4318.025388624283,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   1
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.54363098638723,
+  "stop_reason": "lap completed",
+  "distance": 4316.224585881494,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   2
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.55785579673194,
+  "stop_reason": "lap completed",
+  "distance": 4318.957454006043,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   3
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.63168148823085,
+  "stop_reason": "lap completed",
+  "distance": 4317.131076033365,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   4
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.49150170463533,
+  "stop_reason": "lap completed",
+  "distance": 4316.386143364609,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   5
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.87443917653617,
+  "stop_reason": "lap completed",
+  "distance": 4317.675589978382,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   7
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.51645952017769,
+  "stop_reason": "lap completed",
+  "distance": 4318.3006933879315,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   6
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.49386579174981,
+  "stop_reason": "lap completed",
+  "distance": 4316.208130089537,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   8
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.86496685764183,
+  "stop_reason": "lap completed",
+  "distance": 4318.411740847992,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   9
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.69614380160759,
+  "stop_reason": "lap completed",
+  "distance": 4316.032474563118,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   10
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.63765963794255,
+  "stop_reason": "lap completed",
+  "distance": 4316.679385158745,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   11
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.58459035381375,
+  "stop_reason": "lap completed",
+  "distance": 4316.912365790549,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   12
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3044.6115444517563,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   22
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.55065909584518,
+  "stop_reason": "lap completed",
+  "distance": 4319.500582203938,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   13
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.65716125377608,
+  "stop_reason": "lap completed",
+  "distance": 4319.009069668786,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   14
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.44116836834513,
+  "stop_reason": "lap completed",
+  "distance": 4316.411103137987,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   15
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.57173177451548,
+  "stop_reason": "lap completed",
+  "distance": 4317.896961202849,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   16
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.62023039647586,
+  "stop_reason": "lap completed",
+  "distance": 4318.00469987426,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   17
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.61628711595097,
+  "stop_reason": "lap completed",
+  "distance": 4318.305487746358,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   18
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.61735768911205,
+  "stop_reason": "lap completed",
+  "distance": 4318.224951171955,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   20
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.56807941247585,
+  "stop_reason": "lap completed",
+  "distance": 4318.168338775425,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   19
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.73317015349022,
+  "stop_reason": "lap completed",
+  "distance": 4317.02166349375,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   21
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.58431396074806,
+  "stop_reason": "lap completed",
+  "distance": 4316.936169969366,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   23
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.81736156434624,
+  "stop_reason": "lap completed",
+  "distance": 4318.219047784601,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   0
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.8906701283811,
+  "stop_reason": "lap completed",
+  "distance": 4316.452207075058,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   1
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.9983428652932,
+  "stop_reason": "lap completed",
+  "distance": 4315.864838661302,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   2
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.77117701356356,
+  "stop_reason": "lap completed",
+  "distance": 4317.926354899394,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   3
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.6609894284506,
+  "stop_reason": "lap completed",
+  "distance": 4318.66086363363,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   4
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3044.091503816408,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   26
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.8389255504254,
+  "stop_reason": "lap completed",
+  "distance": 4316.578368285525,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   5
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.48010828743651,
+  "stop_reason": "lap completed",
+  "distance": 4317.22494694514,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   6
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.18593677965053,
+  "stop_reason": "lap completed",
+  "distance": 4316.794244084612,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   7
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.71442148123367,
+  "stop_reason": "lap completed",
+  "distance": 4318.45057990331,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   24
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.5999661541399,
+  "stop_reason": "lap completed",
+  "distance": 4315.742877671346,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   25
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.22320283627658,
+  "stop_reason": "lap completed",
+  "distance": 4317.7451784202585,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   8
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.9958104548129,
+  "stop_reason": "lap completed",
+  "distance": 4316.058254179504,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   9
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.53873677641157,
+  "stop_reason": "lap completed",
+  "distance": 4316.598371573884,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   27
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.56720048248557,
+  "stop_reason": "lap completed",
+  "distance": 4318.244139659757,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   28
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.74364154564077,
+  "stop_reason": "lap completed",
+  "distance": 4316.223646619756,
+  "checkpoint": "A_s3_600k",
+  "group": "A",
+  "case": [
+   "test_dist",
+   29
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.73901733562326,
+  "stop_reason": "lap completed",
+  "distance": 4316.575153991678,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   10
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.70798297604472,
+  "stop_reason": "lap completed",
+  "distance": 4318.866860228649,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   11
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.03766943352922,
+  "stop_reason": "lap completed",
+  "distance": 4316.662901173684,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   12
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.43468602310966,
+  "stop_reason": "lap completed",
+  "distance": 4316.879972964596,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   13
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.67292351100916,
+  "stop_reason": "lap completed",
+  "distance": 4317.798742188637,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   15
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.59323737765632,
+  "stop_reason": "lap completed",
+  "distance": 4316.256908813138,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   16
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.06683467160653,
+  "stop_reason": "lap completed",
+  "distance": 4318.234332622968,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   14
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.18489074961921,
+  "stop_reason": "lap completed",
+  "distance": 4316.884195733374,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   17
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.94565562505569,
+  "stop_reason": "lap completed",
+  "distance": 4316.062955131961,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   18
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.80241984927389,
+  "stop_reason": "lap completed",
+  "distance": 4319.362807105741,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   19
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.15392138420223,
+  "stop_reason": "lap completed",
+  "distance": 4319.20702105011,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   20
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.68299282516152,
+  "stop_reason": "lap completed",
+  "distance": 4317.036664022828,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   21
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.87209978112897,
+  "stop_reason": "lap completed",
+  "distance": 4317.872681057683,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   22
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.22372029412094,
+  "stop_reason": "lap completed",
+  "distance": 4317.732893395902,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   23
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.44963786472132,
+  "stop_reason": "lap completed",
+  "distance": 4315.767399286601,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   24
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.49158436671259,
+  "stop_reason": "lap completed",
+  "distance": 4316.368000123174,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   25
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.8695740135554,
+  "stop_reason": "lap completed",
+  "distance": 4318.046481079061,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   28
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.34663970767595,
+  "stop_reason": "lap completed",
+  "distance": 4315.994101976212,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   27
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.0838744905031,
+  "stop_reason": "lap completed",
+  "distance": 4316.948939747783,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   26
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.96570944965467,
+  "stop_reason": "lap completed",
+  "distance": 4318.303456114878,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   29
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.190845414788,
+  "stop_reason": "lap completed",
+  "distance": 4316.422674017938,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   31
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.0076100761365,
+  "stop_reason": "lap completed",
+  "distance": 4318.893465575935,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   30
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.45757181658215,
+  "stop_reason": "lap completed",
+  "distance": 4318.906786831154,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   32
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.70747530312894,
+  "stop_reason": "lap completed",
+  "distance": 4318.978251131299,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   33
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.19544598973955,
+  "stop_reason": "lap completed",
+  "distance": 4316.085875981393,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   34
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.97219542666001,
+  "stop_reason": "lap completed",
+  "distance": 4317.800272207885,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   35
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.68128223458639,
+  "stop_reason": "lap completed",
+  "distance": 4317.165567692069,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   36
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.19568948897235,
+  "stop_reason": "lap completed",
+  "distance": 4316.0650474583235,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   37
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.18669560693904,
+  "stop_reason": "lap completed",
+  "distance": 4316.735073373447,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   38
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.60012333210125,
+  "stop_reason": "lap completed",
+  "distance": 4319.571949961022,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   39
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.33782990190471,
+  "stop_reason": "lap completed",
+  "distance": 4316.650745747715,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   40
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.94668908971376,
+  "stop_reason": "lap completed",
+  "distance": 4315.99041950489,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   42
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.95835981759564,
+  "stop_reason": "lap completed",
+  "distance": 4318.892822075671,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   44
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.95417225044656,
+  "stop_reason": "lap completed",
+  "distance": 4319.203843056093,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   41
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.83995333897845,
+  "stop_reason": "lap completed",
+  "distance": 4316.487119810777,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   43
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.72563328809693,
+  "stop_reason": "lap completed",
+  "distance": 4317.590104139003,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   45
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.85107860289462,
+  "stop_reason": "lap completed",
+  "distance": 4319.428635362401,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   46
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.55821373804024,
+  "stop_reason": "lap completed",
+  "distance": 4318.932996138554,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   47
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.9456303253058,
+  "stop_reason": "lap completed",
+  "distance": 4316.066419920284,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   48
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.9515903720822,
+  "stop_reason": "lap completed",
+  "distance": 4319.3934553682075,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   49
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.28063912559993,
+  "stop_reason": "lap completed",
+  "distance": 4317.202643455011,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_car",
+   50
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.97850622672168,
+  "stop_reason": "lap completed",
+  "distance": 4317.3668982455065,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   0
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.09544667097127,
+  "stop_reason": "lap completed",
+  "distance": 4316.084190831734,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   1
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.43467231787939,
+  "stop_reason": "lap completed",
+  "distance": 4316.887383756697,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   2
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.15476956407915,
+  "stop_reason": "lap completed",
+  "distance": 4319.1225298656045,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   4
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.47933462701333,
+  "stop_reason": "lap completed",
+  "distance": 4317.291427817248,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   3
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.06327997813749,
+  "stop_reason": "lap completed",
+  "distance": 4318.462650832468,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   5
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.01386456391637,
+  "stop_reason": "lap completed",
+  "distance": 4318.444535163544,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   6
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.4798406845496,
+  "stop_reason": "lap completed",
+  "distance": 4317.2314065457795,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   7
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.90847734914188,
+  "stop_reason": "lap completed",
+  "distance": 4318.871957230183,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   8
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.3970097101102,
+  "stop_reason": "lap completed",
+  "distance": 4315.962998016681,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   9
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.16228411237512,
+  "stop_reason": "lap completed",
+  "distance": 4318.496395468193,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   10
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.34710946557033,
+  "stop_reason": "lap completed",
+  "distance": 4315.956025557038,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   11
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.31095205386352,
+  "stop_reason": "lap completed",
+  "distance": 4318.651380655094,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   12
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.0755452204459,
+  "stop_reason": "lap completed",
+  "distance": 4317.586243665281,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   13
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.01030575143758,
+  "stop_reason": "lap completed",
+  "distance": 4318.63074712583,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   15
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.14645612138648,
+  "stop_reason": "lap completed",
+  "distance": 4316.0046842809215,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   16
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.46250222181942,
+  "stop_reason": "lap completed",
+  "distance": 4318.539156025097,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   14
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.25569607452134,
+  "stop_reason": "lap completed",
+  "distance": 4319.073673376337,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   17
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.42869553230842,
+  "stop_reason": "lap completed",
+  "distance": 4317.340489821399,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   18
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.19889154584261,
+  "stop_reason": "lap completed",
+  "distance": 4315.820472198803,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   19
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.30591026415357,
+  "stop_reason": "lap completed",
+  "distance": 4318.98367024498,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   20
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.53505634880776,
+  "stop_reason": "lap completed",
+  "distance": 4316.861380777978,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   21
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.15910765518733,
+  "stop_reason": "lap completed",
+  "distance": 4318.782331986866,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   22
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.12891263701422,
+  "stop_reason": "lap completed",
+  "distance": 4317.335713473753,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   23
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.78585321626937,
+  "stop_reason": "lap completed",
+  "distance": 4316.764991815155,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   0
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.79105104170198,
+  "stop_reason": "lap completed",
+  "distance": 4316.3891944447405,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   1
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.77729223463012,
+  "stop_reason": "lap completed",
+  "distance": 4317.38146127889,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   2
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.59257695495752,
+  "stop_reason": "lap completed",
+  "distance": 4316.277416603202,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   3
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.6228351430928,
+  "stop_reason": "lap completed",
+  "distance": 4317.711970227423,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   4
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.85415818737376,
+  "stop_reason": "lap completed",
+  "distance": 4319.063075619651,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   5
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.16610711389605,
+  "stop_reason": "lap completed",
+  "distance": 4318.187154511585,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   6
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.91704786740108,
+  "stop_reason": "lap completed",
+  "distance": 4318.118867994674,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   7
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.11205054982403,
+  "stop_reason": "lap completed",
+  "distance": 4318.596621483859,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   24
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.07053606547481,
+  "stop_reason": "lap completed",
+  "distance": 4317.8779041560665,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   25
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.23300306133314,
+  "stop_reason": "lap completed",
+  "distance": 4317.018291557931,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   26
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.75641881001276,
+  "stop_reason": "lap completed",
+  "distance": 4318.8885770140005,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   8
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.22207818156832,
+  "stop_reason": "lap completed",
+  "distance": 4317.790281473212,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   28
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.41734257354399,
+  "stop_reason": "lap completed",
+  "distance": 4318.189641044938,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   27
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.99655202015263,
+  "stop_reason": "lap completed",
+  "distance": 4315.9897743023,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   9
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.19761505835814,
+  "stop_reason": "lap completed",
+  "distance": 4315.9177262198045,
+  "checkpoint": "B_s1_500k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   29
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.5568557463454,
+  "stop_reason": "lap completed",
+  "distance": 4318.867680210177,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   10
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.91224446668373,
+  "stop_reason": "lap completed",
+  "distance": 4318.465230106484,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   11
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.97369272408577,
+  "stop_reason": "lap completed",
+  "distance": 4317.639491624741,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   12
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.35847496686763,
+  "stop_reason": "lap completed",
+  "distance": 4318.744373383604,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   13
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.90773448839342,
+  "stop_reason": "lap completed",
+  "distance": 4318.795382635691,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   14
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.75017832777546,
+  "stop_reason": "lap completed",
+  "distance": 4319.359903001934,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   15
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.64644956990637,
+  "stop_reason": "lap completed",
+  "distance": 4315.997430513551,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   16
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.55582632010159,
+  "stop_reason": "lap completed",
+  "distance": 4318.931787283702,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   17
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.74906160625481,
+  "stop_reason": "lap completed",
+  "distance": 4315.8082582345305,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   19
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.76654587486716,
+  "stop_reason": "lap completed",
+  "distance": 4318.16115113111,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   18
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.77703499696506,
+  "stop_reason": "lap completed",
+  "distance": 4317.40648961674,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   21
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.07428637402455,
+  "stop_reason": "lap completed",
+  "distance": 4317.598171947639,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   20
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3112.984740729159,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   23
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.38673792130857,
+  "stop_reason": "lap completed",
+  "distance": 4316.6996084323855,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   22
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.87537186692154,
+  "stop_reason": "lap completed",
+  "distance": 4317.519915451562,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   24
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3096.999015948717,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   29
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3095.2938952580494,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   31
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.82405465570587,
+  "stop_reason": "lap completed",
+  "distance": 4317.612103211024,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   25
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.98516229525104,
+  "stop_reason": "lap completed",
+  "distance": 4316.810614272628,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   26
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.98838470724749,
+  "stop_reason": "lap completed",
+  "distance": 4316.580819203521,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   28
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.45556033811691,
+  "stop_reason": "lap completed",
+  "distance": 4318.957472847933,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   30
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.25685562312715,
+  "stop_reason": "lap completed",
+  "distance": 4318.874802567851,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   27
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.58185181351676,
+  "stop_reason": "lap completed",
+  "distance": 4317.053905701941,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   33
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.21051725988482,
+  "stop_reason": "lap completed",
+  "distance": 4318.588947770837,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   32
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.7813155497106,
+  "stop_reason": "lap completed",
+  "distance": 4317.091340045668,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   34
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.30339706163603,
+  "stop_reason": "lap completed",
+  "distance": 4319.112700876798,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   35
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.48182065350105,
+  "stop_reason": "lap completed",
+  "distance": 4317.057035077738,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   36
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.5895023205806,
+  "stop_reason": "lap completed",
+  "distance": 4316.497960927506,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   37
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.75014910850474,
+  "stop_reason": "lap completed",
+  "distance": 4319.345497337003,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   38
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.68872049011378,
+  "stop_reason": "lap completed",
+  "distance": 4316.557592683472,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   39
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.0828578009062,
+  "stop_reason": "lap completed",
+  "distance": 4316.977302939,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   40
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.6393097338,
+  "stop_reason": "lap completed",
+  "distance": 4316.513952529602,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   42
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.93104998059377,
+  "stop_reason": "lap completed",
+  "distance": 4317.1115535308945,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   44
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.95167324413377,
+  "stop_reason": "lap completed",
+  "distance": 4319.243218224998,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   41
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.5189039283378,
+  "stop_reason": "lap completed",
+  "distance": 4317.9928267142295,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   43
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3128.00253536316,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   46
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.70478152458593,
+  "stop_reason": "lap completed",
+  "distance": 4319.018930304465,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   45
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.66111127321102,
+  "stop_reason": "lap completed",
+  "distance": 4318.563584731843,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   47
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3089.74626772345,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   48
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.96150816624673,
+  "stop_reason": "lap completed",
+  "distance": 4318.529896717122,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   49
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.88276995964733,
+  "stop_reason": "lap completed",
+  "distance": 4316.986387659485,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   50
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3096.734165047185,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   3
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.96094924246621,
+  "stop_reason": "lap completed",
+  "distance": 4318.571186590023,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   0
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.76352495532366,
+  "stop_reason": "lap completed",
+  "distance": 4318.384911777948,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   1
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.07814446249161,
+  "stop_reason": "lap completed",
+  "distance": 4317.3156775176885,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   2
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.95098674988182,
+  "stop_reason": "lap completed",
+  "distance": 4319.283206189698,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   4
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.06160865554858,
+  "stop_reason": "lap completed",
+  "distance": 4318.5037501005645,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   6
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.75984514674599,
+  "stop_reason": "lap completed",
+  "distance": 4318.638634876514,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   5
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.4016226316299,
+  "stop_reason": "lap completed",
+  "distance": 4319.249618328757,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   7
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.08106435928381,
+  "stop_reason": "lap completed",
+  "distance": 4317.1032613898515,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   8
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.92985075517443,
+  "stop_reason": "lap completed",
+  "distance": 4317.188939582578,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   9
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.9114140601129,
+  "stop_reason": "lap completed",
+  "distance": 4318.5263030573005,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   11
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.27443509328843,
+  "stop_reason": "lap completed",
+  "distance": 4317.56578828304,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   10
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.2056634517451,
+  "stop_reason": "lap completed",
+  "distance": 4318.945693117566,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   12
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.92947625664,
+  "stop_reason": "lap completed",
+  "distance": 4317.224891318485,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   13
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.96996884916724,
+  "stop_reason": "lap completed",
+  "distance": 4317.910906224053,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   14
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.72987525045679,
+  "stop_reason": "lap completed",
+  "distance": 4317.176462196672,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   15
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.90286002148157,
+  "stop_reason": "lap completed",
+  "distance": 4319.15016953075,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   16
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.99806722886747,
+  "stop_reason": "lap completed",
+  "distance": 4315.880109695364,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   17
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.93561099416533,
+  "stop_reason": "lap completed",
+  "distance": 4316.775089459967,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   18
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.21404563640102,
+  "stop_reason": "lap completed",
+  "distance": 4318.340781032196,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   19
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.02867466167508,
+  "stop_reason": "lap completed",
+  "distance": 4317.275050006089,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   20
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.1411958865437,
+  "stop_reason": "lap completed",
+  "distance": 4316.3755516848305,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   21
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.98417871883856,
+  "stop_reason": "lap completed",
+  "distance": 4316.883599505954,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   22
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.19760190084553,
+  "stop_reason": "lap completed",
+  "distance": 4315.913455642963,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   23
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4132.294192442556,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   0
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.60623915722142,
+  "stop_reason": "lap completed",
+  "distance": 4319.074985263484,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   1
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.76176111081703,
+  "stop_reason": "lap completed",
+  "distance": 4318.595546642863,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   2
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4131.398348412343,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   3
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.09093307996672,
+  "stop_reason": "lap completed",
+  "distance": 4316.393855985542,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   24
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.78358113533885,
+  "stop_reason": "lap completed",
+  "distance": 4316.963834015804,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   4
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.66800006414874,
+  "stop_reason": "lap completed",
+  "distance": 4318.153860401084,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   5
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4131.961352410927,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   6
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4131.015622678233,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   7
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.911302493749,
+  "stop_reason": "lap completed",
+  "distance": 4318.529607180358,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   25
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4130.504719616825,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   8
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.98950481597358,
+  "stop_reason": "lap completed",
+  "distance": 4316.496067947486,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   26
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4129.387276979673,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   9
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.77636033488632,
+  "stop_reason": "lap completed",
+  "distance": 4317.446360918275,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   27
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.73037577859746,
+  "stop_reason": "lap completed",
+  "distance": 4317.146378466497,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   28
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.9209829261389,
+  "stop_reason": "lap completed",
+  "distance": 4317.82817416266,
+  "checkpoint": "B_s1_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   29
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4130.776458727832,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   10
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4131.681836600739,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   11
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.98945793136863,
+  "stop_reason": "lap completed",
+  "distance": 4316.526277619684,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   12
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.70958874186016,
+  "stop_reason": "lap completed",
+  "distance": 4318.742394701129,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   13
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.00985944629328,
+  "stop_reason": "lap completed",
+  "distance": 4318.74875402424,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   14
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.40236507208704,
+  "stop_reason": "lap completed",
+  "distance": 4319.34679789988,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   15
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4131.495195658669,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   16
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4132.624388069368,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   17
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4131.280871168891,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   18
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4132.228388218411,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   19
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4132.162534126497,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   21
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.08937895442003,
+  "stop_reason": "lap completed",
+  "distance": 4316.534881394753,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   20
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4131.70937804992,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   22
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4130.553423471482,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   23
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3145.2424378427518,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   26
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.44032866660784,
+  "stop_reason": "lap completed",
+  "distance": 4316.460118062693,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   24
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4132.527468819963,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   25
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3019.1900869677497,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   29
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3016.193008981653,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   31
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.12732562638776,
+  "stop_reason": "lap completed",
+  "distance": 4317.444933265097,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   27
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.81682065213386,
+  "stop_reason": "lap completed",
+  "distance": 4318.24410907431,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   28
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.99300622112509,
+  "stop_reason": "lap completed",
+  "distance": 4316.258402924579,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   30
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4129.651842164169,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   32
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4132.059362799162,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   33
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4132.14734708961,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   34
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.05558532258006,
+  "stop_reason": "lap completed",
+  "distance": 4319.027699356469,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   35
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4132.188948451662,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   36
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4132.138094467473,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   37
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4131.325093152875,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   39
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4131.12121052214,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   38
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.0839297261328,
+  "stop_reason": "lap completed",
+  "distance": 4316.937311574507,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   40
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4132.139226720966,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   41
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4130.561252651608,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   42
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4132.189335752166,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   45
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.95307881584769,
+  "stop_reason": "lap completed",
+  "distance": 4319.224487098529,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   43
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.00224276233523,
+  "stop_reason": "lap completed",
+  "distance": 4319.333474856199,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   44
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3016.518002397832,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   48
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3145.7352410007097,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   47
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4132.721093417563,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   46
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.92730640419006,
+  "stop_reason": "lap completed",
+  "distance": 4317.444743672709,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   49
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.26770202101531,
+  "stop_reason": "lap completed",
+  "distance": 4318.175686049413,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   50
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3145.723131934714,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   1
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4131.659332825349,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   0
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4131.771077106852,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   3
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.06187728239365,
+  "stop_reason": "lap completed",
+  "distance": 4318.610845895375,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   2
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4131.932010680099,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   4
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4131.558267024724,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   6
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.60285562138245,
+  "stop_reason": "lap completed",
+  "distance": 4319.281043763874,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   5
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4130.759728945455,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   7
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.44858108221442,
+  "stop_reason": "lap completed",
+  "distance": 4315.847401009376,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   8
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.00217734122974,
+  "stop_reason": "lap completed",
+  "distance": 4319.345246224584,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   9
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4132.330940762725,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   10
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.77814718696605,
+  "stop_reason": "lap completed",
+  "distance": 4317.3927891095245,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   11
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4131.37028543407,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   12
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4130.769896103034,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   13
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4132.006527321369,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   14
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4131.413810249316,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   15
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.8570475207516,
+  "stop_reason": "lap completed",
+  "distance": 4318.99511356905,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   16
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.62403839066928,
+  "stop_reason": "lap completed",
+  "distance": 4317.699262241378,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   17
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.81491701812625,
+  "stop_reason": "lap completed",
+  "distance": 4318.393189746654,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   18
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4130.443577974702,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   19
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4130.954584907936,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   20
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4132.07075114488,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   21
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.66780332645993,
+  "stop_reason": "lap completed",
+  "distance": 4318.175363238961,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   22
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4131.659952953694,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   23
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.62162386687127,
+  "stop_reason": "lap completed",
+  "distance": 4317.859869953605,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   0
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.56250425722232,
+  "stop_reason": "lap completed",
+  "distance": 4318.53965073466,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   1
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.63128478112884,
+  "stop_reason": "lap completed",
+  "distance": 4317.139153403656,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   2
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3013.224097085571,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   4
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.58300446705731,
+  "stop_reason": "lap completed",
+  "distance": 4317.011634471283,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   3
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.67747117214311,
+  "stop_reason": "lap completed",
+  "distance": 4317.442533533025,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   24
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.59752730123283,
+  "stop_reason": "lap completed",
+  "distance": 4315.925111451575,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   5
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.79219218940598,
+  "stop_reason": "lap completed",
+  "distance": 4316.329265720792,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   25
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.92155899307123,
+  "stop_reason": "lap completed",
+  "distance": 4317.868207339636,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   7
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.05205767953434,
+  "stop_reason": "lap completed",
+  "distance": 4319.330721820805,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   6
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.98625853637384,
+  "stop_reason": "lap completed",
+  "distance": 4316.7669935398935,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   8
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.8150756490796,
+  "stop_reason": "lap completed",
+  "distance": 4318.349460638968,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   9
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.65693481083524,
+  "stop_reason": "lap completed",
+  "distance": 4319.004218069178,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   26
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.58747076155937,
+  "stop_reason": "lap completed",
+  "distance": 4316.674387022644,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   10
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.66840376284514,
+  "stop_reason": "lap completed",
+  "distance": 4318.125110922714,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   27
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 4132.528715864352,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   28
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.8679561619785,
+  "stop_reason": "lap completed",
+  "distance": 4318.160437569746,
+  "checkpoint": "B_s2_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   29
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.0873979785558,
+  "stop_reason": "lap completed",
+  "distance": 4316.67868579744,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   11
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.79650829413107,
+  "stop_reason": "lap completed",
+  "distance": 4316.0016222417025,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   12
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.10154748446085,
+  "stop_reason": "lap completed",
+  "distance": 4319.3537218171805,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   13
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.81654218096735,
+  "stop_reason": "lap completed",
+  "distance": 4318.2438038693945,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   14
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.44861638053845,
+  "stop_reason": "lap completed",
+  "distance": 4315.843715988899,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   15
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.41096994856524,
+  "stop_reason": "lap completed",
+  "distance": 4318.6526716362205,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   16
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.78074293209895,
+  "stop_reason": "lap completed",
+  "distance": 4317.181001806037,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   17
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.58731735774819,
+  "stop_reason": "lap completed",
+  "distance": 4316.686208179555,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   19
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.82517012690208,
+  "stop_reason": "lap completed",
+  "distance": 4317.59708315935,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   20
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.45530617291388,
+  "stop_reason": "lap completed",
+  "distance": 4319.077295677281,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   18
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.40672326780808,
+  "stop_reason": "lap completed",
+  "distance": 4318.974105655701,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   21
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.53461860972999,
+  "stop_reason": "lap completed",
+  "distance": 4316.885859242045,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   22
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.86187300167038,
+  "stop_reason": "lap completed",
+  "distance": 4318.593182370583,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   23
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.02911407826971,
+  "stop_reason": "lap completed",
+  "distance": 4317.302985076352,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   24
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.03498367703935,
+  "stop_reason": "lap completed",
+  "distance": 4316.862135673591,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   25
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.79168822546866,
+  "stop_reason": "lap completed",
+  "distance": 4316.361671378241,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   27
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.69273220465085,
+  "stop_reason": "lap completed",
+  "distance": 4316.283818202822,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   26
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.64920922159894,
+  "stop_reason": "lap completed",
+  "distance": 4315.799399919421,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   28
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.27468296277027,
+  "stop_reason": "lap completed",
+  "distance": 4317.637247200557,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   29
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.32857195217098,
+  "stop_reason": "lap completed",
+  "distance": 4317.334444566216,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   30
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.45436630901979,
+  "stop_reason": "lap completed",
+  "distance": 4319.149909993021,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   31
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.20070287187532,
+  "stop_reason": "lap completed",
+  "distance": 4319.427614328475,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   32
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.55886941212479,
+  "stop_reason": "lap completed",
+  "distance": 4318.8146219008795,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   33
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.75028621919138,
+  "stop_reason": "lap completed",
+  "distance": 4319.457920710922,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   34
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.29616026315011,
+  "stop_reason": "lap completed",
+  "distance": 4316.0249437546245,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   35
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.53167482362409,
+  "stop_reason": "lap completed",
+  "distance": 4317.107401334806,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   36
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.7196197043878,
+  "stop_reason": "lap completed",
+  "distance": 4318.014133942089,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   37
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.94289758067087,
+  "stop_reason": "lap completed",
+  "distance": 4316.271705386504,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   38
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.43307558434255,
+  "stop_reason": "lap completed",
+  "distance": 4317.000426275248,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   39
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.77172567338866,
+  "stop_reason": "lap completed",
+  "distance": 4317.855665656818,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   40
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.7149681365217,
+  "stop_reason": "lap completed",
+  "distance": 4318.363063722141,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   42
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.65475507466802,
+  "stop_reason": "lap completed",
+  "distance": 4319.129136276231,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   41
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.2032397857449,
+  "stop_reason": "lap completed",
+  "distance": 4319.223574839001,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   43
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.71770913546584,
+  "stop_reason": "lap completed",
+  "distance": 4318.157425239628,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   44
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.58809605633631,
+  "stop_reason": "lap completed",
+  "distance": 4316.630306055722,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   45
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.04032164049303,
+  "stop_reason": "lap completed",
+  "distance": 4316.464122281565,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   46
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.37575796749354,
+  "stop_reason": "lap completed",
+  "distance": 4317.548096932487,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   47
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.27840746883082,
+  "stop_reason": "lap completed",
+  "distance": 4317.355642057242,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   48
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.75684262961349,
+  "stop_reason": "lap completed",
+  "distance": 4318.97157628005,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   49
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.85495291235982,
+  "stop_reason": "lap completed",
+  "distance": 4319.1155297372225,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_car",
+   50
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.85098854564094,
+  "stop_reason": "lap completed",
+  "distance": 4319.359154156942,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   0
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.7486190496213,
+  "stop_reason": "lap completed",
+  "distance": 4315.842496657829,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   1
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.91322638681315,
+  "stop_reason": "lap completed",
+  "distance": 4318.465426220782,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   2
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.74220928330215,
+  "stop_reason": "lap completed",
+  "distance": 4316.319137084182,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   5
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.77520889637171,
+  "stop_reason": "lap completed",
+  "distance": 4317.588671273294,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   3
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.72455766703929,
+  "stop_reason": "lap completed",
+  "distance": 4317.62940391696,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   4
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.76670498924074,
+  "stop_reason": "lap completed",
+  "distance": 4318.225902618908,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   6
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.98935849718623,
+  "stop_reason": "lap completed",
+  "distance": 4316.534546948199,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   7
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.59825368016313,
+  "stop_reason": "lap completed",
+  "distance": 4315.869609581055,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   8
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.85101345015241,
+  "stop_reason": "lap completed",
+  "distance": 4319.383697961852,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   9
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.80313320933975,
+  "stop_reason": "lap completed",
+  "distance": 4319.214782877249,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   10
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.83784196360533,
+  "stop_reason": "lap completed",
+  "distance": 4316.645315077658,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   11
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.72625511100514,
+  "stop_reason": "lap completed",
+  "distance": 4317.502105862637,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   13
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.88278459919803,
+  "stop_reason": "lap completed",
+  "distance": 4317.024968586284,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   12
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.78555371121963,
+  "stop_reason": "lap completed",
+  "distance": 4316.819623946383,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   14
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.77859682747685,
+  "stop_reason": "lap completed",
+  "distance": 4317.333656318866,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   16
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.7691300591412,
+  "stop_reason": "lap completed",
+  "distance": 4318.013766371663,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   15
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.92698076100972,
+  "stop_reason": "lap completed",
+  "distance": 4317.461616559151,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   18
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.75055193796076,
+  "stop_reason": "lap completed",
+  "distance": 4319.421163979881,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   17
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.84043548206171,
+  "stop_reason": "lap completed",
+  "distance": 4316.453277567451,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   19
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.81597354232727,
+  "stop_reason": "lap completed",
+  "distance": 4318.279111486976,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   20
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.87952763724489,
+  "stop_reason": "lap completed",
+  "distance": 4317.263640984687,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   21
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.7548524974205,
+  "stop_reason": "lap completed",
+  "distance": 4319.097262686948,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   22
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.83068648851892,
+  "stop_reason": "lap completed",
+  "distance": 4317.179143719552,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   23
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.88810326452987,
+  "stop_reason": "lap completed",
+  "distance": 4316.628468208059,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   0
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.79586309099423,
+  "stop_reason": "lap completed",
+  "distance": 4316.050992533742,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   1
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.97389182734034,
+  "stop_reason": "lap completed",
+  "distance": 4317.680189284503,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   2
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.8362361134086,
+  "stop_reason": "lap completed",
+  "distance": 4316.769114029211,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   3
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3778.815304943334,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   4
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.86698010575813,
+  "stop_reason": "lap completed",
+  "distance": 4318.20287927167,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   5
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.6202857986643,
+  "stop_reason": "lap completed",
+  "distance": 4317.927980564519,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   6
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.37666630448503,
+  "stop_reason": "lap completed",
+  "distance": 4317.4653364598935,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   7
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.76427673714772,
+  "stop_reason": "lap completed",
+  "distance": 4318.411759218583,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   24
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.7608258565075,
+  "stop_reason": "lap completed",
+  "distance": 4318.6562436518125,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   25
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.35023160273086,
+  "stop_reason": "lap completed",
+  "distance": 4319.418428199306,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   8
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3832.3669726036446,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   9
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.72676680819774,
+  "stop_reason": "lap completed",
+  "distance": 4317.46984541237,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   26
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.76028447314832,
+  "stop_reason": "lap completed",
+  "distance": 4318.71460036239,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   28
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.74212357075506,
+  "stop_reason": "lap completed",
+  "distance": 4316.319740499309,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   27
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.86010002196062,
+  "stop_reason": "lap completed",
+  "distance": 4318.689618742778,
+  "checkpoint": "B_s3_600k",
+  "group": "B",
+  "case": [
+   "test_dist",
+   29
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.87863544302965,
+  "stop_reason": "lap completed",
+  "distance": 4317.34634433059,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   10
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.65389037275534,
+  "stop_reason": "lap completed",
+  "distance": 4319.119494474442,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   11
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3780.708424922506,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   13
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.13734905681942,
+  "stop_reason": "lap completed",
+  "distance": 4316.671171629914,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   12
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3822.7800597103574,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   18
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.67025457545911,
+  "stop_reason": "lap completed",
+  "distance": 4317.972580035892,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   15
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.20800503129409,
+  "stop_reason": "lap completed",
+  "distance": 4318.838874206356,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   14
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.68405282326546,
+  "stop_reason": "lap completed",
+  "distance": 4316.942982096438,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   16
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.01827156016347,
+  "stop_reason": "lap completed",
+  "distance": 4318.10483297477,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   17
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.83404174135018,
+  "stop_reason": "lap completed",
+  "distance": 4316.932265585203,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   19
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.65809533268924,
+  "stop_reason": "lap completed",
+  "distance": 4318.900717430086,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   21
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.19304134612872,
+  "stop_reason": "lap completed",
+  "distance": 4316.256036524164,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   20
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.67028651191146,
+  "stop_reason": "lap completed",
+  "distance": 4317.975141608557,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   22
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3856.9331750224246,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   23
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.54628452493466,
+  "stop_reason": "lap completed",
+  "distance": 4316.013324930085,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   24
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.48572499282766,
+  "stop_reason": "lap completed",
+  "distance": 4316.787341444971,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   25
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3848.2580731276203,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   27
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3791.216049639541,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   29
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3783.5316346926315,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   30
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.07629307349298,
+  "stop_reason": "lap completed",
+  "distance": 4317.494155973625,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   26
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.90796434582064,
+  "stop_reason": "lap completed",
+  "distance": 4318.882773506268,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   28
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3782.7904484997493,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   31
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3847.099907161823,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   32
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3847.9335775907516,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   34
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.8156137164573,
+  "stop_reason": "lap completed",
+  "distance": 4318.31112457987,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   33
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3785.194575487258,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   35
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.78760488687908,
+  "stop_reason": "lap completed",
+  "distance": 4316.669754300698,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   36
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.99322063756044,
+  "stop_reason": "lap completed",
+  "distance": 4316.243862304872,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   37
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3781.3002313142406,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   43
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.34940616234174,
+  "stop_reason": "lap completed",
+  "distance": 4315.783982603102,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   38
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.65136547112586,
+  "stop_reason": "lap completed",
+  "distance": 4319.42452217235,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   39
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.05461390756192,
+  "stop_reason": "lap completed",
+  "distance": 4319.120452334999,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   41
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.1885153757465,
+  "stop_reason": "lap completed",
+  "distance": 4316.586884208598,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   40
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.04613827808382,
+  "stop_reason": "lap completed",
+  "distance": 4316.027640666526,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   42
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3806.2235647062375,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   46
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.04763062342042,
+  "stop_reason": "lap completed",
+  "distance": 4315.916256395854,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   44
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.81760931221812,
+  "stop_reason": "lap completed",
+  "distance": 4318.162959112664,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   45
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.55169368253553,
+  "stop_reason": "lap completed",
+  "distance": 4319.381863388442,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   47
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3789.429593496901,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   48
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3782.8130802027044,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   50
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.0556518413478,
+  "stop_reason": "lap completed",
+  "distance": 4319.033361182754,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   49
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3789.0491091979434,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   0
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3809.5302259442897,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   4
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.80684402927629,
+  "stop_reason": "lap completed",
+  "distance": 4318.977479975838,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   1
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.26894303832427,
+  "stop_reason": "lap completed",
+  "distance": 4318.056438076561,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   2
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.19269597869685,
+  "stop_reason": "lap completed",
+  "distance": 4316.286069468744,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   3
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.87358753148129,
+  "stop_reason": "lap completed",
+  "distance": 4317.7073619919975,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   5
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.88396736477276,
+  "stop_reason": "lap completed",
+  "distance": 4316.9371174366515,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   6
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.36948903871938,
+  "stop_reason": "lap completed",
+  "distance": 4318.014748744465,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   7
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.90104729189383,
+  "stop_reason": "lap completed",
+  "distance": 4319.40126397127,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   8
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.25479189546813,
+  "stop_reason": "lap completed",
+  "distance": 4319.116327791715,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   9
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.20208609563203,
+  "stop_reason": "lap completed",
+  "distance": 4319.309359110832,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   10
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.99396104662047,
+  "stop_reason": "lap completed",
+  "distance": 4316.1908504095245,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   11
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.354932339709,
+  "stop_reason": "lap completed",
+  "distance": 4319.095163679288,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   12
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.7649877283575,
+  "stop_reason": "lap completed",
+  "distance": 4318.357137670461,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   13
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.84036927336477,
+  "stop_reason": "lap completed",
+  "distance": 4316.459388846731,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   15
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.08196102096231,
+  "stop_reason": "lap completed",
+  "distance": 4317.089791794124,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   14
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.86630339057079,
+  "stop_reason": "lap completed",
+  "distance": 4318.2697033572995,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   16
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.02099059851281,
+  "stop_reason": "lap completed",
+  "distance": 4317.89842967627,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   17
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.97733764501133,
+  "stop_reason": "lap completed",
+  "distance": 4317.427405547689,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   18
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.0009813921556,
+  "stop_reason": "lap completed",
+  "distance": 4319.406633116486,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   19
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3798.749133045641,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   21
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3788.717008042854,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   22
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.98966587233737,
+  "stop_reason": "lap completed",
+  "distance": 4316.513226161766,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   20
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.07139800983504,
+  "stop_reason": "lap completed",
+  "distance": 4317.881878225793,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   23
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.96886101174229,
+  "stop_reason": "lap completed",
+  "distance": 4318.084121803182,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   0
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.70996021090176,
+  "stop_reason": "lap completed",
+  "distance": 4318.775087760458,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   1
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.1290290514434,
+  "stop_reason": "lap completed",
+  "distance": 4317.301631262378,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   2
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.94020755045075,
+  "stop_reason": "lap completed",
+  "distance": 4316.475383024751,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   3
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.86430225853536,
+  "stop_reason": "lap completed",
+  "distance": 4318.394943455809,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   4
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.01010318504129,
+  "stop_reason": "lap completed",
+  "distance": 4318.734989253423,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   5
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.12176397151069,
+  "stop_reason": "lap completed",
+  "distance": 4317.856797254114,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   24
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.05220963853795,
+  "stop_reason": "lap completed",
+  "distance": 4319.2833658470845,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   25
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.6025983361042,
+  "stop_reason": "lap completed",
+  "distance": 4319.260021584971,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   6
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3786.7903657961956,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   29
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.43568555865441,
+  "stop_reason": "lap completed",
+  "distance": 4316.804418470909,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   7
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.47145203632903,
+  "stop_reason": "lap completed",
+  "distance": 4317.857506065704,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   8
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.16451509399651,
+  "stop_reason": "lap completed",
+  "distance": 4318.394263259943,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   26
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.94689526175102,
+  "stop_reason": "lap completed",
+  "distance": 4315.97163719567,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   27
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.97148426450192,
+  "stop_reason": "lap completed",
+  "distance": 4317.874184800775,
+  "checkpoint": "C_s1_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   28
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.89184167242762,
+  "stop_reason": "lap completed",
+  "distance": 4316.355989607651,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   10
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.12009444424359,
+  "stop_reason": "lap completed",
+  "distance": 4317.992767821612,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   9
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.61525591957734,
+  "stop_reason": "lap completed",
+  "distance": 4318.3073587029485,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   11
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.24294690073411,
+  "stop_reason": "lap completed",
+  "distance": 4316.263404904186,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   12
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.64300985009643,
+  "stop_reason": "lap completed",
+  "distance": 4316.256525190036,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   13
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.17642500403919,
+  "stop_reason": "lap completed",
+  "distance": 4317.496494214614,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   14
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.79666443691227,
+  "stop_reason": "lap completed",
+  "distance": 4315.990771626466,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   15
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.62797762324811,
+  "stop_reason": "lap completed",
+  "distance": 4317.407631131669,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   16
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.07561398884205,
+  "stop_reason": "lap completed",
+  "distance": 4317.5738060327185,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   17
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 83.02638944737288,
+  "stop_reason": "lap completed",
+  "distance": 4317.487553063119,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   18
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.88088274893445,
+  "stop_reason": "lap completed",
+  "distance": 4317.180943675228,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   19
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.35684673498939,
+  "stop_reason": "lap completed",
+  "distance": 4318.958261103211,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   20
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.77200347590959,
+  "stop_reason": "lap completed",
+  "distance": 4317.853198178054,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   21
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.6030058916395,
+  "stop_reason": "lap completed",
+  "distance": 4319.305875607438,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   22
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.18960590985556,
+  "stop_reason": "lap completed",
+  "distance": 4316.521850280358,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   23
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.46221742853415,
+  "stop_reason": "lap completed",
+  "distance": 4318.552621621557,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   24
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.49461796814501,
+  "stop_reason": "lap completed",
+  "distance": 4316.138557677826,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   25
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.1927350988091,
+  "stop_reason": "lap completed",
+  "distance": 4316.278859607214,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   26
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.35029846102665,
+  "stop_reason": "lap completed",
+  "distance": 4319.479163178531,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   27
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.09425842393048,
+  "stop_reason": "lap completed",
+  "distance": 4316.1705804449075,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   28
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3813.8976292555517,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   31
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.77498503086586,
+  "stop_reason": "lap completed",
+  "distance": 4317.599858410422,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   29
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.86497599505458,
+  "stop_reason": "lap completed",
+  "distance": 4318.32973462791,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   30
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.71059993902239,
+  "stop_reason": "lap completed",
+  "distance": 4318.656629241601,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   32
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.81780994787059,
+  "stop_reason": "lap completed",
+  "distance": 4318.167029931319,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   33
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.96905053487215,
+  "stop_reason": "lap completed",
+  "distance": 4318.076108815027,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   34
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.84011482137264,
+  "stop_reason": "lap completed",
+  "distance": 4316.467838728794,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   35
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.78328735208567,
+  "stop_reason": "lap completed",
+  "distance": 4317.001604885023,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   36
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.41440726225706,
+  "stop_reason": "lap completed",
+  "distance": 4318.383962359754,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   38
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.12574670948467,
+  "stop_reason": "lap completed",
+  "distance": 4317.555780844276,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   37
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.58569972392449,
+  "stop_reason": "lap completed",
+  "distance": 4316.825962060013,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   39
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.29804605043786,
+  "stop_reason": "lap completed",
+  "distance": 4315.885029597491,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   40
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.17650021846762,
+  "stop_reason": "lap completed",
+  "distance": 4317.497491858758,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   41
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.1361302926973,
+  "stop_reason": "lap completed",
+  "distance": 4316.779495093195,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   42
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.12099104520908,
+  "stop_reason": "lap completed",
+  "distance": 4317.917734971972,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   44
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.81237691915128,
+  "stop_reason": "lap completed",
+  "distance": 4318.523032213416,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   43
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.91425135299875,
+  "stop_reason": "lap completed",
+  "distance": 4318.430471110469,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   45
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.55406329279145,
+  "stop_reason": "lap completed",
+  "distance": 4319.187578964207,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   46
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.62584081348386,
+  "stop_reason": "lap completed",
+  "distance": 4317.565577224013,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   47
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3810.703230434759,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   48
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.16566454810726,
+  "stop_reason": "lap completed",
+  "distance": 4318.307438506488,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   49
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.21578497196022,
+  "stop_reason": "lap completed",
+  "distance": 4318.309320053519,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_car",
+   50
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.0757197655685,
+  "stop_reason": "lap completed",
+  "distance": 4317.568124419835,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   1
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.04731270026558,
+  "stop_reason": "lap completed",
+  "distance": 4315.942437775411,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   0
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.17592843866844,
+  "stop_reason": "lap completed",
+  "distance": 4317.550855996298,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   2
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.06252614284824,
+  "stop_reason": "lap completed",
+  "distance": 4318.562883848579,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   3
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.88824176341508,
+  "stop_reason": "lap completed",
+  "distance": 4316.622238318156,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   5
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.96322675579944,
+  "stop_reason": "lap completed",
+  "distance": 4318.503292869826,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   4
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.96670655146754,
+  "stop_reason": "lap completed",
+  "distance": 4318.247607972613,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   6
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.22438343791703,
+  "stop_reason": "lap completed",
+  "distance": 4317.661322041097,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   7
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.06085572065572,
+  "stop_reason": "lap completed",
+  "distance": 4318.69095855587,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   8
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.1594231050758,
+  "stop_reason": "lap completed",
+  "distance": 4318.7990643693265,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   9
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.01809696753749,
+  "stop_reason": "lap completed",
+  "distance": 4318.1424942078565,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   11
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.18146765623892,
+  "stop_reason": "lap completed",
+  "distance": 4317.129098668525,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   10
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.09337894428121,
+  "stop_reason": "lap completed",
+  "distance": 4316.23773864743,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   12
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.02078930570428,
+  "stop_reason": "lap completed",
+  "distance": 4317.937236593838,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   13
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.99467810122123,
+  "stop_reason": "lap completed",
+  "distance": 4316.140452548353,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   14
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.86403378909407,
+  "stop_reason": "lap completed",
+  "distance": 4318.444799691757,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   15
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.998490393855,
+  "stop_reason": "lap completed",
+  "distance": 4315.853795509353,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   16
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.94531276496518,
+  "stop_reason": "lap completed",
+  "distance": 4316.091709650199,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   17
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.17171998579201,
+  "stop_reason": "lap completed",
+  "distance": 4317.8653898163275,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   19
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.98500147280969,
+  "stop_reason": "lap completed",
+  "distance": 4316.866401714331,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   18
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.06738561963536,
+  "stop_reason": "lap completed",
+  "distance": 4318.193597595451,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   20
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.22195259299616,
+  "stop_reason": "lap completed",
+  "distance": 4317.851105469235,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   21
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.97167453754173,
+  "stop_reason": "lap completed",
+  "distance": 4317.872640434158,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   22
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2800.041169360726,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   1
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.1282221887737,
+  "stop_reason": "lap completed",
+  "distance": 4317.380950267604,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   23
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.80407247882614,
+  "stop_reason": "lap completed",
+  "distance": 4319.212231159315,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   0
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2782.473894819217,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   4
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.89990786809537,
+  "stop_reason": "lap completed",
+  "distance": 4315.747187714493,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   2
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.64541560660179,
+  "stop_reason": "lap completed",
+  "distance": 4316.085418444106,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   3
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.84781855365124,
+  "stop_reason": "lap completed",
+  "distance": 4315.904298952332,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   5
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.43599455303534,
+  "stop_reason": "lap completed",
+  "distance": 4316.781236346012,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   6
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.21485157074973,
+  "stop_reason": "lap completed",
+  "distance": 4318.364228220909,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   7
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.05612292098861,
+  "stop_reason": "lap completed",
+  "distance": 4319.042120645885,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   24
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.05298242235278,
+  "stop_reason": "lap completed",
+  "distance": 4319.2780843285545,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   25
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.061554250673,
+  "stop_reason": "lap completed",
+  "distance": 4318.638617988995,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   26
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.8918722820999,
+  "stop_reason": "lap completed",
+  "distance": 4316.351168040482,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   27
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.99482629878015,
+  "stop_reason": "lap completed",
+  "distance": 4316.129058024006,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   28
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2793.996524421438,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   11
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.20387477564097,
+  "stop_reason": "lap completed",
+  "distance": 4319.174234029442,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   8
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.0795122809834,
+  "stop_reason": "lap completed",
+  "distance": 4317.278984884119,
+  "checkpoint": "C_s2_450k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   29
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.2132856251347,
+  "stop_reason": "lap completed",
+  "distance": 4318.513562636958,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   9
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.6432829367721,
+  "stop_reason": "lap completed",
+  "distance": 4316.248669606437,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   10
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2781.81275614558,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   13
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.16640869448932,
+  "stop_reason": "lap completed",
+  "distance": 4318.244562787761,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   12
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2833.609892865149,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   14
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2795.4613926837173,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   17
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2791.6881619231144,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   19
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.46735925116582,
+  "stop_reason": "lap completed",
+  "distance": 4318.221112438376,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   16
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.6141811506049,
+  "stop_reason": "lap completed",
+  "distance": 4318.44681572451,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   15
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.21442190632038,
+  "stop_reason": "lap completed",
+  "distance": 4318.401654983455,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   20
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2787.733394150456,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   24
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 83.06239145927736,
+  "stop_reason": "lap completed",
+  "distance": 4318.529212880296,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   18
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.57238349229193,
+  "stop_reason": "lap completed",
+  "distance": 4317.832453698022,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   21
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2787.612049131376,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   25
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.87783075861728,
+  "stop_reason": "lap completed",
+  "distance": 4317.425194661827,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   22
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2796.6525035188647,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   27
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.40697122885204,
+  "stop_reason": "lap completed",
+  "distance": 4318.990177004724,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   23
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.07042737267321,
+  "stop_reason": "lap completed",
+  "distance": 4317.944771100509,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   26
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2786.6767962009794,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   30
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2803.173085347368,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   29
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.98014370938542,
+  "stop_reason": "lap completed",
+  "distance": 4317.235638748627,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   28
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2805.6343496165687,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   31
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2791.1836489677935,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   34
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2794.3136126285226,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   33
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2788.623455481419,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   35
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.60322965544634,
+  "stop_reason": "lap completed",
+  "distance": 4319.211653121082,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   32
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.62713225433465,
+  "stop_reason": "lap completed",
+  "distance": 4317.472067120647,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   36
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.24762309559844,
+  "stop_reason": "lap completed",
+  "distance": 4315.918568411064,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   37
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.26668285829818,
+  "stop_reason": "lap completed",
+  "distance": 4318.222135708918,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   38
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2784.3962372211113,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   43
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2791.2569162061404,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   44
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2811.5792775841473,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   46
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.56507081632368,
+  "stop_reason": "lap completed",
+  "distance": 4318.404857752558,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   39
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.52442662675142,
+  "stop_reason": "lap completed",
+  "distance": 4317.645519364281,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   40
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.9402011605466,
+  "stop_reason": "lap completed",
+  "distance": 4316.474764274139,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   41
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.92874577979948,
+  "stop_reason": "lap completed",
+  "distance": 4317.338709089786,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   42
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.87670118022693,
+  "stop_reason": "lap completed",
+  "distance": 4317.498558225432,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   45
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2791.1856307562225,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   49
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2786.516127950944,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   50
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.05060228331334,
+  "stop_reason": "lap completed",
+  "distance": 4319.492967203707,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   47
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 83.21501517033363,
+  "stop_reason": "lap completed",
+  "distance": 4318.346314949324,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   48
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2801.064843244981,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   0
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2800.765364629685,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   3
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.88043981670442,
+  "stop_reason": "lap completed",
+  "distance": 4317.2198297940595,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   1
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.11317262354953,
+  "stop_reason": "lap completed",
+  "distance": 4318.51725574449,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   2
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.70060304007639,
+  "stop_reason": "lap completed",
+  "distance": 4319.461591342191,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   5
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.81980368802493,
+  "stop_reason": "lap completed",
+  "distance": 4318.013603371174,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   4
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.89856942496864,
+  "stop_reason": "lap completed",
+  "distance": 4315.848179411933,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   6
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.10073296926932,
+  "stop_reason": "lap completed",
+  "distance": 4319.444402762896,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   7
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.01329765856484,
+  "stop_reason": "lap completed",
+  "distance": 4318.511796263339,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   9
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.87003604321221,
+  "stop_reason": "lap completed",
+  "distance": 4318.0091884591275,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   8
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.93574080896927,
+  "stop_reason": "lap completed",
+  "distance": 4316.812161558073,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   10
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.91498175392672,
+  "stop_reason": "lap completed",
+  "distance": 4318.383295387157,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   11
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.98769550451811,
+  "stop_reason": "lap completed",
+  "distance": 4316.667014055038,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   12
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.8806782272378,
+  "stop_reason": "lap completed",
+  "distance": 4317.197544512589,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   13
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 2790.2078803911168,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   20
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.86571262751448,
+  "stop_reason": "lap completed",
+  "distance": 4318.331655605074,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   14
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.31179814315794,
+  "stop_reason": "lap completed",
+  "distance": 4318.620544331823,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   15
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.77758183254568,
+  "stop_reason": "lap completed",
+  "distance": 4317.433922883691,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   16
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.51812805488295,
+  "stop_reason": "lap completed",
+  "distance": 4318.141628280083,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   17
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.96174562943416,
+  "stop_reason": "lap completed",
+  "distance": 4318.6227968924795,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   18
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.98384300945182,
+  "stop_reason": "lap completed",
+  "distance": 4316.956263823007,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   19
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.13218390771455,
+  "stop_reason": "lap completed",
+  "distance": 4317.083762608772,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   21
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.86079286240626,
+  "stop_reason": "lap completed",
+  "distance": 4318.698859810696,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   22
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.00527186720717,
+  "stop_reason": "lap completed",
+  "distance": 4319.124700004311,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   23
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3118.2814286579205,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   1
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.7408744495922,
+  "stop_reason": "lap completed",
+  "distance": 4316.4232663208095,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   0
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.28949450465615,
+  "stop_reason": "lap completed",
+  "distance": 4316.518378465021,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   2
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3114.310108516553,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   4
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.76189952573834,
+  "stop_reason": "lap completed",
+  "distance": 4318.594977247237,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   3
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.94196899891966,
+  "stop_reason": "lap completed",
+  "distance": 4316.345564345289,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   24
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.89437591546186,
+  "stop_reason": "lap completed",
+  "distance": 4316.163278005585,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   25
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.09874866828181,
+  "stop_reason": "lap completed",
+  "distance": 4315.833526662428,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   5
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.51894201461184,
+  "stop_reason": "lap completed",
+  "distance": 4318.033626864244,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   6
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 82.02365591715592,
+  "stop_reason": "lap completed",
+  "distance": 4317.730892207215,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   26
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.26333756154374,
+  "stop_reason": "lap completed",
+  "distance": 4318.457411749332,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   7
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3146.4254683196305,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   11
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.31144515905712,
+  "stop_reason": "lap completed",
+  "distance": 4318.59202329264,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   8
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.10120645007667,
+  "stop_reason": "lap completed",
+  "distance": 4319.409309619566,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   9
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.912477379196,
+  "stop_reason": "lap completed",
+  "distance": 4318.573749076757,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   27
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.80487827202006,
+  "stop_reason": "lap completed",
+  "distance": 4319.156271469106,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   28
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.6676620579221,
+  "stop_reason": "lap completed",
+  "distance": 4318.175620587634,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   10
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3106.497012890287,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   13
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.2993317138011,
+  "stop_reason": "lap completed",
+  "distance": 4315.789623256604,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   12
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.818816259132,
+  "stop_reason": "lap completed",
+  "distance": 4318.093758855259,
+  "checkpoint": "C_s2_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   29
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.0212543532371,
+  "stop_reason": "lap completed",
+  "distance": 4317.874509847763,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   14
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.98183797068215,
+  "stop_reason": "lap completed",
+  "distance": 4317.098357621764,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   15
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3122.8428348921184,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   19
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.5634524156118,
+  "stop_reason": "lap completed",
+  "distance": 4318.497998077071,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   16
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.86989347701216,
+  "stop_reason": "lap completed",
+  "distance": 4317.996816717443,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   17
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 81.27848086977275,
+  "stop_reason": "lap completed",
+  "distance": 4317.32713035604,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   18
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3122.732738210287,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   23
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.90099249182322,
+  "stop_reason": "lap completed",
+  "distance": 4319.425101061197,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   21
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.5037681253866,
+  "stop_reason": "lap completed",
+  "distance": 4319.170308914727,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   20
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.47180843270473,
+  "stop_reason": "lap completed",
+  "distance": 4317.870965513444,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   22
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3782.177262019836,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   24
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.55232502021913,
+  "stop_reason": "lap completed",
+  "distance": 4319.263650232594,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   25
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3110.141801169702,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   27
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3095.0913491466854,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   30
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3089.2582442804965,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   29
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.40378430857166,
+  "stop_reason": "lap completed",
+  "distance": 4319.157909364365,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   26
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3070.1786497006915,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   31
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.25170297286924,
+  "stop_reason": "lap completed",
+  "distance": 4319.348766223033,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   28
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3110.4211410406824,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   34
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3098.393511064089,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   35
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.63721567094876,
+  "stop_reason": "lap completed",
+  "distance": 4316.683000685769,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   32
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.65396802665909,
+  "stop_reason": "lap completed",
+  "distance": 4319.20000283435,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   33
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.60565914573712,
+  "stop_reason": "lap completed",
+  "distance": 4319.080143676538,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   36
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.93006406859855,
+  "stop_reason": "lap completed",
+  "distance": 4317.228025597085,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   37
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.26974181731677,
+  "stop_reason": "lap completed",
+  "distance": 4317.978825547822,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   38
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3779.1327251785897,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   40
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3095.354163450085,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   43
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.0874269889218,
+  "stop_reason": "lap completed",
+  "distance": 4316.675192103302,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   41
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.58810280401651,
+  "stop_reason": "lap completed",
+  "distance": 4316.6387382478315,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   39
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.9646162730178,
+  "stop_reason": "lap completed",
+  "distance": 4318.384314009546,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   42
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3782.5642004428855,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   44
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3124.6226684493267,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   46
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.68810181507277,
+  "stop_reason": "lap completed",
+  "distance": 4316.63076603904,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   45
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3074.165852431425,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   48
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.77860959337106,
+  "stop_reason": "lap completed",
+  "distance": 4317.348679824412,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   47
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3113.7480448178467,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   49
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3098.5930162240697,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_car",
+   50
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3102.3313777142935,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   3
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3780.519080821733,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   5
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3781.906045738328,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   4
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.87279102249693,
+  "stop_reason": "lap completed",
+  "distance": 4317.781082028268,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   0
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.88330130912495,
+  "stop_reason": "lap completed",
+  "distance": 4316.993963885114,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   1
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3779.2166539306663,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   8
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.00615411505234,
+  "stop_reason": "lap completed",
+  "distance": 4319.027724651263,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   2
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.96330150202567,
+  "stop_reason": "lap completed",
+  "distance": 4318.492341812603,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   6
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.36600086112502,
+  "stop_reason": "lap completed",
+  "distance": 4318.280060118081,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   7
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.0701494006375,
+  "stop_reason": "lap completed",
+  "distance": 4317.981135305183,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   9
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.85714094886103,
+  "stop_reason": "lap completed",
+  "distance": 4318.944207231617,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   10
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.83593023253474,
+  "stop_reason": "lap completed",
+  "distance": 4316.793751336013,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   11
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.1429856790888,
+  "stop_reason": "lap completed",
+  "distance": 4316.265467622716,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   12
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.03126522383707,
+  "stop_reason": "lap completed",
+  "distance": 4317.142694803238,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   14
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.83570064806392,
+  "stop_reason": "lap completed",
+  "distance": 4316.8096406368,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   13
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "spin",
+  "distance": 3116.210657461496,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   21
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3780.6002674523284,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   19
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.76469437425186,
+  "stop_reason": "lap completed",
+  "distance": 4318.380950872923,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   15
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.96344995567377,
+  "stop_reason": "lap completed",
+  "distance": 4318.481126252091,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   16
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.8926851513366,
+  "stop_reason": "lap completed",
+  "distance": 4316.286757078107,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   17
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.97863893703844,
+  "stop_reason": "lap completed",
+  "distance": 4317.3386493446305,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   18
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3783.3603374574695,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   22
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.04501979177303,
+  "stop_reason": "lap completed",
+  "distance": 4316.112332932201,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   20
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.01527799063606,
+  "stop_reason": "lap completed",
+  "distance": 4318.348554816886,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   23
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.18364829217008,
+  "stop_reason": "lap completed",
+  "distance": 4316.964296488997,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   24
+  ]
+ },
+ {
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 3780.31655251642,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   29
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.1353854725998,
+  "stop_reason": "lap completed",
+  "distance": 4316.835051852042,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   26
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.87996482491168,
+  "stop_reason": "lap completed",
+  "distance": 4317.238677817526,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   25
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 80.12325970580567,
+  "stop_reason": "lap completed",
+  "distance": 4317.742067898563,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   27
+  ]
+ },
+ {
+  "completed": true,
+  "lap_time": 79.74949685906807,
+  "stop_reason": "lap completed",
+  "distance": 4315.777958813292,
+  "checkpoint": "C_s3_600k",
+  "group": "C",
+  "case": [
+   "test_dist",
+   28
+  ]
+ }
+]

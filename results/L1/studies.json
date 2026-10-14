@@ -1,0 +1,458 @@
+{
+  "ocp_grid": {
+    "5.0": {
+      "lap_time": 74.12855447278852,
+      "success": true,
+      "iterations": 119,
+      "seconds": 71.62466788291931
+    },
+    "2.5": {
+      "lap_time": 73.90724944207388,
+      "success": true,
+      "iterations": 93,
+      "seconds": 147.53384017944336
+    },
+    "1.25": {
+      "lap_time": 73.78577948221104,
+      "success": true,
+      "iterations": 93,
+      "seconds": 300.4951391220093
+    }
+  },
+  "gap": {
+    "L1 model": {
+      "lap_time": 73.90724944207388,
+      "success": true
+    },
+    "no longitudinal load transfer (h_cg = 0)": {
+      "lap_time": 75.74264442672393,
+      "success": true
+    },
+    "brake balance 50 % front": {
+      "lap_time": 73.85045134316137,
+      "success": true
+    },
+    "brake balance 70 % front": {
+      "lap_time": 74.41495288544237,
+      "success": true
+    },
+    "half the yaw inertia": {
+      "lap_time": 73.84895616424457,
+      "success": true
+    },
+    "L0 kinematic (reference)": {
+      "lap_time": 71.26203387743065,
+      "success": true
+    }
+  },
+  "tracker": [
+    {
+      "eta": 0.93,
+      "gains": {
+        "k_p": 0.08,
+        "x_la": 12.0,
+        "k_r": 0.05,
+        "kv": 8.0
+      },
+      "completed": false,
+      "lap_time": NaN,
+      "stop_reason": "off track",
+      "distance": 2728.5688657569726,
+      "max_usage": 0.9999966536022354,
+      "min_edge_margin": -0.03112571856300317,
+      "max_abs_e": 0.19200443148666557,
+      "max_rear_slip_deg": 19.368857380280858
+    },
+    {
+      "eta": 0.93,
+      "gains": {
+        "k_p": 0.06,
+        "x_la": 12.0,
+        "k_r": 0.05,
+        "kv": 8.0
+      },
+      "completed": false,
+      "lap_time": NaN,
+      "stop_reason": "spin",
+      "distance": 2746.8774803190795,
+      "max_usage": 0.9999951894400897,
+      "min_edge_margin": 0.04034648333830182,
+      "max_abs_e": 0.2527342091594865,
+      "max_rear_slip_deg": 33.53581993647598
+    },
+    {
+      "eta": 0.93,
+      "gains": {
+        "k_p": 0.05,
+        "x_la": 15.0,
+        "k_r": 0.05,
+        "kv": 8.0
+      },
+      "completed": false,
+      "lap_time": NaN,
+      "stop_reason": "spin",
+      "distance": 2753.7493753786916,
+      "max_usage": 0.99999711795478,
+      "min_edge_margin": 0.2032533763141533,
+      "max_abs_e": 0.22524704702538273,
+      "max_rear_slip_deg": 33.56634068523859
+    },
+    {
+      "eta": 0.93,
+      "gains": {
+        "k_p": 0.05,
+        "x_la": 12.0,
+        "k_r": 0.05,
+        "kv": 8.0
+      },
+      "completed": false,
+      "lap_time": NaN,
+      "stop_reason": "spin",
+      "distance": 2762.1987174510446,
+      "max_usage": 0.9999963772845538,
+      "min_edge_margin": 0.28431173575083424,
+      "max_abs_e": 0.25449575182741135,
+      "max_rear_slip_deg": 33.78369297034439
+    },
+    {
+      "eta": 0.93,
+      "gains": {
+        "k_p": 0.1,
+        "x_la": 10.0,
+        "k_r": 0.05,
+        "kv": 8.0
+      },
+      "completed": false,
+      "lap_time": NaN,
+      "stop_reason": "off track",
+      "distance": 2724.725554383764,
+      "max_usage": 0.999995999474102,
+      "min_edge_margin": -0.021557316922295122,
+      "max_abs_e": 0.18323734455715468,
+      "max_rear_slip_deg": 24.032166905699622
+    },
+    {
+      "eta": 0.93,
+      "gains": {
+        "k_p": 0.05,
+        "x_la": 12.0,
+        "k_r": 0.05,
+        "kv": 4.0
+      },
+      "completed": false,
+      "lap_time": NaN,
+      "stop_reason": "spin",
+      "distance": 2759.9003946569537,
+      "max_usage": 0.9999965343224378,
+      "min_edge_margin": 0.2609413197458901,
+      "max_abs_e": 0.27620342523937,
+      "max_rear_slip_deg": 33.29390967202635
+    },
+    {
+      "eta": 0.95,
+      "gains": {
+        "k_p": 0.05,
+        "x_la": 12.0,
+        "k_r": 0.05,
+        "kv": 8.0
+      },
+      "completed": true,
+      "lap_time": 75.57301956639921,
+      "stop_reason": "lap completed",
+      "distance": 4315.510512023071,
+      "max_usage": 0.9899230689430046,
+      "min_edge_margin": 0.21957089611026603,
+      "max_abs_e": 0.12373222238997947,
+      "max_rear_slip_deg": 4.292023503363253
+    },
+    {
+      "eta": 0.93,
+      "gains": {
+        "k_p": 0.08,
+        "x_la": 8.0,
+        "k_r": 0.1,
+        "kv": 8.0
+      },
+      "completed": true,
+      "lap_time": 76.33459689257522,
+      "stop_reason": "lap completed",
+      "distance": 4315.391448517123,
+      "max_usage": 0.9957307908126871,
+      "min_edge_margin": 0.1704773976830367,
+      "max_abs_e": 0.23714916337588474,
+      "max_rear_slip_deg": 4.586737881488577
+    },
+    {
+      "eta": 0.95,
+      "gains": {
+        "k_p": 0.08,
+        "x_la": 12.0,
+        "k_r": 0.05,
+        "kv": 8.0
+      },
+      "completed": true,
+      "lap_time": 75.59253448544484,
+      "stop_reason": "lap completed",
+      "distance": 4315.547422778663,
+      "max_usage": 1.0091249499550545,
+      "min_edge_margin": 0.23367746619450225,
+      "max_abs_e": 0.25849940450125347,
+      "max_rear_slip_deg": 4.668887524090132
+    },
+    {
+      "eta": 0.95,
+      "gains": {
+        "k_p": 0.06,
+        "x_la": 12.0,
+        "k_r": 0.05,
+        "kv": 8.0
+      },
+      "completed": true,
+      "lap_time": 75.57439992185292,
+      "stop_reason": "lap completed",
+      "distance": 4315.405488983052,
+      "max_usage": 0.9899357776504997,
+      "min_edge_margin": 0.26689312010806443,
+      "max_abs_e": 0.07215349104727142,
+      "max_rear_slip_deg": 4.261376475129522
+    },
+    {
+      "eta": 0.95,
+      "gains": {
+        "k_p": 0.05,
+        "x_la": 15.0,
+        "k_r": 0.05,
+        "kv": 8.0
+      },
+      "completed": true,
+      "lap_time": 75.57487701006094,
+      "stop_reason": "lap completed",
+      "distance": 4315.369193915067,
+      "max_usage": 0.9899557068188656,
+      "min_edge_margin": 0.2578387884186113,
+      "max_abs_e": 0.06463470757319209,
+      "max_rear_slip_deg": 4.294215809238795
+    },
+    {
+      "eta": 0.93,
+      "gains": {
+        "k_p": 0.03,
+        "x_la": 12.0,
+        "k_r": 0.05,
+        "kv": 8.0
+      },
+      "completed": true,
+      "lap_time": 76.33167029985438,
+      "stop_reason": "lap completed",
+      "distance": 4315.613528200484,
+      "max_usage": 0.991212027141668,
+      "min_edge_margin": 0.0687366839014869,
+      "max_abs_e": 0.4409658098616321,
+      "max_rear_slip_deg": 4.621786385034575
+    },
+    {
+      "eta": 0.97,
+      "gains": {
+        "k_p": 0.06,
+        "x_la": 12.0,
+        "k_r": 0.05,
+        "kv": 8.0
+      },
+      "completed": false,
+      "lap_time": NaN,
+      "stop_reason": "off track",
+      "distance": 2729.3850492569563,
+      "max_usage": 0.9999996302514853,
+      "min_edge_margin": -0.004742109153444751,
+      "max_abs_e": 0.3444612872185594,
+      "max_rear_slip_deg": 30.070623543791914
+    },
+    {
+      "eta": 0.95,
+      "gains": {
+        "k_p": 0.1,
+        "x_la": 10.0,
+        "k_r": 0.05,
+        "kv": 8.0
+      },
+      "completed": false,
+      "lap_time": NaN,
+      "stop_reason": "off track",
+      "distance": 2734.6063762873723,
+      "max_usage": 0.9999983179813628,
+      "min_edge_margin": -0.012860609171854165,
+      "max_abs_e": 0.13188438634948563,
+      "max_rear_slip_deg": 7.933986543324139
+    },
+    {
+      "eta": 0.95,
+      "gains": {
+        "k_p": 0.03,
+        "x_la": 12.0,
+        "k_r": 0.05,
+        "kv": 8.0
+      },
+      "completed": false,
+      "lap_time": NaN,
+      "stop_reason": "off track",
+      "distance": 2723.961690608319,
+      "max_usage": 0.9999986746769367,
+      "min_edge_margin": -0.0034686405235326845,
+      "max_abs_e": 0.38761490645901403,
+      "max_rear_slip_deg": 9.223093094562651
+    },
+    {
+      "eta": 0.97,
+      "gains": {
+        "k_p": 0.05,
+        "x_la": 12.0,
+        "k_r": 0.05,
+        "kv": 8.0
+      },
+      "completed": false,
+      "lap_time": NaN,
+      "stop_reason": "off track",
+      "distance": 2729.2380158553597,
+      "max_usage": 0.9999996412976417,
+      "min_edge_margin": -0.0005601223587143878,
+      "max_abs_e": 0.30108696588958533,
+      "max_rear_slip_deg": 28.482454678057096
+    },
+    {
+      "eta": 0.95,
+      "gains": {
+        "k_p": 0.05,
+        "x_la": 12.0,
+        "k_r": 0.05,
+        "kv": 4.0
+      },
+      "completed": false,
+      "lap_time": NaN,
+      "stop_reason": "off track",
+      "distance": 3036.0314106063274,
+      "max_usage": 0.99999808053333,
+      "min_edge_margin": -0.00878323026563077,
+      "max_abs_e": 0.343120859982738,
+      "max_rear_slip_deg": 12.122132867121527
+    },
+    {
+      "eta": 0.95,
+      "gains": {
+        "k_p": 0.08,
+        "x_la": 8.0,
+        "k_r": 0.1,
+        "kv": 8.0
+      },
+      "completed": true,
+      "lap_time": 75.57719077483553,
+      "stop_reason": "lap completed",
+      "distance": 4315.193198668646,
+      "max_usage": 0.992414552759766,
+      "min_edge_margin": 0.17528115809125389,
+      "max_abs_e": 0.15639167160346454,
+      "max_rear_slip_deg": 4.429549098496668
+    },
+    {
+      "eta": 0.97,
+      "gains": {
+        "k_p": 0.05,
+        "x_la": 12.0,
+        "k_r": 0.05,
+        "kv": 4.0
+      },
+      "completed": false,
+      "lap_time": NaN,
+      "stop_reason": "off track",
+      "distance": 2729.4930932893953,
+      "max_usage": 0.9999988205701061,
+      "min_edge_margin": -0.025497614497439258,
+      "max_abs_e": 0.24915478144732758,
+      "max_rear_slip_deg": 27.1774228278567
+    },
+    {
+      "eta": 0.97,
+      "gains": {
+        "k_p": 0.05,
+        "x_la": 15.0,
+        "k_r": 0.05,
+        "kv": 8.0
+      },
+      "completed": false,
+      "lap_time": NaN,
+      "stop_reason": "off track",
+      "distance": 2729.6858597299847,
+      "max_usage": 0.999999915044445,
+      "min_edge_margin": -0.02823860227085717,
+      "max_abs_e": 0.34912147979031494,
+      "max_rear_slip_deg": 30.610113910392137
+    },
+    {
+      "eta": 0.97,
+      "gains": {
+        "k_p": 0.08,
+        "x_la": 8.0,
+        "k_r": 0.1,
+        "kv": 8.0
+      },
+      "completed": false,
+      "lap_time": NaN,
+      "stop_reason": "off track",
+      "distance": 2730.155678223486,
+      "max_usage": 0.9999981746719111,
+      "min_edge_margin": -0.0265927131676591,
+      "max_abs_e": 0.2738503750621529,
+      "max_rear_slip_deg": 27.276271059480912
+    },
+    {
+      "eta": 0.97,
+      "gains": {
+        "k_p": 0.08,
+        "x_la": 12.0,
+        "k_r": 0.05,
+        "kv": 8.0
+      },
+      "completed": false,
+      "lap_time": NaN,
+      "stop_reason": "off track",
+      "distance": 2729.528710293701,
+      "max_usage": 0.9999995480399629,
+      "min_edge_margin": -0.022754403053930616,
+      "max_abs_e": 0.40902241030223163,
+      "max_rear_slip_deg": 32.92742961321724
+    },
+    {
+      "eta": 0.97,
+      "gains": {
+        "k_p": 0.03,
+        "x_la": 12.0,
+        "k_r": 0.05,
+        "kv": 8.0
+      },
+      "completed": false,
+      "lap_time": NaN,
+      "stop_reason": "off track",
+      "distance": 2728.794595941639,
+      "max_usage": 0.9999997284314406,
+      "min_edge_margin": -0.008137438842942935,
+      "max_abs_e": 0.23705013822375368,
+      "max_rear_slip_deg": 26.636406280593913
+    },
+    {
+      "eta": 0.97,
+      "gains": {
+        "k_p": 0.1,
+        "x_la": 10.0,
+        "k_r": 0.05,
+        "kv": 8.0
+      },
+      "completed": false,
+      "lap_time": NaN,
+      "stop_reason": "off track",
+      "distance": 2729.164185560729,
+      "max_usage": 0.999995141259355,
+      "min_edge_margin": -0.008195521380526039,
+      "max_abs_e": 0.4242233961047662,
+      "max_rear_slip_deg": 33.45510167662771
+    }
+  ]
+}

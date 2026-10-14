@@ -1,0 +1,5 @@
+round1: ../F1-Race-wt-L6-run/results/L6/round1.jsonl (observe=command; 20b314b, 1a first controllers 75865d8+save) + angle ablation ../F1-Race-wt-L6-rerun/results/L6_angle (fa7ba35/d783f90)
+rl: ../F1-Race-wt-L6-run (20b314b) + sweep ../F1-Race-wt-L6-run23 (be9cdb6)
+round2: ../F1-Race-wt-L6-run23 results/L6 and results/L6_tau10 (be9cdb6) - ran during the overload, NOT VERIFIED
+round3: ../F1-Race-wt-L6-run23 cars 0-11 (be9cdb6, during the overload; 6 and 7 with fallbacks) + ../F1-Race-wt-L6-rerun cars 12-24 (d783f90, car 24 4db4e39)
+round4: ../F1-Race-wt-L6-r4 (4db4e39)

@@ -1,0 +1,398 @@
+[
+ {
+  "variant": "soft stage 0",
+  "car": {
+   "mu": 0.9650119050006077,
+   "m": 1.027479684383653,
+   "ClA": 0.9055118226486137,
+   "CdA": 1.0507026217349613,
+   "Iz": 1.0114429939657834,
+   "B": 0.9489195149497276,
+   "aero_front": 0.01730572220570426
+  },
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 474.21157970122704,
+  "fallbacks": 0,
+  "solves": 155,
+  "max_limit_slack": 0.01601567343021129,
+  "iterations_mean": 21.587096774193547,
+  "wall_s": 61.9411940574646
+ },
+ {
+  "variant": "hard",
+  "car": {
+   "mu": 0.953351431222081,
+   "m": 1.0226748944740327,
+   "ClA": 0.926808339449433,
+   "CdA": 0.9806225972894259,
+   "Iz": 0.9110365722028448,
+   "B": 0.9286940021325548,
+   "aero_front": 0.015021880357803157
+  },
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 475.40719208138717,
+  "fallbacks": 28,
+  "solves": 154,
+  "max_limit_slack": 0.0,
+  "iterations_mean": 28.785714285714285,
+  "wall_s": 80.09507727622986
+ },
+ {
+  "variant": "hard",
+  "car": {
+   "mu": 0.9650119050006077,
+   "m": 1.027479684383653,
+   "ClA": 0.9055118226486137,
+   "CdA": 1.0507026217349613,
+   "Iz": 1.0114429939657834,
+   "B": 0.9489195149497276,
+   "aero_front": 0.01730572220570426
+  },
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 479.4894819848705,
+  "fallbacks": 35,
+  "solves": 157,
+  "max_limit_slack": 0.0,
+  "iterations_mean": 29.43949044585987,
+  "wall_s": 83.0355122089386
+ },
+ {
+  "variant": "soft stage 0",
+  "car": {
+   "mu": 0.953351431222081,
+   "m": 1.0226748944740327,
+   "ClA": 0.926808339449433,
+   "CdA": 0.9806225972894259,
+   "Iz": 0.9110365722028448,
+   "B": 0.9286940021325548,
+   "aero_front": 0.015021880357803157
+  },
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 471.10855270126785,
+  "fallbacks": 0,
+  "solves": 153,
+  "max_limit_slack": 0.01814968004188111,
+  "iterations_mean": 21.758169934640524,
+  "wall_s": 59.47698497772217
+ },
+ {
+  "variant": "hard",
+  "car": {
+   "mu": 0.9763003787170282,
+   "m": 1.047523184816297,
+   "ClA": 0.9288319225439268,
+   "CdA": 1.0897298894274488,
+   "Iz": 0.9435494356031456,
+   "B": 0.9769979346917727,
+   "aero_front": 0.019662155629226505
+  },
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2722.4000070773463,
+  "fallbacks": 71,
+  "solves": 986,
+  "max_limit_slack": 0.0,
+  "iterations_mean": 18.272819472616632,
+  "wall_s": 345.8563370704651
+ },
+ {
+  "variant": "soft stages 0-1",
+  "car": {
+   "mu": 0.9650119050006077,
+   "m": 1.027479684383653,
+   "ClA": 0.9055118226486137,
+   "CdA": 1.0507026217349613,
+   "Iz": 1.0114429939657834,
+   "B": 0.9489195149497276,
+   "aero_front": 0.01730572220570426
+  },
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 473.9636133994072,
+  "fallbacks": 0,
+  "solves": 155,
+  "max_limit_slack": 0.01602227647374283,
+  "iterations_mean": 23.083870967741934,
+  "wall_s": 66.5599479675293
+ },
+ {
+  "variant": "soft stage 0",
+  "car": {
+   "mu": 0.9763003787170282,
+   "m": 1.047523184816297,
+   "ClA": 0.9288319225439268,
+   "CdA": 1.0897298894274488,
+   "Iz": 0.9435494356031456,
+   "B": 0.9769979346917727,
+   "aero_front": 0.019662155629226505
+  },
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2726.6061594995563,
+  "fallbacks": 0,
+  "solves": 991,
+  "max_limit_slack": 0.013064602133414555,
+  "iterations_mean": 23.0343087790111,
+  "wall_s": 422.2879157066345
+ },
+ {
+  "variant": "hard",
+  "car": {
+   "nominal": true
+  },
+  "completed": true,
+  "lap_time": 75.88415829593299,
+  "stop_reason": "lap completed",
+  "distance": 4315.424366106777,
+  "fallbacks": 1,
+  "solves": 1518,
+  "max_limit_slack": 0.0,
+  "iterations_mean": 14.540843214756258,
+  "wall_s": 430.5725643634796
+ },
+ {
+  "variant": "soft stages 0-1",
+  "car": {
+   "mu": 0.953351431222081,
+   "m": 1.0226748944740327,
+   "ClA": 0.926808339449433,
+   "CdA": 0.9806225972894259,
+   "Iz": 0.9110365722028448,
+   "B": 0.9286940021325548,
+   "aero_front": 0.015021880357803157
+  },
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 471.140793028962,
+  "fallbacks": 0,
+  "solves": 153,
+  "max_limit_slack": 0.018156902497840403,
+  "iterations_mean": 21.26143790849673,
+  "wall_s": 64.55367112159729
+ },
+ {
+  "variant": "hard",
+  "car": {
+   "mu": 0.9508449633784645,
+   "m": 1.0242595487215818,
+   "ClA": 1.0961474399602478,
+   "CdA": 1.0923314387327574,
+   "Iz": 1.06743698223206,
+   "B": 1.0123680566642301,
+   "aero_front": -0.01338652775727775
+  },
+  "completed": true,
+  "lap_time": 77.25265927201103,
+  "stop_reason": "lap completed",
+  "distance": 4315.54231316857,
+  "fallbacks": 155,
+  "solves": 1546,
+  "max_limit_slack": 0.0,
+  "iterations_mean": 16.471539456662356,
+  "wall_s": 500.02248978614807
+ },
+ {
+  "variant": "soft everywhere",
+  "car": {
+   "mu": 0.9650119050006077,
+   "m": 1.027479684383653,
+   "ClA": 0.9055118226486137,
+   "CdA": 1.0507026217349613,
+   "Iz": 1.0114429939657834,
+   "B": 0.9489195149497276,
+   "aero_front": 0.01730572220570426
+  },
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 474.1859500329251,
+  "fallbacks": 0,
+  "solves": 155,
+  "max_limit_slack": 0.016015061652866754,
+  "iterations_mean": 20.73548387096774,
+  "wall_s": 68.81080746650696
+ },
+ {
+  "variant": "soft stages 0-1",
+  "car": {
+   "mu": 0.9763003787170282,
+   "m": 1.047523184816297,
+   "ClA": 0.9288319225439268,
+   "CdA": 1.0897298894274488,
+   "Iz": 0.9435494356031456,
+   "B": 0.9769979346917727,
+   "aero_front": 0.019662155629226505
+  },
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2725.3301303330345,
+  "fallbacks": 1,
+  "solves": 994,
+  "max_limit_slack": 0.013058222479071707,
+  "iterations_mean": 23.127766599597585,
+  "wall_s": 449.4567267894745
+ },
+ {
+  "variant": "soft everywhere",
+  "car": {
+   "mu": 0.953351431222081,
+   "m": 1.0226748944740327,
+   "ClA": 0.926808339449433,
+   "CdA": 0.9806225972894259,
+   "Iz": 0.9110365722028448,
+   "B": 0.9286940021325548,
+   "aero_front": 0.015021880357803157
+  },
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 471.1811985087061,
+  "fallbacks": 0,
+  "solves": 153,
+  "max_limit_slack": 0.018165341954121804,
+  "iterations_mean": 20.50980392156863,
+  "wall_s": 70.57138276100159
+ },
+ {
+  "variant": "soft stage 0",
+  "car": {
+   "nominal": true
+  },
+  "completed": true,
+  "lap_time": 75.99058558873193,
+  "stop_reason": "lap completed",
+  "distance": 4315.695931461266,
+  "fallbacks": 2,
+  "solves": 1520,
+  "max_limit_slack": 7.2150399579192005e-06,
+  "iterations_mean": 22.276315789473685,
+  "wall_s": 650.7654304504395
+ },
+ {
+  "variant": "soft stages 0-1",
+  "car": {
+   "nominal": true
+  },
+  "completed": true,
+  "lap_time": 76.09474410724076,
+  "stop_reason": "lap completed",
+  "distance": 4315.380856478436,
+  "fallbacks": 2,
+  "solves": 1522,
+  "max_limit_slack": 2.657491414999684e-05,
+  "iterations_mean": 22.26281208935611,
+  "wall_s": 637.0952520370483
+ },
+ {
+  "variant": "soft stage 0",
+  "car": {
+   "mu": 0.9508449633784645,
+   "m": 1.0242595487215818,
+   "ClA": 1.0961474399602478,
+   "CdA": 1.0923314387327574,
+   "Iz": 1.06743698223206,
+   "B": 1.0123680566642301,
+   "aero_front": -0.01338652775727775
+  },
+  "completed": true,
+  "lap_time": 77.29920395030683,
+  "stop_reason": "lap completed",
+  "distance": 4315.05439523202,
+  "fallbacks": 1,
+  "solves": 1546,
+  "max_limit_slack": 0.014433460732112127,
+  "iterations_mean": 22.316300129366105,
+  "wall_s": 643.323477268219
+ },
+ {
+  "variant": "soft everywhere",
+  "car": {
+   "mu": 0.9763003787170282,
+   "m": 1.047523184816297,
+   "ClA": 0.9288319225439268,
+   "CdA": 1.0897298894274488,
+   "Iz": 0.9435494356031456,
+   "B": 0.9769979346917727,
+   "aero_front": 0.019662155629226505
+  },
+  "completed": false,
+  "lap_time": NaN,
+  "stop_reason": "off track",
+  "distance": 2723.346354431944,
+  "fallbacks": 0,
+  "solves": 990,
+  "max_limit_slack": 0.013072887097388871,
+  "iterations_mean": 21.523232323232325,
+  "wall_s": 385.8535499572754
+ },
+ {
+  "variant": "soft everywhere",
+  "car": {
+   "nominal": true
+  },
+  "completed": true,
+  "lap_time": 76.07256184376767,
+  "stop_reason": "lap completed",
+  "distance": 4315.54618478613,
+  "fallbacks": 0,
+  "solves": 1522,
+  "max_limit_slack": 3.057055173416941e-05,
+  "iterations_mean": 21.135348226018397,
+  "wall_s": 550.2516288757324
+ },
+ {
+  "variant": "soft stages 0-1",
+  "car": {
+   "mu": 0.9508449633784645,
+   "m": 1.0242595487215818,
+   "ClA": 1.0961474399602478,
+   "CdA": 1.0923314387327574,
+   "Iz": 1.06743698223206,
+   "B": 1.0123680566642301,
+   "aero_front": -0.01338652775727775
+  },
+  "completed": true,
+  "lap_time": 77.32036441332306,
+  "stop_reason": "lap completed",
+  "distance": 4315.713145411734,
+  "fallbacks": 0,
+  "solves": 1547,
+  "max_limit_slack": 0.015485143769614898,
+  "iterations_mean": 22.251454427925015,
+  "wall_s": 568.5354564189911
+ },
+ {
+  "variant": "soft everywhere",
+  "car": {
+   "mu": 0.9508449633784645,
+   "m": 1.0242595487215818,
+   "ClA": 1.0961474399602478,
+   "CdA": 1.0923314387327574,
+   "Iz": 1.06743698223206,
+   "B": 1.0123680566642301,
+   "aero_front": -0.01338652775727775
+  },
+  "completed": true,
+  "lap_time": 77.22266207531338,
+  "stop_reason": "lap completed",
+  "distance": 4315.5418628493835,
+  "fallbacks": 0,
+  "solves": 1545,
+  "max_limit_slack": 0.013400530030203469,
+  "iterations_mean": 21.127508090614885,
+  "wall_s": 511.48246574401855
+ }
+]

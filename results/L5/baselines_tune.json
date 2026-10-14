@@ -1,0 +1,38 @@
+[
+ {
+  "completed": true,
+  "lap_time": 85.02110288826302,
+  "stop_reason": "lap completed",
+  "distance": 4315.659339575029,
+  "fallbacks": 0,
+  "plant": {
+   "nominal": true
+  },
+  "controller": "nmpc_0.80_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 83.47248895894096,
+  "stop_reason": "lap completed",
+  "distance": 4315.556644975673,
+  "fallbacks": 0,
+  "plant": {
+   "nominal": true
+  },
+  "controller": "nmpc_0.82_m1.3",
+  "set": "L2"
+ },
+ {
+  "completed": true,
+  "lap_time": 85.6156658438717,
+  "stop_reason": "lap completed",
+  "distance": 4315.326887483293,
+  "fallbacks": 0,
+  "plant": {
+   "nominal": true
+  },
+  "controller": "nmpc_0.78_m1.3",
+  "set": "L2"
+ }
+]

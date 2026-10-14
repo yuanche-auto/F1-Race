@@ -1,0 +1,66 @@
+{
+  "config": {
+    "track": "Spielberg",
+    "n_plants": 24,
+    "seed": 0,
+    "eta": 0.95,
+    "explore_eta": 0.88,
+    "dt": 0.01,
+    "N": 30,
+    "mpc_dt": 0.05,
+    "t_max": 120.0,
+    "workers": 7
+  },
+  "summary": {
+    "nominal": {
+      "runs": 25,
+      "completed": 13,
+      "completed_ci95": [
+        0.31305704445703214,
+        0.7220319903300535
+      ],
+      "lap_mean": 76.34975365513728
+    },
+    "explore": {
+      "runs": 25,
+      "completed": 16,
+      "completed_ci95": [
+        0.42520634955384945,
+        0.8202831794163447
+      ],
+      "lap_mean": 79.2140113335209
+    },
+    "identified": {
+      "runs": 25,
+      "completed": 25,
+      "completed_ci95": [
+        0.8628148284692874,
+        1.0
+      ],
+      "lap_mean": 76.86532384095368
+    },
+    "oracle": {
+      "runs": 25,
+      "completed": 25,
+      "completed_ci95": [
+        0.8628148284692874,
+        1.0
+      ],
+      "lap_mean": 76.8910846612663
+    },
+    "identification_max_abs_error": {
+      "mu": 0.0002,
+      "m": 0.0003,
+      "ClA": 0.0014,
+      "CdA": 0.0001,
+      "Iz": 0.0006,
+      "B": 0.0006,
+      "aero_front": 0.0002
+    },
+    "identified_minus_oracle_lap": {
+      "cars": 25,
+      "mean": -0.025760820312632972,
+      "max_abs": 0.7241808768065283
+    }
+  }
+}

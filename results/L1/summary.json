@@ -1,0 +1,102 @@
+{
+  "config": {
+    "track": "Spielberg",
+    "margin": 0.3,
+    "eta_plan": 0.95,
+    "eta_l0_plan": 0.97,
+    "first_eta": 0.97,
+    "etas": [
+      0.97,
+      0.95,
+      0.93
+    ],
+    "ds_l0": 2.0,
+    "ds_l1": 2.5,
+    "nsub": 2,
+    "dt": 0.01,
+    "tracker": {
+      "k_p": 0.06,
+      "x_la": 12.0,
+      "k_r": 0.05,
+      "kv": 8.0
+    }
+  },
+  "l0_ocp_ideal": 71.26203387743055,
+  "l1_ocp_ideal": 73.90722248258369,
+  "l1_ocp_plan": 75.59986743160022,
+  "closed_loop": {
+    "l1_plan_on_dynamic_car": {
+      "lap_time": 75.57439991731651,
+      "completed": true,
+      "stop_reason": "lap completed",
+      "t_end": 75.57000000000176,
+      "distance": 4315.40548932815,
+      "max_usage": 0.9899357782897107,
+      "slide_fraction": 0.0,
+      "min_edge_margin": 0.26689307404956164,
+      "max_abs_e": 0.07215355380945015,
+      "max_dv": 0.5323678391581339,
+      "max_rear_slip_deg": 4.261376602715058
+    },
+    "l0_plan_on_dynamic_car": {
+      "lap_time": NaN,
+      "completed": false,
+      "stop_reason": "spin",
+      "t_end": 6.649999999999903,
+      "distance": 449.67098574049305,
+      "max_usage": 1.0509493062960544,
+      "slide_fraction": 0.052552552552552555,
+      "min_edge_margin": 0.3024528489528926
+    }
+  },
+  "plans": {
+    "0.93": 76.34942418596138,
+    "0.95": 75.59986743160022,
+    "0.97": 74.88908356378981,
+    "1.0": 73.90722248258369
+  },
+  "solve_log": [
+    {
+      "step": "first eta=0.97",
+      "init": "kinematic",
+      "status": "Solve_Succeeded",
+      "iterations": 501,
+      "lap_time": 74.88908356378981
+    },
+    {
+      "step": "ideal from eta=0.97",
+      "status": "Solve_Succeeded",
+      "iterations": 117,
+      "lap_time": 73.90726462524844
+    },
+    {
+      "step": "eta=0.97 from ideal",
+      "status": "Solve_Succeeded",
+      "iterations": 43,
+      "lap_time": 74.8890835637923
+    },
+    {
+      "step": "eta=0.95 from ideal",
+      "status": "Solve_Succeeded",
+      "iterations": 57,
+      "lap_time": 75.59986743160022
+    },
+    {
+      "step": "eta=0.93 from ideal",
+      "status": "Solve_Succeeded",
+      "iterations": 62,
+      "lap_time": 76.34942418596138
+    },
+    {
+      "step": "ideal from eta=0.95",
+      "status": "Solved_To_Acceptable_Level",
+      "iterations": 95,
+      "lap_time": 73.90722248258369
+    }
+  ],
+  "timing": {
+    "l1_ocp_s": 717.0197710990906,
+    "sim_s": 4.998364210128784,
+    "total_s": 762.1813735961914
+  }
+}
