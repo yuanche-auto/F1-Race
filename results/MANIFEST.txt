@@ -1,9 +1,10 @@
-﻿MANIFEST - results needed to continue F1-Race on a new machine
+MANIFEST - results needed to continue F1-Race on a new machine
 Branch: data/results-v2 (orphan; contains ONLY results/, NEVER merge into main).
 Base code: main cd3ace5. Restore with: git archive --format=zip -o r.zip origin/data/results-v2 results  (then unzip in the repo root).
 Changes against data/results (de2359f): results/L1/l1_plans.pkl regenerated with run_l1.py on main cd3ace5 (code fingerprint matches, plans agree with the old cache to <1e-5 s); results/L0 added (run_l0.py on the new machine);
 results/L6/chain_* run scripts dropped. Other files are unchanged copies of de2359f; origin of the L6 parts: results/L6_final/SOURCES.txt.
 Not included: per-seed L5 training checkpoints beyond results/L5/multiseed, run logs, figures. Per-worktree oracle_plans.pkl comparison was not possible here.
+Note on l1_plans.pkl: the eta=0.93 plan converged to a neighbouring local solution (lateral offset up to 2.3 cm, vy and r about 2 % relative, same lap time within 8.3e-6 s); eta=0.95/0.97/1.0 agree with the old cache to <1e-4 relative. L2-L6 results were produced with the old cache, so re-runs that use the eta=0.93 plan will not be bit-identical.
 sha256  bytes  path
 e76f45d0f2ee68333dec9287389e7fadd6da96be4c66dba3686eadac7f07ab09      341060  results/L0/l0_data.npz
 ca7e49ec39ad10809f61d772f4db10c56f649f6909367d577b551528ca27124f        1177  results/L0/summary.json
