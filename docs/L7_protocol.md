@@ -359,6 +359,11 @@ Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4
 
 ## Amendments
 
+* **A1 (2026-10-14), after the confirmation of 58ad42e (reviewer's nit 1):** section 9, the
+  cost of the checkpoint laps per run given per group (the total of 7.6 CPU-h was right,
+  "0.5–0.8 h per run" was too low for M). No run affected. Also nit 2: the width test now
+  asserts max |smoothed − raw width| < 1 m directly (code: `width_derivatives` returns the
+  smoothed width as well; the filter's numbers are unchanged).
 * **A2 (2026-10-14), review finding A-M1 after 1b99c0e, committed before any Part A result
   was read or analysed:** Part A's laps include the L7 test laps (T1 at τ = 0 = L5 test cars
   0–24, T2 = L5 L3 seeds 0–29; `sample_plants` draws in order). To keep S1 and H-B clean:
@@ -383,9 +388,3 @@ Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4
   I mentioned "the critic did not anticipate the crash" to the user. These two laps belong to
   part (ii); no change of Part C may rest on them. The failure positions of all L5 test laps
   were known before (L5 `test.json`, docs/L5.md: blind spots at 4 130 m etc.).
-
-* **A1 (2026-10-14), after the confirmation of 58ad42e (reviewer's nit 1):** section 9, the
-  cost of the checkpoint laps per run given per group (the total of 7.6 CPU-h was right,
-  "0.5–0.8 h per run" was too low for M). No run affected. Also nit 2: the width test now
-  asserts max |smoothed − raw width| < 1 m directly (code: `width_derivatives` returns the
-  smoothed width as well; the filter's numbers are unchanged).

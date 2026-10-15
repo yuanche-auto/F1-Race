@@ -63,7 +63,7 @@ hash, merge to `main` and push only after APPROVE. Workflow: [docs/workflow.md](
 | L5 reinforcement learning | `layer/L5` → `main` | **approved, pushed** to origin/main 2026-10-09 | APPROVE after the multi-seed redo (wording minors fixed in 4fec887) |
 | L6 model mismatch with a structural error | `layer/L6` → `main` | **approved, pushed** to origin/main 2026-10-10 | results review: APPROVE (minors m1–m4 fixed) |
 | Preparation for L7 (numerical robustness, filter benchmark) | `prep/robustness` → `main` (a4739c2) | **approved, pushed** to origin/main 2026-10-14 | APPROVE (minors m1–m3, n1–n3 fixed on `layer/L7`) |
-| L7 reliable learning | `layer/L7` (from `prep/robustness`) | protocol **binding** (revision 1.1, 58ad42e approved); Part A running (`scripts/l7_partA.py`, worktree `../F1-Race-wt-L7-run`) | d1fa964 CHANGES_REQUESTED → revision 1 → APPROVE |
+| L7 reliable learning | `layer/L7` (from `prep/robustness`) | protocol **binding** (revision 1.1, 58ad42e; amendments A1, A2 approved); **Part A done**, report in docs/L7.md (review requested); K (calibration set) may run in parallel with Part A (reviewer, 2026-10-14) | d1fa964 CHANGES_REQUESTED → revision 1 → APPROVE |
 
 ## Preparation for L7 (2026-10-14, new machine)
 

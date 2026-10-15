@@ -4,6 +4,10 @@
     .venv-rl/Scripts/python scripts/l7_partA.py drive --all --workers 11
     .venv-rl/Scripts/python scripts/l7_partA.py analyze                 # A0-A4 -> results/L7/partA/partA.md, partA.json
 
+Amendment A2: the L5 test cars 0-24 at tau = 0 and the L3 seeds 0-29 are the L7 test sets T1
+(tau = 0) and T2; every finding is reported in two parts, (i) L5 test cars 25-50 (and the
+validation outcomes for A1), (ii) the laps of T1 / T2 (``part_of``). Only (i) may change Part C.
+
 Checkpoints: the final checkpoint of each of the nine runs (``results/L5/multiseed/<g>_s<k>.zip``,
 the model saved after 600 000 decisions – identical to ``<run>_600k``, checked for A_s2) and
 the two selected checkpoints that are not final (``models/L5/B_s1_500k``, ``C_s2_450k``).
@@ -40,6 +44,16 @@ GAMMA = 0.99
 WINDOW = 100.0                                           # [m] blind-spot window
 BEFORE = 60                                              # decisions = 3 s before a failure
 TRUNC = 300                                              # decisions before the lap end excluded in A4
+
+
+PARTS = ("i", "ii")
+
+
+def part_of(case) -> str:
+    """Amendment A2: (i) L5 test cars 25-50, outside the L7 test sets; (ii) L5 test cars 0-24
+    and the L3 seeds 0-29 = T1 at tau = 0 and T2."""
+    kind, idx = case
+    return "i" if kind == "test_car" and idx >= 25 else "ii"
 
 
 def ckpt_path(name: str) -> Path:
@@ -230,27 +244,33 @@ def analyze() -> None:
             res["A1"][name].append({"k": k, "failures": n, "spot": st, "in_spot": inside})
             cells.append(f"{n}" + (f" @{st:.0f} ({inside})" if st is not None else ""))
         md.append(f"| {name} | " + " | ".join(cells) + " |")
-    md += ["", "Test laps (81 per checkpoint, L5 test.json):", "",
-           "| checkpoint | failures | blind spot (start, failures in it) | other failure positions |", "|---|---|---|---|"]
+    md += ["", "Test laps (L5 test.json), split by amendment A2: (i) L5 test cars 25–50 (not in the L7 test "
+           "sets), (ii) L5 test cars 0–24 and L3 seeds 0–29 (= T1 at τ = 0 and T2):", "",
+           "| checkpoint | part | laps | failures | blind spot (start, failures in it) | other failure positions |",
+           "|---|---|---|---|---|---|"]
     res["A1"]["test"] = {}
     for name in FINALS + SELECTED:
-        rs = [r for r in test if r["checkpoint"] == test_name(name)]
-        fails = [r["distance"] for r in rs if not r["completed"]]
-        st, inside, n = blind_spot(fails, L)
-        res["A1"]["test"][name] = {"failures": n, "spot": st, "in_spot": inside, "positions": sorted(fails)}
-        rest = [f for f in fails if st is None or not (0 <= (f - st) % L <= WINDOW)]
-        md.append(f"| {name} | {n} | " + (f"{st:.0f}–{st + WINDOW:.0f} m ({inside})" if st is not None else "–")
-                  + f" | {', '.join(f'{x:.0f}' for x in sorted(rest)) or '–'} |")
+        for part in PARTS:
+            rs = [r for r in test if r["checkpoint"] == test_name(name) and part_of(r["case"]) == part]
+            fails = [r["distance"] for r in rs if not r["completed"]]
+            st, inside, n = blind_spot(fails, L)
+            res["A1"]["test"].setdefault(name, {})[part] = {"laps": len(rs), "failures": n, "spot": st,
+                                                             "in_spot": inside, "positions": sorted(fails)}
+            rest = [f for f in fails if st is None or not (0 <= (f - st) % L <= WINDOW)]
+            md.append(f"| {name} | ({part}) | {len(rs)} | {n} | "
+                      + (f"{st:.0f}–{st + WINDOW:.0f} m ({inside})" if st is not None else "–")
+                      + f" | {', '.join(f'{x:.0f}' for x in sorted(rest)) or '–'} |")
 
-    # A2-A4 on the re-driven laps
+    # A2-A4 on the re-driven laps, per part (amendment A2)
     md += ["", "## A2 states before the failures, A3 saturated actions, A4 critic error", "",
-           "Failing: the last 3 s (60 decisions) before each failure. Window: the same 100 m before the failure "
-           "position on the laps of the same checkpoint that complete. Elsewhere: all other decisions of "
-           "completed laps. Medians (A2), fractions (A3), Q − G (A4; G the discounted return, γ = 0.99, "
-           "truncated at the lap end, so decisions in the last 300 of a completed lap are excluded).", ""]
-    hdr = ("| checkpoint | failures | v / v_plan: fail / window | lateral error [m] | rear slip / peak | "
+           "Per part (i) / (ii) of amendment A2; failing laps and the comparison laps are taken from the same "
+           "part. Failing: the last 3 s (60 decisions) before each failure. Window: the same 100 m before the "
+           "failure position on the laps of the same checkpoint and part that complete. Elsewhere: all other "
+           "decisions of completed laps. Medians (A2), fractions (A3), Q − G (A4; G the discounted return, "
+           "γ = 0.99, truncated at the lap end, so decisions in the last 300 of a completed lap are excluded).", ""]
+    hdr = ("| checkpoint | part | failures | v / v_plan: fail / window | lateral error [m] | rear slip / peak | "
            "usage | speed factor | steer offset | saturated (fail / window / elsewhere) | Q − G (fail / elsewhere) |")
-    md += [hdr, "|---|---|---|---|---|---|---|---|---|---|"]
+    md += [hdr, "|---|---|---|---|---|---|---|---|---|---|---|"]
     for name, laps in redriven.items():
         z = np.load(OUT / f"laps_{name}.npz")
         lid = z["lap_id"]
@@ -259,48 +279,59 @@ def analyze() -> None:
         sat = np.any(np.abs(act) >= 0.99, axis=1)
         ratio = z["vx"] / np.maximum(z["v_plan"], 1.0)
         err = np.zeros(len(lid))
-        keep_else = np.zeros(len(lid), bool)
-        fail_idx, win_idx = [], []
-        for i, r in enumerate(laps):
+        for i in range(len(laps)):
             m = np.flatnonzero(lid == i)
-            g = returns(z["reward"][m])
-            err[m] = z["q"][m] - g
-            if r["completed"]:
-                keep_else[m[:-TRUNC]] = True
-            else:
-                fail_idx.append(m[-BEFORE:])
-                pf = r["distance"] % L
-                for j, rr in enumerate(laps):
-                    if rr["completed"]:
-                        mm = np.flatnonzero(lid == j)
-                        d = (pf - z["pos"][mm]) % L
-                        win_idx.append(mm[d <= WINDOW])
-        if not fail_idx:
-            md.append(f"| {name} | 0 | – | – | – | – | – | – | – / – / {sat[keep_else].mean():.3f} | – / {np.median(err[keep_else]):.2f} |")
-            continue
-        fi = np.concatenate(fail_idx)
-        wi = np.unique(np.concatenate(win_idx)) if win_idx else np.array([], int)
-        else_idx = np.flatnonzero(keep_else & ~np.isin(np.arange(len(lid)), wi))
-        med = lambda a, ix: float(np.nanmedian(a[ix])) if len(ix) else float("nan")   # noqa: E731
-        row = {"failures": len(fail_idx),
-               "v_ratio": [med(ratio, fi), med(ratio, wi)], "e": [med(z["e"], fi), med(z["e"], wi)],
-               "rear_slip": [med(np.abs(z["a_r"]), fi), med(np.abs(z["a_r"]), wi)],
-               "usage": [med(z["usage"], fi), med(z["usage"], wi)],
-               "speed_factor": [med(speed_factor, fi), med(speed_factor, wi)],
-               "steer_offset": [med(act[:, 0], fi), med(act[:, 0], wi)],
-               "saturated": [float(sat[fi].mean()), float(sat[wi].mean()) if len(wi) else float("nan"),
-                             float(sat[else_idx].mean())],
-               "sat_component_fail": [float((np.abs(act[fi, 0]) >= 0.99).mean()), float((np.abs(act[fi, 1]) >= 0.99).mean())],
-               "q_minus_g": [med(err, fi), med(err, else_idx)],
-               "q_minus_g_q90": [float(np.percentile(err[fi], 90)), float(np.percentile(err[else_idx], 90))]}
-        res["A2"][name] = {k: row[k] for k in ("failures", "v_ratio", "e", "rear_slip", "usage", "speed_factor", "steer_offset")}
-        res["A3"][name] = {"saturated": row["saturated"], "component_fail": row["sat_component_fail"]}
-        res["A4"][name] = {"q_minus_g": row["q_minus_g"], "q_minus_g_q90": row["q_minus_g_q90"]}
-        f2 = lambda p: f"{p[0]:.2f} / {p[1]:.2f}"             # noqa: E731
-        md.append(f"| {name} | {row['failures']} | {f2(row['v_ratio'])} | {f2(row['e'])} | {f2(row['rear_slip'])} | "
-                  f"{f2(row['usage'])} | {f2(row['speed_factor'])} | {f2(row['steer_offset'])} | "
-                  f"{row['saturated'][0]:.2f} / {row['saturated'][1]:.2f} / {row['saturated'][2]:.3f} | "
-                  f"{row['q_minus_g'][0]:.1f} / {row['q_minus_g'][1]:.1f} |")
+            err[m] = z["q"][m] - returns(z["reward"][m])
+        for part in PARTS:
+            ids = [i for i, r in enumerate(laps) if part_of(r["case"]) == part]
+            keep_else = np.zeros(len(lid), bool)
+            fail_idx, win_idx = [], []
+            for i in ids:
+                r = laps[i]
+                m = np.flatnonzero(lid == i)
+                if r["completed"]:
+                    keep_else[m[:-TRUNC]] = True
+                else:
+                    fail_idx.append(m[-BEFORE:])
+                    pf = r["distance"] % L
+                    for j in ids:
+                        if laps[j]["completed"]:
+                            mm = np.flatnonzero(lid == j)
+                            d = (pf - z["pos"][mm]) % L
+                            win_idx.append(mm[d <= WINDOW])
+            key = f"{name} ({part})"
+            if not fail_idx:
+                q_else = float(np.median(err[keep_else])) if keep_else.any() else float("nan")
+                s_else = float(sat[keep_else].mean()) if keep_else.any() else float("nan")
+                res["A3"][key] = {"saturated": [None, None, s_else]}
+                res["A4"][key] = {"q_minus_g": [None, q_else]}
+                md.append(f"| {name} | ({part}) | 0 | – | – | – | – | – | – | – / – / {s_else:.3f} | – / {q_else:.1f} |")
+                continue
+            fi = np.concatenate(fail_idx)
+            wi = np.unique(np.concatenate(win_idx)) if win_idx else np.array([], int)
+            else_idx = np.flatnonzero(keep_else & ~np.isin(np.arange(len(lid)), wi))
+            med = lambda a, ix: float(np.nanmedian(a[ix])) if len(ix) else float("nan")   # noqa: E731
+            mean = lambda a, ix: float(a[ix].mean()) if len(ix) else float("nan")       # noqa: E731
+            pct = lambda a, ix: float(np.percentile(a[ix], 90)) if len(ix) else float("nan")  # noqa: E731
+            row = {"failures": len(fail_idx), "window_decisions": int(len(wi)),
+                   "v_ratio": [med(ratio, fi), med(ratio, wi)], "e": [med(z["e"], fi), med(z["e"], wi)],
+                   "rear_slip": [med(np.abs(z["a_r"]), fi), med(np.abs(z["a_r"]), wi)],
+                   "usage": [med(z["usage"], fi), med(z["usage"], wi)],
+                   "speed_factor": [med(speed_factor, fi), med(speed_factor, wi)],
+                   "steer_offset": [med(act[:, 0], fi), med(act[:, 0], wi)],
+                   "saturated": [mean(sat, fi), mean(sat, wi), mean(sat, else_idx)],
+                   "sat_component_fail": [mean(np.abs(act[:, 0]) >= 0.99, fi), mean(np.abs(act[:, 1]) >= 0.99, fi)],
+                   "q_minus_g": [med(err, fi), med(err, else_idx)],
+                   "q_minus_g_q90": [pct(err, fi), pct(err, else_idx)]}
+            res["A2"][key] = {k: row[k] for k in ("failures", "window_decisions", "v_ratio", "e", "rear_slip",
+                                                   "usage", "speed_factor", "steer_offset")}
+            res["A3"][key] = {"saturated": row["saturated"], "component_fail": row["sat_component_fail"]}
+            res["A4"][key] = {"q_minus_g": row["q_minus_g"], "q_minus_g_q90": row["q_minus_g_q90"]}
+            f2 = lambda p: f"{p[0]:.2f} / {p[1]:.2f}"             # noqa: E731
+            md.append(f"| {name} | ({part}) | {row['failures']} | {f2(row['v_ratio'])} | {f2(row['e'])} | "
+                      f"{f2(row['rear_slip'])} | {f2(row['usage'])} | {f2(row['speed_factor'])} | "
+                      f"{f2(row['steer_offset'])} | {row['saturated'][0]:.2f} / {row['saturated'][1]:.2f} / "
+                      f"{row['saturated'][2]:.3f} | {row['q_minus_g'][0]:.1f} / {row['q_minus_g'][1]:.1f} |")
     (OUT / "partA.json").write_text(json.dumps(res, indent=1))
     (OUT / "partA.md").write_text("\n".join(md) + "\n", encoding="utf-8")
     print("\n".join(md))
