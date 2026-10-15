@@ -3,6 +3,7 @@
     .venv-rl/Scripts/python scripts/l7_partA.py drive --ckpt A_s1      # re-drive the 81 L5 test laps, log every decision
     .venv-rl/Scripts/python scripts/l7_partA.py drive --all --workers 11
     .venv-rl/Scripts/python scripts/l7_partA.py analyze                 # A0-A4 -> results/L7/partA/partA.md, partA.json
+    .venv-rl/Scripts/python scripts/l7_partA.py drive --all --extend 300   # A4c: part (i) laps driven on past the line
 
 Amendment A2: the L5 test cars 0-24 at tau = 0 and the L3 seeds 0-29 are the L7 test sets T1
 (tau = 0) and T2; every finding is reported in two parts, (i) L5 test cars 25-50 (and the
@@ -70,14 +71,18 @@ def test_cases():
 
 
 # ---------------------------------------------------------------- driving
-def drive_lap(model, env, plant=None, disturbances=False, dist_seed=0, t_max=120.0) -> dict:
-    """``rl.env.evaluate_lap`` with a log of every decision."""
+def drive_lap(model, env, plant=None, disturbances=False, dist_seed=0, t_max=120.0, extra: int = 0) -> dict:
+    """``rl.env.evaluate_lap`` with a log of every decision. ``extra`` > 0: a completed lap is
+    driven on for ``extra`` more decisions (or until a crash), so that the return of every
+    decision of the first lap includes at least ``extra`` decisions of what follows (A4c);
+    ``lap_end`` is the number of decisions of the first lap. With ``extra`` = 0 the lap is
+    exactly that of ``evaluate_lap``."""
     import torch
 
     from f1race.dynamics import ellipse_usage, tyre_forces
 
     episode_s = env.episode_s
-    env.episode_s = t_max
+    env.episode_s = t_max + extra * env.dt * env.ctrl_every
     opts = {"plant": plant if plant is not None else env.nominal, "start_index": 0,
             "disturbances": disturbances, "dist_seed": dist_seed}
     obs, _ = env.reset(options=opts)
@@ -95,6 +100,7 @@ def drive_lap(model, env, plant=None, disturbances=False, dist_seed=0, t_max=120
     log = {k: [] for k in ("pos", "e", "dpsi", "vx", "v_plan", "a_f", "a_r", "usage", "act", "reward",
                            "obs", "progress")}
     done, info = False, {}
+    lap_end, lap_t, lap_progress, lap_vx = None, None, None, None
     while not done:
         a = model.predict(obs, deterministic=True)[0]
         sp, e, dpsi, ff = env.ctl.last
@@ -118,10 +124,12 @@ def drive_lap(model, env, plant=None, disturbances=False, dist_seed=0, t_max=120
             log["usage"].append(float("nan"))
         log["reward"].append(float(rew))
         log["progress"].append(float(env.progress))
-        done = term or trunc or env.progress >= L
+        if lap_end is None and env.progress >= L:
+            lap_end, lap_t, lap_progress, lap_vx = len(log["pos"]), env.t, env.progress, float(env.x[3])
+        done = term or trunc or (lap_end is not None and len(log["pos"]) >= lap_end + extra)
     env.episode_s = episode_s
-    completed = env.progress >= L
-    lap = env.t - (env.progress - L) / max(env.x[3], 1.0)
+    completed = lap_end is not None
+    lap = (lap_t - (lap_progress - L) / max(lap_vx, 1.0)) if completed else float("nan")
     out = {k: np.array(v) for k, v in log.items()}
     with torch.no_grad():                                 # the critic: min(Q1, Q2)(s, a)
         o_t = torch.as_tensor(out["obs"], dtype=torch.float32)
@@ -129,12 +137,14 @@ def drive_lap(model, env, plant=None, disturbances=False, dist_seed=0, t_max=120
         q = torch.min(*model.critic(o_t, a_t)).numpy().ravel()
     out["q"] = q
     out.pop("obs")
-    return {"completed": bool(completed), "lap_time": float(lap) if completed else float("nan"),
+    return {"completed": bool(completed), "lap_time": float(lap),
             "stop_reason": "lap completed" if completed else (info.get("reason") or "time limit"),
-            "distance": float(env.progress), "log": out}
+            "distance": float(lap_progress if completed else env.progress),
+            "lap_end": int(lap_end if completed else len(log["pos"])),
+            "after_lap": (info.get("reason") or "driven on") if completed and extra else None, "log": out}
 
 
-def drive(name: str) -> dict:
+def drive(name: str, extend: int = 0) -> dict:
     import pickle
 
     from stable_baselines3 import SAC
@@ -149,21 +159,23 @@ def drive(name: str) -> dict:
     cars = sample_plants(DynVehicle(), 50, seed=0)
     laps, arrays = [], {}
     t0 = time.time()
-    for kind, idx in test_cases():
+    cases = [c for c in test_cases() if part_of(c) == "i"] if extend else test_cases()
+    for kind, idx in cases:
         if kind == "test_car":
-            r = drive_lap(model, env, plant=cars[idx][1])
+            r = drive_lap(model, env, plant=cars[idx][1], extra=extend)
         else:
-            r = drive_lap(model, env, disturbances=True, dist_seed=idx)
+            r = drive_lap(model, env, disturbances=True, dist_seed=idx, extra=extend)
         lg = r.pop("log")
         r.update({"checkpoint": name, "case": [kind, idx], "decisions": len(lg["pos"])})
         laps.append(r)
         for k, v in lg.items():
             arrays.setdefault(k, []).append(v)
     OUT.mkdir(parents=True, exist_ok=True)
+    tag = f"laps_ext_{name}" if extend else f"laps_{name}"
     lap_id = np.concatenate([np.full(len(v), i) for i, v in enumerate(arrays["pos"])])
-    np.savez_compressed(OUT / f"laps_{name}.npz", lap_id=lap_id,
+    np.savez_compressed(OUT / f"{tag}.npz", lap_id=lap_id,
                         **{k: np.concatenate(v) for k, v in arrays.items()})
-    (OUT / f"laps_{name}.json").write_text(json.dumps(laps, indent=1))
+    (OUT / f"{tag}.json").write_text(json.dumps(laps, indent=1))
     print(f"{name}: {sum(r['completed'] for r in laps)}/{len(laps)} completed, {time.time() - t0:.0f} s", flush=True)
     return {"checkpoint": name, "laps": laps}
 
@@ -343,18 +355,23 @@ def main() -> None:
     ap.add_argument("--ckpt")
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--workers", type=int, default=11)
+    ap.add_argument("--extend", type=int, default=0,
+                    help="A4c: part (i) laps only, each completed lap driven on for this many decisions")
     a = ap.parse_args()
     if a.what == "analyze":
         analyze()
     elif a.all:
         from multiprocessing import get_context
 
-        names = [n for n in FINALS + SELECTED if not (OUT / f"laps_{n}.npz").exists()]
+        from functools import partial
+
+        tag = "laps_ext_" if a.extend else "laps_"
+        names = [n for n in FINALS + SELECTED if not (OUT / f"{tag}{n}.npz").exists()]
         with get_context("spawn").Pool(min(a.workers, len(names)), maxtasksperchild=1) as pool:
-            for _ in pool.imap_unordered(drive, names):
+            for _ in pool.imap_unordered(partial(drive, extend=a.extend), names):
                 pass
     else:
-        drive(a.ckpt)
+        drive(a.ckpt, extend=a.extend)
 
 
 if __name__ == "__main__":
