@@ -388,3 +388,45 @@ Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4
   I mentioned "the critic did not anticipate the crash" to the user. These two laps belong to
   part (ii); no change of Part C may rest on them. The failure positions of all L5 test laps
   were known before (L5 `test.json`, docs/L5.md: blind spots at 4 130 m etc.).
+* **A3 (2026-10-14), implementation details of Part B, fixed before any K, A or Part B run**
+  (the protocol leaves them open; none was chosen after seeing a K or A lap):
+  1. **Cars of K and A**: `sample_plants(nominal, n, seed)[1:]`, the perturbed cars only, as
+     for V (the nominal car is in T1 / T2).
+  2. **Filter in the loop** (both filters, training and evaluation): at each 50 ms decision
+     the proposal is the tracker + policy command for the first 10 ms step after the
+     actuator limits (r-m3). If the filter changes it (thresholds of section 6), the filtered
+     command is held for the 50 ms of the decision (through the actuator limits at each
+     10 ms step); otherwise the tracker runs on as without a filter (10 ms updates). The NMPC
+     filter is warm-started along the lap; its previous input is the last applied command.
+  3. **Lag**: the NMPC filter has a lag model only with estimate (a) (the identified τ, the
+     open-loop observer of `LagAwareMPCController` on the commanded angle); with (b) and (c)
+     it has the nominal model and treats the steering slot (the commanded angle) as the
+     angle, like the nominal NMPC of L6.
+  4. **(b)**: the L3 procedure (`l3._calibration_samples`, `l3.calibrate`, ε = 0.05,
+     u_threshold 0.85, predictions reaching into the last 2 s of a failed lap dropped) with
+     one generalisation: u_real is the true car's friction usage (including the friction
+     field) and f = 1 – in L3 the car was the nominal one and the friction field the only
+     friction error; the K cars also differ in μ and the other parameters.
+  5. **(c)**: per car and condition the L6 residual model (BLR on random Fourier features,
+     unchanged) fitted on the whole exploration lap, its targets relative to the *filter's*
+     model (the nominal car; the band surrounds the nominal model's predictions, and the
+     residual mean is not used). σ(k) = Σ_{j<k} (k − j − ½) h² σ_vy,j along the filter's
+     prediction (the `CautiousMPCController` propagation with κ = 1); the errors are those of
+     (b) (axle points); q̂ pools all stages k = 1 … 30 of all K predictions. In use: b_k =
+     q̂ σ(k) evaluated at each decision along the shifted previous prediction (as
+     `CautiousMPCController`), η = 0.95.
+  6. **(a)**: identification on the first two thirds (by time) of the exploration lap;
+     δn(k) from open-loop predictions of the identified model (with the identified lag)
+     started at every fifth logged state of the last third with the logged inputs, the
+     axle-point errors of (b), the 95 % quantile per k, made non-decreasing in k (as L3);
+     η = 0.95.
+  7. **Exploration laps** (for (a) and (c), on K, A and the test sets): the L6 `explore`
+     controller (nominal NMPC, 12 % reserve plan, η = 0.88) with the condition's lag; on a
+     disturbance condition a separate draw of the disturbances (seed + 100 000) and the L3
+     measurement noise.
+  8. **Acceptance coverage**: |e(k)| ≤ δn(k) of the estimate used in that lap, k = 10 and 20,
+     predictions reaching into the last 2 s of a failed lap dropped (as L6 `kstep_coverage`);
+     near the limit: the filter's predicted usage at stage k ≥ 0.85.
+  9. **CBF-QP α rule (section 4.1)**: margin = b_10 of (b) (the axle-point band; the filter
+     adds half the width and the front-axle swing), friction factor η_10 of (b); the laps
+     are the K laps that `B_s1_500k` completes without a filter, at α ∈ {1, 2, 4, 8}.
