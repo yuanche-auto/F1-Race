@@ -1,8 +1,55 @@
-# STATUS — F1-Race (L0–L6 done)
+# STATUS — F1-Race (L0–L6 done; preparing L7)
 
-Builder session: "F1-Race 施工者（L0–L5 builder）" [f92a84]. Reviewer: "独立审查员身份和职责".
-Rule: work on branch `layer/Lk`, request review by commit hash, merge to `main` and push only
-after APPROVE. Workflow: [docs/workflow.md](docs/workflow.md).
+Since 2026-10-14 the project runs on a new machine (below). Reviewer on this machine: Claude
+session **"F1 Race 阶段审查"** (`local_30f94a40-03cb-490d-85b4-12ad1d351d3a`); the reviewer and
+builder sessions named in the older entries below ran on the old machine and are not used any
+more. Rule: work on branch `layer/Lk` (preparation work: `prep/...`), request review by commit
+hash, merge to `main` and push only after APPROVE. Workflow: [docs/workflow.md](docs/workflow.md).
+
+## Machine and environments (from 2026-10-14)
+
+* Dell Pro Max 16 Plus: Core Ultra 9 285HX (24 cores / 24 threads), 63.5 GB RAM, commit limit
+  ~73 GB (~46 GB free when idle); GPU RTX PRO 3000 Blackwell 12 GB (not used so far). WSL2
+  Ubuntu-24.04 available (24 cores, ~31 GB, gcc / cmake / python3) – the place for acados (L9).
+* `.venv`: Python 3.12, rebuilt from `requirements-lock.txt` (same versions as the reference
+  environment). `.venv-rl`: CPU torch 2.14.1, gymnasium 1.4.0, stable-baselines3 2.9.0. The
+  second environment (Python 3.11) is not set up yet; it is built when the first main results
+  of L7 need the cross-check.
+* Verified on this machine: `pytest` passes in `.venv`; `test_l5.py`, `test_l6.py` pass in
+  `.venv-rl` (nothing skipped); `scripts/run_l0.py` reproduces the L0 numbers below (ideal lap
+  71.262 s, closed loop 72.90 / 72.10 s).
+* Runs: single-threaded BLAS (`OMP_NUM_THREADS=1`, `OPENBLAS_NUM_THREADS=1`), a fresh process
+  per job.
+* **Re-plan concurrency: 4.** One minimum-time OCP re-plan (casadi Opti, default `expand: True`,
+  SX expansion) commits ~7.4 GB and takes ~65 s here. Limit file
+  `%TEMP%\f1race_replan_slots\limit` = 4 and user environment variable `L6_REPLAN_SLOTS=4`
+  (`replan_slot` in `src/f1race/experiments/l6.py`).
+* Measured, not adopted: without expansion (`expand=False`) a re-plan commits 0.22 GB; the
+  η = 0.97 plan is identical (difference 1e-13), the η = 0.93 plan differs slightly (lap time
+  1e-7 s), iterations 131 → 200, ~3× the time; 16 at once ≈ 500 re-plans/h, 24 at once ≈ 560/h.
+  A full L6 round has ~460 re-plans, so this saves about one hour – kept off for now, to be
+  revisited if re-planning limits L7. Changing `planning/ocp_dynamic.py` changes
+  `code_fingerprint()` (`experiments/l1.py` hashes the whole file): `results/L1/l1_plans.pkl`
+  becomes stale, `scripts/run_l1.py` must be re-run (~13 min) and the data branch re-published.
+
+## Results and data
+
+* `results/` and `data/` are git-ignored and never committed to `main`. Track data:
+  `python scripts/fetch_tracks.py` (checked against the pinned SHA-256).
+* Results of the old machine: orphan branch **`origin/data/results-v2`** (only `results/`,
+  `MANIFEST.txt` with SHA-256; **never merge into `main`**). Restore in the repository root with
+  `git archive --format=zip -o r.zip origin/data/results-v2 results` and unzip (write with `-o`;
+  a PowerShell pipe corrupts the binary).
+* `results/L1/l1_plans.pkl` was regenerated on this machine on `main` (cd3ace5); its fingerprint
+  matches the code. The η = 0.93 plan converged to a neighbouring local solution of the old
+  cache (lateral offset ≤ 2.3 cm, same lap time); L2–L6 ran on the old cache, so re-runs that
+  involve η = 0.93 will not be bit-identical (noted in the MANIFEST).
+* Known gaps: the `oracle_plans.pkl` of the individual L6 run worktrees cannot be compared with
+  each other (those worktrees stayed on the old machine; `results/L6/oracle_plans.pkl` is the
+  restored one); the per-seed intermediate checkpoints of L5 were not restored (the three
+  selected policies are in `models/L5`).
+* Round 2 of L6: lap outcomes **not verified** (ran during the overload); no L7 decision may rest
+  on them.
 
 ## Layers
 
@@ -15,6 +62,19 @@ after APPROVE. Workflow: [docs/workflow.md](docs/workflow.md).
 | L4 learning / adaptation | `layer/L4` → `main` | **approved, pushed** to origin/main 2026-10-08 | round 1: APPROVE (minors fixed in 66f6cb3) |
 | L5 reinforcement learning | `layer/L5` → `main` | **approved, pushed** to origin/main 2026-10-09 | APPROVE after the multi-seed redo (wording minors fixed in 4fec887) |
 | L6 model mismatch with a structural error | `layer/L6` → `main` | **approved, pushed** to origin/main 2026-10-10 | results review: APPROVE (minors m1–m4 fixed) |
+| Preparation for L7 (numerical robustness, filter benchmark) | `prep/robustness` | review requested | – |
+| L7 reliable learning | `layer/L7` (from `prep/robustness`) | protocol draft, **no L7 run before the reviewer confirms it** | – |
+
+## Preparation for L7 (2026-10-14, new machine)
+
+In the order the user set: (1) STATUS for the new machine (above); (2) numerical robustness –
+the L6 failures located and reproduced first, then fixed: [docs/prep_robustness.md](docs/prep_robustness.md)
+(`FrenetMPC(retry=True, fallback="brake")`, `planning/replan.py`; `scripts/prep_robustness.py`,
+results in `results/prep`); (3) the solve-time benchmark of the candidate safety filters, decision
+rule written before measuring: [docs/L7_filter_benchmark.md](docs/L7_filter_benchmark.md)
+(`control/safety_filter.py`, `FrenetMPC(mode="filter")`, `scripts/l7_filter_bench.py`, results in
+`results/L7_bench`); (4) the L7 protocol: [docs/L7_protocol.md](docs/L7_protocol.md); (5) L7 runs
+start only after the reviewer has confirmed the protocol.
 
 ## L0 summary
 
@@ -69,7 +129,7 @@ Figures are not expected to be byte-identical across versions.
 * After it finishes: write docs/L5.md from results/L5/multiseed/tables.md and the
   baselines, request the review, merge to main and push after APPROVE (user's rule).
 
-## L6–L10 (started 2026-10-09, user away; decisions recorded here)
+## L6–L10 (started 2026-10-09 on the old machine, user away; decisions recorded here)
 
 * The user asked for an L6–L10 plan, had it criticised (a written critique the user forwarded; not from the repository's review session) and asked for a revised
   plan "with critical inheritance"; then: save it and start. Roadmap:
