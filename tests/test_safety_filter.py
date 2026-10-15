@@ -27,11 +27,15 @@ def test_cbf_qp_passes_safe_commands_and_corrects_unsafe_ones(track):
     u = np.array([5.0, 0.0, 0.0])                   # steering rate towards the left
     out, info = f.filter((s, n, 0.05), x, u)
     assert info["ok"] and info["intervened"] and out[0] < u[0]
-    # a lateral demand beyond the friction circle is cut back
-    u = np.array([30.0, 0.0, 0.0])
-    out, info = f.filter((s, 0.0, 0.0), x, u)
-    ax, ay = f.accel_of(x, out)
-    assert ay <= 0.95 * veh.mu_y * (9.81 + veh.q_lift * 900 / veh.m) + 1e-6
+    # the filtered command stays within what the steering can reach in one step
+    assert abs(out[0]) <= veh.delta_rate_max + 1e-9
+    # a steering angle already far beyond the friction circle: the friction constraint
+    # cannot be met within one step (slack > 0); the filter unwinds the steering as fast
+    # as the actuator allows
+    xs = x.copy()
+    xs[6] = 0.3                                     # a_y = v^2 tan(0.3) / L = 77 m/s^2
+    out, info = f.filter((s, 0.0, 0.0), xs, np.array([0.0, 0.0, 0.0]))
+    assert info["ok"] and info["sigma_friction"] > 0 and np.isclose(out[0], -veh.delta_rate_max)
 
 
 @pytest.mark.slow

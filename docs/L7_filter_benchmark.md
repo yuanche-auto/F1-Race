@@ -94,6 +94,34 @@ whole laps), with two or three single-threaded preparation runs on the machine a
   intrusive as they stand; the protocol fixes their margins on the calibration set before
   any L7 run.
 
+## CBF-QP revised after the review (layer/L7)
+
+The review of 89f81fb found that the QP did not constrain a_y to what the steering can
+reach in one step, so a filtered command could be unrealisable exactly when a large
+correction is needed, and that the barrier ignored the car's extent and the change of the
+track width (`control/safety_filter.py` now: a_y and a_x bounds from the steering rate and
+angle limits and the engine power, the friction polygon softened by its own slack, margin
++ l_f |sin ξ_h| + l_f² |κ| / 2, w′ and w″ in the barrier). Re-timed on the same three laps
+(qpOASES):
+
+| CBF-QP | load | calls | mean ms | median | P95 | P99 | max | failed | changed |
+|---|---|---|---|---|---|---|---|---|---|
+| revised | alone | 4 852 | 0.44 | 0.42 | 0.61 | 1.02 | 1.6 | 0 % | 45.6 % |
+| revised | 24 processes | 38 816 | 0.68 | 0.59 | 1.36 | 4.53 | 23.4 | 0 % | 45.6 % |
+
+Same verdict. The share of changed decisions rose (45.6 % against 40.4 %), as expected from
+the wider margin; it is uncalibrated and is fixed on K (protocol section 4.1).
+
+## Sensitivity of the decision to the rule
+
+The rule was written before the timings were measured, but not committed separately, and
+the smoke runs of each filter (which came first) already showed the NMPC filter at
+~125–140 ms. The decision does not depend on the exact thresholds: with the budget stated
+above (at most ~2.5× the L5 run time, i.e. +1.5 × 2.5 h = 3.75 h per run), the largest
+admissible mean is 3.75 h / 75 000 ≈ 180 ms per call; the NMPC filter's 219–235 ms under
+load exceeds it as well, and the CBF-QP's 0.7 ms is far below any threshold that could be
+argued for. (Review of 89f81fb.)
+
 ## Decision (by the rule above)
 
 | filter | mean under load | P99 under load | failed | verdict |

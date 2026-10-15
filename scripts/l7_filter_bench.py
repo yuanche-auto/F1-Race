@@ -124,7 +124,7 @@ def bench(filt: str, lap: int, tag: str, limit: int | None) -> dict:
             t0 = time.perf_counter()
             s, n, xi_h = ctl.frenet(x)[:3]
             xi = xi_h + np.arctan2(x[4], max(x[3], 1.0))             # course angle
-            _, info = f.filter((s % track.length, n, xi), x, u)
+            _, info = f.filter((s % track.length, n, xi, xi_h), x, u)
             times.append(time.perf_counter() - t0)
             fails += not info["ok"]
             moved += changed(info["u"], u)

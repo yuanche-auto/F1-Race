@@ -1,7 +1,8 @@
 # L7 protocol – reliable learning: diagnosis, a safety layer, and whether reliability transfers to the policy
 
-Draft, written before any result-producing run of L7 (2026-10-14). It becomes binding
-when the reviewer has confirmed it; deviations after that are listed at the end as
+Draft, written before any result-producing run of L7 (2026-10-14); revision 1 after the
+design review of d1fa964 (CHANGES_REQUESTED, see the end). It becomes binding when the
+reviewer has confirmed it; deviations after that are listed at the end as
 amendments with their date and reason, and the runs they affect are named. Roadmap:
 [ROADMAP_L6-L10.md](ROADMAP_L6-L10.md) (section 4, L7, and section 7, the strategy update
 after L6).
@@ -11,10 +12,16 @@ after L6).
 * the reproduction of the L6 numerical failures and the robustness changes of the NMPC and
   the re-plan ([prep_robustness.md](prep_robustness.md));
 * the solve-time benchmark of the two candidate safety filters on three closed-loop laps of
-  the selected L5 policy ([L7_filter_benchmark.md](L7_filter_benchmark.md); its decision
-  rule was written before its measurements). These laps are the only RL laps run so far on
-  this machine; they are on the nominal car and L2 cars 5 and 12 of the L6 set, which are
-  also test cars below – they were used for timing only, no outcome of them enters L7.
+  the selected L5 policy ([L7_filter_benchmark.md](L7_filter_benchmark.md)).
+
+**Test laps touched before this protocol (p-m2 of the review).** All on cars of the test set
+T1 below: NMPC laps of the preparation on the nominal car (τ 120 ms – not a T1 condition),
+cars 4, 18, 20, 21 at 30 / 60 ms and cars 20, 21 at τ = 0 (EKF plans); RL laps of
+`B_s1_500k` on the nominal car (τ = 0), car 5 (30 ms) and car 12 (60 ms) for the
+benchmark. No outcome of them enters L7. The CBF calibration rule of section 4.1 (the α
+grid, the 10 % threshold) was written after seeing that the uncalibrated filters change
+40 % / 26 % of the decisions on those three RL laps; no parameter is set on them – α and
+every back-off are fixed on the calibration set K.
 
 ## 1. Question and hypotheses
 
@@ -49,7 +56,8 @@ worktree pinned to one commit (`results/L7/RUN_COMMIT`).
 |---|---|---|---|
 | **test T1** | the 25 cars of L4/L6 (`sample_plants(nominal, 24, seed 0)`) × steering lag τ ∈ {0, 30, 60 ms}, controllers see their own commanded angle (L6 main condition) | 75 | all conclusions |
 | **test T2** | nominal car, L3 disturbances, seeds 0–29 | 30 | all conclusions |
-| validation V | 10 cars `sample_plants(nominal, 10, seed 1)` (no nominal car) × τ ∈ {0, 30, 60 ms}, + 10 disturbance seeds 2000–2009 | 40 | checkpoint selection (secondary results only) |
+| validation V | 10 cars `sample_plants(nominal, 10, seed 1)` (no nominal car) × τ ∈ {0, 30, 60 ms}, + 10 disturbance seeds 2000–2009 | 40 | checkpoint selection (secondary results only); S2 |
+| curriculum C | 10 cars `sample_plants(nominal, 10, seed 9)` × τ ∈ {0, 30, 60 ms}, + disturbance seeds 5000–5009 | 40 | failure positions for the episode starts of F and M (section 5) – so that V stays independent of their training |
 | calibration K | 10 cars `sample_plants(nominal, 10, seed 7)` × τ ∈ {0, 30, 60 ms}, + disturbance seeds 3000–3009 | 40 | risk estimates (b) and (c) |
 | acceptance A | 5 cars `sample_plants(nominal, 5, seed 8)` × τ ∈ {0, 30, 60 ms}, + disturbance seeds 4000–4004 | 20 | the acceptance test of each risk estimate |
 
@@ -103,30 +111,41 @@ seeing A.
 ### 4.1 Filters
 
 Decided by the solve-time benchmark ([L7_filter_benchmark.md](L7_filter_benchmark.md);
-under the load of 24 processes: CBF-QP 0.71 ms mean, 7 ms P99; NMPC filter 219–235 ms
-mean, 0.75–1.08 s P99):
+under the load of 24 processes: CBF-QP 0.68 ms mean, 4.5 ms P99 (revised version);
+NMPC filter 219–235 ms mean, 0.75–1.08 s P99). Roles (P-M2 of the review):
 
-* **CBF-QP** (`control/safety_filter.py`, qpOASES): **admissible in training**; always
-  evaluated. As benchmarked (barrier at the plan's own edge margin of 1.3 m, α = 2)
-  it changes ~40 % of the decisions of the L5 policy on laps that complete without it,
-  three quarters of them through the edge barrier – the racing line runs along that
-  margin. Its two free parameters are therefore fixed on the calibration set K before
-  any other L7 run, by this rule: barrier margin = half the car's width plus the risk
-  estimate's back-off (not the plan's 0.3 m), and α = the smallest value in {1, 2, 4, 8}
-  for which the filtered `B_s1_500k` changes at most 10 % of the decisions on the K laps
-  that `B_s1_500k` completes without the filter (if none does: α = 8, reported);
-* **NMPC filter** (`FrenetMPC(mode="filter")`, N = 30, 50 ms, with the steering-lag model
-  where the risk estimate provides τ): **evaluation only** (it misses the training budget:
-  ~+4.6–4.9 h per run). As benchmarked it changes ~26 % of the decisions, mostly the
-  longitudinal force where the policy uses more than its hard friction limit η = 0.95;
-  its η and back-offs come from the risk estimate (section 4.2), not from this default.
+* **The main filter of Part B is the NMPC filter** (`FrenetMPC(mode="filter")`, N = 30,
+  50 ms, with the steering-lag model where the risk estimate provides τ): it can carry
+  every risk estimate of section 4.2 as it is defined (a model, per-stage back-offs and
+  friction factors), and the acceptance test is made on its own predictions. **Evaluation
+  only** – it misses the training budget (~+4.6–4.9 h per run). "With the filter" in H-B,
+  S3 and section 6 means this filter with the main risk estimate. As benchmarked (η = 0.95,
+  no back-offs) it changes ~26 % of the decisions, mostly the longitudinal force where the
+  policy uses more than its hard friction limit; its η_k and back-offs come from the risk
+  estimate, not from this default.
+* **The CBF-QP is the training filter** (`control/safety_filter.py`, qpOASES; Part C) and
+  the **secondary** evaluation filter (reported next to the main one, no hypothesis rests
+  on it). It was revised after the review (P-M1): a_y and a_x are bounded by what the
+  steering (rate and angle limits within one 10 ms step) and the engine can reach, the
+  friction polygon has its own slack, and the barrier margin includes the front axle swung
+  out by the heading angle, the chord of the curve and the change of the track width.
+  Uncalibrated (plan margin 0.3 m, α = 2) it changes ~46 % of the decisions of the L5
+  policy on laps that complete without it, mostly through the edge barrier – the racing
+  line runs along that margin. Its free parameters are fixed on K before any other L7 run
+  (after the back-off of (b), section 4.2): margin = the back-off of (b) at k = 10 (instead
+  of the plan's 0.3 m; the car's half width and extent are added inside the filter),
+  friction factor η_10 of (b), and α = the smallest value in {1, 2, 4, 8} for which the
+  filtered `B_s1_500k` changes at most 10 % of the decisions on the K laps that
+  `B_s1_500k` completes without the filter (if none does: α = 8, reported). The band of (b)
+  is calibrated on the NMPC filter's predictions, not on the point-mass model's: for the
+  CBF-QP it is a heuristic transfer, and the CBF-QP has no acceptance test of its own – it
+  is judged by its outcomes (completion, interventions, false interventions) only.
 
 Both filter the command of tracker + policy at every 50 ms decision (the command proposed
 for the first 10 ms step; the filtered command replaces it for the decision). Every
 NMPC-based controller and filter of L7 uses the NMPC failure handling chosen by the rule
-in [prep_robustness.md](prep_robustness.md) section 4 (written before the comparison it
-decides: the L6 settings), every re-plan `replan_robust`; fallbacks are counted and
-reported.
+in [prep_robustness.md](prep_robustness.md) section 4.3 – the L6 settings (for the rule's
+timing see there) – and every re-plan `replan_robust`; fallbacks are counted and reported.
 
 ### 4.2 Risk estimate (the filter's uncertainty), in the order of ROADMAP section 7
 
@@ -155,13 +174,22 @@ track back-offs and η_k as per-stage friction factors, the CBF-QP the band at k
   dynamics unless round 2 of L6 has first been replayed at 10 ms (ROADMAP section 7 point
   1; not planned).
 
-**Acceptance test (the L6 go criterion, kept):** the 95 % band covers 90–98 % of the
-k-step lateral prediction errors (k = 10 and 20) on the closed-loop laps of the acceptance
-set A, which neither identifies nor calibrates; coverage near the friction limit (usage ≥
-0.85) is reported alongside. All three estimates are computed and tested (offline, cheap).
-**The main L7 filter uses the first estimate in the order (a), (b), (c) that passes**; the
-others are reported as secondary. If none passes, the filters are still evaluated with (b)
-and every result is labelled "risk estimate not accepted".
+**Closed loops used for calibration and acceptance** (P-M2 (iii)): on K and on A the laps
+are driven by `B_s1_500k` as the proposer with the NMPC filter. For (b) and (c) the K laps
+run the filter with its default (nominal model, η = 0.95, no back-offs); its k-step
+predictions against the realised path give the samples of (b) and the calibration errors
+of (c). For (a) the identification uses each car's own exploration lap.
+
+**Acceptance test (the L6 go criterion, kept):** on the laps of the acceptance set A,
+driven by `B_s1_500k` with the NMPC filter *using the estimate under test* (its model, η_k
+and back-offs), the 95 % band covers 90–98 % of the filter's own k-step lateral prediction
+errors **both at k = 10 and at k = 20** (p-m4); coverage near the friction limit (usage ≥
+0.85) is reported alongside. A neither identifies nor calibrates. All three estimates are
+computed and tested.
+
+**The main risk estimate is the first in the order (a), (b), (c) that passes; the main
+filter uses it**; the others are reported as secondary. If none passes, the main filter
+is still evaluated with (b) and every result is labelled "risk estimate not accepted".
 
 In training (Part C) the filter uses (b), the only estimate available per episode without
 an exploration lap, whether or not it is the main one.
@@ -169,16 +197,27 @@ an exploration lap, whether or not it is the main one.
 ### 4.3 Evaluation of Part B
 
 Policies: the nine final L5 checkpoints (unselected) and the selected `B_s1_500k`.
-Baselines on the same laps: the bare tracker under the same filter (no learning), the
+
+**Pre-registered test of H-B (primary, P-M2 (ii)):** over the nine final checkpoints, the
+paired numbers of completed T1 + T2 laps with and without the main filter; H-B holds if the
+Wilcoxon signed-rank test (two-sided, zero differences dropped) is significant at the
+level given in section 7 and the median difference is positive. (With nine policies the
+smallest attainable p is 2/2⁹ ≈ 0.004; with fewer than six non-zero differences 0.025 cannot
+be reached, and H-B is then reported as not shown.) Per policy: exact McNemar with /
+without (secondary, all ten reported).
+
+Baselines on the same laps: the bare tracker under the main filter (no learning), the
 lag-aware NMPC with τ and parameters identified (the best model-based controller of L6;
-L6 failure handling, plans by `replan_robust`), the L3 SMPC, the nominal NMPC. Each on T1 + T2 (105 laps),
-without and with the main filter (and with the secondary filter and estimates where the
-compute allows; listed in the report).
+L6 failure handling, plans by `replan_robust`), the L3 SMPC, the nominal NMPC. Each on
+T1 + T2 (105 laps), without and with the main filter, and with the CBF-QP (secondary); the
+secondary risk estimates where the compute allows (listed in the report).
 
 ## 5. Part C – training from failures and interventions
 
-Three groups, three training seeds each (9 runs), all with the L5 group-B settings (SAC,
-history of 8 observations + last action, 40 s episodes, steering offset ±0.02 rad, speed
+Three groups – **P and M with five training seeds each, F with three** (13 runs; P-M3 of
+the review: the L5 seeds of one group differed from 19 to 50 of 51 completed laps, so two
+median seeds of three could differ by seed luck alone) – all with the L5 group-B settings
+(SAC, history of 8 observations + last action, 40 s episodes, steering offset ±0.02 rad, speed
 factor 0.85–1.05, 600 000 decisions in 8 parallel environments, a checkpoint every 50 000)
 and the **L7 training distribution**: cars from the L2 ranges; in the four environments
 without L3 disturbances a steering lag τ = 0 with probability 1/3, otherwise τ ~ U(10,
@@ -188,31 +227,36 @@ without L3 disturbances a steering lag τ = 0 with probability 1/3, otherwise τ
 | group | what is fed back |
 |---|---|
 | **P** plain | nothing (the control: L5 training on the L7 distribution) |
-| **F** failure starts | 30 % of the episodes start 50–150 m before a recent failure position: failures of the validation laps run at every checkpoint (V, without filter) and crash points of training episodes, the last 200 positions |
-| **M** method | F, plus the training filter in the loop: the environment applies the filtered command, the reward has a cost 0.5 · (changed decision) per intervention, and the positions of interventions join the failure positions for the episode starts |
+| **F** failure starts | 30 % of the episodes start 50–150 m before a recent failure position: failures of the curriculum laps C run without filter at every checkpoint, and crash points of training episodes; the last 200 positions |
+| **M** method | F, plus the training filter (CBF-QP, calibrated as in section 4.1) in the loop: the environment applies the filtered command, the reward has a cost 0.5 · (changed decision) per intervention, and the positions of interventions join the failure positions for the episode starts |
 
 F separates the curriculum from the filter. The cost weight 0.5 (about the progress
 reward of one decision at racing speed: 2.5 m / 5) and the 30 % are fixed here, not tuned.
 
 **Pre-registered success criteria** (on T1 + T2, 105 laps):
 
-* **S1 (primary): the policy without the filter.** The median seed of M (ranking rule of
-  L5: completed test laps without filter, ties by lower mean lap time, then lower seed),
-  final checkpoint, completes significantly more test laps *without the filter* than the
-  median seed of P (exact McNemar, two-sided, α = 0.05).
-* **S2: interventions fall during training.** On the validation laps with the filter, the
-  intervention rate of the M checkpoints decreases with training (Spearman ρ < 0, p < 0.05)
-  for at least 2 of the 3 seeds.
-* **S3: not worse than the filtered MPC alone.** The median seed of M *with* the filter
-  completes at least as many test laps as the bare tracker under the same filter and, on
-  the laps both complete, is not slower than the lag-aware NMPC baseline by more than its
-  L5/L6 gap (4.5 s per lap). (The ROADMAP's example "not slower than the safety-filtered
-  MPC alone" is made concrete this way: the RL policies were 4.3–4.6 s slower than the
-  NMPC in L5 and L6, so "not slower" literally would fail before any run.)
+* **S1 (primary): the policy without the filter.** The median seed of M (of five; ranking
+  rule of L5: completed test laps without filter, ties by lower mean lap time, then lower
+  seed), final checkpoint, completes significantly more test laps *without the filter*
+  than the median seed of P (of five) – exact McNemar, two-sided, at the level of section 7.
+  Reported with it, to show the scope: the 5 × 5 pairwise comparisons of the final
+  checkpoints (how many M seeds beat how many P seeds without the filter).
+* **S2: interventions fall during training.** On the validation laps V with the training
+  filter, the intervention rate of the M checkpoints decreases with training (Spearman
+  ρ < 0, p < 0.05) for at least 3 of the 5 seeds.
+* **S3: not worse than the filtered MPC alone.** The median seed of M *with the main
+  filter* completes at least as many test laps as the bare tracker under the main filter
+  and, on the laps both complete, is not slower than the lag-aware NMPC baseline by more
+  than the RL gap of L5 and L6: 4.6 s per lap (L5 section 3: the selected policy 4.6 s
+  slower than the nominal NMPC on the L2 cars and L3 seeds both complete; L6 section 3: the
+  residual RL policy 4.3–4.4 s slower than the correct-structure reference; the larger is
+  taken). (The
+  ROADMAP's example "not slower than the safety-filtered MPC alone" is made concrete this
+  way: "not slower" literally would fail before any run.)
 
 L7's method claim holds if S1 and S2 hold; S3 is reported. Secondary: F vs P (S1 with F
-in place of M), all nine final checkpoints (the unselected distribution, reported first),
-the validation-selected checkpoint per group, M vs P with the filter.
+in place of M), all final checkpoints (the unselected distribution, reported first),
+the validation-selected checkpoint per group, M vs P with the main filter.
 
 ## 6. Always reported
 
@@ -226,8 +270,12 @@ For every policy and baseline, on T1 and T2 separately and together:
   if it neither leaves the track nor spins, the intervention counts as false. Rate and
   interval reported;
 * **lap-time cost of the filter**: lap with minus lap without, on laps both complete;
+* **decisions the filter cannot guarantee**, separately from solver failures (p-m5): the
+  NMPC filter is softly constrained, so a converged solve may still use track or friction
+  slack (> 1e-3) – reported as a rate and with positions; for the CBF-QP the decisions with
+  σ_edge or σ_friction > 0;
 * **computation time** of the filter per call (mean, P95, P99, max) under the load of the
-  run, and the number of solver fallbacks;
+  run, and the number of solver failures (NMPC: fallbacks to the shifted plan);
 * the comparison with the model-based baselines (section 4.3) on the same laps.
 
 ## 7. Statistics
@@ -237,15 +285,17 @@ intervals, paired lap-time differences on laps both complete with the Wilcoxon s
 test. A relative perturbation of 1e-9 of the initial state changes an NMPC lap by up to
 0.34 s (preparation, car 4 at 60 ms), so lap-time differences of single laps below about
 0.4 s are not interpreted; lap-time statements rest on means and paired tests over laps.
-S1 is the only primary test; everything else is reported with its p value and the number
-of comparisons made, without a claim of significance across the family.
+Two primary tests: H-B (section 4.3) and S1 (section 5), with Holm's correction over the
+two (family-wise α = 0.05: the smaller p value is tested at 0.025, the other then at 0.05).
+Everything else is reported with its p value and the number of comparisons made, without
+a claim of significance across the family.
 
 ## 8. Second environment
 
 A Python 3.11 environment with the RL extras (`.venv-311-rl`, built from the lock file
 with Python 3.11 versions; to be set up before the first main result) re-runs: the
 acceptance test of the main risk estimate; T1 + T2 with and without the main filter for
-`B_s1_500k` and for the median seeds of P and M. Training itself is not bit-reproducible
+`B_s1_500k` and for the median seeds of P and M (S1). Training itself is not bit-reproducible
 (parallel environments); evaluation is, and differences are reported as in L6 section 7.
 
 ## 9. Compute and order
@@ -253,8 +303,8 @@ acceptance test of the main risk estimate; T1 + T2 with and without the main fil
 1. Part A (CPU, RL evaluation only; ~1 day including the report).
 2. Risk estimates (a)–(c) and their acceptance test; Part B evaluation (~1–2 days: the
    NMPC filter costs about 0.15–0.3 s per decision, ~1 600 decisions per lap).
-3. Part C training (9 runs, three at a time on 24 cores; ~1–2 days depending on the
-   training filter), validation of all checkpoints, test evaluation.
+3. Part C training (13 runs, three at a time on 24 cores, ~2.5–3 h each: ~13–15 h; the
+   CBF-QP adds < 1 %), validation and curriculum laps at every checkpoint, test evaluation.
 4. Second environment, report, review.
 
 Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4 here).
@@ -268,6 +318,18 @@ Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4
 * The L6 numerical failures depend on rounding (preparation); fallbacks are counted in
   every NMPC-based lap of L7.
 * The intermediate L5 checkpoints are missing (Part A).
+
+## Revisions before the protocol is binding
+
+* **Revision 1 (2026-10-14), design review of d1fa964:** P-M1 the CBF-QP made realisable
+  (steering / engine reach, softened friction, axle swing, chord, w′ / w″) and re-timed;
+  P-M2 the NMPC filter is the main filter of Part B, the CBF-QP the training and secondary
+  filter; a pre-registered test of H-B (co-primary with S1, Holm); the closed loops for K
+  and A named; P-M3 five seeds for P and M; p-m1 a separate curriculum set C; p-m2 the test
+  laps touched in the preparation listed; p-m3 the CBF-QP's band declared a heuristic;
+  p-m4 k = 10 and 20 both in the acceptance band; p-m5 slack-using decisions reported
+  apart from solver failures; p-m6 the reference to the prep rule corrected; nit: the
+  source of the 4.6 s gap.
 
 ## Amendments
 

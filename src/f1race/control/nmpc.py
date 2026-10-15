@@ -274,8 +274,11 @@ class FrenetMPC:
         A failed solve (no ``Solve_Succeeded`` / ``Solved_To_Acceptable_Level``) applies
         the shifted previous plan. With ``retry`` it is first retried with a second IPOPT
         instance (``solver_cold``) from the shifted plan and then from a rollout of its
-        inputs; with ``fallback="brake"`` the fallback keeps the shifted plan's steering
-        rate and brakes with traction control instead of its longitudinal forces."""
+        inputs (``info["status"]`` is then the status of the last attempt, ``info["attempts"]``
+        lists all of them); with ``fallback="brake"`` the fallback keeps the shifted plan's steering
+        rate and brakes with traction control instead of its longitudinal forces (the brake
+        request ``BRAKE_REQUEST`` is only safe behind traction control: ``MPCController``
+        refuses ``fallback="brake"`` with ``tc_eta=None``)."""
         p = np.concatenate([x0, [u_prev[0], u_prev[1] / FS, u_prev[2] / FS]])
         if self.param_tightening:
             e = self.eta_k if eta is None else np.asarray(eta, float)
@@ -368,6 +371,8 @@ class MPCController:
         """``tc_eta``: optional low-level traction control / ABS applied at every
         simulator step (the MPC input is held for mpc.dt while the state moves).
         ``record``: keep every prediction (for calibrating constraint tightening, L3)."""
+        if getattr(mpc, "fallback_mode", "shift") == "brake" and tc_eta is None:
+            raise ValueError('fallback="brake" needs the traction control (tc_eta)')
         self.mpc, self.sim_dt, self.tc_eta = mpc, sim_dt, tc_eta
         self.record = record
         self.predictions: list[tuple[float, np.ndarray, np.ndarray]] = []

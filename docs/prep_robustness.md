@@ -84,8 +84,9 @@ perturbations, every variant on the same trials (paired):
 
 Discordant pairs against `old` (completed only by old : only by the variant): retry 3 : 0
 (exact McNemar p = 0.25), brake 3 : 2 (p = 1), retry + brake 3 : 0 (p = 0.25). On the cases
-without failed solves (car 4 and car 18 at 60 ms, 4 trials each) all variants give the
-same laps to the last digit – the options act only when a solve fails.
+without failed solves (car 4 and car 18 at 60 ms, 4 trials each; only `old` and retry +
+brake were run there) the two give the same laps to the last digit – the options act only
+when a solve fails.
 
 * **The retries remove the failed solves** (1 063 fallbacks → 5): of the failed solves, the
   retry from the rollout converges almost always, the retry from the shifted plan with a
@@ -136,9 +137,11 @@ Laps with these plans (L6 controllers and settings, unperturbed):
 
 ### 4.3 Decision for L7
 
-**Rule for the L7 default, written after the first comparison (old against retry + brake:
-14 laps completed by both, 9 by neither, 3 only by old, 0 only by the new settings) and
-before the isolated variants (retry only, brake only) were run (2026-10-14 21:10):** the
+**Rule for the L7 default, written at 21:10 on 2026-10-14, after the first comparison (old
+against retry + brake: 14 laps completed by both, 9 by neither, 3 only by old, 0 only by
+the new settings), after two trials of the retry-only variant (car 20 at 30 and 60 ms,
+trial 0: finished 20:40 and 20:41, both off track, as `old` and retry + brake on the same
+trials) and before the other 16 retry-only and all 18 brake-only trials:** the
 NMPC setting for L7 is the variant with the most completed laps over the paired trials of
 the four cases with failed solves; ties are broken by fewer fallbacks. A variant that
 completes fewer paired laps than `old` is not used, whatever its fallback count. If no
@@ -148,6 +151,12 @@ the fallbacks.
 **Applied: no variant completes more laps than `old` (9 of 18) – L7 keeps the L6 failure
 handling of the NMPC** (`retry=False`, `fallback="shift"`, the defaults). The options stay
 in the code, off by default.
+
+The rule's timing rests on this record and the result files' times, not on a separate
+commit. It cannot have been bent towards the outcome: it is a status-quo rule (a variant
+replaces `old` only if it completes more laps), `old` is never worse in any comparison, and
+the two retry-only trials known before it were failures of the variant and of `old` alike.
+(Review of 89f81fb, minor m1.)
 
 ## 5. Conclusions
 
