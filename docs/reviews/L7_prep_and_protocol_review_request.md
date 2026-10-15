@@ -37,9 +37,10 @@ Preparation (`docs/prep_robustness.md`):
    cars 4 and 18 complete here, car 20 (30 / 60 ms) still leaves the track at ~1 400 m.
 2. `FrenetMPC(retry=True)` removes the failed solves (1 063 → 5 fallbacks over 18 paired
    trials) but completes fewer laps (6 vs 9 of 18; retry + brake 6, brake 8); by the rule
-   written before the isolated variants ran, L7 keeps the L6 settings. Check the rule's
-   timing (it is in the doc with its time stamp; the first comparison it mentions came
-   before it) and the table (`prep_robustness.py report`).
+   written before the isolated variants ran, L7 keeps the L6 settings. **Evidence for the
+   timing is only my statement and the time stamp in the doc**: the rule was not committed
+   separately before those runs (the result files in `results/prep` carry their own
+   modification times, the rule says 21:10). Check the table (`prep_robustness.py report`).
 3. The remaining lap failures are a control limit at the Remus hairpin (~1 390–1 410 m), not
    numerical: with every solve converged the car still slides off (car 20, retry runs;
    paired car-21 trial 2 diverges at 1 391 m).
@@ -51,8 +52,9 @@ Preparation (`docs/prep_robustness.md`):
 
 Benchmark (`docs/L7_filter_benchmark.md`):
 
-6. The decision rule was written before the measurement (the doc's history; the protocol
-   preamble). The proposals are passed through the plant's actuator limits – a correction
+6. The decision rule was written before the timings were measured – again without a separate
+   commit, so only my statement supports it (the smoke runs of each filter came first; their
+   numbers were not used). The proposals are passed through the plant's actuator limits – a correction
    made after the smoke runs, disclosed in the doc; timings were unaffected.
 7. Under 24-process load: CBF-QP (qpOASES) 0.71 ms mean, 7 ms P99, 0 failures → training;
    NMPC filter 219–235 ms mean, 0.75–1.08 s P99 → evaluation only.
