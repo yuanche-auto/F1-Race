@@ -63,7 +63,7 @@ hash, merge to `main` and push only after APPROVE. Workflow: [docs/workflow.md](
 | L5 reinforcement learning | `layer/L5` → `main` | **approved, pushed** to origin/main 2026-10-09 | APPROVE after the multi-seed redo (wording minors fixed in 4fec887) |
 | L6 model mismatch with a structural error | `layer/L6` → `main` | **approved, pushed** to origin/main 2026-10-10 | results review: APPROVE (minors m1–m4 fixed) |
 | Preparation for L7 (numerical robustness, filter benchmark) | `prep/robustness` → `main` (a4739c2) | **approved, pushed** to origin/main 2026-10-14 | APPROVE (minors m1–m3, n1–n3 fixed on `layer/L7`) |
-| L7 reliable learning | `layer/L7` (from `prep/robustness`) | protocol **binding** (revision 1.1, 58ad42e; amendments A1, A2 approved); **Part A done**, report in docs/L7.md (review requested); K (calibration set) may run in parallel with Part A (reviewer, 2026-10-14) | d1fa964 CHANGES_REQUESTED → revision 1 → APPROVE |
+| L7 reliable learning | `layer/L7` (from `prep/robustness`) | protocol **binding** (revision 1.1, 58ad42e; amendments A1, A2 approved); **Part A approved** (36c6fdb, report docs/L7.md); next: K and the risk estimates, then Part C; K (calibration set) may run in parallel with Part A (reviewer, 2026-10-14) | d1fa964 CHANGES_REQUESTED → revision 1 → APPROVE |
 
 ## Preparation for L7 (2026-10-14, new machine)
 
@@ -96,6 +96,9 @@ Figures are not expected to be byte-identical across versions.
 
 | Date | Commit | Scope | Verdict | Notes |
 |---|---|---|---|---|
+| 2026-10-14 | 36c6fdb | L7 Part A (revised) | **APPROVE** | all 286 extended part-(i) laps identical to the originals decision by decision; A4c recomputed; the reviewer's earlier rough numbers withdrawn (truncation); nit: wording of the check |
+| 2026-10-14 | 735c348 | L7 Part A | CHANGES_REQUESTED | PA-M1 A4 (Q − G on failed laps) a selection effect → A4c over all laps; PA-M2 "rare states" contradicts μ ~ U(0.92, 1.03) → two explanations (value error / observability); pa-m1 six of nine; pa-m2 statistics |
+| 2026-10-14 | 8bc7605 | amendment A2 | **APPROVE** | A-M1: Part A diagnoses the L7 test laps (T1 at τ = 0, T2) → findings split (i) / (ii), only (i) may change Part C |
 | 2026-10-14 | 58ad42e | L7 protocol revision 1.1 | **APPROVE** (check of the three minors) | r-m1 smoothing recomputed (symmetric periodic kernel, h with raw widths, 42.9 % reproduced), r-m2, r-m3 correct; protocol binding; nits (per-group checkpoint-lap cost, width test) fixed as amendment A1 |
 | 2026-10-14 | 39b62c4 | L7 protocol revision 1 | **APPROVE** | merge a4739c2 = 89f81fb tree; new CBF barrier derivation checked; 45.6 % recomputed; minors before the first K run: r-m1 w″ spikes from the piecewise-linear widths (code), r-m2 attainability of the H-B test, r-m3 filters see actuator-limited commands; nit: cost of the checkpoint laps – revision 1.1; Part A may start now |
 | 2026-10-14 | d1fa964 | L7 protocol (design) | CHANGES_REQUESTED | P-M1 CBF-QP not realisable (a_y beyond the steering's reach, CG-only barrier) → fixed before calibrating; P-M2 main filter and a test of H-B missing, closed loops of K / A unnamed; P-M3 median of three seeds too weak for S1 → five seeds for P and M; minors: V used by the curriculum, touched test laps undisclosed, CBF band heuristic, acceptance k = 10 and 20, slack-using decisions, prep-rule reference; nit: source of the RL gap – all in revision 1 |
