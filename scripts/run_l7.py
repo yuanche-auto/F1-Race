@@ -90,8 +90,7 @@ def job_lap(args):
     {"kind": "cbf", ...}; records predictions and samples when asked."""
     name, spec, record_dir = args
     from f1race.dynamics import DynVehicle
-    from f1race.experiments.l7 import (CBFFilter, NMPCFilter, band_c, make_env, plan, prediction_samples,
-                                       run_lap)
+    from f1race.experiments.l7 import CBFFilter, NMPCFilter, band_c, make_env, plan, rollout_errors, run_lap
     from f1race.track import Track
 
     case = case_by_name(name)
@@ -119,11 +118,14 @@ def job_lap(args):
     if record_dir and filt is not None and getattr(filt, "predictions", None):
         d = Path(record_dir)
         d.mkdir(parents=True, exist_ok=True)
-        smp = prediction_samples(track, filt.mpc.veh, filt.predictions, r["log"], r["completed"])
+        # A4: the errors of the filter's model rolled out under the applied inputs, one row per
+        # (decision p, stage k); p indexes the recorded predictions (same filter call)
+        smp = rollout_errors(track, filt.mpc, filt.states, r["log"])
         P = filt.predictions
         np.savez_compressed(d / f"{name}.npz", t=np.array([p[0] for p in P]), X=np.stack([p[1] for p in P]),
                             U=np.stack([p[2] for p in P]), b=np.stack([p[3] for p in P]),
                             log_t=r["log"].t, log_state=r["log"].state, log_usage=r["log"].usage,
+                            log_inputs=r["log"].inputs, xf=np.stack([q[3] for q in filt.states]),
                             **{f"smp_{k}": v for k, v in smp.items() if isinstance(v, np.ndarray)},
                             smp_t_end=smp["t_end"], smp_completed=smp["completed"],
                             dec_t=r["decisions"]["t"], dec_changed=r["decisions"]["changed"],
@@ -193,8 +195,9 @@ def load_jsonl(path: Path) -> list[dict]:
 
 # ---------------------------------------------------------------- steps
 def calibrate() -> dict:
-    """(b) from the K predictions of the default filter (A3.4), (c) q_k per stage (A3.5) from
-    the same predictions and the same cut."""
+    """(b) from the K rollout errors of the default filter (A3.4, A4), (c) q_k per stage (A3.5)
+    from the same errors and the same cut, sigma(k) along the filter's prediction at that
+    decision."""
     from f1race.experiments.l3 import calibrate as l3_calibrate
     from f1race.experiments.l7 import N, cases, conformal_qk, sigma_k
 
@@ -228,6 +231,46 @@ def calibrate() -> dict:
     print(json.dumps({"b_eta_10": b["eta"][10], "b_10": b["backoff"][10], "b_20": b["backoff"][20],
                       "q_10": q[10], "q_20": q[20]}), flush=True)
     return est
+
+
+def coverage_report(est_name: str, set_name: str = "A") -> dict:
+    """Acceptance (section 4.2, A3.8, A4): coverage of the rollout errors by the band b_k the
+    filter used at that decision, k = 10 and 20; predictions reaching into the last 2 s of a
+    failed lap dropped; also without the cut (a3-m3) and near the limit (rollout usage at
+    stage k >= 0.85)."""
+    from f1race.experiments.l7 import N, cases
+
+    d = OUT / set_name / f"accept_{est_name}"
+    out = {}
+    for k in (10, 20):
+        tot = {"n": 0, "inside": 0, "n_all": 0, "inside_all": 0, "n_near": 0, "inside_near": 0, "dropped": 0}
+        for c in cases(set_name):
+            f = d / f"{c['name']}.npz"
+            if not f.exists():
+                continue
+            z = np.load(f)
+            kk, p, e = z["smp_k"].astype(int), z["smp_p"].astype(int), z["smp_e_n"]
+            band = z["b"][p, kk]
+            m = kk == k
+            ok = np.ones(len(kk), bool)
+            if not bool(z["smp_completed"]):
+                ok = z["smp_t"] + N * 0.05 <= float(z["smp_t_end"]) - 2.0
+            ins = np.abs(e) <= band
+            near = z["smp_u_pred"] >= 0.85
+            tot["n"] += int((m & ok).sum())
+            tot["inside"] += int((m & ok & ins).sum())
+            tot["n_all"] += int(m.sum())
+            tot["inside_all"] += int((m & ins).sum())
+            tot["n_near"] += int((m & ok & near).sum())
+            tot["inside_near"] += int((m & ok & near & ins).sum())
+            tot["dropped"] += int((m & ~ok).sum())
+        tot["coverage"] = tot["inside"] / max(tot["n"], 1)
+        tot["coverage_all"] = tot["inside_all"] / max(tot["n_all"], 1)
+        tot["coverage_near"] = tot["inside_near"] / max(tot["n_near"], 1)
+        tot["passes"] = 0.90 <= tot["coverage"] <= 0.98
+        out[str(k)] = tot
+    out["accepted"] = all(out[str(k)]["passes"] for k in (10, 20))
+    return out
 
 
 def main() -> None:
@@ -285,6 +328,9 @@ def main() -> None:
                         "q": est["c"]["q"], "eta": 0.95}
             jobs.append((n, spec, str(base / f"accept_{a.estimate}")))
         pool_run(job_lap, jobs, base / f"accept_{a.estimate}.jsonl", a.workers)
+        rep = coverage_report(a.estimate, a.set)
+        (base / f"accept_{a.estimate}_coverage.json").write_text(json.dumps(rep, indent=1))
+        print(json.dumps(rep), flush=True)
     else:
         raise SystemExit(f"unknown step {a.what}")
 

@@ -192,7 +192,9 @@ run the filter with its default (nominal model, η = 0.95, no back-offs); its k-
 predictions against the realised path give the samples of (b) and the calibration errors
 of (c). For (a) the identification uses each car's own exploration lap.
 
-**Acceptance test (the L6 go criterion, kept):** on the laps of the acceptance set A,
+**Acceptance test (the L6 go criterion, kept – the criterion, not the quantity:** 90–98 % at
+k = 10 and 20 is unchanged, but what is covered is the rollout error of amendment A4, not the
+controller's own predictions as in L6)**:** on the laps of the acceptance set A,
 driven by `B_s1_500k` with the NMPC filter *using the estimate under test* (its model, η_k
 and back-offs), the 95 % band covers 90–98 % of the filter's own k-step lateral prediction
 errors **both at k = 10 and at k = 20** (p-m4); coverage near the friction limit (usage ≥
@@ -338,6 +340,10 @@ Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4
 * The intermediate L5 checkpoints are missing (Part A).
 * The filters check only the first 10 ms command of each 50 ms decision; when they do not
   intervene, the tracker's next four 10 ms commands are not checked (A3.2, a3-m1).
+* The bands are calibrated on the model's error under the inputs actually applied (A4), an
+  approximation of the error when the backup plan is executed: the backup plan's inputs
+  (towards braking, more cautious) differ from the policy's, and the model error depends
+  on the region of states and inputs (a4-m2).
 
 ## Revisions before the protocol is binding
 
@@ -426,11 +432,13 @@ Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4
      δn(k) from open-loop predictions of the identified model (with the identified lag)
      started at every fifth logged state of the last third with the logged inputs, the
      axle-point errors of (b), the 95 % quantile per k, made non-decreasing in k (as L3);
-     η = 0.95. **Expected before any run (a3-m2):** these open-loop replays use the logged
-     inputs and miss the error from the filter re-solving every 50 ms with different later
-     inputs, while the acceptance test compares the filter's own k-step predictions – (a)
-     may under-cover at k = 20. The design is not changed for that: the order (a) → (b) →
-     (c) and the acceptance test handle it.
+     η = 0.95. **Expected before any run (a3-m2, rewritten after A4):** (a) may under-cover
+     in the acceptance test because (i) its errors come from the exploration lap – the
+     nominal NMPC on the 12 % plan at η = 0.88, far from the tyres' peak – while the
+     acceptance laps are driven by the RL policy close to the limit, where identification
+     errors and the tyre's non-linearity grow; and (ii) with the right structure and no
+     noise its band degenerates towards the discretisation error alone. The design is not
+     changed for that: the order (a) → (b) → (c) and the acceptance test handle it.
   7. **Exploration laps** (for (a) and (c), on K, A and the test sets): the L6 `explore`
      controller (nominal NMPC, 12 % reserve plan, η = 0.88) with the condition's lag; on a
      disturbance condition a separate draw of the disturbances (seed + 100 000) and the L3
@@ -444,8 +452,9 @@ Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4
      adds half the width and the front-axle swing), friction factor η_10 of (b); the laps
      are the K laps that `B_s1_500k` completes without a filter, at α ∈ {1, 2, 4, 8}.
 
-* **A4 (2026-10-15), the errors that (b), (c) and the acceptance test use – found in the code
-  smoke test on set X (seed 99, not a protocol set), before any K, A or Part B run.**
+* **A4 (2026-10-15; revised after the review of 347b297: A4-M1, a4-m1, a4-m2, a3-m2), the
+  errors that (b), (c) and the acceptance test use – found in the code smoke test on set X
+  (seed 99, not a protocol set), before any K, A or Part B run.**
   Section 4.2 and A3.4 / A3.5 / A3.8 calibrate and test on "the filter's own k-step
   predictions". For a safety filter these are not forecasts of the closed loop: only the
   first input is tied to the proposal, the later stages carry only the smoothness cost, so
@@ -457,15 +466,26 @@ Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4
   filter's model rolled out under the inputs actually applied; (c) gave q̂_k of 160–290 and
   back-offs of hundreds of metres. Bands calibrated on the former would make the filter
   intervene almost always, and no estimate could pass the acceptance test.
-  **Change:** the prediction error used by (b), (c) and the acceptance test is the error of
-  the filter's model rolled out open loop from the filter's state at each decision (the
-  measured state; with a lag model, the road-wheel angle estimate) **under the 10 ms inputs
-  actually applied** to the car, at the stage times k · 50 ms: the larger axle-point lateral
-  error against the true car, and the model's usage of the axle closer to its limit against
-  the true usage of that axle (`experiments.l7.rollout_errors`). This is what a back-off must
-  cover if the backup plan is executed – model and disturbance error –, and it is the
-  quantity (a) already uses on its exploration lap (A3.6), so (a), (b) and (c) are now
-  calibrated and tested on the same kind of error. Unchanged: the laps (K, A), the cut of
+  **Change** (revised after the review of 347b297, A4-M1): the prediction error used by (b),
+  (c) and the acceptance test is the error of **the filter's own discrete model**
+  (`FrenetMPC._step`: Frenet coordinates, one RK4 step of 50 ms with the input held) rolled
+  out open loop from the filter's Frenet state at each decision (from the measured state;
+  with a lag model, with the road-wheel angle estimate) under **the inputs actually applied**
+  to the car, averaged over each 50 ms block (the mean steering rate keeps the angle
+  increment, the mean force the impulse) – `experiments.l7.rollout_errors`. Per stage k: the
+  larger axle-point lateral error, the model's n + arm · sin ξ (as the filter's track
+  constraint and L3's calibration; the chord stays a separate margin of the constraint)
+  against the true car's axle points; and the usage pair aligned with the NLP's stage-k
+  ellipse constraint: the model's usage at state X_k with block k (the 50 ms after X_k)
+  against the largest true usage of that axle over the same block [t_k, t_k + 50 ms). This
+  is what a back-off must cover if the backup plan is executed – model, discretisation and
+  disturbance error –, and (a)'s replay (A3.6) now uses the same model, so (a), (b) and (c)
+  are calibrated and tested on the same kind of error. Check on the same X laps (numbers
+  only, nothing set on them), P95 at k = 10 / 20, filter's model against the simulator's
+  10 ms integration (the first version of A4): no lag 0.16 / 0.50 m against 0.07 / 0.32 m;
+  30 ms 0.22 / 0.61 against 0.15 / 0.43; L3 disturbances 0.74 / 2.31 against 0.53 / 1.68;
+  (a) on an X exploration lap, noise-free, 30 ms: b_10 / b_20 0.091 / 0.109 m against
+  0.000 / 0.006 m. Unchanged: the laps (K, A), the cut of
   the last 2 s of failed laps, ε = 0.05, u_threshold 0.85, the per-stage q̂_k, the acceptance
   band 90–98 % at k = 10 and 20; for (c), σ(k) is evaluated along the filter's prediction
   (as in use, A3.5), the error is the rollout's. Near the limit (A3.8): the rollout's usage at

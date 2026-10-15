@@ -91,7 +91,7 @@ class NMPCFilter:
         self.u_prev = np.zeros(3)
         self.d_hat = self.c_prev = self.t_prev = None
         self.predictions: list[tuple] = []                       # (t, X, U, b_k)
-        self.states: list[tuple] = []                            # (t, y, road-wheel angle estimate)
+        self.states: list[tuple] = []                            # (t, y, angle estimate, Frenet state)
         self.stats: list[dict] = []
 
     def observe(self, t: float, y: np.ndarray) -> None:
@@ -116,8 +116,8 @@ class NMPCFilter:
         return np.concatenate([self.conv.frenet(ya), [float(y[6])]])
 
     def filter(self, t: float, y: np.ndarray, u_des: np.ndarray):
-        self.states.append((t, np.array(y, float), self.d_hat))
         xf = self.frenet(y)
+        self.states.append((t, np.array(y, float), self.d_hat, np.array(xf, float)))
         kw = {}
         b = self.mpc.backoff
         if self.band is not None:
@@ -318,8 +318,10 @@ def prediction_samples(track: Track, model: DynVehicle, predictions, log, comple
     return out
 
 
-def rollout_errors(track: Track, model: DynVehicle, tau: float | None, states, log) -> dict:
-    """Open-loop predictions of the filter's model under the inputs actually applied: from
+def rollout_errors_sim(track: Track, model: DynVehicle, tau: float | None, states, log) -> dict:
+    """Superseded (A4-M1), kept only for the comparison reported in A4: the rollout with the
+    simulator's 10 ms integration instead of the filter's discrete model. Open-loop
+    predictions of the filter's car under the inputs actually applied: from
     the filter's state at each decision (measured y; with a lag model the road-wheel angle
     estimate), the model is stepped with the logged 10 ms inputs; per stage k (50 ms) the
     larger axle-point lateral error against the true car, and the model's usage of the axle
@@ -335,7 +337,7 @@ def rollout_errors(track: Track, model: DynVehicle, tau: float | None, states, l
     n_ax = axle_n(track, model, log.state)
     arms = np.array([model.L - model.lr, -model.lr])
     cols = {"k": [], "e_n": [], "u_pred": [], "u_real": [], "t": [], "p": []}
-    for p_i, (t, y, d_hat) in enumerate(states):
+    for p_i, (t, y, d_hat, *_) in enumerate(states):
         j0 = int(round(t / DT))
         if j0 >= Kn:
             continue
@@ -365,6 +367,75 @@ def rollout_errors(track: Track, model: DynVehicle, tau: float | None, states, l
     return out
 
 
+def block_inputs(inputs: np.ndarray, j0: int, n_blocks: int) -> np.ndarray:
+    """The applied 10 ms inputs averaged over 50 ms blocks from index j0 (the mean steering
+    rate keeps the angle increment, the mean force the impulse); forces scaled as in the
+    NLP (1 / FS). Fewer rows where the log ends."""
+    step = int(round(MPC_DT / DT))
+    out = []
+    for k in range(n_blocks):
+        a, b = j0 + k * step, j0 + (k + 1) * step
+        if b > len(inputs):
+            break
+        u = inputs[a:b].mean(axis=0)
+        out.append([u[0], u[1] / FS, u[2] / FS])
+    return np.array(out)
+
+
+def model_rollout(mpc: FrenetMPC, xf0: np.ndarray, U: np.ndarray) -> np.ndarray:
+    """The filter's own discrete model (``FrenetMPC._step``: Frenet coordinates, one RK4 step
+    of 50 ms, the input held) from ``xf0`` under the scaled block inputs ``U``."""
+    X = [np.asarray(xf0, float)]
+    for u in U:
+        X.append(np.asarray(mpc._step(X[-1], u)).ravel())
+    return np.array(X)
+
+
+def rollout_errors(track: Track, mpc: FrenetMPC, states, log) -> dict:
+    """A4 / A4-M1: the error of the filter's own model rolled out open loop from the filter's
+    Frenet state at each decision (with a lag model, the road-wheel angle estimate) under the
+    applied inputs averaged over each 50 ms block. Per stage k (k * 50 ms): the larger
+    axle-point lateral error, predicted n + arm sin(xi) (as the filter's track constraint and
+    L3's calibration; the chord stays a separate margin of the constraint) against the true
+    car's axle points; the model's ellipse usage (the filter's expression) at state k with
+    block k (the 50 ms after X_k, as the NLP's stage-k ellipse constraint) of the axle closer
+    to its limit, against the largest true usage of that axle over the same block
+    [t_k, t_k + 50 ms). Rows over (decision p, stage k)."""
+    step = int(round(MPC_DT / DT))
+    veh = mpc.veh
+    Kn = len(log.t)
+    n_ax = axle_n(track, veh, log.state)
+    arms = np.array([veh.L - veh.lr, -veh.lr])
+    cols = {"k": [], "e_n": [], "u_pred": [], "u_real": [], "t": [], "p": []}
+    for p_i, (t, _, _, xf) in enumerate(states):
+        j0 = int(round(t / DT))
+        U = block_inputs(log.inputs, j0, N)
+        if len(U) == 0:
+            continue
+        X = model_rollout(mpc, xf, U)                        # (len(U) + 1, nx)
+        up = nominal_usage(veh, X[:len(U), :7], U * np.array([1.0, FS, FS]))
+        for k in range(1, len(X)):
+            jk = j0 + k * step
+            if jk >= Kn:
+                break
+            na = X[k, 1] + arms * np.sin(X[k, 2])
+            cols["k"].append(k)
+            cols["e_n"].append(float(np.abs(n_ax[jk] - na).max()))
+            if k < len(U) and jk + step <= Kn:
+                ax = int(np.argmax(up[k]))
+                cols["u_pred"].append(float(up[k, ax]))
+                cols["u_real"].append(float(log.usage[jk:jk + step, ax].max()))
+            else:
+                cols["u_pred"].append(np.nan)
+                cols["u_real"].append(np.nan)
+            cols["t"].append(t)
+            cols["p"].append(p_i)
+    out = {k: np.array(v) for k, v in cols.items()}
+    out["f"] = np.ones(len(out["k"]))
+    out.update({"t_end": float(log.t[-1]), "completed": bool(log.completed)})
+    return out
+
+
 def horizon_ok(smp: dict) -> np.ndarray:
     """A3.8: predictions whose horizon reaches into the last 2 s of a failed lap dropped."""
     if smp["completed"]:
@@ -386,9 +457,41 @@ def identify_case(run, dt: float = DT) -> dict:
 
 
 def open_loop_errors(track: Track, veh: DynVehicle, tau: float, run, stride: int = 5) -> np.ndarray:
-    """(n_starts, N + 1) axle-point lateral errors of open-loop predictions of ``veh`` with
-    steering lag ``tau``, started at every ``stride``-th logged state with the logged inputs;
-    NaN where the log ends."""
+    """(n_starts, N + 1) axle-point lateral errors of open-loop predictions of the filter's
+    discrete model of ``veh`` with steering lag ``tau`` (A4-M1: ``FrenetMPC._step``, 50 ms
+    blocks of the logged inputs), started at every ``stride``-th logged state (Frenet; the
+    road-wheel angle from the logged commands through the lag); NaN where the log ends."""
+    from ..estimation.identify import lag_filter
+
+    tau = max(tau, 1e-4)
+    mpc = FrenetMPC(track, veh, ref_from_plan(plan(0.95)), mode="filter", N=N, dt=MPC_DT, steer_lag=tau)
+    conv = MPCController(mpc, DT, tc_eta=None)
+    step = int(round(MPC_DT / DT))
+    Kn = len(run.t)
+    dact = lag_filter(run.state[:, 6], DT, tau, a0=run.state[0, 6])
+    n_ax = axle_n(track, veh, run.state)
+    arms = np.array([veh.L - veh.lr, -veh.lr])
+    starts = np.arange(0, Kn, stride)
+    out = np.full((len(starts), N + 1), np.nan)
+    for r_i, i in enumerate(starts):
+        ya = np.array(run.state[i], float)
+        ya[6] = dact[i]
+        xf = np.concatenate([conv.frenet(ya), [run.state[i, 6]]])
+        U = block_inputs(run.inputs, i, N)
+        X = model_rollout(mpc, xf, U)
+        out[r_i, 0] = 0.0
+        for k in range(1, len(X)):
+            jk = i + k * step
+            if jk >= Kn:
+                break
+            na = X[k, 1] + arms * np.sin(X[k, 2])
+            out[r_i, k] = float(np.abs(n_ax[jk] - na).max())
+    return out
+
+
+def open_loop_errors_sim(track: Track, veh: DynVehicle, tau: float, run, stride: int = 5) -> np.ndarray:
+    """Superseded (A4-M1), kept only for the comparison reported in A4: the replay with the
+    simulator's 10 ms integration."""
     from ..estimation.identify import lag_filter
     from ..sim.lagged import LaggedSim
 
@@ -498,4 +601,4 @@ def band_c(res_model, q, eta0: float = 0.95):
 
 
 __all__ = ["cases", "SETS", "run_lap", "NMPCFilter", "CBFFilter", "explore_lap", "prediction_samples",
-           "horizon_ok", "rollout_errors", "estimate_a", "residual_for", "sigma_k", "conformal_q", "conformal_qk", "band_c", "changed"]
+           "horizon_ok", "rollout_errors", "rollout_errors_sim", "block_inputs", "model_rollout", "estimate_a", "residual_for", "sigma_k", "conformal_q", "conformal_qk", "band_c", "changed"]
