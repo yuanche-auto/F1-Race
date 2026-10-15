@@ -63,7 +63,7 @@ hash, merge to `main` and push only after APPROVE. Workflow: [docs/workflow.md](
 | L5 reinforcement learning | `layer/L5` → `main` | **approved, pushed** to origin/main 2026-10-09 | APPROVE after the multi-seed redo (wording minors fixed in 4fec887) |
 | L6 model mismatch with a structural error | `layer/L6` → `main` | **approved, pushed** to origin/main 2026-10-10 | results review: APPROVE (minors m1–m4 fixed) |
 | Preparation for L7 (numerical robustness, filter benchmark) | `prep/robustness` → `main` (a4739c2) | **approved, pushed** to origin/main 2026-10-14 | APPROVE (minors m1–m3, n1–n3 fixed on `layer/L7`) |
-| L7 reliable learning | `layer/L7` (from `prep/robustness`) | protocol **binding** (revision 1.1, 58ad42e; amendments A1, A2 approved); **Part A approved** (36c6fdb, report docs/L7.md); next: K and the risk estimates, then Part C; K (calibration set) may run in parallel with Part A (reviewer, 2026-10-14) | d1fa964 CHANGES_REQUESTED → revision 1 → APPROVE |
+| L7 reliable learning | `layer/L7` (from `prep/robustness`) | protocol **binding** (revision 1.1, 58ad42e; amendments A1, A2 approved); **Part A approved** (36c6fdb, report docs/L7.md); A3 approved (4194638); K / risk-estimate code written but **not yet smoke-tested, K not run** (src/f1race/experiments/l7.py, scripts/run_l7.py; next: smoke test on set X, pinned worktree, then K -> calibrate -> CBF alpha -> A acceptance, results to the reviewer before Part B / C); K (calibration set) may run in parallel with Part A (reviewer, 2026-10-14) | d1fa964 CHANGES_REQUESTED → revision 1 → APPROVE |
 
 ## Preparation for L7 (2026-10-14, new machine)
 
