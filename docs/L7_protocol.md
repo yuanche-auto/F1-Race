@@ -432,7 +432,10 @@ Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4
      δn(k) from open-loop predictions of the identified model (with the identified lag)
      started at every fifth logged state of the last third with the logged inputs, the
      axle-point errors of (b), the 95 % quantile per k, made non-decreasing in k (as L3);
-     η = 0.95. **Expected before any run (a3-m2, rewritten after A4):** (a) may under-cover
+     η = 0.95. On a noisy condition both the start and the target of (a)'s replay are
+     measured states, so the measurement noise enters twice and (a) is somewhat
+     conservative there; the acceptance test compares with the true car. **Expected before
+     any run (a3-m2, rewritten after A4):** (a) may under-cover
      in the acceptance test because (i) its errors come from the exploration lap – the
      nominal NMPC on the 12 % plan at η = 0.88, far from the tyres' peak – while the
      acceptance laps are driven by the RL policy close to the limit, where identification
@@ -477,7 +480,8 @@ Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4
   constraint and L3's calibration; the chord stays a separate margin of the constraint)
   against the true car's axle points; and the usage pair aligned with the NLP's stage-k
   ellipse constraint: the model's usage at state X_k with block k (the 50 ms after X_k)
-  against the largest true usage of that axle over the same block [t_k, t_k + 50 ms). This
+  against the true usage of that axle at t_k, with the input applied then (single points,
+  as L3 and the NLP's constraint at the node; a4-m3 of the review of b237af6). This
   is what a back-off must cover if the backup plan is executed – model, discretisation and
   disturbance error –, and (a)'s replay (A3.6) now uses the same model, so (a), (b) and (c)
   are calibrated and tested on the same kind of error. Check on the same X laps (numbers

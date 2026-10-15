@@ -398,9 +398,9 @@ def rollout_errors(track: Track, mpc: FrenetMPC, states, log) -> dict:
     axle-point lateral error, predicted n + arm sin(xi) (as the filter's track constraint and
     L3's calibration; the chord stays a separate margin of the constraint) against the true
     car's axle points; the model's ellipse usage (the filter's expression) at state k with
-    block k (the 50 ms after X_k, as the NLP's stage-k ellipse constraint) of the axle closer
-    to its limit, against the largest true usage of that axle over the same block
-    [t_k, t_k + 50 ms). Rows over (decision p, stage k)."""
+    block k (the 50 ms after X_k, as the NLP's stage-k ellipse constraint, imposed at the
+    node) of the axle closer to its limit, against the true usage of that axle at t_k (with
+    the input applied then), as L3's u_pred / u_real. Rows over (decision p, stage k)."""
     step = int(round(MPC_DT / DT))
     veh = mpc.veh
     Kn = len(log.t)
@@ -421,10 +421,10 @@ def rollout_errors(track: Track, mpc: FrenetMPC, states, log) -> dict:
             na = X[k, 1] + arms * np.sin(X[k, 2])
             cols["k"].append(k)
             cols["e_n"].append(float(np.abs(n_ax[jk] - na).max()))
-            if k < len(U) and jk + step <= Kn:
+            if k < len(U):
                 ax = int(np.argmax(up[k]))
                 cols["u_pred"].append(float(up[k, ax]))
-                cols["u_real"].append(float(log.usage[jk:jk + step, ax].max()))
+                cols["u_real"].append(float(log.usage[jk, ax]))
             else:
                 cols["u_pred"].append(np.nan)
                 cols["u_real"].append(np.nan)
