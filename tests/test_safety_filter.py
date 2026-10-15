@@ -38,6 +38,23 @@ def test_cbf_qp_passes_safe_commands_and_corrects_unsafe_ones(track):
     assert info["ok"] and info["sigma_friction"] > 0 and np.isclose(out[0], -veh.delta_rate_max)
 
 
+def test_width_terms_of_the_barrier_are_bounded(track):
+    """r-m1 of the review of 39b62c4: the raw widths are piecewise linear between points
+    ~5 m apart; w'' from them has spikes. The smoothed derivatives must stay physical
+    along the whole lap: |w''| v_max^2 small against the friction circle (15-40 m/s^2) and
+    the smoothed width close to the raw one."""
+    from f1race.control.safety_filter import width_derivatives
+
+    g, d = width_derivatives(track)
+    v_max = 90.0                                    # above the plans' top speed
+    for side in ("left", "right"):
+        d1, d2 = d[side]
+        assert np.abs(d2).max() * v_max**2 < 10.0
+        assert np.abs(d1).max() * v_max < 5.0
+        w = track.interp(track.w_left if side == "left" else track.w_right, g)
+        assert abs(np.cumsum(d1).max() - np.cumsum(d1).min()) * (g[1] - g[0]) < (w.max() - w.min()) + 1.0
+
+
 @pytest.mark.slow
 @pytest.mark.skipif(not CACHE.exists(), reason="run scripts/run_l1.py first")
 def test_nmpc_filter_keeps_a_safe_command(track):

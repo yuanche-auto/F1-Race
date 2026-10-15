@@ -63,7 +63,7 @@ hash, merge to `main` and push only after APPROVE. Workflow: [docs/workflow.md](
 | L5 reinforcement learning | `layer/L5` → `main` | **approved, pushed** to origin/main 2026-10-09 | APPROVE after the multi-seed redo (wording minors fixed in 4fec887) |
 | L6 model mismatch with a structural error | `layer/L6` → `main` | **approved, pushed** to origin/main 2026-10-10 | results review: APPROVE (minors m1–m4 fixed) |
 | Preparation for L7 (numerical robustness, filter benchmark) | `prep/robustness` → `main` (a4739c2) | **approved, pushed** to origin/main 2026-10-14 | APPROVE (minors m1–m3, n1–n3 fixed on `layer/L7`) |
-| L7 reliable learning | `layer/L7` (from `prep/robustness`) | protocol revision 1, **no L7 run before the reviewer confirms it** | design review of d1fa964: CHANGES_REQUESTED (P-M1–M3) → revision 1 |
+| L7 reliable learning | `layer/L7` (from `prep/robustness`) | protocol **confirmed** (39b62c4, APPROVE; revision 1.1 fixes the three minors to be done before the first K run); Part A may start | d1fa964 CHANGES_REQUESTED → revision 1 → APPROVE |
 
 ## Preparation for L7 (2026-10-14, new machine)
 
@@ -96,6 +96,7 @@ Figures are not expected to be byte-identical across versions.
 
 | Date | Commit | Scope | Verdict | Notes |
 |---|---|---|---|---|
+| 2026-10-14 | 39b62c4 | L7 protocol revision 1 | **APPROVE** | merge a4739c2 = 89f81fb tree; new CBF barrier derivation checked; 45.6 % recomputed; minors before the first K run: r-m1 w″ spikes from the piecewise-linear widths (code), r-m2 attainability of the H-B test, r-m3 filters see actuator-limited commands; nit: cost of the checkpoint laps – revision 1.1; Part A may start now |
 | 2026-10-14 | d1fa964 | L7 protocol (design) | CHANGES_REQUESTED | P-M1 CBF-QP not realisable (a_y beyond the steering's reach, CG-only barrier) → fixed before calibrating; P-M2 main filter and a test of H-B missing, closed loops of K / A unnamed; P-M3 median of three seeds too weak for S1 → five seeds for P and M; minors: V used by the curriculum, touched test laps undisclosed, CBF band heuristic, acceptance k = 10 and 20, slack-using decisions, prep-rule reference; nit: source of the RL gap – all in revision 1 |
 | 2026-10-14 | 89f81fb | preparation (STATUS, numerical robustness, filter benchmark) | **APPROVE** | tests, standing checks, nmpc.py default path, replan_robust direct step, report tables and McNemar recomputed, CBF derivation checked; the prep rule's timeline corrected (two retry-only trials finished before it; conclusion unaffected, m1); benchmark decision insensitive to the threshold (≤ 180 ms admissible, NMPC filter 219–235 ms); minors m2/m3 (CBF realisability, axle points, dw/ds), n1–n3 – fixed on `layer/L7` |
 | 2026-10-10 | 284a0e3 | L6 results | **APPROVE** | held-out coverage recomputed in Python 3.11 (identical for 75/75 cases); the 12 lag_nominal failures = the 12 L4 failures; tables checked; minors: no-go basis as amendment A11 + held-out near-limit coverage (m1), SMPC 60 ms only on the nominal car (m2), closed-loop coverage valid but secondary (m3), conformal calibration separate from L7 evaluation laps and round-2 replay before using the residual mean (m4) – fixed in 7f744d3 (table only) and the next commit |

@@ -112,6 +112,12 @@ angle limits and the engine power, the friction polygon softened by its own slac
 Same verdict. The share of changed decisions rose (45.6 % against 40.4 %), as expected from
 the wider margin; it is uncalibrated and is fixed on K (protocol section 4.1).
 
+The review of this version (39b62c4, r-m1) found that w″ from the raw widths (piecewise
+linear between points ~5 m apart) has spikes at the points of up to ~350 m/s² in w″ ṡ².
+With w′ and w″ from widths smoothed along the lap (periodic Gaussian, 20 m), alone on the
+same three laps: 0.58 ms mean, 1.27 ms P99, 0 failures, 42.9 % of the decisions changed
+(the reviewer measured 43.3 % with w″ = 0).
+
 ## Sensitivity of the decision to the rule
 
 The rule was written before the timings were measured, but not committed separately, and

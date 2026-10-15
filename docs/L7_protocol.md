@@ -1,8 +1,8 @@
 # L7 protocol – reliable learning: diagnosis, a safety layer, and whether reliability transfers to the policy
 
-Draft, written before any result-producing run of L7 (2026-10-14); revision 1 after the
-design review of d1fa964 (CHANGES_REQUESTED, see the end). It becomes binding when the
-reviewer has confirmed it; deviations after that are listed at the end as
+Written before any result-producing run of L7 (2026-10-14); revision 1 after the design
+review of d1fa964 (CHANGES_REQUESTED), confirmed by the reviewer on 39b62c4 (APPROVE) with
+three minors fixed in revision 1.1 (see the end). Binding from revision 1.1; deviations after that are listed at the end as
 amendments with their date and reason, and the runs they affect are named. Roadmap:
 [ROADMAP_L6-L10.md](ROADMAP_L6-L10.md) (section 4, L7, and section 7, the strategy update
 after L6).
@@ -142,7 +142,12 @@ NMPC filter 219–235 ms mean, 0.75–1.08 s P99). Roles (P-M2 of the review):
   is judged by its outcomes (completion, interventions, false interventions) only.
 
 Both filter the command of tracker + policy at every 50 ms decision (the command proposed
-for the first 10 ms step; the filtered command replaces it for the decision). Every
+for the first 10 ms step; the filtered command replaces it for the decision). **In training
+and in evaluation the filters receive the command after the plant's actuator limits**
+(`DynamicSim.apply_limits` / `LaggedSim.apply_limits`: steering rate and angle, engine
+power), as in the benchmark – otherwise the tracker's raw rate and drive commands, which
+the plant clips anyway, would count as interventions (62 % in the benchmark's smoke runs),
+and M's intervention cost and every intervention rate would include them (r-m3). Every
 NMPC-based controller and filter of L7 uses the NMPC failure handling chosen by the rule
 in [prep_robustness.md](prep_robustness.md) section 4.3 – the L6 settings (for the rule's
 timing see there) – and every re-plan `replan_robust`; fallbacks are counted and reported.
@@ -201,9 +206,10 @@ Policies: the nine final L5 checkpoints (unselected) and the selected `B_s1_500k
 **Pre-registered test of H-B (primary, P-M2 (ii)):** over the nine final checkpoints, the
 paired numbers of completed T1 + T2 laps with and without the main filter; H-B holds if the
 Wilcoxon signed-rank test (two-sided, zero differences dropped) is significant at the
-level given in section 7 and the median difference is positive. (With nine policies the
-smallest attainable p is 2/2⁹ ≈ 0.004; with fewer than six non-zero differences 0.025 cannot
-be reached, and H-B is then reported as not shown.) Per policy: exact McNemar with /
+level given in section 7 and the median difference is positive. (With n non-zero
+differences the smallest attainable two-sided p is 2/2ⁿ: n = 6 gives 0.031, n = 7 gives
+0.016. H-B is reported as not shown if n < 7 when Holm tests it at 0.025, or n < 6 when it
+is tested at 0.05.) Per policy: exact McNemar with /
 without (secondary, all ten reported).
 
 Baselines on the same laps: the bare tracker under the main filter (no learning), the
@@ -305,6 +311,11 @@ acceptance test of the main risk estimate; T1 + T2 with and without the main fil
    NMPC filter costs about 0.15–0.3 s per decision, ~1 600 decisions per lap).
 3. Part C training (13 runs, three at a time on 24 cores, ~2.5–3 h each: ~13–15 h; the
    CBF-QP adds < 1 %), validation and curriculum laps at every checkpoint, test evaluation.
+   The laps at the checkpoints: an RL lap takes ~2 s here (measured, `B_s1_500k`, one
+   process), ~3 s with the CBF-QP (1 600 calls × 0.6 ms); V (40 laps) for all 13 runs, C
+   (40) for F and M (8 runs), V with the training filter for M (S2, 5 runs), each at 12
+   checkpoints: 13·12·40·2 s + 8·12·40·2 s + 5·12·40·3 s ≈ 7.6 CPU-h, i.e. ~0.5–0.8 h per
+   run if the laps run inside the training process, less on spare cores.
 4. Second environment, report, review.
 
 Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4 here).
@@ -330,6 +341,14 @@ Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4
   p-m4 k = 10 and 20 both in the acceptance band; p-m5 slack-using decisions reported
   apart from solver failures; p-m6 the reference to the prep rule corrected; nit: the
   source of the 4.6 s gap.
+
+* **Revision 1.1 (2026-10-14), confirmation of 39b62c4 (APPROVE) with three minors to fix
+  before the first K run:** r-m1 the CBF-QP's w′ / w″ from widths smoothed along the lap
+  (the raw piecewise-linear widths gave spikes of up to ~350 m/s² in w″ ṡ²; test added;
+  changed decisions on the benchmark laps 45.6 % → 42.9 %); r-m2 the attainability of the
+  H-B test corrected (n < 7 at 0.025, n < 6 at 0.05); r-m3 the filters see the command after
+  the actuator limits, in training and evaluation; nit: the cost of the checkpoint laps in
+  section 9. **The protocol is binding from this revision on.**
 
 ## Amendments
 

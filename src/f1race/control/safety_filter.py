@@ -14,7 +14,11 @@ so that n'' = a_x sin(xi) + cos(xi) (a_y - kappa v^2 cos(xi) / (1 - n kappa)) is
 * **track edges** as second-order barriers (relative degree 2 in the accelerations): for
   h_l = w_l(s) - b - n and h_r = n + w_r(s) - b,  h'' + 2 alpha h' + alpha^2 h >= -sigma_e,
   with the change of the track width along the lap in h' (w' s') and h'' (w'' s'^2; the
-  w' s'' term is neglected). The barrier is on the CG; the car's extent enters the margin
+  w' s'' term is neglected). h uses the track's widths as they are; w' and w'' come from
+  the widths smoothed along the lap (periodic Gaussian, ``width_smoothing`` = 20 m) – the
+  raw widths are piecewise linear between points ~5 m apart, and their second difference
+  has spikes at the points of up to ~350 m/s^2 in w'' s'^2 (review of 39b62c4, r-m1); the
+  smoothed width differs from the raw one by < 1 m and its w'' v^2 stays below ~4 m/s^2. The barrier is on the CG; the car's extent enters the margin
   b = half width + margin + l_f |sin(xi_h)| + l_f^2 |kappa| / 2 (the front axle swung out by
   the heading angle xi_h against the centre line, and the chord of the curve, as the NMPC's
   axle points), held constant within a solve (its derivative is neglected);
@@ -50,11 +54,30 @@ N_POLY = 16
 BIG = 1e20          # finite stand-in for infinity (DAQP needs finite bounds)
 
 
+def width_derivatives(track: Track, sigma: float = 20.0, h: float = 1.0):
+    """w' and w'' of both track widths, smoothed along the lap by a periodic Gaussian of
+    standard deviation ``sigma`` [m], on a grid of about ``h`` m (grid, {side: (w', w'')})."""
+    n = int(round(track.length / h))
+    h = track.length / n
+    g = np.arange(n) * h
+    k = np.arange(n)
+    k = np.minimum(k, n - k) * h                       # periodic distance to the first point
+    ker = np.exp(-0.5 * (k / sigma) ** 2) if sigma > 0 else (k == 0).astype(float)
+    ker /= ker.sum()
+    out = {}
+    for side, w0 in (("left", track.w_left), ("right", track.w_right)):
+        w = np.fft.irfft(np.fft.rfft(track.interp(w0, g)) * np.fft.rfft(ker), n)
+        out[side] = ((np.roll(w, -1) - np.roll(w, 1)) / (2 * h),
+                     (np.roll(w, -1) - 2 * w + np.roll(w, 1)) / h**2)
+    return g, out
+
+
 class CBFQPFilter:
     def __init__(self, track: Track, veh: DynVehicle, eta: float = 0.95, margin: float = 0.3,
                  alpha: float = 2.0, w_x: float = 0.1, w_sigma: float = 1e4, solver: str = "qpoases",
-                 ctrl_dt: float = 0.01):
+                 ctrl_dt: float = 0.01, width_smoothing: float = 20.0):
         self.track, self.veh, self.eta, self.alpha = track, veh, eta, alpha
+        self.width_grid, self.width_derivs = width_derivatives(track, width_smoothing)
         self.b = veh.half_width + margin
         self.w_x, self.w_sigma, self.ctrl_dt = w_x, w_sigma, ctrl_dt
         nc = 2 + N_POLY
@@ -88,10 +111,13 @@ class CBFQPFilter:
         rate = float(np.clip((d - float(x[6])) / self.ctrl_dt, -veh.delta_rate_max, veh.delta_rate_max))
         return np.array([rate, max(f, 0.0), min(f, 0.0)])
 
-    def _width_derivs(self, w: np.ndarray, s: float, ds: float = 1.0) -> tuple[float, float, float]:
-        tr = self.track
-        a, b0, c = (float(tr.interp(w, s + d)) for d in (-ds, 0.0, ds))
-        return b0, (c - a) / (2 * ds), (c - 2 * b0 + a) / ds**2
+    def _width(self, side: str, s: float) -> tuple[float, float, float]:
+        """Width (raw), w' and w'' (smoothed) of one side at arclength s."""
+        tr, g = self.track, self.width_grid
+        w = float(tr.interp(tr.w_left if side == "left" else tr.w_right, s))
+        d1, d2 = self.width_derivs[side]
+        sm = s % tr.length
+        return w, float(np.interp(sm, g, d1, period=tr.length)), float(np.interp(sm, g, d2, period=tr.length))
 
     def filter(self, frenet: tuple, x: np.ndarray, u: np.ndarray,
                backoff: float = 0.0) -> tuple[np.ndarray, dict]:
@@ -105,8 +131,8 @@ class CBFQPFilter:
         xi_h = frenet[3] if len(frenet) > 3 else xi
         v = max(float(x[3]), 1.0)
         k = float(tr.kappa_at(s))
-        wl, dwl, ddwl = self._width_derivs(tr.w_left, s)
-        wr, dwr, ddwr = self._width_derivs(tr.w_right, s)
+        wl, dwl, ddwl = self._width("left", s)
+        wr, dwr, ddwr = self._width("right", s)
         lf = veh.L - veh.lr
         b = self.b + backoff + lf * abs(np.sin(xi_h)) + 0.5 * lf * lf * abs(k)
         sx, cx = np.sin(xi), np.cos(xi)
@@ -149,4 +175,4 @@ class CBFQPFilter:
         return u_out, info
 
 
-__all__ = ["CBFQPFilter"]
+__all__ = ["CBFQPFilter", "width_derivatives"]
