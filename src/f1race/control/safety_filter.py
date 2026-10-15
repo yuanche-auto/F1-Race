@@ -25,7 +25,8 @@ so that n'' = a_x sin(xi) + cos(xi) (a_y - kappa v^2 cos(xi) / (1 - n kappa)) is
 * **friction**: (a_x, a_y) inside a regular 16-gon inscribed in the circle of radius
   eta mu_y (g + q_lift v^2 / m), softened by sigma_f (so that the QP stays solvable when the
   car is already beyond the limit);
-* **what the actuators can reach** within one control step (``ctrl_dt``): a_y between
+* **what the actuators can reach** while the filtered command is held (``hold_dt``; L7 holds
+  it for the 50 ms of a decision, A3.2): a_y between
   v^2 tan(delta_lo) / L and v^2 tan(delta_hi) / L, delta_lo/hi the steering angle moved by
   the rate limit and clipped to the angle limit; a_x at most (P_max / v - resistance) / m.
   Without these bounds the QP could pick an a_y that the steering cannot produce, and the
@@ -76,11 +77,16 @@ def width_derivatives(track: Track, sigma: float = 20.0, h: float = 1.0):
 class CBFQPFilter:
     def __init__(self, track: Track, veh: DynVehicle, eta: float = 0.95, margin: float = 0.3,
                  alpha: float = 2.0, w_x: float = 0.1, w_sigma: float = 1e4, solver: str = "qpoases",
-                 ctrl_dt: float = 0.01, width_smoothing: float = 20.0):
+                 ctrl_dt: float = 0.01, width_smoothing: float = 20.0, hold_dt: float | None = None):
+        """``ctrl_dt``: the step the proposed command was made for (the tracker's 10 ms: its
+        steering rate aims at the angle one step ahead); ``hold_dt``: how long a filtered
+        command is held (its rate is computed to reach the filtered angle at the end of the
+        hold, and the reachable a_y uses the hold); default ``ctrl_dt``."""
         self.track, self.veh, self.eta, self.alpha = track, veh, eta, alpha
         self.width_grid, self.width_derivs = width_derivatives(track, width_smoothing)
         self.b = veh.half_width + margin
         self.w_x, self.w_sigma, self.ctrl_dt = w_x, w_sigma, ctrl_dt
+        self.hold_dt = ctrl_dt if hold_dt is None else hold_dt
         nc = 2 + N_POLY
         H = ca.DM([[2 * w_x, 0, 0, 0], [0, 2.0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]])
         A = ca.DM.zeros(nc, 4)
@@ -109,7 +115,7 @@ class CBFQPFilter:
         veh, v = self.veh, max(float(x[3]), 1.0)
         d = float(np.arctan(ay * veh.L / (v * v)))
         f = veh.m * ax + veh.resist(v * v)
-        rate = float(np.clip((d - float(x[6])) / self.ctrl_dt, -veh.delta_rate_max, veh.delta_rate_max))
+        rate = float(np.clip((d - float(x[6])) / self.hold_dt, -veh.delta_rate_max, veh.delta_rate_max))
         return np.array([rate, max(f, 0.0), min(f, 0.0)])
 
     def _width(self, side: str, s: float) -> tuple[float, float, float]:
@@ -155,7 +161,7 @@ class CBFQPFilter:
         uba[2:] = r
         # what the steering and the engine can reach within one control step
         d = float(x[6])
-        step = veh.delta_rate_max * self.ctrl_dt
+        step = veh.delta_rate_max * self.hold_dt
         d_lo, d_hi = max(d - step, -veh.delta_max), min(d + step, veh.delta_max)
         ay_lo, ay_hi = v * v * np.tan(d_lo) / veh.L, v * v * np.tan(d_hi) / veh.L
         ax_hi = (veh.P_max / v - veh.resist(v * v)) / veh.m

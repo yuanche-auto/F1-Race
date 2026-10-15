@@ -142,7 +142,9 @@ class CBFFilter:
     def __init__(self, track: Track, veh: DynVehicle, alpha: float, margin: float, eta: float):
         from ..control.safety_filter import CBFQPFilter
 
-        self.f = CBFQPFilter(track, veh, eta=eta, margin=margin, alpha=alpha)
+        # the proposal aims 10 ms ahead (the tracker), a filtered command is held for the
+        # decision's 50 ms (A3.2): its rate reaches the filtered angle at the end of the hold
+        self.f = CBFQPFilter(track, veh, eta=eta, margin=margin, alpha=alpha, ctrl_dt=DT, hold_dt=MPC_DT)
         self.track = track
         self.conv = MPCController(SimpleNamespace(track=track), DT, tc_eta=None)
         self.predictions, self.stats = [], []
