@@ -512,3 +512,29 @@ Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4
      reported as a result of Part B.
   3. Known limitation added to section 10 (the smoke laps on X showed it; no other
      conclusion is drawn from them).
+* **A6 (2026-10-15), the training filter of M – committed before the corrected CBF-QP was run
+  on K.** Cause: the code check on set X (not a protocol set) found the CBF-QP leaving the
+  track at turn 1 on every X lap (its point-mass / kinematic-steering model does not know the
+  car's slip and yaw dynamics, and with a large heading angle the front-axle swing tightens
+  both barriers, so its interventions contradict each other), and the first α run on K had a
+  bug (the filtered rate held five times too long; fixed in 6e61b83, the runs kept as
+  `bug_hold_cbf_alpha*`). Neither involves a test lap.
+  1. **Criteria for the training filter (fixed now):** (i) solve time by the rule of the
+     benchmark (24-process load: mean ≤ 150 ms, P99 ≤ 1 s, failures ≤ 1 %); (ii) on the 36 K
+     laps that `B_s1_500k` completes without a filter, the policy with the filter (calibrated
+     with (b), as in training) completes at least 90 % of them (≥ 33). The intervention rate is
+     reported only.
+  2. **Candidates, in this order; the first that passes is the training filter:** ① the
+     corrected CBF-QP with the α chosen by the α rule of section 4.1 on K; ② a short-horizon
+     NMPC filter: N = 10 (0.5 s), the same model and filter formulation, η_k and b_k of (b)
+     for k ≤ 10 (the rollout errors do not depend on the horizon length); ③ another design
+     (e.g. a CBF with axle-point barriers) – only with a further amendment, reviewed.
+     ① and ② are evaluated on K only; ② is timed as in the benchmark (three laps of
+     `B_s1_500k`, one process and 24 processes).
+  3. **If none passes,** M cannot have a filter in training. Option written now: M is
+     dropped and S1 becomes F against P (median seeds of F and P, F then with five seeds as
+     well); this change needs its own review before Part C.
+  4. **Budget:** an N = 10 NMPC filter at ~70–100 ms per call adds ~1.5–2 h to each M run
+     (75 000 vector steps), within the 2.5× budget of the benchmark rule.
+  5. The CBF-QP stays the secondary filter of Part B (its α by the α rule on K), reported with
+     whatever it does to completions (A5.2).
