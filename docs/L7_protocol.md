@@ -61,6 +61,10 @@ worktree pinned to one commit (`results/L7/RUN_COMMIT`).
 | calibration K | 10 cars `sample_plants(nominal, 10, seed 7)` × τ ∈ {0, 30, 60 ms}, + disturbance seeds 3000–3009 | 40 | risk estimates (b) and (c) |
 | acceptance A | 5 cars `sample_plants(nominal, 5, seed 8)` × τ ∈ {0, 30, 60 ms}, + disturbance seeds 4000–4004 | 20 | the acceptance test of each risk estimate |
 
+**T1 at τ = 0 and T2 are the L5 test laps** (amendment A2): `sample_plants` draws in order
+from one generator, so the 25 cars of T1 are the L5 test cars 0–24, and T2 is the L5 L3 test
+set; Part A diagnoses the L5 runs on exactly these laps (and on L5 test cars 25–50).
+
 The sets are disjoint from each other and from the training distribution's samples
 (training draws cars and disturbances from the L2/L3 ranges with its own seeds). V extends
 the L5 validation set by the lag conditions (L5 policies were selected on its 20 laps
@@ -104,7 +108,10 @@ of the blind spots during training (A1) is on the logged validation outcomes.
 A has no pass/fail criterion; it is reported before Part C starts. Part C's design is
 fixed in this protocol now; if the diagnosis points to a mechanism that Part C does not
 address, a change is written as an amendment, reviewed, and labelled as decided after
-seeing A.
+seeing A – **subject to amendment A2**: every finding of A is reported in two parts, (i) on
+laps outside the L7 test sets (L5 test cars 25–50, and for A1 the L5 validation outcomes)
+and (ii) on laps of T1 (τ = 0) and T2 (L5 test cars 0–24, L3 seeds 0–29); only findings
+of (i) may change Part C.
 
 ## 4. Part B – the safety layer
 
@@ -351,6 +358,31 @@ Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4
   section 9. **The protocol is binding from this revision on.**
 
 ## Amendments
+
+* **A2 (2026-10-14), review finding A-M1 after 1b99c0e, committed before any Part A result
+  was read or analysed:** Part A's laps include the L7 test laps (T1 at τ = 0 = L5 test cars
+  0–24, T2 = L5 L3 seeds 0–29; `sample_plants` draws in order). To keep S1 and H-B clean:
+  1. Part A reports every finding in two parts: (i) L5 test cars 25–50 (26 cars, not in
+     T1) and, for A1, the L5 validation outcomes (`validation.json`); (ii) the laps of T1
+     (τ = 0) and T2. Both are reported.
+  2. A change of Part C after A may rest only on findings of (i). A mechanism seen only in
+     (ii) is reported, not acted upon.
+  3. If Part C is nevertheless changed on findings of (ii), S1 and S2 on T1 + T2 are labelled
+     "design informed by test laps" and are no longer primary evidence; they are then also
+     reported on a new disjoint set: `sample_plants(nominal, 24, seed 10)` × τ ∈ {0, 30,
+     60 ms} + disturbance seeds 6000–6029.
+  4. Section 2 notes that T1 (τ = 0) and T2 are the L5 test laps, diagnosed in Part A.
+
+  **State when A2 was committed (disclosure):** the drive of Part A (`scripts/l7_partA.py
+  drive --all`, worktree pinned at 1b99c0e) was running; no result file of it existed yet.
+  Before it, a smoke test of the script in the main checkout re-drove two laps of `B_s2`
+  (the final checkpoint) that failed in L5 – test cars 0 and 3, **both in T1 (τ = 0)**. What
+  I saw: both left the track at 4 132 / 4 131 m, as in L5's `test.json`; the largest true
+  friction usage 1.34 / 1.30; at the last decision before the failure the critic's Q was
+  9.0 / 3.9 against a realised return of −49.4 / −49.6; at mid-lap Q 25.8 against 40.4.
+  I mentioned "the critic did not anticipate the crash" to the user. These two laps belong to
+  part (ii); no change of Part C may rest on them. The failure positions of all L5 test laps
+  were known before (L5 `test.json`, docs/L5.md: blind spots at 4 130 m etc.).
 
 * **A1 (2026-10-14), after the confirmation of 58ad42e (reviewer's nit 1):** section 9, the
   cost of the checkpoint laps per run given per group (the total of 7.6 CPU-h was right,
