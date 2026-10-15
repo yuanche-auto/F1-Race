@@ -79,11 +79,12 @@ def changed(u_out, u) -> bool:
 class NMPCFilter:
     """``FrenetMPC(mode="filter")`` around the proposal (A3.2, A3.3). ``tau_model``: lag in
     the model (estimate (a)); ``eta`` / ``backoff``: static tightening ((b)); ``band``: a
-    function (filter, xf) -> (eta_k, b_k) evaluated at every decision ((c))."""
+    function (filter, xf) -> (eta_k, b_k) evaluated at every decision ((c)). ``horizon``: the
+    number of 50 ms stages (30; 10 for candidate (2) of the training filter, A6)."""
 
     def __init__(self, track: Track, model: DynVehicle, ref_plan, tau_model: float | None = None,
-                 eta=0.95, backoff=None, band=None, record: bool = True):
-        self.mpc = FrenetMPC(track, model, ref_from_plan(ref_plan), mode="filter", N=N, dt=MPC_DT,
+                 eta=0.95, backoff=None, band=None, record: bool = True, horizon: int = N):
+        self.mpc = FrenetMPC(track, model, ref_from_plan(ref_plan), mode="filter", N=horizon, dt=MPC_DT,
                              eta=eta, backoff=backoff, steer_lag=tau_model,
                              param_tightening=band is not None)
         self.conv = MPCController(self.mpc, DT, tc_eta=None)     # its frenet() only

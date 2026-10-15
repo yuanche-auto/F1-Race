@@ -108,13 +108,13 @@ def job_lap(args):
             res = pickle.load(open(spec["c_file"], "rb"))
             band = band_c(res, np.asarray(spec["q"], float))
         filt = NMPCFilter(track, model, plan(0.95), tau_model=tau_m, eta=spec.get("eta", 0.95),
-                          backoff=spec.get("backoff"), band=band)
+                          backoff=spec.get("backoff"), band=band, horizon=spec.get("horizon", 30))
     elif spec is not None and spec["kind"] == "cbf":
         filt = CBFFilter(track, nom, alpha=spec["alpha"], margin=spec["margin"], eta=spec["eta"])
     t0 = time.time()
     r = run_lap(pol, env, case, filt)
     out = outcome(case, r, wall_s=time.time() - t0, filter=None if spec is None else
-                  {k: spec[k] for k in ("kind", "estimate", "alpha") if k in spec})
+                  {k: spec[k] for k in ("kind", "estimate", "alpha", "horizon") if k in spec})
     if record_dir and filt is not None and getattr(filt, "predictions", None):
         d = Path(record_dir)
         d.mkdir(parents=True, exist_ok=True)
@@ -343,7 +343,8 @@ def main() -> None:
     ap.add_argument("--workers", type=int, default=20)
     ap.add_argument("--cases", default=None, help="comma-separated case names (default: the whole set)")
     a = ap.parse_args()
-    names = [c["name"] for c in cases(a.set)] if a.what not in ("kfilter", "calibrate", "cbf-alpha") \
+    names = [c["name"] for c in cases(a.set)] if a.what not in ("kfilter", "calibrate", "cbf-alpha",
+                                                                 "train-filter-nmpc10") \
         else [c["name"] for c in cases("K")]
     if a.cases:
         names = a.cases.split(",")
@@ -391,6 +392,15 @@ def main() -> None:
         rep = coverage_report(a.estimate, a.set)
         (base / f"accept_{a.estimate}_coverage.json").write_text(json.dumps(rep, indent=1))
         print(json.dumps(rep), flush=True)
+    elif a.what == "train-filter-nmpc10":
+        # A6 candidate (2): the N = 10 NMPC filter with (b) for k <= 10, on the K laps that
+        # B_s1_500k completes without a filter (criterion (ii)); no predictions recorded
+        est = json.loads((OUT / "K" / "estimates.json").read_text())
+        nf = {r["case"]: r for r in load_jsonl(OUT / "K" / "nofilter.jsonl")}
+        ok = [n for n in names if nf[n]["completed"]]
+        spec = {"kind": "nmpc", "estimate": "b", "horizon": 10, "eta": est["b"]["eta"][:10],
+                "backoff": est["b"]["backoff"][:11]}
+        pool_run(job_lap, [(n, spec, None) for n in ok], OUT / "K" / "train_nmpc10.jsonl", a.workers)
     elif a.what == "acceptance-report":
         acceptance_report(a.set)
     else:
