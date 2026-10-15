@@ -91,6 +91,7 @@ class NMPCFilter:
         self.u_prev = np.zeros(3)
         self.d_hat = self.c_prev = self.t_prev = None
         self.predictions: list[tuple] = []                       # (t, X, U, b_k)
+        self.states: list[tuple] = []                            # (t, y, road-wheel angle estimate)
         self.stats: list[dict] = []
 
     def observe(self, t: float, y: np.ndarray) -> None:
@@ -115,6 +116,7 @@ class NMPCFilter:
         return np.concatenate([self.conv.frenet(ya), [float(y[6])]])
 
     def filter(self, t: float, y: np.ndarray, u_des: np.ndarray):
+        self.states.append((t, np.array(y, float), self.d_hat))
         xf = self.frenet(y)
         kw = {}
         b = self.mpc.backoff
@@ -316,6 +318,53 @@ def prediction_samples(track: Track, model: DynVehicle, predictions, log, comple
     return out
 
 
+def rollout_errors(track: Track, model: DynVehicle, tau: float | None, states, log) -> dict:
+    """Open-loop predictions of the filter's model under the inputs actually applied: from
+    the filter's state at each decision (measured y; with a lag model the road-wheel angle
+    estimate), the model is stepped with the logged 10 ms inputs; per stage k (50 ms) the
+    larger axle-point lateral error against the true car, and the model's usage of the axle
+    closer to its limit against the true usage of that axle. Returns arrays over
+    (decision, k) pairs like ``prediction_samples``."""
+    from ..sim.dynamic import DynamicSim
+    from ..sim.lagged import LaggedSim
+
+    step = int(round(MPC_DT / DT))
+    Kn = len(log.t)
+    lag = tau is not None and tau > 0
+    sim = LaggedSim(track, model, tau, DT, observe="command") if lag else DynamicSim(track, model, DT)
+    n_ax = axle_n(track, model, log.state)
+    arms = np.array([model.L - model.lr, -model.lr])
+    cols = {"k": [], "e_n": [], "u_pred": [], "u_real": [], "t": [], "p": []}
+    for p_i, (t, y, d_hat) in enumerate(states):
+        j0 = int(round(t / DT))
+        if j0 >= Kn:
+            continue
+        x = np.concatenate([y[:6], [d_hat if d_hat is not None else y[6], y[6]]]) if lag else np.array(y[:7], float)
+        for k in range(1, N + 1):
+            jk = j0 + k * step
+            if jk >= Kn:
+                break
+            up = []
+            for j in range(j0 + (k - 1) * step, jk):
+                u = log.inputs[j]
+                up.append(sim._forces(x, u)[1])
+                x = sim.step(x, u)
+            c, s_ = math.cos(x[2]), math.sin(x[2])
+            _, n = track.project(x[0] + arms * c, x[1] + arms * s_)
+            upm = np.max(np.array(up), axis=0)
+            ax = int(np.argmax(upm))
+            cols["k"].append(k)
+            cols["e_n"].append(float(np.abs(n_ax[jk] - n).max()))
+            cols["u_pred"].append(float(upm[ax]))
+            cols["u_real"].append(float(np.max(log.usage[jk - step:jk, ax])))
+            cols["t"].append(t)
+            cols["p"].append(p_i)
+    out = {k: np.array(v) for k, v in cols.items()}
+    out["f"] = np.ones(len(out["k"]))
+    out.update({"t_end": float(log.t[-1]), "completed": bool(log.completed)})
+    return out
+
+
 def horizon_ok(smp: dict) -> np.ndarray:
     """A3.8: predictions whose horizon reaches into the last 2 s of a failed lap dropped."""
     if smp["completed"]:
@@ -449,4 +498,4 @@ def band_c(res_model, q, eta0: float = 0.95):
 
 
 __all__ = ["cases", "SETS", "run_lap", "NMPCFilter", "CBFFilter", "explore_lap", "prediction_samples",
-           "horizon_ok", "estimate_a", "residual_for", "sigma_k", "conformal_q", "conformal_qk", "band_c", "changed"]
+           "horizon_ok", "rollout_errors", "estimate_a", "residual_for", "sigma_k", "conformal_q", "conformal_qk", "band_c", "changed"]

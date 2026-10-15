@@ -443,3 +443,30 @@ Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4
   9. **CBF-QP α rule (section 4.1)**: margin = b_10 of (b) (the axle-point band; the filter
      adds half the width and the front-axle swing), friction factor η_10 of (b); the laps
      are the K laps that `B_s1_500k` completes without a filter, at α ∈ {1, 2, 4, 8}.
+
+* **A4 (2026-10-15), the errors that (b), (c) and the acceptance test use – found in the code
+  smoke test on set X (seed 99, not a protocol set), before any K, A or Part B run.**
+  Section 4.2 and A3.4 / A3.5 / A3.8 calibrate and test on "the filter's own k-step
+  predictions". For a safety filter these are not forecasts of the closed loop: only the
+  first input is tied to the proposal, the later stages carry only the smoothness cost, so
+  the predicted trajectory is the filter's backup plan, which is executed only while the
+  filter keeps intervening (~20–35 % of the decisions uncalibrated, ≤ 10 % targeted). Its
+  "error" measures backup plan against policy, not the model's uncertainty. On three X laps
+  of 10–20 s (`B_s1_500k`, default filter): k = 20 P95 of the own-prediction error 3.9 / 4.2 /
+  7.1 m (no lag / 30 ms / L3 disturbances), against 0.32 / 0.43 / 1.7 m for the error of the
+  filter's model rolled out under the inputs actually applied; (c) gave q̂_k of 160–290 and
+  back-offs of hundreds of metres. Bands calibrated on the former would make the filter
+  intervene almost always, and no estimate could pass the acceptance test.
+  **Change:** the prediction error used by (b), (c) and the acceptance test is the error of
+  the filter's model rolled out open loop from the filter's state at each decision (the
+  measured state; with a lag model, the road-wheel angle estimate) **under the 10 ms inputs
+  actually applied** to the car, at the stage times k · 50 ms: the larger axle-point lateral
+  error against the true car, and the model's usage of the axle closer to its limit against
+  the true usage of that axle (`experiments.l7.rollout_errors`). This is what a back-off must
+  cover if the backup plan is executed – model and disturbance error –, and it is the
+  quantity (a) already uses on its exploration lap (A3.6), so (a), (b) and (c) are now
+  calibrated and tested on the same kind of error. Unchanged: the laps (K, A), the cut of
+  the last 2 s of failed laps, ε = 0.05, u_threshold 0.85, the per-stage q̂_k, the acceptance
+  band 90–98 % at k = 10 and 20; for (c), σ(k) is evaluated along the filter's prediction
+  (as in use, A3.5), the error is the rollout's. Near the limit (A3.8): the rollout's usage at
+  stage k ≥ 0.85. The smoke laps on X are used for nothing else (no parameter set on them).
