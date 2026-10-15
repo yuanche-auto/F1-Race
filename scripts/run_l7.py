@@ -273,6 +273,66 @@ def coverage_report(est_name: str, set_name: str = "A") -> dict:
     return out
 
 
+def acceptance_report(set_name: str = "A") -> dict:
+    """Section 4.2 with A3.8, A4, A5: per estimate the coverage (criterion) and, reported only,
+    the completions with the filter (and without, B_s1_500k), the intervention rate, the
+    solver failures, the share of decisions using slack and the share of decisions whose
+    back-offs leave a corridor narrower than the car at some stage (track width minus both
+    back-offs minus the car's width < 0; it leaves out the constraint's 0.3 m margin and the
+    chord, so it underestimates the narrow corridors); then the main estimate (the first of
+    (a), (b), (c) whose coverage passes)."""
+    from f1race.dynamics import DynVehicle
+    from f1race.track import Track
+
+    track, veh = Track.load("Spielberg"), DynVehicle()
+    base = OUT / set_name
+    nf = load_jsonl(base / "nofilter.jsonl")
+    out = {"nofilter_completed": sum(r["completed"] for r in nf), "laps": len(nf), "estimates": {}}
+    md = [f"# L7 acceptance test on {set_name}", "",
+          f"B_s1_500k without a filter: {out['nofilter_completed']} of {len(nf)} laps completed.", "",
+          "| estimate | coverage k=10 | coverage k=20 | passes | without the 2 s cut k=10 / 20 (dropped) | near the limit k=10 / 20 | "
+          "completed (of laps) | intervention rate | fallbacks | slack decisions | corridor < car width |",
+          "|---|---|---|---|---|---|---|---|---|---|---|"]
+    main = None
+    for e in ("a", "b", "c"):
+        laps = load_jsonl(base / f"accept_{e}.jsonl")
+        if not laps:
+            continue
+        cov = coverage_report(e, set_name)
+        dec = sum(r.get("decisions", 0) for r in laps)
+        narrow = n_dec = 0
+        for c in laps:
+            f = base / f"accept_{e}" / f"{c['case']}.npz"
+            if not f.exists():
+                continue
+            z = np.load(f)
+            S, B = z["X"][:, 1:, 0].astype(float), z["b"][:, 1:].astype(float)
+            W = track.interp(track.w_left, S % track.length) + track.interp(track.w_right, S % track.length)
+            narrow += int(np.any(W - 2 * B - 2 * veh.half_width < 0, axis=1).sum())
+            n_dec += len(S)
+        rec = {"coverage": cov, "completed": sum(r["completed"] for r in laps), "laps": len(laps),
+               "intervention_rate": sum(r.get("interventions", 0) for r in laps) / max(dec, 1),
+               "fallbacks": sum(r.get("filter_failures", 0) for r in laps),
+               "slack_share": sum(r.get("slack_decisions", 0) for r in laps) / max(dec, 1),
+               "narrow_share": narrow / max(n_dec, 1)}
+        out["estimates"][e] = rec
+        if main is None and cov["accepted"]:
+            main = e
+        c10, c20 = cov["10"], cov["20"]
+        md.append(f"| ({e}) | {c10['coverage']:.3f} ({c10['n']}) | {c20['coverage']:.3f} ({c20['n']}) | "
+                  f"{'yes' if cov['accepted'] else 'no'} | {c10['coverage_all']:.3f} / {c20['coverage_all']:.3f} "
+                  f"({c10['dropped']} / {c20['dropped']}) | {c10['coverage_near']:.3f} ({c10['n_near']}) / "
+                  f"{c20['coverage_near']:.3f} ({c20['n_near']}) | {rec['completed']} ({rec['laps']}) | "
+                  f"{rec['intervention_rate']:.3f} | {rec['fallbacks']} | {rec['slack_share']:.3f} | {rec['narrow_share']:.3f} |")
+    out["main_estimate"] = main
+    md += ["", f"Main estimate (first of (a), (b), (c) that passes 90–98 % at k = 10 and 20): "
+           f"**{main if main else 'none – the filters are evaluated with (b), labelled \'risk estimate not accepted\''}**."]
+    (base / "acceptance.json").write_text(json.dumps(out, indent=1))
+    (base / "acceptance.md").write_text(NL.join(md) + NL, encoding="utf-8")
+    print(f"written {base / 'acceptance.md'}", flush=True)
+    return out
+
+
 def main() -> None:
     from f1race.experiments.l7 import cases
 
@@ -331,6 +391,8 @@ def main() -> None:
         rep = coverage_report(a.estimate, a.set)
         (base / f"accept_{a.estimate}_coverage.json").write_text(json.dumps(rep, indent=1))
         print(json.dumps(rep), flush=True)
+    elif a.what == "acceptance-report":
+        acceptance_report(a.set)
     else:
         raise SystemExit(f"unknown step {a.what}")
 
