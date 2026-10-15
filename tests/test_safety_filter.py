@@ -48,11 +48,11 @@ def test_width_terms_of_the_barrier_are_bounded(track):
     g, d = width_derivatives(track)
     v_max = 90.0                                    # above the plans' top speed
     for side in ("left", "right"):
-        d1, d2 = d[side]
+        d1, d2, smooth = d[side]
         assert np.abs(d2).max() * v_max**2 < 10.0
         assert np.abs(d1).max() * v_max < 5.0
-        w = track.interp(track.w_left if side == "left" else track.w_right, g)
-        assert abs(np.cumsum(d1).max() - np.cumsum(d1).min()) * (g[1] - g[0]) < (w.max() - w.min()) + 1.0
+        raw = track.interp(track.w_left if side == "left" else track.w_right, g)
+        assert np.abs(smooth - raw).max() < 1.0
 
 
 @pytest.mark.slow

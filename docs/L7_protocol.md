@@ -314,8 +314,8 @@ acceptance test of the main risk estimate; T1 + T2 with and without the main fil
    The laps at the checkpoints: an RL lap takes ~2 s here (measured, `B_s1_500k`, one
    process), ~3 s with the CBF-QP (1 600 calls × 0.6 ms); V (40 laps) for all 13 runs, C
    (40) for F and M (8 runs), V with the training filter for M (S2, 5 runs), each at 12
-   checkpoints: 13·12·40·2 s + 8·12·40·2 s + 5·12·40·3 s ≈ 7.6 CPU-h, i.e. ~0.5–0.8 h per
-   run if the laps run inside the training process, less on spare cores.
+   checkpoints: 13·12·40·2 s + 8·12·40·2 s + 5·12·40·3 s ≈ 7.6 CPU-h; per run, if the laps
+   run inside the training process: P ~0.27 h, F ~0.53 h, M ~0.93 h (amendment A1).
 4. Second environment, report, review.
 
 Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4 here).
@@ -352,4 +352,8 @@ Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4
 
 ## Amendments
 
-(none yet)
+* **A1 (2026-10-14), after the confirmation of 58ad42e (reviewer's nit 1):** section 9, the
+  cost of the checkpoint laps per run given per group (the total of 7.6 CPU-h was right,
+  "0.5–0.8 h per run" was too low for M). No run affected. Also nit 2: the width test now
+  asserts max |smoothed − raw width| < 1 m directly (code: `width_derivatives` returns the
+  smoothed width as well; the filter's numbers are unchanged).

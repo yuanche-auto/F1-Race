@@ -56,7 +56,8 @@ BIG = 1e20          # finite stand-in for infinity (DAQP needs finite bounds)
 
 def width_derivatives(track: Track, sigma: float = 20.0, h: float = 1.0):
     """w' and w'' of both track widths, smoothed along the lap by a periodic Gaussian of
-    standard deviation ``sigma`` [m], on a grid of about ``h`` m (grid, {side: (w', w'')})."""
+    standard deviation ``sigma`` [m], on a grid of about ``h`` m:
+    (grid, {side: (w', w'', smoothed width)})."""
     n = int(round(track.length / h))
     h = track.length / n
     g = np.arange(n) * h
@@ -68,7 +69,7 @@ def width_derivatives(track: Track, sigma: float = 20.0, h: float = 1.0):
     for side, w0 in (("left", track.w_left), ("right", track.w_right)):
         w = np.fft.irfft(np.fft.rfft(track.interp(w0, g)) * np.fft.rfft(ker), n)
         out[side] = ((np.roll(w, -1) - np.roll(w, 1)) / (2 * h),
-                     (np.roll(w, -1) - 2 * w + np.roll(w, 1)) / h**2)
+                     (np.roll(w, -1) - 2 * w + np.roll(w, 1)) / h**2, w)
     return g, out
 
 
@@ -115,7 +116,7 @@ class CBFQPFilter:
         """Width (raw), w' and w'' (smoothed) of one side at arclength s."""
         tr, g = self.track, self.width_grid
         w = float(tr.interp(tr.w_left if side == "left" else tr.w_right, s))
-        d1, d2 = self.width_derivs[side]
+        d1, d2, _ = self.width_derivs[side]
         sm = s % tr.length
         return w, float(np.interp(sm, g, d1, period=tr.length)), float(np.interp(sm, g, d2, period=tr.length))
 
