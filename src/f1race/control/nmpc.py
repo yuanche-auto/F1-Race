@@ -14,6 +14,11 @@ Two objectives on the same constraints:
 * ``mode="mpcc"``: maximise the progress s_N - s_0 (no reference line); the
   terminal speed is bounded by a reference speed profile so that the short
   horizon cannot run into a corner it can no longer brake for.
+* ``mode="filter"`` (predictive safety filter, prepared for L7): stay as close as
+  possible to a proposed first input ``u_des`` (another controller's command, a
+  parameter of each solve) subject to the same constraints, with the terminal speed
+  bounded by the reference speed as in MPCC; the later inputs only carry the small
+  smoothness cost.
 
 Constraints: friction ellipse of both axles (factor ``eta``), slip angles within
 the tyre peak, power, steering angle and rate, and track limits for the front
@@ -23,7 +28,11 @@ disturbance: the solution is unchanged while the constraints can be met, and
 the slip angles at stage 0, fixed by the measured state, can no longer make the
 problem infeasible (``soft_limits=False`` restores the hard version, kept as an
 ablation). Multiple shooting with one RK4 step per MPC step, IPOPT with warm
-start; if a solve fails, the shifted previous plan is applied instead.
+start; if a solve fails, the shifted previous plan is applied instead. Options added
+before L7 (``retry``, ``fallback``): a failed solve is retried twice with a second
+IPOPT instance (no warm-started multipliers, default barrier start) – from the shifted
+plan and from a rollout of its inputs – and the fallback can brake within the friction
+left instead of following the shifted plan's longitudinal forces.
 
 ``steer_lag=tau`` (L6) gives the model a first-order steering actuator: the state
 gets the commanded angle as an eighth entry, the input moves it, and the angle
@@ -49,6 +58,8 @@ from ..track import Track
 from .dyn_tracking import traction_limit
 
 FS = 1e4
+BRAKE_REQUEST = 1e5        # [N] fallback "brake": more than any axle can take; the
+                           # controller's traction control limits it to the friction left
 
 
 def _periodic_interpolant(name: str, s: np.ndarray, f: np.ndarray, length: float, laps: int = 3):
@@ -63,7 +74,7 @@ class FrenetMPC:
                  N: int = 30, dt: float = 0.05, eta=0.97, margin: float = 0.3,
                  weights: dict | None = None, max_iter: int = 500, soft_limits: bool | int = True,
                  backoff=None, steer_lag: float | None = None, residual=None,
-                 param_tightening: bool = False):
+                 param_tightening: bool = False, retry: bool = False, fallback: str = "shift"):
         """``ref``: arrays over centre-line arclength ref['s'] with keys n, xi, vx (the
         reference trajectory, e.g. an L1 plan; in MPCC mode only vx is used, as a
         terminal speed bound). ``eta``: friction factor, a number or one value per
@@ -74,7 +85,9 @@ class FrenetMPC:
         the measured state only). ``backoff``: optional extra distance [m] kept from the
         track edges per predicted state (N + 1 values, the first unused), e.g.
         stochastic constraint tightening (L3). ``steer_lag``: steering actuator time
-        constant [s] of the model (L6); the state is then 8-dim (see module doc)."""
+        constant [s] of the model (L6); the state is then 8-dim (see module doc).
+        ``retry`` and ``fallback``: what happens when a solve fails (see ``solve``; the
+        defaults keep the behaviour of L2–L6)."""
         eta_k = np.broadcast_to(np.asarray(eta, float), (N,)).copy()
         b_k = np.zeros(N + 1) if backoff is None else np.asarray(backoff, float)
         self.track, self.veh, self.mode, self.N, self.dt = track, veh, mode, N, dt
@@ -84,7 +97,8 @@ class FrenetMPC:
         self.nxs = nx
         self.eta, self.eta_k, self.backoff = eta, eta_k, b_k
         w = {"n": 1.0, "xi": 10.0, "v": 0.2, "drate": 1.0, "dF": 0.5, "slack": 1e4, "progress": 1.0,
-             "limit_slack": 1e6}           # physics limits cost far more than track limits
+             "limit_slack": 1e6,           # physics limits cost far more than track limits
+             "filter_drate": 100.0, "filter_F": 100.0}   # filter: per (rad/s)^2 and (1e4 N)^2
         w.update(weights or {})
         self.w = w
         L = track.length
@@ -132,7 +146,7 @@ class FrenetMPC:
         S = ca.SX.sym("S", 2, N + 1)                  # track-limit slacks (front, rear points)
         n_soft = N if soft_limits is True else int(soft_limits)
         T = ca.SX.sym("T", 4, n_soft)                   # ellipse (front, rear) and slip slacks
-        npar = nx + 3 + (2 * N + 1 if self.param_tightening else 0)
+        npar = nx + 3 + (2 * N + 1 if self.param_tightening else 0) + (3 if mode == "filter" else 0)
         P = ca.SX.sym("P", npar)                      # initial state, previous input (, eta_k, b_k)
         pt = self.param_tightening
         g, lbg, ubg = [], [], []
@@ -173,7 +187,12 @@ class FrenetMPC:
                     lbg += [-ca.inf, -ca.inf, -veh.alpha_peak, -veh.alpha_peak, -ca.inf]
                     ubg += [eta_k[i]**2, eta_k[i]**2, veh.alpha_peak, veh.alpha_peak, veh.P_max]
             du = U[:, i] - (P[nx:nx + 3] if i == 0 else U[:, i - 1])
-            J += h * (w["drate"] * U[0, i] ** 2 + w["dF"] * (du[1] ** 2 + du[2] ** 2) / h)
+            if mode == "filter" and i == 0:             # deviation from the proposed input
+                ud = P[npar - 3:npar]
+                J += w["filter_drate"] * (U[0, 0] - ud[0]) ** 2 + w["filter_F"] * ((U[1, 0] - ud[1]) ** 2
+                                                                                   + (U[2, 0] - ud[2]) ** 2)
+            else:
+                J += h * (w["drate"] * U[0, i] ** 2 + w["dF"] * (du[1] ** 2 + du[2] ** 2) / h)
         for i in range(1, N + 1):
             si, ni, xii = X[0, i], X[1, i], X[2, i]
             ki = kap(si)
@@ -193,6 +212,7 @@ class FrenetMPC:
                           + w["v"] * (X[3, i] - vref(si)) ** 2)
         if mode == "mpcc":
             J += -w["progress"] * (X[0, N] - X[0, 0])
+        if mode in ("mpcc", "filter"):
             g.append(X[3, N] - vref(X[0, N])); lbg.append(-ca.inf); ubg.append(0.0)
 
         z = ca.vertcat(ca.vec(X), ca.vec(U), ca.vec(S), ca.vec(T))
@@ -223,6 +243,11 @@ class FrenetMPC:
             "ipopt": {"print_level": 0, "max_iter": max_iter, "tol": 1e-4, "acceptable_tol": 1e-3,
                       "acceptable_iter": 5, "warm_start_init_point": "yes", "mu_init": 1e-3,
                       "linear_solver": "mumps"}})
+        if fallback not in ("shift", "brake"):
+            raise ValueError(fallback)
+        self.retry, self.fallback_mode = bool(retry), fallback
+        self._nlp, self._step, self._max_iter = nlp, step, max_iter
+        self._solver2 = None
         self.z = None
         self.lam_g = None
         self.lam_x = None
@@ -240,9 +265,17 @@ class FrenetMPC:
             z[self.Ui[i]] = [0.0, u0[1] / FS, u0[2] / FS]
         return z
 
-    def solve(self, x0: np.ndarray, u_prev: np.ndarray, eta=None, backoff=None) -> tuple[np.ndarray, dict]:
+    def solve(self, x0: np.ndarray, u_prev: np.ndarray, eta=None, backoff=None,
+              u_des=None) -> tuple[np.ndarray, dict]:
         """``eta`` (N) and ``backoff`` (N + 1): per-solve tightening (``param_tightening``
-        only; default: the values given at construction)."""
+        only; default: the values given at construction). ``u_des``: the proposed input
+        (``mode="filter"`` only; rate in rad/s, forces in N).
+
+        A failed solve (no ``Solve_Succeeded`` / ``Solved_To_Acceptable_Level``) applies
+        the shifted previous plan. With ``retry`` it is first retried with a second IPOPT
+        instance (``solver_cold``) from the shifted plan and then from a rollout of its
+        inputs; with ``fallback="brake"`` the fallback keeps the shifted plan's steering
+        rate and brakes with traction control instead of its longitudinal forces."""
         p = np.concatenate([x0, [u_prev[0], u_prev[1] / FS, u_prev[2] / FS]])
         if self.param_tightening:
             e = self.eta_k if eta is None else np.asarray(eta, float)
@@ -250,6 +283,12 @@ class FrenetMPC:
             p = np.concatenate([p, e, b])
         elif eta is not None or backoff is not None:
             raise ValueError("per-solve tightening needs param_tightening=True")
+        if self.mode == "filter":
+            if u_des is None:
+                raise ValueError("the filter needs u_des")
+            p = np.concatenate([p, [u_des[0], u_des[1] / FS, u_des[2] / FS]])
+        elif u_des is not None:
+            raise ValueError("u_des only in mode='filter'")
         if self.z is None:
             z0 = self.initial_guess(x0, u_prev)
             args = {}
@@ -265,6 +304,17 @@ class FrenetMPC:
         sol = self.solver(x0=z0, p=p, lbx=self.lbz, ubx=self.ubz, lbg=self.lbg, ubg=self.ubg, **args)
         st = self.solver.stats()
         ok = st["return_status"] in ("Solve_Succeeded", "Solved_To_Acceptable_Level")
+        attempts = [st["return_status"]]
+        iters = st["iter_count"]
+        if not ok and self.z is not None and self.retry:
+            for name, guess in (("fresh barrier", lambda: z0), ("rollout", lambda: self.rollout(z0, x0))):
+                sol = self.solver_cold()(x0=guess(), p=p, lbx=self.lbz, ubx=self.ubz, lbg=self.lbg, ubg=self.ubg)
+                st = self.solver_cold().stats()
+                attempts.append(f"{name}: {st['return_status']}")
+                iters += st["iter_count"]
+                ok = st["return_status"] in ("Solve_Succeeded", "Solved_To_Acceptable_Level")
+                if ok:
+                    break
         fallback = False
         if ok or self.z is None:
             z = np.asarray(sol["x"]).ravel()
@@ -273,12 +323,36 @@ class FrenetMPC:
             z, fallback = z0, True
             self.z = z0
         u = z[self.Ui[0]] * np.array([1.0, FS, FS])
-        info = {"status": st["return_status"], "iter": st["iter_count"], "time": time.time() - t0,
+        if fallback and self.fallback_mode == "brake":  # brake within what the tyres have left
+            u = np.array([u[0], 0.0, -BRAKE_REQUEST])
+        info = {"status": st["return_status"], "iter": iters, "time": time.time() - t0,
                 "slack": float(np.max(z[self.Si])), "fallback": fallback,
                 "limit_slack": float(np.max(z[self.Ti])) if self.Ti.size else 0.0}
+        if self.retry:
+            info["attempts"] = attempts
         self.stats.append(info)
         return u, info
 
+    def solver_cold(self):
+        """A second IPOPT instance on the same NLP for retries: no warm-started
+        multipliers, IPOPT's default initial barrier parameter, twice the iterations."""
+        if self._solver2 is None:
+            self._solver2 = ca.nlpsol("mpc_retry", "ipopt", self._nlp, {
+                "print_time": False,
+                "ipopt": {"print_level": 0, "max_iter": 2 * self._max_iter, "tol": 1e-4,
+                          "acceptable_tol": 1e-3, "acceptable_iter": 5, "linear_solver": "mumps"}})
+        return self._solver2
+
+    def rollout(self, z0: np.ndarray, x0: np.ndarray) -> np.ndarray:
+        """``z0`` with its states replaced by the model's response to its inputs from x0
+        (the dynamics constraints then hold exactly at the initial guess)."""
+        z = z0.copy()
+        xs = np.asarray(x0, float)
+        z[self.Xi[0]] = xs
+        for i in range(self.N):
+            xs = np.asarray(self._step(xs, z[self.Ui[i]])).ravel()
+            z[self.Xi[i + 1]] = xs
+        return z
 
     def prediction(self) -> tuple[np.ndarray, np.ndarray]:
         """Predicted states (N + 1, 7 or 8) and inputs (N, 3, forces in N) of the last solve."""

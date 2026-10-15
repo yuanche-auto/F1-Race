@@ -62,6 +62,19 @@ hash, merge to `main` and push only after APPROVE. Workflow: [docs/workflow.md](
 | L4 learning / adaptation | `layer/L4` → `main` | **approved, pushed** to origin/main 2026-10-08 | round 1: APPROVE (minors fixed in 66f6cb3) |
 | L5 reinforcement learning | `layer/L5` → `main` | **approved, pushed** to origin/main 2026-10-09 | APPROVE after the multi-seed redo (wording minors fixed in 4fec887) |
 | L6 model mismatch with a structural error | `layer/L6` → `main` | **approved, pushed** to origin/main 2026-10-10 | results review: APPROVE (minors m1–m4 fixed) |
+| Preparation for L7 (numerical robustness, filter benchmark) | `prep/robustness` | review requested | – |
+| L7 reliable learning | `layer/L7` (from `prep/robustness`) | protocol draft, **no L7 run before the reviewer confirms it** | – |
+
+## Preparation for L7 (2026-10-14, new machine)
+
+In the order the user set: (1) STATUS for the new machine (above); (2) numerical robustness –
+the L6 failures located and reproduced first, then fixed: [docs/prep_robustness.md](docs/prep_robustness.md)
+(`FrenetMPC(retry=True, fallback="brake")`, `planning/replan.py`; `scripts/prep_robustness.py`,
+results in `results/prep`); (3) the solve-time benchmark of the candidate safety filters, decision
+rule written before measuring: [docs/L7_filter_benchmark.md](docs/L7_filter_benchmark.md)
+(`control/safety_filter.py`, `FrenetMPC(mode="filter")`, `scripts/l7_filter_bench.py`, results in
+`results/L7_bench`); (4) the L7 protocol: [docs/L7_protocol.md](docs/L7_protocol.md); (5) L7 runs
+start only after the reviewer has confirmed the protocol.
 
 ## L0 summary
 
