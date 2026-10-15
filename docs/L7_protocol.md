@@ -340,6 +340,9 @@ Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4
 * The intermediate L5 checkpoints are missing (Part A).
 * The filters check only the first 10 ms command of each 50 ms decision; when they do not
   intervene, the tracker's next four 10 ms commands are not checked (A3.2, a3-m1).
+* Honest back-offs can be wide at the end of the horizon; the corridor they leave can become
+  narrow, so that the filter's NLP is hard to solve or the filter intervenes very often –
+  seen on the smoke laps on X (A5).
 * The bands are calibrated on the model's error under the inputs actually applied (A4), an
   approximation of the error when the backup plan is executed: the backup plan's inputs
   (towards braking, more cautious) differ from the policy's, and the model error depends
@@ -494,3 +497,18 @@ Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4
   band 90–98 % at k = 10 and 20; for (c), σ(k) is evaluated along the filter's prediction
   (as in use, A3.5), the error is the rollout's. Near the limit (A3.8): the rollout's usage at
   stage k ≥ 0.85. The smoke laps on X are used for nothing else (no parameter set on them).
+* **A5 (2026-10-15), what the acceptance test reports besides coverage – committed while K
+  was running and before any lap of A (exploration or filtered) was run.**
+  1. For each estimate (a), (b), (c), the acceptance laps on A also report: laps completed
+     with the filter using that estimate (of 20), the intervention rate, the solver failures
+     (fallbacks), the share of decisions that use slack (p-m5), and – as a diagnostic – the
+     share of decisions where the back-offs leave a corridor narrower than the car (track
+     width minus both back-offs minus the car's width < 0 at some stage). All of this is
+     reported only; it is not a criterion. The choice of the main estimate (the first in the
+     order (a), (b), (c) whose coverage passes) is unchanged.
+  2. If the main estimate passes but the filtered laps on A complete fewer than the laps of
+     `B_s1_500k` without a filter, neither the choice of the main estimate nor Part B
+     changes: that is the question H-B answers (a filter can cost completions), and it is
+     reported as a result of Part B.
+  3. Known limitation added to section 10 (the smoke laps on X showed it; no other
+     conclusion is drawn from them).
