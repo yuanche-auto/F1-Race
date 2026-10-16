@@ -237,7 +237,9 @@ Baselines on the same laps: the bare tracker under the main filter (no learning)
 lag-aware NMPC with τ and parameters identified (the best model-based controller of L6;
 L6 failure handling, plans by `replan_robust`), the L3 SMPC, the nominal NMPC. Each on
 T1 + T2 (105 laps), without and with the main filter, and with the CBF-QP (secondary); the
-secondary risk estimates where the compute allows (listed in the report).
+secondary risk estimates where the compute allows (listed in the report). *(A8: the bare
+tracker runs without a filter, with the main filter and with the CBF-QP; the three
+model-based baselines run without a filter only.)*
 
 ## 5. Part C – training from failures and interventions
 
@@ -297,7 +299,10 @@ For every policy and baseline, on T1 and T2 separately and together:
 * **false interventions**: for a sample of up to 200 interventions per policy (all if
   fewer), the unfiltered policy is rolled out from the state at the intervention for 3 s;
   if it neither leaves the track nor spins, the intervention counts as false. Rate and
-  interval reported;
+  interval reported. *(A8, pe-M1: the sample is stratified along the lap – on every lap the
+  first intervention after each j · L / 8, j = 0 … 7, at most eight per lap – and 200 per
+  policy are drawn uniformly from all of them with seed 0; the rate is also reported per
+  eighth of the lap.)*
 * **lap-time cost of the filter**: lap with minus lap without, on laps both complete;
 * **decisions the filter cannot guarantee**, separately from solver failures (p-m5): the
   NMPC filter is softly constrained, so a converged solve may still use track or friction
@@ -585,3 +590,20 @@ Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4
      in L7 (section 10).
   Part B: the background that calibrated filters cost laps on K is added to section 4.3; the
   main filter is not changed for it.
+* **A8 (2026-10-16), the baselines under the filters and the sample of false interventions –
+  committed before any result of T1 / T2 was read; the runs without a filter (`none`) and
+  the three model-based baselines had been started from 375a418 (they are needed under
+  either reading).**
+  1. Section 4.3 says the baselines run "each … without and with the main filter, and with
+     the CBF-QP". Reading fixed now: the bare tracker runs under all three conditions (it is
+     driven in the same loop as the policies, and S3 needs it under the main filter); the
+     three model-based baselines (nominal NMPC, L3 SMPC, lag-aware NMPC with τ and
+     parameters identified) run without a filter only. Reason: no pre-registered test (H-B,
+     S1, S3) uses a filtered MPC baseline, and putting an NMPC filter of the same model around
+     an MPC has no clear meaning; they serve as the model-based reference.
+  2. False interventions (pe-M1 of the review of 375a418): the first sampling – the first
+     intervention after 0 m and after L / 2, the first 200 in case order – would have sampled
+     almost only turn 1 and the first corner after half the lap, and the first cars of T1.
+     Changed before any filtered T1 / T2 lap: on every lap the first intervention after each
+     j · L / 8 (j = 0 … 7), at most eight per lap; per policy 200 drawn uniformly from all with
+     seed 0 (all if fewer); the rate also reported per eighth of the lap.
