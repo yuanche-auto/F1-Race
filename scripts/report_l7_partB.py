@@ -8,7 +8,8 @@ with rl_cbf.jsonl, rl_main.jsonl and dec/.
 
 Fixed before any result was read (2026-10-16):
 * H-B: over the nine final L5 checkpoints, the paired numbers of completed T1 + T2 laps with
-  and without the main filter, Wilcoxon signed-rank (two-sided, zero differences dropped);
+  and without the main filter, Wilcoxon signed-rank (two-sided, zero differences dropped) with
+  the exact distribution (mid-ranks, all 2^n sign assignments; review pr-M1);
   H-B holds if p is below its Holm level and the median difference is positive. The Holm
   level depends on S1 (Part C); here p is reported with both possible levels (0.025 / 0.05).
 * False interventions (A8): per policy 200 snapshots drawn uniformly with seed 0 from all
@@ -48,12 +49,36 @@ def ci(k: int, n: int) -> tuple[float, float]:
 
 
 def mcnemar(a: dict, b: dict) -> tuple[int, int, float]:
+    """Exact McNemar: two-sided binomial test on the discordant pairs (also S1 of Part C)."""
     from scipy.stats import binomtest
 
     keys = sorted(set(a) & set(b))
     x = sum(a[k] and not b[k] for k in keys)
     y = sum(b[k] and not a[k] for k in keys)
     return x, y, float(binomtest(min(x, y), x + y).pvalue) if x + y else 1.0
+
+
+def exact_signed_rank(diffs) -> dict:
+    """The Wilcoxon signed-rank test with the exact distribution (review pr-M1): zero
+    differences dropped, mid-ranks for ties, the null distribution of W+ by enumerating all
+    2^n sign assignments of the ranks; two-sided p = P(|W+ - n(n+1)/4| >= |W+_obs - n(n+1)/4|)."""
+    import itertools
+
+    from scipy.stats import rankdata
+
+    d = np.asarray([x for x in diffs if x != 0], float)
+    n = len(d)
+    if n == 0:
+        return {"n": 0, "W_plus": 0.0, "p": 1.0}
+    r = rankdata(np.abs(d))                               # mid-ranks
+    w_obs = float(r[d > 0].sum())
+    mu = n * (n + 1) / 4.0
+    dev = abs(w_obs - mu)
+    hits = 0
+    for signs in itertools.product((0, 1), repeat=n):
+        w = float(np.dot(signs, r))
+        hits += abs(w - mu) >= dev - 1e-9
+    return {"n": n, "W_plus": w_obs, "p": hits / 2 ** n}
 
 
 def attribute(dec: dict) -> str:
@@ -109,12 +134,16 @@ def main() -> None:
     diffs = [sum(comp[(p, "main")].values()) - sum(comp[(p, "none")].values()) for p in FINALS
              if (p, "main") in comp and (p, "none") in comp]
     nz = [d for d in diffs if d != 0]
-    p_hb = float(wilcoxon(nz).pvalue) if len(nz) else 1.0
-    res["H-B"] = {"differences": diffs, "nonzero": len(nz), "median": float(np.median(diffs)) if diffs else None,
-                  "p": p_hb, "holds_at_0.025": bool(p_hb < 0.025 and np.median(diffs) > 0),
+    ex = exact_signed_rank(diffs)                       # the decision uses the exact p (pr-M1)
+    p_hb = ex["p"]
+    p_scipy = float(wilcoxon(nz).pvalue) if len(nz) else 1.0
+    res["H-B"] = {"differences": diffs, "nonzero": ex["n"], "W_plus": ex["W_plus"],
+                  "median": float(np.median(diffs)) if diffs else None, "p_exact": p_hb,
+                  "p_scipy_reference": p_scipy, "holds_at_0.025": bool(p_hb < 0.025 and np.median(diffs) > 0),
                   "holds_at_0.05": bool(p_hb < 0.05 and np.median(diffs) > 0)}
     md += ["", "## H-B (pre-registered): nine final checkpoints, completed T1 + T2 laps with minus without the main filter", "",
-           f"Differences: {diffs}; non-zero {len(nz)}; median {res['H-B']['median']}; Wilcoxon two-sided p = {p_hb:.4g}. "
+           f"Differences: {diffs}; non-zero n = {ex['n']}; W+ = {ex['W_plus']}; median {res['H-B']['median']}; "
+           f"exact signed-rank two-sided p = {p_hb:.4g} (scipy, for reference: {p_scipy:.4g}). "
            f"Holds at 0.025: {res['H-B']['holds_at_0.025']}; at 0.05: {res['H-B']['holds_at_0.05']} "
            "(the level follows Holm with S1, Part C).", "",
            "Per policy, exact McNemar (completed only with the filter : only without):", "",
