@@ -8,7 +8,9 @@ environments, a checkpoint every 50 000) on the L7 training distribution
 (``rl.curriculum.L7TrainEnv``: four environments with a steering lag drawn per episode, four
 with the L3 disturbances). Group F: 30 % of the episodes start 50-150 m before a position of
 the failure pool – the last 200 failure positions: the failures of the curriculum laps C (40
-laps, without a filter) run at every checkpoint, and the crash points of training episodes.
+laps, without a filter; off track or spin, not a time limit) run at every checkpoint, and the
+crash points of training episodes; every record of training.json holds the pool's
+composition (pool_train, pool_C).
 At every checkpoint the validation laps V (40) are run for the selection (all runs).
 
 Seeds: SAC seed = the run's seed (1-5); environment seeds 70 000 + 1 000 seed + rank (disjoint
@@ -122,7 +124,8 @@ def main() -> None:
         eps = list(model.ep_info_buffer)
         rec = {"steps": done, "minutes": (time.time() - t0) / 60.0,
                "ep_reward_mean": float(sum(e["r"] for e in eps) / max(len(eps), 1)),
-               "ep_len_mean": float(sum(e["l"] for e in eps) / max(len(eps), 1)), "pool": len(pool)}
+               "ep_len_mean": float(sum(e["l"] for e in eps) / max(len(eps), 1)), "pool": len(pool),
+               "pool_train": sum(src == "train" for src, _ in pool), "pool_C": sum(src == "C" for src, _ in pool)}
         if done % a.every == 0:
             k = done // 1000
             model.save(out / f"{name}_{k}k")
@@ -137,11 +140,13 @@ def main() -> None:
                 with open(out / "curriculum.jsonl", "a", encoding="utf-8") as fo:
                     for r in cur:
                         fo.write(json.dumps({"checkpoint": f"{name}_{k}k", **r}) + NL)
-                for r in cur:
-                    if not r["completed"]:
+                for r in cur:                         # off track / spin only, as the crash points (pc-m1)
+                    if r["stop_reason"] in ("off track", "spin"):
                         pool.append(("C", r["s_end"] % L))
                 pool_file.write_text(json.dumps([p for _, p in pool]))
-                rec["cur_failures"] = sum(not r["completed"] for r in cur)
+                rec["cur_failures"] = sum(r["stop_reason"] in ("off track", "spin") for r in cur)
+                rec["pool_train"] = sum(src == "train" for src, _ in pool)
+                rec["pool_C"] = sum(src == "C" for src, _ in pool)
             rec["eval_minutes"] = (time.time() - t1) / 60.0
         log.append(rec)
         print(json.dumps(rec), flush=True)
