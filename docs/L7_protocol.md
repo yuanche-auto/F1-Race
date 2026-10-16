@@ -159,7 +159,8 @@ and in evaluation the filters receive the command after the plant's actuator lim
 (`DynamicSim.apply_limits` / `LaggedSim.apply_limits`: steering rate and angle, engine
 power), as in the benchmark – otherwise the tracker's raw rate and drive commands, which
 the plant clips anyway, would count as interventions (62 % in the benchmark's smoke runs),
-and M's intervention cost and every intervention rate would include them (r-m3). Every
+and every intervention rate (and M's intervention cost; M dropped by A7) would include
+them (r-m3). Every
 NMPC-based controller and filter of L7 uses the NMPC failure handling chosen by the rule
 in [prep_robustness.md](prep_robustness.md) section 4.3 – the L6 settings (for the rule's
 timing see there) – and every re-plan `replan_robust`; fallbacks are counted and reported.
