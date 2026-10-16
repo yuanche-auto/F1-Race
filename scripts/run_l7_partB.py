@@ -11,9 +11,9 @@ Policies: the nine final L5 checkpoints (``results/L5/multiseed/<g>_s<k>.zip``),
 the NMPC filter (N = 30) with the main estimate (b) (``results/L7/K/estimates.json``);
 ``cbf`` = the CBF-QP with alpha = 8 (the alpha rule, A6) and margin / friction factor b_10 /
 eta_10 of (b). With a filter, the episode state is kept at the first intervention at or after
-0 m and 2 158 m (half the lap) and the unfiltered policy is rolled out from it for 3 s
-(false interventions, section 6; at most two per lap, 210 per policy, the first 200 in case
-order are reported). Records: results/L7/partB/rl_<condition>.jsonl, per-lap decision logs
+each j L / 8 (j = 0 ... 7) and the unfiltered policy is rolled out from it for 3 s (false
+interventions, section 6 and A8: at most eight per lap; the report draws 200 per policy
+uniformly with seed 0 and gives the rate per eighth of the lap). Records: results/L7/partB/rl_<condition>.jsonl, per-lap decision logs
 results/L7/partB/dec/<condition>/<policy>__<case>.npz (for the attribution of failures,
 pb-m2); baselines.jsonl.
 """
@@ -82,7 +82,7 @@ def job_rl(args):
         filt = CBFFilter(track, DynVehicle(), alpha=CBF_ALPHA, margin=est["backoff"][10], eta=est["eta"][10])
     t0 = time.time()
     L = track.length
-    r = run_lap(pol, env, case, filt, snap_at=(0.0, L / 2) if filt is not None else ())
+    r = run_lap(pol, env, case, filt, snap_at=tuple(j * L / 8 for j in range(8)) if filt is not None else ())
     rec = {"job": f"{policy_name}|{condition}|{case_name}", "policy": policy_name, "condition": condition,
            "case": case_name, "set": case["set"], "car": case["car"], "tau": case["tau"],
            "dist_seed": case["dist_seed"], "completed": r["completed"], "lap_time": r["lap_time"],
