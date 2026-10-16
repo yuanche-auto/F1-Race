@@ -33,7 +33,11 @@ and does the reliability come from the safety layer or from the policy?*
   reported.
 * **H-C (transfer, the candidate method):** training that feeds failures and filter
   interventions back (section 5) makes the policy *without* the filter more reliable than
-  plain training under otherwise identical conditions.
+  plain training under otherwise identical conditions. **Narrowed by amendment A7:** no
+  training filter passed A6, so L7 tests only the feedback of failures – *training that
+  starts episodes before failure positions (F) makes the policy without the filter more
+  reliable than plain training (P)*. The feedback of filter interventions is not tested in
+  L7 and is reported as untested, with the reason.
 
 H-C is the falsifiable claim. If it fails while H-B holds, the conclusion is pre-written:
 *the safety layer works but does not transfer reliability to the policy* – a result that
@@ -56,8 +60,8 @@ worktree pinned to one commit (`results/L7/RUN_COMMIT`).
 |---|---|---|---|
 | **test T1** | the 25 cars of L4/L6 (`sample_plants(nominal, 24, seed 0)`) × steering lag τ ∈ {0, 30, 60 ms}, controllers see their own commanded angle (L6 main condition) | 75 | all conclusions |
 | **test T2** | nominal car, L3 disturbances, seeds 0–29 | 30 | all conclusions |
-| validation V | 10 cars `sample_plants(nominal, 10, seed 1)` (no nominal car) × τ ∈ {0, 30, 60 ms}, + 10 disturbance seeds 2000–2009 | 40 | checkpoint selection (secondary results only); S2 |
-| curriculum C | 10 cars `sample_plants(nominal, 10, seed 9)` × τ ∈ {0, 30, 60 ms}, + disturbance seeds 5000–5009 | 40 | failure positions for the episode starts of F and M (section 5) – so that V stays independent of their training |
+| validation V | 10 cars `sample_plants(nominal, 10, seed 1)` (no nominal car) × τ ∈ {0, 30, 60 ms}, + 10 disturbance seeds 2000–2009 | 40 | checkpoint selection (secondary results only); (S2, dropped by A7) |
+| curriculum C | 10 cars `sample_plants(nominal, 10, seed 9)` × τ ∈ {0, 30, 60 ms}, + disturbance seeds 5000–5009 | 40 | failure positions for the episode starts of F (section 5; M dropped by A7) – so that V stays independent of its training |
 | calibration K | 10 cars `sample_plants(nominal, 10, seed 7)` × τ ∈ {0, 30, 60 ms}, + disturbance seeds 3000–3009 | 40 | risk estimates (b) and (c) |
 | acceptance A | 5 cars `sample_plants(nominal, 5, seed 8)` × τ ∈ {0, 30, 60 ms}, + disturbance seeds 4000–4004 | 20 | the acceptance test of each risk estimate |
 
@@ -130,8 +134,9 @@ NMPC filter 219–235 ms mean, 0.75–1.08 s P99). Roles (P-M2 of the review):
   no back-offs) it changes ~26 % of the decisions, mostly the longitudinal force where the
   policy uses more than its hard friction limit; its η_k and back-offs come from the risk
   estimate, not from this default.
-* **The CBF-QP is the training filter** (`control/safety_filter.py`, qpOASES; Part C) and
-  the **secondary** evaluation filter (reported next to the main one, no hypothesis rests
+* **The CBF-QP was to be the training filter** (`control/safety_filter.py`, qpOASES; Part C)
+  – it failed the criteria of A6, and after A7 there is no training filter – and is the
+  **secondary** evaluation filter (reported next to the main one, no hypothesis rests
   on it). It was revised after the review (P-M1): a_y and a_x are bounded by what the
   steering (rate and angle limits within one 10 ms step) and the engine can reach, the
   friction polygon has its own slack, and the barrier margin includes the front axle swung
@@ -221,6 +226,12 @@ differences the smallest attainable two-sided p is 2/2ⁿ: n = 6 gives 0.031, n 
 is tested at 0.05.) Per policy: exact McNemar with /
 without (secondary, all ten reported).
 
+Background for H-B, from the calibration set K (A6, A7): calibrated filters cost laps there
+– the N = 10 NMPC filter with (b) completed 26 of the 36 K laps that `B_s1_500k` completes
+alone, the corrected CBF-QP none at any α – while the uncalibrated N = 30 filter (η = 0.95,
+no back-offs) completed 36 of 40 like the policy alone. The main filter is not changed for
+that: how it does on T1 + T2 is the question H-B answers.
+
 Baselines on the same laps: the bare tracker under the main filter (no learning), the
 lag-aware NMPC with τ and parameters identified (the best model-based controller of L6;
 L6 failure handling, plans by `replan_robust`), the L3 SMPC, the nominal NMPC. Each on
@@ -229,9 +240,11 @@ secondary risk estimates where the compute allows (listed in the report).
 
 ## 5. Part C – training from failures and interventions
 
-Three groups – **P and M with five training seeds each, F with three** (13 runs; P-M3 of
-the review: the L5 seeds of one group differed from 19 to 50 of 51 completed laps, so two
-median seeds of three could differ by seed luck alone) – all with the L5 group-B settings
+**After amendment A7: two groups, P and F, five training seeds each (10 runs; M dropped,
+see below).** Originally three groups – P and M with five training seeds each, F with three
+(13 runs; P-M3 of the review: the L5 seeds of one group differed from 19 to 50 of 51
+completed laps, so two median seeds of three could differ by seed luck alone) – all with the
+L5 group-B settings
 (SAC, history of 8 observations + last action, 40 s episodes, steering offset ±0.02 rad, speed
 factor 0.85–1.05, 600 000 decisions in 8 parallel environments, a checkpoint every 50 000)
 and the **L7 training distribution**: cars from the L2 ranges; in the four environments
@@ -243,24 +256,24 @@ without L3 disturbances a steering lag τ = 0 with probability 1/3, otherwise τ
 |---|---|
 | **P** plain | nothing (the control: L5 training on the L7 distribution) |
 | **F** failure starts | 30 % of the episodes start 50–150 m before a recent failure position: failures of the curriculum laps C run without filter at every checkpoint, and crash points of training episodes; the last 200 positions |
-| **M** method | F, plus the training filter (CBF-QP, calibrated as in section 4.1) in the loop: the environment applies the filtered command, the reward has a cost 0.5 · (changed decision) per intervention, and the positions of interventions join the failure positions for the episode starts |
+| ~~**M** method~~ (dropped by A7: no training filter passed A6) | F, plus the training filter (CBF-QP, calibrated as in section 4.1) in the loop: the environment applies the filtered command, the reward has a cost 0.5 · (changed decision) per intervention, and the positions of interventions join the failure positions for the episode starts |
 
 F separates the curriculum from the filter. The cost weight 0.5 (about the progress
 reward of one decision at racing speed: 2.5 m / 5) and the 30 % are fixed here, not tuned.
 
 **Pre-registered success criteria** (on T1 + T2, 105 laps):
 
-* **S1 (primary): the policy without the filter.** The median seed of M (of five; ranking
-  rule of L5: completed test laps without filter, ties by lower mean lap time, then lower
-  seed), final checkpoint, completes significantly more test laps *without the filter*
-  than the median seed of P (of five) – exact McNemar, two-sided, at the level of section 7.
-  Reported with it, to show the scope: the 5 × 5 pairwise comparisons of the final
-  checkpoints (how many M seeds beat how many P seeds without the filter).
-* **S2: interventions fall during training.** On the validation laps V with the training
-  filter, the intervention rate of the M checkpoints decreases with training (Spearman
-  ρ < 0, p < 0.05) for at least 3 of the 5 seeds.
-* **S3: not worse than the filtered MPC alone.** The median seed of M *with the main
-  filter* completes at least as many test laps as the bare tracker under the main filter
+* **S1 (primary): the policy without the filter.** *(A7: F in place of M.)* The median seed
+  of F (of five; ranking rule of L5: completed test laps without filter, ties by lower mean
+  lap time, then lower seed), final checkpoint, completes significantly more test laps
+  *without the filter* than the median seed of P (of five) – exact McNemar, two-sided, at the
+  level of section 7 (with H-B under Holm). Reported with it, to show the scope: the 5 × 5
+  pairwise comparisons of the final checkpoints (how many F seeds beat how many P seeds
+  without the filter).
+* ~~**S2: interventions fall during training.**~~ *Dropped by A7: there is no training
+  filter, so there are no interventions during training.*
+* **S3: not worse than the filtered MPC alone.** *(A7: F in place of M.)* The median seed of
+  F *with the main filter* completes at least as many test laps as the bare tracker under the main filter
   and, on the laps both complete, is not slower than the lag-aware NMPC baseline by more
   than the RL gap of L5 and L6: 4.6 s per lap (L5 section 3: the selected policy 4.6 s
   slower than the nominal NMPC on the L2 cars and L3 seeds both complete; L6 section 3: the
@@ -269,9 +282,9 @@ reward of one decision at racing speed: 2.5 m / 5) and the 30 % are fixed here, 
   ROADMAP's example "not slower than the safety-filtered MPC alone" is made concrete this
   way: "not slower" literally would fail before any run.)
 
-L7's method claim holds if S1 and S2 hold; S3 is reported. Secondary: F vs P (S1 with F
-in place of M), all final checkpoints (the unselected distribution, reported first),
-the validation-selected checkpoint per group, M vs P with the main filter.
+L7's method claim (after A7: the failure-start curriculum) holds if S1 holds; S3 is
+reported. Secondary: all final checkpoints (the unselected distribution, reported first),
+the validation-selected checkpoint per group, F vs P with the main filter.
 
 ## 6. Always reported
 
@@ -310,7 +323,7 @@ a claim of significance across the family.
 A Python 3.11 environment with the RL extras (`.venv-311-rl`, built from the lock file
 with Python 3.11 versions; to be set up before the first main result) re-runs: the
 acceptance test of the main risk estimate; T1 + T2 with and without the main filter for
-`B_s1_500k` and for the median seeds of P and M (S1). Training itself is not bit-reproducible
+`B_s1_500k` and for the median seeds of P and F (S1, after A7). Training itself is not bit-reproducible
 (parallel environments); evaluation is, and differences are reported as in L6 section 7.
 
 ## 9. Compute and order
@@ -318,13 +331,15 @@ acceptance test of the main risk estimate; T1 + T2 with and without the main fil
 1. Part A (CPU, RL evaluation only; ~1 day including the report).
 2. Risk estimates (a)–(c) and their acceptance test; Part B evaluation (~1–2 days: the
    NMPC filter costs about 0.15–0.3 s per decision, ~1 600 decisions per lap).
-3. Part C training (13 runs, three at a time on 24 cores, ~2.5–3 h each: ~13–15 h; the
-   CBF-QP adds < 1 %), validation and curriculum laps at every checkpoint, test evaluation.
+3. Part C training – after A7: 10 runs (P and F, five seeds each), three at a time on 24
+   cores, ~2.5–3 h each plus the checkpoint laps (P ~0.27 h, F ~0.53 h): ~11–13 h; validation
+   (all runs) and curriculum laps (F) at every checkpoint, test evaluation. (Before A7: 13
+   runs including M with the training filter.)
    The laps at the checkpoints: an RL lap takes ~2 s here (measured, `B_s1_500k`, one
-   process), ~3 s with the CBF-QP (1 600 calls × 0.6 ms); V (40 laps) for all 13 runs, C
-   (40) for F and M (8 runs), V with the training filter for M (S2, 5 runs), each at 12
-   checkpoints: 13·12·40·2 s + 8·12·40·2 s + 5·12·40·3 s ≈ 7.6 CPU-h; per run, if the laps
-   run inside the training process: P ~0.27 h, F ~0.53 h, M ~0.93 h (amendment A1).
+   process). After A7: V (40 laps) for all 10 runs, C (40) for the 5 F runs, each at 12
+   checkpoints: 10·12·40·2 s + 5·12·40·2 s ≈ 4 CPU-h. (Before A7, amendment A1: V for all
+   13 runs, C for F and M, V with the training filter for M – ≈ 7.6 CPU-h; per run P
+   ~0.27 h, F ~0.53 h, M ~0.93 h.)
 4. Second environment, report, review.
 
 Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4 here).
@@ -340,6 +355,11 @@ Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4
 * The intermediate L5 checkpoints are missing (Part A).
 * The filters check only the first 10 ms command of each 50 ms decision; when they do not
   intervene, the tracker's next four 10 ms commands are not checked (A3.2, a3-m1).
+* L7 does not test whether feeding the safety filter's interventions back into training
+  helps (H-C narrowed, A7): no training filter met A6's criteria on K. A training filter that
+  is fast enough and does not cost completions (candidate ③ of A6, e.g. a CBF with a
+  single-track model, axle-point barriers and a speed barrier, or a backup-controller filter)
+  is work after L7.
 * Honest back-offs can be wide at the end of the horizon; the corridor they leave can become
   narrow, so that the filter's NLP is hard to solve or the filter intervenes very often –
   seen on the smoke laps on X (A5).
@@ -538,3 +558,29 @@ Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4
      (75 000 vector steps), within the 2.5× budget of the benchmark rule.
   5. The CBF-QP stays the secondary filter of Part B (its α by the α rule on K), reported with
      whatever it does to completions (A5.2).
+* **A7 (2026-10-16), M dropped, H-C narrowed to the failure-start curriculum – agreed with
+  the user, after A6's candidates ① and ② failed on K.**
+  1. **H-C narrowed** to: does the failure-start curriculum (F) make the policy without the
+     filter more reliable than plain training (P)? The feedback of filter interventions is
+     not tested in L7; the report lists it as untested. Reason: no training filter met A6's
+     criteria – on the 36 K laps that `B_s1_500k` completes alone, the corrected CBF-QP
+     completed 0 at every α (α rule: no α with ≤ 10 % interventions, so α = 8; criterion (ii)
+     at α = 8: 0 of 36), the N = 10 NMPC filter with (b) completed 26 (criterion (ii) needs
+     33); criterion (i) was not timed for ② since (ii) had failed. Interventions are counted
+     per decision (interventions / decisions; the per-lap mean is reported alongside).
+  2. **S1 = the median seed of F against the median seed of P**, five seeds each, exact
+     McNemar on T1 + T2 without the filter, with H-B under Holm; the 5 × 5 pairwise
+     comparisons reported.
+  3. **S2 dropped** (no training filter, no interventions in training); the method claim
+     rests on S1 alone.
+  4. **S3 with the median seed of F** (with the main filter); otherwise unchanged.
+  5. **Training: 10 runs**, P and F with five seeds each; budget in section 9.
+  6. **Cause and timeline:** ① and ② were evaluated on K (the calibration set) only; no test
+     lap was used. The A acceptance laps had finished (all 20 laps of (a), (b), (c), no error
+     records, the acceptance report written) when this amendment was committed; **none of
+     their coverages or outcomes had been read** (only the files' line counts and error
+     counts were checked), so A has no part in this decision.
+  7. **Candidate ③ of A6** (another design of a training filter) is work after L7, not done
+     in L7 (section 10).
+  Part B: the background that calibrated filters cost laps on K is added to section 4.3; the
+  main filter is not changed for it.
