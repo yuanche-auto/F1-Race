@@ -173,10 +173,73 @@ def make_env(steer_mode: str = "angle"):
     return RacingEnv(plan(0.95), randomize_plant=False, history=8, steer_mode=steer_mode, observe="command")
 
 
-def run_lap(policy, env, case: dict, filt=None, t_max: float = 120.0) -> dict:
+def env_snapshot(env) -> dict:
+    """The episode state of a ``RacingEnv`` (to restart a rollout from it, section 6)."""
+    import copy
+
+    ctl = env.ctl
+    snap = {"x": np.array(env.x, float), "t": env.t, "progress": env.progress, "s_prev": env.s_prev,
+            "hist": [h.copy() for h in env._hist], "last_a": env._last_a.copy(),
+            "meas": np.array(env._meas, float),
+            "ctl": {"idx": ctl.idx, "d_offset": ctl.d_offset, "v_scale": ctl.v_scale, "last": ctl.last},
+            "hint": list(env.margins.hint),
+            "noise_rng": copy.deepcopy(env.noise_rng) if env.noise is not None else None}
+    sim = env.sim
+    if hasattr(sim, "f_now"):                        # StochasticSim: time, friction, gust
+        snap["sim"] = {"t": sim.t, "f_now": sim.f_now, "gust_now": sim.gust_now, "veh": sim.veh}
+    return snap
+
+
+def env_restore(env, case: dict, snap: dict) -> np.ndarray:
+    """Reset ``env`` to ``case`` and overwrite its episode state with ``snap``; returns the
+    observation."""
+    opts = {"plant": case["plant"], "start_index": 0, "disturbances": case["dist_seed"] is not None,
+            "dist_seed": case["dist_seed"] or 0}
+    if case["tau"] > 0:
+        opts["steer_lag"] = case["tau"]
+    env.reset(options=opts)
+    env.x, env.t, env.progress, env.s_prev = snap["x"].copy(), snap["t"], snap["progress"], snap["s_prev"]
+    env._hist = [h.copy() for h in snap["hist"]]
+    env._last_a = snap["last_a"].copy()
+    env._meas = snap["meas"].copy()
+    for k, v in snap["ctl"].items():
+        setattr(env.ctl, k, v)
+    env.margins.hint = list(snap["hint"])
+    if snap["noise_rng"] is not None:
+        import copy
+
+        env.noise_rng = copy.deepcopy(snap["noise_rng"])
+    if "sim" in snap:
+        for k, v in snap["sim"].items():
+            setattr(env.sim, k, v)
+    return env._stacked()
+
+
+def rollout_unfiltered(policy, env, case: dict, snap: dict, decisions: int = 60) -> dict:
+    """Section 6, false interventions: from the state at an intervention, the policy without
+    the filter for ``decisions`` decisions (3 s); a crash means the intervention was needed."""
+    obs = env_restore(env, case, snap)
+    episode_s = env.episode_s
+    env.episode_s = snap["t"] + decisions * env.dt * env.ctrl_every + 1.0
+    reason, n = "", 0
+    for n in range(1, decisions + 1):
+        a = np.zeros(2) if policy is None else policy(obs)
+        obs, _, term, trunc, info = env.step(a)
+        if term:
+            reason = info.get("reason", "crash")
+            break
+        if trunc or env.progress >= env.track.length:
+            break
+    env.episode_s = episode_s
+    return {"crashed": bool(reason), "reason": reason, "decisions": n}
+
+
+def run_lap(policy, env, case: dict, filt=None, t_max: float = 120.0, snap_at=()) -> dict:
     """One flying lap of tracker + ``policy`` (obs -> action; None: the bare tracker) on
     ``case``, with ``filt`` in the loop (A3.2). Returns the outcome, the log of the true car
-    (10 ms: t, state[:7], applied input, true usage) and the filter's record."""
+    (10 ms: t, state[:7], applied input, true usage) and the filter's record. ``snap_at``:
+    lap distances [m]; at the first intervention at or after each, the episode state before
+    that decision is kept (``snapshots``) for the false-intervention rollouts (section 6)."""
     episode_s = env.episode_s
     env.episode_s = t_max
     opts = {"plant": case["plant"], "start_index": 0, "disturbances": case["dist_seed"] is not None,
@@ -217,10 +280,16 @@ def run_lap(policy, env, case: dict, filt=None, t_max: float = 120.0) -> dict:
     sim.apply_limits = apply_limits
     L = env.track.length
     done, info = False, {}
+    pending = sorted(snap_at)
+    snapshots = []
     while not done:
         a = np.zeros(2) if policy is None else policy(obs)
+        snap = env_snapshot(env) if pending and env.progress >= pending[0] else None
+        n_dec = len(dec["t"])
         st["first"], st["held"] = True, None
         obs, _, term, trunc, info = env.step(a)
+        if snap is not None and len(dec["changed"]) > n_dec and dec["changed"][-1]:
+            snapshots.append({"at": pending.pop(0), "progress": snap["progress"], "snap": snap})
         done = term or trunc or env.progress >= L
     env.episode_s = episode_s
     sim.apply_limits = orig
@@ -231,7 +300,7 @@ def run_lap(policy, env, case: dict, filt=None, t_max: float = 120.0) -> dict:
     return {"completed": bool(completed), "lap_time": float(lap) if completed else float("nan"),
             "stop_reason": "lap completed" if completed else (info.get("reason") or "time limit"),
             "distance": float(env.progress), "log": log,
-            "decisions": {k: np.array(v) for k, v in dec.items()}}
+            "decisions": {k: np.array(v) for k, v in dec.items()}, "snapshots": snapshots}
 
 
 # ---------------------------------------------------------------- exploration laps
@@ -268,6 +337,71 @@ def explore_lap(case: dict, track: Track) -> SimpleNamespace:
     return SimpleNamespace(t=r.t, state=state, inputs=r.inputs, usage=r.usage, noisy=noisy,
                            completed=bool(r.completed), stop_reason=r.stop_reason,
                            distance=float(r.progress[-1]))
+
+
+def make_sim_for(case: dict, track: Track, seed_offset: int = 0):
+    """The case's simulator: L3 disturbances (with measurement noise), the steering lag
+    (commanded angle observed), or neither."""
+    from ..sim.dynamic import DynamicSim
+    from ..sim.lagged import LaggedSim
+    from ..sim.stochastic import StochasticSim, sample_disturbances
+
+    if case["dist_seed"] is not None:
+        return StochasticSim(track, case["plant"], sample_disturbances(track, case["dist_seed"] + seed_offset,
+                                                                       t_max=150.0), DT)
+    if case["tau"] > 0:
+        return LaggedSim(track, case["plant"], case["tau"], DT, observe="command")
+    return DynamicSim(track, case["plant"], DT)
+
+
+def drive_baseline(case: dict, kind: str, track: Track) -> dict:
+    """The model-based baselines of section 4.3 on one case, without a filter: ``nmpc`` (L2,
+    nominal model, 5 % plan, eta 0.95), ``smpc`` (L3 SMPC eps 0.01, calibration unchanged, as
+    in L6), ``lag_identified`` (the best of L6: tau and the parameters identified from the
+    case's exploration lap – least squares without noise, the EKF with the lag under the L3
+    noise –, the plan by ``replan_robust``, the lag-aware NMPC). L6 failure handling."""
+    import json
+
+    from ..control.nmpc import LagAwareMPCController
+    from ..planning.replan import replan_robust
+    from .l1 import dyn_reference
+    from .l2 import x0_from_plan
+    from .l6 import replan_slot, smpc_spec
+
+    nom = DynVehicle()
+    out = {}
+    if kind == "nmpc":
+        o, model, ctl_kind, eta, backoff, lag = plan(0.95), nom, "mpc", 0.95, None, None
+    elif kind == "smpc":
+        sp = smpc_spec(json.loads((ROOT / "results" / "L3" / "calibration.json").read_text()))
+        o, model, ctl_kind, eta, backoff, lag = plan(sp["plan_eta"]), nom, "mpc", sp["eta"], sp["backoff"], None
+    elif kind == "lag_identified":
+        ex = explore_lap(case, track)
+        ident = identify_case(ex)
+        out["identification"] = {"tau": ident["tau"], "theta": ident["theta"], "explore_completed": ex.completed,
+                                 "explore_distance": ex.distance}
+        with replan_slot():
+            o, log = replan_robust(track, ident["vehicle"], [("nominal plan", plan(0.95)), ("ideal plan", plan(1.0))],
+                                   0.95, nominal=nom)
+        out["plan_log"] = log
+        if o is None:
+            out.update({"completed": False, "stop_reason": "plan failed", "lap_time": float("nan"), "distance": 0.0})
+            return out
+        out["plan_lap_time"] = o.lap_time
+        model, ctl_kind, eta, backoff, lag = ident["vehicle"], "lag", 0.95, None, max(ident["tau"], 1e-4)
+    else:
+        raise ValueError(kind)
+    path, _ = dyn_reference(track, model, o)
+    mpc = FrenetMPC(track, model, ref_from_plan(o), mode="track", N=N, dt=MPC_DT, eta=eta, backoff=backoff,
+                    steer_lag=lag)
+    ctl = LagAwareMPCController(mpc, DT, observe="command") if ctl_kind == "lag" else MPCController(mpc, DT)
+    sim = make_sim_for(case, track)
+    r = sim.run(ctl, x0_from_plan(o, path), t_max=120.0)
+    st = mpc.stats
+    out.update({"completed": bool(r.completed), "lap_time": float(r.lap_time), "stop_reason": r.stop_reason,
+                "distance": float(r.progress[-1]), "fallbacks": int(sum(x["fallback"] for x in st)),
+                "solves": len(st), "solve_ms_mean": float(np.mean([x["time"] for x in st]) * 1e3) if st else None})
+    return out
 
 
 def cut(run, t0: float, t1: float) -> SimpleNamespace:
@@ -604,4 +738,5 @@ def band_c(res_model, q, eta0: float = 0.95):
 
 
 __all__ = ["cases", "SETS", "run_lap", "NMPCFilter", "CBFFilter", "explore_lap", "prediction_samples",
-           "horizon_ok", "rollout_errors", "rollout_errors_sim", "block_inputs", "model_rollout", "estimate_a", "residual_for", "sigma_k", "conformal_q", "conformal_qk", "band_c", "changed"]
+           "horizon_ok", "rollout_errors", "env_snapshot", "env_restore", "rollout_unfiltered",
+           "make_sim_for", "drive_baseline", "rollout_errors_sim", "block_inputs", "model_rollout", "estimate_a", "residual_for", "sigma_k", "conformal_q", "conformal_qk", "band_c", "changed"]
