@@ -80,6 +80,11 @@ as in L2). **If a plan of a test track fails, the track is replaced by the next 
 (reported); the pipeline is not changed on test tracks. Changes of the pipeline may rest only on
 the validation tracks and are made before this protocol is binding.
 
+**Replacement (2026-10-17, by the rule above):** Norisring's plans failed – the first dynamic solve
+(η 0.97) did not converge from any of L1's four initial guesses (each at the 600-iteration cap) –
+and it is replaced by the first reserve track, **Austin**. The test tracks are Zandvoort, SaoPaulo,
+Austin and Nuerburgring.
+
 **Order once the protocol is binding (l8-m2):** download the four test tracks from the pinned
 commit; write their SHA-256 into `scripts/fetch_tracks.py` and commit; only then compute their
 plans. A reserve track that replaces a test track goes through the same three steps.

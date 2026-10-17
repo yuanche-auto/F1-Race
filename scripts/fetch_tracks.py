@@ -25,8 +25,9 @@ SHA256 = {
     "Sakhir": "bc3c23da42f9474dbf5700341037bb45521acaa2ad1389bd0a48540fe179ee7a",       # L8 validation
     "Zandvoort": "f3f2a82c9f41bcee8d7161a6ad6c0b8e6d4b902dd772459918c9fe7f7451bc59",    # L8 test
     "SaoPaulo": "7383caa2b7af9af6c321aa5442cc5b47b6cfe1a56f70b56f3216ba1a3c015a04",     # L8 test
-    "Norisring": "8857d3c362ad2923c1f93c8d257498f50459770b9021adcc7969b71085c31d9a",    # L8 test
+    "Norisring": "8857d3c362ad2923c1f93c8d257498f50459770b9021adcc7969b71085c31d9a",    # L8: plans failed, replaced
     "Nuerburgring": "9fea2a9daa25311bb251be416140b6c55cb2e53bb4f69c28f512fbfce25a3f87", # L8 test
+    "Austin": "60d46180320177ba49bec61bad390872039222dbab225fe12781ca662becda55",       # L8 test (replaces Norisring, plans failed)
 }
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "data" / "tracks"
