@@ -166,7 +166,9 @@ controllers missing from L7 Part B (`nmpc_reserve`, `identified`) on T1 τ = 0 a
 the others are L7 Part B's records (deterministic evaluation, L7 Part B consistency checks).
 Sources (l8-m4): `results/L7/partB_none/` (`rl_none.jsonl`, `baselines.jsonl`; run at 375a418)
 for the RL policies, the bare tracker and `nmpc` / `smpc` / `lag_identified` without a filter;
-`results/L7/partB_filtered/` (bb420e5) is not needed (no filter in L8). The new A0 runs
+`results/L7/partC_eval/rl_none.jsonl` (f71c9c6) for the ten final L7 checkpoints and the two
+validation-selected ones (nit of the review of 277fa02); of T2 only seeds 0–9 are taken from both
+files. `results/L7/partB_filtered/` (bb420e5) is not needed (no filter in L8). The new A0 runs
 (`nmpc_reserve`, `identified`) are made with the L8 evaluation code at the commit approved for
 Parts A–C, from a pinned worktree (`RUN_COMMIT` recorded), like every L8 run.
 

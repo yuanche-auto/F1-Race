@@ -23,6 +23,10 @@ SHA256 = {
     "Silverstone": "27c51454e81780a75c353d3e6c9f73dbbcd1e82139782e95bd722ade19736e39",
     "Catalunya": "8d6dc9d50e98bdecd818cb880a4b12bb5cec25d699a6b774e0b593c0f8a9da5e",
     "Sakhir": "bc3c23da42f9474dbf5700341037bb45521acaa2ad1389bd0a48540fe179ee7a",       # L8 validation
+    "Zandvoort": "f3f2a82c9f41bcee8d7161a6ad6c0b8e6d4b902dd772459918c9fe7f7451bc59",    # L8 test
+    "SaoPaulo": "7383caa2b7af9af6c321aa5442cc5b47b6cfe1a56f70b56f3216ba1a3c015a04",     # L8 test
+    "Norisring": "8857d3c362ad2923c1f93c8d257498f50459770b9021adcc7969b71085c31d9a",    # L8 test
+    "Nuerburgring": "9fea2a9daa25311bb251be416140b6c55cb2e53bb4f69c28f512fbfce25a3f87", # L8 test
 }
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "data" / "tracks"
