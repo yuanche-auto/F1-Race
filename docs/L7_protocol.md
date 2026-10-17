@@ -607,3 +607,37 @@ Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4
      Changed before any filtered T1 / T2 lap: on every lap the first intervention after each
      j · L / 8 (j = 0 … 7), at most eight per lap; per policy 200 drawn uniformly from all with
      seed 0 (all if fewer); the rate also reported per eighth of the lap.
+* **A9 (2026-10-16), Part C evaluation: Holm reading, selection tie-break, second environment,
+  disclosures – committed before any Part C lap on T1 / T2 was run or read** (evaluation and
+  report code: `scripts/run_l7_partC.py`, `scripts/report_l7_partC.py`, approved at 97a393d;
+  the stricter reading of 1. added to the report with this amendment).
+  1. **Holm (section 7).** H-B's two-sided null hypothesis was rejected in Part B (exact
+     p = 0.0039 ≤ 0.025) in the direction "fewer laps with the filter"; H-B itself is not
+     supported. Read literally, Holm then tests S1 at 0.05 (if S1's p is the larger of the two).
+     Holm controls the family-wise error rate over the two null hypotheses of no difference,
+     and with two tests also the directional error rate when conclusions follow the sign
+     (Shaffer 1980), so this reading is kept. Since it matters exactly when S1's p falls in
+     (0.025, 0.05], the report gives two decisions side by side: Holm's (S1 at 0.05 here) and
+     the stricter one (S1 at 0.025 whatever H-B gives); where they differ, both are stated.
+  2. **Selection tie-break.** The validation-selected checkpoint per group (secondary) follows
+     the L5 rule – most V laps, then the lower mean lap time, then the later checkpoint – with
+     one rule added for ties across seeds: then the lower seed. It affects only the
+     secondary results of the selected checkpoint.
+  3. **Deviation from section 8.** The second environment (Python 3.11 with the RL extras,
+     `.venv-311-rl`) was to be set up before the first main result; Part B's results are out
+     and it is not built. Reason: this machine has no Python 3.11 (only 3.12), and installing
+     one needs the user's consent, which has been asked for. Scope of the cross-check
+     unchanged: the acceptance test of the main estimate (b); T1 + T2 with and without the main
+     filter for `B_s1_500k` and for the median seeds of P and F. Its job list goes to the
+     reviewer before it runs.
+  4. **V results seen before the test evaluation (disclosure).** The smoke check of the
+     evaluation code on X used checkpoints of the running training, renamed as final ones,
+     and printed V results of early checkpoints: validation laps completed (of 40) for P_s1 at
+     50k–300k 0, 0, 24, 28, 10, 27; P_s2 at 50k–300k 0, 0, 0, 0, 0, 3; F_s1 at 50k–200k 0, 0,
+     12, 40. V is the selection set; it does not enter S1 or S3 (final checkpoints, T1 + T2).
+     No T1 / T2 lap of a Part C checkpoint had been run.
+  5. **Training time.** A run takes ~50 min (measured on the first three runs: ~300 000 decisions in ~23 min) instead of the 2.5–3 h of section 9 (estimate
+     from L5's runs on the earlier machine); noted in the report.
+  6. **Provenance of the checkpoints.** The ten final and the selected checkpoints are copied
+     from the training worktree to the evaluation worktree with a SHA-256 list made in each;
+     the two lists are compared and go with the review package.

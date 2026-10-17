@@ -20,7 +20,10 @@ Fixed before any Part C test result was read (2026-10-16):
   Part B's records (exact signed-rank, as in report_l7_partB). S1 holds if its null hypothesis
   is rejected by Holm and the median seed of F completes more laps (more laps only F
   completes than only P completes); H-B holds if rejected and its median difference is
-  positive.
+  positive. A9.1: H-B's two-sided null can be rejected in the direction "fewer laps", which
+  lets S1 be tested at 0.05 (the literal reading of section 7, Holm). The report gives this
+  decision and the stricter one (S1 tested at 0.025 whatever H-B gives) side by side; where
+  they differ, both are stated.
 * **5 x 5 pairwise** (scope of S1): for every final F seed against every final P seed,
   completed laps without the filter and exact McNemar; counts of pairs in which F completes
   more / fewer / equally many, and of pairs significant at 0.05 in either direction
@@ -132,8 +135,10 @@ def main() -> None:
     hb = exact_signed_rank(hb_d)
     h = holm({"H-B": hb["p"], "S1": p_s1})
     s1_holds = h["S1"]["rejected"] and x > y
+    s1_strict = p_s1 <= 0.025 and x > y                     # A9.1: the stricter reading
     hb_holds = h["H-B"]["rejected"] and float(np.median(hb_d)) > 0
-    res["S1"] = {"F": med["F"], "P": med["P"], "only_F": x, "only_P": y, "p": p_s1, "holm": h["S1"], "holds": s1_holds}
+    res["S1"] = {"F": med["F"], "P": med["P"], "only_F": x, "only_P": y, "p": p_s1, "holm": h["S1"], "holds": s1_holds,
+                 "holds_strict_0.025": s1_strict}
     res["H-B"] = {"differences": hb_d, **hb, "median": float(np.median(hb_d)), "holm": h["H-B"], "holds": hb_holds}
     md += ["", "## S1 (primary): median seed of F against median seed of P, without the filter", "",
            f"{med['F']} against {med['P']}: completed only by F : only by P = {x} : {y}; exact McNemar two-sided "
@@ -143,7 +148,9 @@ def main() -> None:
            f"| H-B (Part B) | {hb['p']:.4g} | {h['H-B']['level']:.3g} | {h['H-B']['rejected']} | median {np.median(hb_d):+g} | "
            f"**{hb_holds}** |",
            f"| S1 | {p_s1:.4g} | {h['S1']['level']:.3g} | {h['S1']['rejected']} | F {'more' if x > y else 'not more'} "
-           f"({x} : {y}) | **{s1_holds}** |"]
+           f"({x} : {y}) | **{s1_holds}** |", "",
+           f"Stricter reading (A9.1: S1 at 0.025 whatever H-B gives): S1 {'holds' if s1_strict else 'does not hold'}"
+           + (" – **the two readings differ**." if s1_strict != s1_holds else " – the same decision as Holm.")]
 
     # 5 x 5 pairwise
     md += ["", "## 5 x 5 pairwise, final checkpoints without the filter (scope of S1; 25 comparisons, uncorrected)", "",
