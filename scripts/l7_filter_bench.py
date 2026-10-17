@@ -124,7 +124,7 @@ def bench(filt: str, lap: int, tag: str, limit: int | None) -> dict:
             t0 = time.perf_counter()
             s, n, xi_h = ctl.frenet(x)[:3]
             xi = xi_h + np.arctan2(x[4], max(x[3], 1.0))             # course angle
-            _, info = f.filter((s % track.length, n, xi), x, u)
+            _, info = f.filter((s % track.length, n, xi, xi_h), x, u)
             times.append(time.perf_counter() - t0)
             fails += not info["ok"]
             moved += changed(info["u"], u)
@@ -132,8 +132,13 @@ def bench(filt: str, lap: int, tag: str, limit: int | None) -> dict:
         lag = tau if filt == "nmpc_lag" else None
         if filt == "nmpc_lag" and not tau:
             raise ValueError("nmpc_lag needs a lap with a lag")
-        mpc = FrenetMPC(track, nom, ref_from_plan(plan), mode="filter", N=30, dt=0.05, eta=0.95,
-                        steer_lag=lag)               # L6 failure handling (docs/prep_robustness.md)
+        if filt == "nmpc10_b":                       # A6 candidate (2): N = 10 with (b), k <= 10
+            est = json.loads((ROOT / "results" / "L7" / "K" / "estimates.json").read_text())
+            mpc = FrenetMPC(track, nom, ref_from_plan(plan), mode="filter", N=10, dt=0.05,
+                            eta=est["b"]["eta"][:10], backoff=est["b"]["backoff"][:11])
+        else:
+            mpc = FrenetMPC(track, nom, ref_from_plan(plan), mode="filter", N=30, dt=0.05, eta=0.95,
+                            steer_lag=lag)           # L6 failure handling (docs/prep_robustness.md)
         ctl = MPCController(mpc, 0.01)
         t_build = time.perf_counter() - t_build
         u_prev = np.zeros(3)
