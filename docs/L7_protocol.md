@@ -641,3 +641,16 @@ Runs that make re-plans respect the machine-wide re-plan slots (`replan_slot`, 4
   6. **Provenance of the checkpoints.** The ten final and the selected checkpoints are copied
      from the training worktree to the evaluation worktree with a SHA-256 list made in each;
      the two lists are compared and go with the review package.
+* **A10 (2026-10-17), section 8 deferred by the user's decision – after all L7 results.**
+  The user put the second environment on the to-do list ("先列入待做吧", 2026-10-17) rather
+  than installing Python 3.11 now. L7 is reported and reviewed without it; section 8 is **not
+  executed** and stays an open item in STATUS. What the conclusions lack because of it: H-B,
+  S1, S3 and the acceptance test of (b) were run in one environment only (`.venv-rl`: Python
+  3.12.10, numpy 2.5.3, scipy 1.18.1, casadi 3.8.1, torch 2.14.1+cpu, stable-baselines3 2.9.0,
+  gymnasium 1.4.0; single-threaded BLAS). The evaluation is deterministic there (Part B: 550 of
+  550 unfiltered laps identical to L5), but single NMPC laps are sensitive to rounding
+  (preparation: a relative perturbation of 1e-9 can change a lap's outcome), so single laps may
+  differ in another environment. Whether the decisions would change is not verified; the effect
+  sizes (H-B: all nine differences negative; S1: 4 : 34) make a change unlikely, which is a
+  judgement, not a result. When the cross-check is run later (scope as in section 8), its
+  results are reported as an addendum to docs/L7.md, with any difference stated.
