@@ -33,13 +33,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from run_l7_partB import pool_run  # noqa: E402
+from f1race.experiments.l8 import TEST  # noqa: E402
 
 OUT = ROOT / "results" / "L8" / "eval"
 L5_FINALS = [f"{g}_s{s}" for g in "ABC" for s in (1, 2, 3)]
 L7_FINALS = [f"{g}_s{s}_600k" for g in "PF" for s in range(1, 6)]
 L7_SELECTED = ["P_s5_500k", "F_s5_450k"]
 POLICIES = L5_FINALS + ["B_s1_500k", "tracker"] + L7_FINALS + L7_SELECTED
-FT_TARGETS = ("Zandvoort", "SaoPaulo", "Norisring", "Nuerburgring", "wet")
+FT_TARGETS = TEST + ("wet",)                     # the four test tracks (after the replacement) and wet Spielberg
 FT_SEEDS = (1, 2, 3)
 FT_STEPS = 100_000
 FT_WET = (0.70, 0.90)
