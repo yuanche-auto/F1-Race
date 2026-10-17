@@ -1,7 +1,7 @@
 # L8 protocol – generalisation: new tracks and new conditions, separately
 
-Status: **draft, revision 0 (2026-10-17)**, written before any run on a test track or under a
-test condition. Branch `layer/L8` (from `main` at 4a9d92c). ROADMAP: section 4 (L8), rules of
+Status: **draft, revision 1 (2026-10-17)** after the review of revision 0 (fc53b4f: l8-M1, l8-m1 to
+l8-m4, scope of H-G / H-D), written before any run on a test track or under a test condition. Branch `layer/L8` (from `main` at 4a9d92c). ROADMAP: section 4 (L8), rules of
 section 2. What was seen before this draft is listed in section 12.
 
 ## 0. What L7 left, and what L8 asks
@@ -35,6 +35,12 @@ section 3), while `B_s1_500k` learned its corrections on Spielberg with friction
 0.92–1.03 (and the L3 friction field, σ = 0.03). If H-G or H-D fails, the learned policy's
 reliability transferred as well as identification + re-planning (or both failed alike) – a
 result reported as such.
+
+**Scope:** H-G and H-D compare these two controllers – the best identification + re-planning
+controller and the validation-selected policy, each with its own information (section 3) – not
+"model-based methods against RL". Statements about RL as a method rest on the unselected
+distribution of the policies (sections 3 and 8). How the identification controllers count when
+their exploration lap, the identification or the re-plan fails is fixed in section 3 (l8-M1).
 
 Holm over H-G and H-D (family-wise α = 0.05: the smaller p at 0.025, the other at 0.05 only if
 the first is rejected). As in L7 (A9.1), the report gives Holm's decision and the stricter one
@@ -74,6 +80,10 @@ as in L2). **If a plan of a test track fails, the track is replaced by the next 
 (reported); the pipeline is not changed on test tracks. Changes of the pipeline may rest only on
 the validation tracks and are made before this protocol is binding.
 
+**Order once the protocol is binding (l8-m2):** download the four test tracks from the pinned
+commit; write their SHA-256 into `scripts/fetch_tracks.py` and commit; only then compute their
+plans. A reserve track that replaces a test track goes through the same three steps.
+
 **Cars.** The 25 cars of T1 (`sample_plants(nominal, 24, seed 0)`, the nominal car first; L2
 ranges), without steering lag – the cars of the Spielberg reference.
 
@@ -89,9 +99,9 @@ ranges), without steering lag – the cars of the Spielberg reference.
 
 * Global wet: the car's friction coefficients (both axles, x and y) are multiplied by the level;
   nothing else changes, nobody is told. The levels: 0.85 and 0.75 of dry grip – a damp and a wet
-  track for tyres of this car, below the training range of the policies (0.92–1.03). 0.75 keeps
-  the true friction factor (0.75 × 0.92–1.03 = 0.69–0.77) essentially inside the identification
-  bounds of L4 (0.7–1.3; up to 1.4 % below), which stay unchanged.
+  track for tyres of this car, below the training range of the policies (0.92–1.03). At 0.75 the
+  true friction factors of the 25 cars (0.75 × their factor) lie inside the identification bounds
+  of L4 (0.7–1.3, unchanged) except one car (car 18 at 0.696, 0.6 % below; l8-m1).
 * Wet patches: each 100 m at × 0.75 with 25 m linear ramps on both sides; four per lap, centres
   drawn uniformly over the lap with the patch seed, redrawn (same generator) until every two are
   at least 300 m apart. The friction field of the L3 simulator (`StochasticSim`) carries it; no
@@ -122,6 +132,21 @@ the preparation's rule). Every controller gets the same track plan and curvature
 gets the friction level or the patch positions; the identification controllers get one
 exploration lap of the actual car under the actual condition (that is what they are).
 
+**Identification controllers when something fails (l8-M1, fixed before any test run).** The
+exploration lap (`nmpc_reserve`, nominal model, η 0.88) may end early – on Spielberg's K laps
+only 10 of 40 completed even when dry (L7) – and more so on a new track or in the wet. For
+`identified` and `lag_identified`:
+
+1. The identification uses all data the exploration lap logged, including the part before a
+   failure (as in L6 / L7); there is no minimum distance.
+2. If the identification raises an error, the lap is recorded as **not completed** with
+   `stop_reason = "identification failed"`; if `replan_robust` returns no plan, as **not
+   completed** with `stop_reason = "plan failed"` (as `drive_baseline` already does). Both count
+   in H-G / H-D and everywhere else; no retry, no other fallback plan or model.
+3. Reported per condition: how far each exploration lap went (completed / distance), the
+   identified μ factor against the true one and whether any parameter sits on its bound, τ, and
+   the outcome of the re-plan (steps of `replan_robust`).
+
 **RL, unselected distribution (reported first, secondary):** the nine final L5 checkpoints and
 the ten final L7 checkpoints (P, F), plus the two validation-selected L7 checkpoints
 (`P_s5_500k`, `F_s5_450k`). Without a filter.
@@ -139,6 +164,11 @@ On each test track: the plans (section 2), then the fixed set and the RL policie
 and on the 10 disturbance seeds. **A0** completes the Spielberg reference on the same laps: the
 controllers missing from L7 Part B (`nmpc_reserve`, `identified`) on T1 τ = 0 and T2 seeds 0–9;
 the others are L7 Part B's records (deterministic evaluation, L7 Part B consistency checks).
+Sources (l8-m4): `results/L7/partB_none/` (`rl_none.jsonl`, `baselines.jsonl`; run at 375a418)
+for the RL policies, the bare tracker and `nmpc` / `smpc` / `lag_identified` without a filter;
+`results/L7/partB_filtered/` (bb420e5) is not needed (no filter in L8). The new A0 runs
+(`nmpc_reserve`, `identified`) are made with the L8 evaluation code at the commit approved for
+Parts A–C, from a pinned worktree (`RUN_COMMIT` recorded), like every L8 run.
 
 Reported per controller: completion per track and over the four, with exact intervals, against
 Spielberg on the same cars; failure positions per track; lap times; plan lap times per track; for
@@ -159,8 +189,10 @@ them).
   100 000 decisions (8 environments; a new replay buffer, 5 000 steps before learning) on
   (i) each test track and (ii) wet Spielberg with a friction factor drawn per episode from
   U(0.70, 0.90); cars from the L2 ranges, half of the environments with the L3 disturbances, as
-  in L5. Three seeds per condition (15 runs); the final checkpoint is evaluated (no selection) on
-  that condition's laps of Parts A / B. Reported against `B_s1_500k` without fine-tuning
+  in L5 – drawn at random, so not the 25 cars of T1 (continuous ranges; l8-m3). The fine-tuning
+  runs only after all laps of Parts A and B (including those of H-G and H-D) have run, and its
+  results are secondary. Three seeds per condition (15 runs); the final checkpoint is evaluated
+  (no selection) on that condition's laps of Parts A / B. Reported against `B_s1_500k` without fine-tuning
   (McNemar) and against `lag_identified`. Information: ~100 000 × 50 ms ≈ 5 000 s of driving on
   the track or condition (about 60 laps' worth, other cars), against one exploration lap for the
   identification controllers – stated with every comparison.
@@ -213,8 +245,8 @@ report marks them as not cross-checked, as L7 does.
   without banking or kerbs; four test tracks.
 * Wet is a friction factor only (no water film, no change of tyre characteristics, the same
   Pacejka shape); the patches are a deterministic friction field.
-* The identification bounds of L4 (μ factor ≥ 0.7) are kept; at 0.75 a few cars' true factor lies
-  up to 1.4 % below the bound.
+* The identification bounds of L4 (μ factor ≥ 0.7) are kept; at 0.75 one car's true factor (car
+  18, 0.696) lies 0.6 % below the bound.
 * The RL policies get the plan of the nominal dry car on every track and condition, as every plan-
   based controller does; the identification controllers re-plan for their car.
 * Round 2 of L6 remains unverified; no L8 decision rests on it. The second environment is pending
