@@ -22,6 +22,7 @@ SHA256 = {
     "Budapest": "3c25a55841af6de1e78a366593108835738d78e75cedfb7acd11c9b36da53d5a",
     "Silverstone": "27c51454e81780a75c353d3e6c9f73dbbcd1e82139782e95bd722ade19736e39",
     "Catalunya": "8d6dc9d50e98bdecd818cb880a4b12bb5cec25d699a6b774e0b593c0f8a9da5e",
+    "Sakhir": "bc3c23da42f9474dbf5700341037bb45521acaa2ad1389bd0a48540fe179ee7a",       # L8 validation
 }
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "data" / "tracks"
