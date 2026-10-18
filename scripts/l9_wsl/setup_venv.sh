@@ -13,6 +13,7 @@ cat > "$HOME/f1race-env.sh" <<'EOF'
 export ACADOS_SOURCE_DIR="$HOME/acados"
 export LD_LIBRARY_PATH="$HOME/acados/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
+export L6_REPLAN_SLOTS=3      # one re-plan needs ~7.4 GB; WSL has 31 GB
 source "$HOME/f1race-venv/bin/activate"
 EOF
 "$V/bin/pip" freeze
