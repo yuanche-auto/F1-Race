@@ -70,7 +70,6 @@ hash, merge to `main` and push only after APPROVE. Workflow: [docs/workflow.md](
 
 * **L7 section 8 – second environment** (amendment A10, deferred by the user on 2026-10-17): install Python 3.11, build `.venv-311-rl` from the lock file; re-run the acceptance test of estimate (b) and T1 + T2 with and without the main filter for `B_s1_500k` and the median seeds P_s1 / F_s4; report as an addendum to docs/L7.md.
 * **L8 section 9 – second environment** (same deferral): re-run H-G and H-D there – the laps of `lag_identified` and `B_s1_500k` in sets A (25 cars x 4 test tracks) and B (wet 0.85 / 0.75); report as an addendum to docs/L8.md.
-* **L7 literature check:** two works found but not read (a genetic curriculum from failure scenarios, Song et al.; on-board RL for racing with a safety filter in training, RLC 2025).
 * **Next layer: L9** (real-time control under an equal compute budget; ROADMAP section 4): `docs/L9_protocol.md` first, reviewed before any run. Worktrees for pinned runs go under `C:\Users\yuanche\F1-Race-worktrees\` (the L7 ones were moved there on 2026-10-17).
 
 ## Preparation for L7 (2026-10-14, new machine)
