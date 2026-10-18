@@ -1,6 +1,7 @@
 # L9 protocol – real-time control under an equal compute budget
 
-Status: **draft, revision 0 (2026-10-18)**, written before any L9 run. Branch `layer/L9` (from
+Status: **draft, revision 1 (2026-10-18)** after the review of revision 0 (50e2a8d: l9-M1, l9-m1 to
+l9-m4), written before any L9 run. Branch `layer/L9` (from
 `main` at 896b243). ROADMAP: section 4 (L9), rules of section 2. What was measured or seen before
 this draft is listed in section 12.
 
@@ -29,6 +30,11 @@ achieved?*
   (section 4) completes **more** of the 105 test laps than the IPOPT implementation under the same
   rule. Same test and rule.
 
+H-RT1 measures the controller as it would be deployed: in the real-time mode its exploration lap
+runs in the real-time mode too, so a worse exploration lap and a worse identification are part of
+the effect (l9-m2). A secondary comparison separates them: the real-time evaluated lap with the
+identification and re-plan from the offline exploration lap (section 5).
+
 Holm over H-RT1 and H-RT2 (family-wise α = 0.05), with the stricter decision (each at 0.025)
 reported alongside, as in L7 / L8. Scope: both compare implementations of one controller;
 `lag_identified` is chosen because it is the best model-based controller of L6–L8 and the one that
@@ -45,9 +51,10 @@ approximation costs laps is part of what H-RT2 and the secondary comparisons sho
 2026-10-18).** The real-time iteration (Diehl et al.; Gros, Zanon, Quirynen, Bemporad, Diehl,
 *From linear to nonlinear MPC: bridging the gap via the real-time iteration*, IJC 2020) and its
 use for racing: Verschueren et al. (CDC 2014) made minimum-time race-car driving tractable for
-Gauss-Newton real-time NMPC on miniature cars; a full-scale racing controller in acados C code at
-100 Hz with one linearisation and one QP per update (arXiv:2604.19452; from the search summary,
-not read). acados itself:
+Gauss-Newton real-time NMPC on miniature cars; Bongard, Jank, Sagmeister, Lohmann (arXiv:2604.19452)
+track trajectories near the handling limits on three-dimensional tracks with a robust NMPC on a 3D
+single-track model, simplified to stay real-time capable, with uncertainty-aware constraint
+tightening (abstract; solver and control rate not named there; l9-m1). acados itself:
 Verschueren, Frison, Kouzoupis, ..., Diehl, *acados – a modular open-source framework for fast
 embedded optimal control*, Math. Prog. Comp. 14 (2022) 147–183 (arXiv:1910.13753). Neural
 approximations of racing MPC: DAgger with a long-horizon MPCC expert in Tearle et al. (RA-L 2021,
@@ -128,6 +135,7 @@ Two modes, on the same laps:
 |---|---|---|---|
 | T1new + T2new, no sensor delay | all of section 4 | offline and real-time, both implementations | **H-RT1, H-RT2** and the ranking |
 | the same with 20 ms sensor delay | `lag_identified` (IPOPT, RTI), `B_s1_500k`, `tracker` | real-time | secondary |
+| T1new + T2new, real-time evaluated lap with the offline exploration's identification and re-plan | `lag_identified` (IPOPT, RTI) | real-time | secondary (l9-m2: direct against indirect effect of the budget) |
 
 ## 6. Part C – a neural approximation of the NMPC (secondary)
 
@@ -135,7 +143,8 @@ An MLP (two hidden layers of 256, the RL policy's observation without the histor
 DAgger to imitate the acados RTI `nmpc` (nominal model) on Spielberg, with cars from the L2 ranges
 and half of the episodes with the L3 disturbances (as the L5 training distribution), three seeds,
 10 DAgger iterations of 20 000 decisions each (the expert labels every visited state); evaluated
-in both modes on T1new + T2new against its expert. Fixed now; reported as secondary, after the
+in both modes on T1new + T2new against its expert. In the real-time mode its inference is timed and
+held to the same rule as every other controller (section 3; l9-m4). Fixed now; reported as secondary, after the
 primary laps have run.
 
 ## 7. Always reported
@@ -162,11 +171,23 @@ its p value and the number of comparisons, no claim across the family.
 * WSL's vCPUs are scheduled by Windows onto the 285HX's performance and efficiency cores; pinning
   a process to a vCPU does not pin it to a physical core. Idle, every vCPU ran a fixed workload in
   29–32 ms (section 12). Real-time runs therefore run at most **8 jobs at once**, each pinned to its
-  own vCPU, and each job first times the same fixed workload; that calibration time is recorded
-  with the lap and reported (no lap is excluded for it).
+  own vCPU, and each job first times the same fixed workload; that calibration time and the vCPU
+  are recorded with the lap and reported (no lap is excluded for it).
+* **Machine load (l9-M1 a).** While real-time laps run, nothing else heavy runs on the machine –
+  neither in WSL nor on the Windows side (no offline laps, training or other experiments); offline
+  and real-time laps never run at the same time. The utilisation of every core is sampled once a
+  minute during every real-time batch (WSL: /proc/stat; Windows: the processor counters) and
+  reported with the results.
+* **The two arms of a paired comparison under the same conditions (l9-M1 b).** In the real-time
+  mode the two implementations of a controller run **interleaved in the same batches**: every batch
+  of 8 jobs holds 4 laps × both implementations (IPOPT and RTI) of the same controller, in case
+  order – never all IPOPT laps first and all RTI laps after – so that a drift of load or core
+  assignment affects both arms alike. The report gives the calibration times of the two arms
+  side by side. (H-RT1's other arm, the offline mode, is deterministic and not timed.)
 * Outcomes in the real-time mode depend on measured times and are not bit-reproducible. To show
-  how much, 20 laps of each IPOPT controller in the real-time mode are run twice (the first 20 test
-  laps in case order) and the outcome flips are reported.
+  how much, 20 laps of each IPOPT controller and of `lag_identified` RTI (the other arm of H-RT2;
+  l9-M1) in the real-time mode are run twice (the first 20 test laps in case order), interleaved as
+  above, and the outcome flips are reported.
 * The offline mode is deterministic; its laps may run with more jobs at once.
 
 ## 10. Second environment
@@ -192,8 +213,10 @@ H-RT1 and H-RT2 are re-run there when it exists; until then they are marked as n
   P95 56.2 ms, max 58.2 ms (50 steps), its first command within 0.014 (median, scaled) of IPOPT's;
   with qrqp 3.7 s per step; HPIPM could not be used through casadi's generic interface.
 * The WSL environment (user's approval, 2026-10-18): acados v0.6.0 (released 2026-08-06) cloned
-  with its submodules and built with qpOASES and DAQP; tera_renderer v0.2.1 (2026-07-31,
-  SHA-256 64a0a0f8…); a venv with pip 25.2 from its PyPI wheel, the lock file and acados_template.
+  with its submodules and built with qpOASES and DAQP – the commits of acados and every submodule in
+  `scripts/l9_wsl/acados_versions.txt` (a tag can move; l9-m3); tera_renderer v0.2.1 (2026-07-31,
+  SHA-256 64a0a0f8…); a venv with pip 25.2 from its PyPI wheel (SHA-256 in the same file), the lock
+  file and acados_template.
   An acados example generated, compiled and solved; the project's tests pass there (the RL tests
   skip – torch is not yet installed in WSL). Per-vCPU speed of a fixed workload: 29.3–31.8 ms.
 * No controller has run on T1new or T2new.

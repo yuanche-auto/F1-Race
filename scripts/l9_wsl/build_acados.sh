@@ -16,4 +16,6 @@ chmod +x t_renderer
 # Python: python3-venv is not installed (apt needs sudo), so a pip-less venv and pip from its PyPI wheel:
 python3 -m venv --without-pip "$HOME/f1race-venv"
 curl -sSL -o /tmp/pip-25.2-py3-none-any.whl https://files.pythonhosted.org/packages/py3/p/pip/pip-25.2-py3-none-any.whl
+echo "6d67a2b4e7f14d8b31b8b52648866fa717f45a1eb70e83002f4331d07e953717  /tmp/pip-25.2-py3-none-any.whl" | sha256sum -c
+# the commits actually built: scripts/l9_wsl/acados_versions.txt (scripts/l9_wsl/record_versions.sh; a tag can move)
 # then: bash scripts/l9_wsl/setup_venv.sh (from the repository, as /mnt/c/...)
