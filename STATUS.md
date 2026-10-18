@@ -1,4 +1,4 @@
-# STATUS — F1-Race (L0–L7 done; L8 protocol in review)
+# STATUS — F1-Race (L0–L7 done; L8 results in review)
 
 Since 2026-10-14 the project runs on a new machine (below). Reviewer on this machine: Claude
 session **"F1 Race 阶段审查"** (`local_30f94a40-03cb-490d-85b4-12ad1d351d3a`); the reviewer and
@@ -64,13 +64,13 @@ hash, merge to `main` and push only after APPROVE. Workflow: [docs/workflow.md](
 | L6 model mismatch with a structural error | `layer/L6` → `main` | **approved, pushed** to origin/main 2026-10-10 | results review: APPROVE (minors m1–m4 fixed) |
 | Preparation for L7 (numerical robustness, filter benchmark) | `prep/robustness` → `main` (a4739c2) | **approved, pushed** to origin/main 2026-10-14 | APPROVE (minors m1–m3, n1–n3 fixed on `layer/L7`) |
 | L7 reliable learning | `layer/L7` → `main` | **approved, pushed** to origin/main 2026-10-17 – report [docs/L7.md](docs/L7.md), protocol [docs/L7_protocol.md](docs/L7_protocol.md) (revision 1.1, amendments A1–A10). **H-B not supported:** the main filter (NMPC, N = 30, nominal model + back-offs of estimate (b), L6 failure handling) lowers the completions of all nine L5 checkpoints (exact p = 0.0039; scope: this filter). **H-C (narrowed to the failure-start curriculum, A7) not supported:** the pre-registered median-seed comparison is significant in the opposite direction (F_s4 50 vs P_s1 80 of 105, 4 : 34, p = 6·10⁻⁷); at the seed level no significant difference (p = 0.69), F far more spread (3–103). S3 not shown (+6.29 s > 4.6 s). Secondary: validation-selected checkpoints 104 / 105 of 105 without the filter; training unstable between checkpoints. **Open:** section 8 second environment (A10, deferred by the user); two works of the literature check found but not read. Smoke-test set X (code checks only): cars `sample_plants(nominal, 2, seed 99)[1:]` × τ ∈ {0, 30, 60 ms} and disturbance seed 9999 | protocol d1fa964 CHANGES_REQUESTED → revision 1 APPROVE; Parts A, B, C APPROVE; final review of 328d5ab: **APPROVE** |
-| L8 generalisation (new tracks, wet) | `layer/L8` (from `main` 4a9d92c) | protocol draft revision 0 ([docs/L8_protocol.md](docs/L8_protocol.md), fc53b4f): track draw (seed 8) validation Monza, Sakhir; test Zandvoort, SaoPaulo, Norisring, Nuerburgring (not downloaded before binding); primary H-G (new tracks) and H-D (wet Spielberg): `lag_identified` vs `B_s1_500k`, Holm; validation-track plans and a nominal-car check done | review requested |
+| L8 generalisation (new tracks, wet) | `layer/L8` (from `main` 4a9d92c) | protocol revision 1 binding (277fa02); test tracks Zandvoort, SaoPaulo, Austin (replaces Norisring: plans failed), Nuerburgring; code e21806b; runs 2026-10-17/18 (report [docs/L8.md](docs/L8.md)): **H-G holds** – new tracks, `lag_identified` 100/100 vs `B_s1_500k` 0/100 (p = 1.6·10⁻³⁰); **H-D holds** – wet Spielberg 50/50 vs 8/50 (p = 4.5·10⁻¹³); all 22 trained policies ~0 on the new tracks; SMPC most reliable under L3 on the new tracks (33/40); Part C fine-tuning seed-dependent (0–34 of 35), none on Austin, worse in the wet; second environment not done | protocol fc53b4f CHANGES_REQUESTED → revision 1 APPROVE; code e21806b APPROVE; results review requested |
 
 ## Open items (to do)
 
 * **L7 section 8 – second environment** (amendment A10, deferred by the user on 2026-10-17): install Python 3.11, build `.venv-311-rl` from the lock file; re-run the acceptance test of estimate (b) and T1 + T2 with and without the main filter for `B_s1_500k` and the median seeds P_s1 / F_s4; report as an addendum to docs/L7.md.
 * **L7 literature check:** two works found but not read (a genetic curriculum from failure scenarios, Song et al.; on-board RL for racing with a safety filter in training, RLC 2025).
-* **L8** (generalisation): protocol in review. Worktrees for pinned runs go under `C:\Users\yuanche\F1-Race-worktrees\` (the L7 ones were moved there on 2026-10-17).
+* **L8** (generalisation): results in review; H-G / H-D not cross-checked in a second environment (same deferral as L7 A10). Worktrees for pinned runs go under `C:\Users\yuanche\F1-Race-worktrees\` (the L7 ones were moved there on 2026-10-17).
 
 ## Preparation for L7 (2026-10-14, new machine)
 
