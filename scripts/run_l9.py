@@ -163,7 +163,10 @@ def load_sampler(path: Path, stop: threading.Event, stage: dict) -> None:
             fo.write(json.dumps({"time": time.time(), "stage": stage["now"], "wsl": wsl, "windows": win}) + "\n")
 
 
-def execute(jobs: list[dict], rec: Path, slots: int, cpu0: int) -> None:
+def execute(jobs: list[dict], rec: Path, slots: int, cpu0: int, batches: bool = False) -> None:
+    """Run jobs, one process each on its own vCPU. ``batches`` (timed stages of the real-time
+    mode, l9-M1 b): strict batches of ``slots`` jobs – the next batch starts when the whole batch
+    has finished, so that the two interleaved implementations always run side by side."""
     done = set()
     if rec.exists():
         done = {json.loads(l)["job"] for l in rec.read_text().splitlines() if l.strip() and '"error"' not in l}
@@ -172,7 +175,8 @@ def execute(jobs: list[dict], rec: Path, slots: int, cpu0: int) -> None:
     free, running = list(range(cpu0, cpu0 + slots)), {}
     with open(rec, "a") as fo:
         while queue or running:
-            while queue and free:
+            start = not (batches and running)                    # batches: a new batch only when all are done
+            while start and queue and free:
                 j, cpu = queue.pop(0), free.pop(0)
                 cmd = ["taskset", "-c", str(cpu), sys.executable, str(Path(__file__)), "job", "--spec", json.dumps(j),
                        "--dir", str(rec.parent)]
@@ -201,7 +205,7 @@ def run(a) -> None:
         jobs = stage_jobs(a, s)
         if jobs:
             execute(jobs, d / {"explore": "explore.jsonl", "plan": "plans.jsonl", "eval": "model.jsonl"}[s], slots,
-                    a.cpu0)
+                    a.cpu0, batches=a.mode == "realtime" and s != "plan")
     stop.set()
 
 
