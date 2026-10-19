@@ -7,6 +7,10 @@ to one vCPU with taskset; single-threaded.
     python scripts/run_l9.py run --mode realtime --kinds lag_identified --explore-mode offline \\
         --plan-dir results/L9/offline --tag offline_explore
     python scripts/run_l9.py run --mode realtime --repeat 20 --tag repeat
+    python scripts/run_l9.py run --mode realtime --hold last --tag hold_last     # A1: the rule of revision 1
+    python scripts/run_l9.py run --part rl --mode realtime --slots 8                 # RL policies, bare tracker
+    python scripts/run_l9.py train-student --seed 1                                  # Part C (DAgger)
+    python scripts/run_l9.py run --part student --mode realtime --slots 8            # Part C evaluation
     python scripts/run_l9.py jobs ...                                                 # print the job list
 
 Stages of a run (so that no re-plan runs while a timed lap runs, l9-M1):
@@ -44,6 +48,9 @@ OUT = ROOT / "results" / "L9"
 KINDS = ("nmpc", "nmpc_reserve", "smpc", "identified", "lag_identified")
 IDENT = ("identified", "lag_identified")
 IMPLS = ("ipopt", "rti")
+L5_FINALS = [f"{g}_s{s}" for g in "ABC" for s in (1, 2, 3)]
+POLICIES = ["B_s1_500k"] + L5_FINALS + ["tracker"]
+STUDENTS = ("student_s1", "student_s2", "student_s3")
 
 
 def calibration() -> float:
@@ -62,13 +69,14 @@ def calibration() -> float:
 
 
 def key(j: dict) -> str:
-    return "|".join(str(j[k]) for k in ("stage", "kind", "impl", "mode", "case", "delay", "explore_mode", "rep"))
+    return "|".join(str(j.get(k, "plan")) for k in ("stage", "kind", "impl", "mode", "case", "delay", "explore_mode",
+                                                   "rep", "hold"))
 
 
 def find_case(name: str) -> dict:
     from f1race.experiments.l9 import cases
 
-    return next(c for s in ("T1new", "T2new", "V", "X") for c in cases(s) if c["name"] == name)
+    return next(c for s in ("T1new", "T2new", "V", "X", "T1", "T2") for c in cases(s) if c["name"] == name)
 
 
 def run_job(j: dict, d: Path) -> dict:
@@ -81,8 +89,12 @@ def run_job(j: dict, d: Path) -> dict:
     t0 = time.time()
     name = f"{j['stage']}_{j['kind']}_{j['impl']}_{j['mode']}_{j['case']}_{os.getpid()}"
     em = j["explore_mode"]
-    if j["stage"] == "explore":
-        ex = explore_lap(case, Track.load("Spielberg"), j["impl"], j["mode"], name)
+    if j["stage"] == "rl":
+        out = rl_job(j, case)
+    elif j["stage"] == "student":
+        out = student_job(j, case)
+    elif j["stage"] == "explore":
+        ex = explore_lap(case, Track.load("Spielberg"), j["impl"], j["mode"], name, j["hold"])
         (d / "explore").mkdir(exist_ok=True)
         pickle.dump(ex, open(d / "explore" / f"{j['impl']}_{j['mode']}_{j['case']}.pkl", "wb"))
         out = explore_summary(ex)
@@ -98,14 +110,76 @@ def run_job(j: dict, d: Path) -> dict:
             pd = Path(j["plan_dir"]) if j.get("plan_dir") else d
             planned = pickle.load(open(pd / "plans" / f"{j['kind']}_{j['impl']}_{em}_{j['case']}.pkl", "rb"))
         out = drive(case, j["kind"], j["impl"], j["mode"], delay=j["delay"], explore_mode=em, name=name,
-                    planned=planned)
-    out.update({"job": key(j), **{k: j[k] for k in ("stage", "kind", "impl", "mode", "delay", "explore_mode", "rep")},
+                    planned=planned, hold=j["hold"])
+    out.update({"job": key(j), **{k: j[k] for k in ("stage", "kind", "impl", "mode", "delay", "explore_mode", "rep",
+                                                    "hold")},
                 "case": j["case"], "set": case["set"], "car": case["car"], "tau": case["tau"],
                 "dist_seed": case["dist_seed"], "cpu": cpu, "calibration_s": cal, "wall_s": time.time() - t0})
     for b in Path(os.path.expanduser("~/l9_acados_build")).glob(f"{name}*"):      # generated code not kept
         subprocess.run(["rm", "-rf", str(b)], check=False)
     return out
 
+
+
+def policy_path(name: str) -> Path:
+    if name == "B_s1_500k":
+        return ROOT / "models" / "L5" / "B_s1_500k.zip"
+    return ROOT / "results" / "L5" / "multiseed" / f"{name}.zip"
+
+
+def rl_job(j: dict, case: dict) -> dict:
+    """One lap of an RL policy (or the bare tracker) under the rule of section 3 (A1: no plan, the
+    previous action held)."""
+    from f1race.experiments.l9 import make_env, rl_lap
+
+    pol = None
+    if j["kind"] != "tracker":
+        import torch
+        from stable_baselines3 import SAC
+
+        torch.set_num_threads(1)
+        model = SAC.load(policy_path(j["kind"]), device="cpu")
+        pol = lambda obs: model.predict(obs, deterministic=True)[0]          # noqa: E731
+    env = make_env("lateral" if j["kind"].startswith("C_") else "angle", delay=j["delay"])
+    return rl_lap(pol, env, case, j["mode"])
+
+
+def student_job(j: dict, case: dict) -> dict:
+    """One lap of a Part C student (results/L9/partC/<student>.pt)."""
+    import torch
+
+    from f1race.experiments.l9_distill import MLP, student_lap
+
+    torch.set_num_threads(1)
+    k = int(j["kind"].rsplit("_s", 1)[1])
+    m = MLP(k)
+    m.net.load_state_dict(torch.load(OUT / "partC" / f"{j['kind']}.pt", map_location="cpu"))
+    m.net.eval()
+    return student_lap(m, case, j["mode"])
+
+
+def train_student(seed: int, iters: int | None = None, decisions: int | None = None) -> None:
+    """Part C: DAgger training of one student (section 6); results/L9/partC/student_s<seed>.pt and
+    its history."""
+    import torch
+
+    from f1race.experiments.l9_distill import train
+
+    d = OUT / "partC"
+    d.mkdir(parents=True, exist_ok=True)
+    t0 = time.time()
+    log = []
+
+    def note(rec):
+        log.append({**rec, "minutes": (time.time() - t0) / 60.0})
+        print(json.dumps(log[-1]), flush=True)
+        (d / f"student_s{seed}_history.json").write_text(json.dumps(log, indent=1))
+
+    from f1race.experiments.l9_distill import DECISIONS, ITERS
+
+    student, _ = train(seed, f"student_s{seed}_{os.getpid()}", iters=iters or ITERS, decisions=decisions or DECISIONS,
+                       log=note)
+    torch.save(student.net.state_dict(), d / f"student_s{seed}.pt")
 
 def stage_jobs(a, stage: str) -> list[dict]:
     from f1race.experiments.l9 import cases
@@ -116,7 +190,10 @@ def stage_jobs(a, stage: str) -> list[dict]:
     kinds, impls = a.kinds.split(","), a.impls.split(",")
     em = a.explore_mode or a.mode
     base = {"mode": a.mode, "delay": a.delay, "explore_mode": em, "rep": 1 if a.repeat else 0,
-            "plan_dir": a.plan_dir}
+            "plan_dir": a.plan_dir, "hold": a.hold}
+    if stage in ("rl", "student"):
+        pols = a.policies.split(",") if stage == "rl" else list(STUDENTS)
+        return [{**base, "stage": stage, "kind": p, "impl": "policy", "case": n} for p in pols for n in names]
     if stage == "explore":
         if a.explore_mode or not any(k in IDENT for k in kinds):
             return []
@@ -200,18 +277,26 @@ def run(a) -> None:
     stop, stage = threading.Event(), {"now": "start"}
     if a.mode == "realtime":
         threading.Thread(target=load_sampler, args=(d / "load.jsonl", stop, stage), daemon=True).start()
-    for s, slots in (("explore", a.slots), ("plan", a.plan_slots), ("eval", a.slots)):
+    stages = (("explore", a.slots), ("plan", a.plan_slots), ("eval", a.slots)) if a.part == "model" else \
+        ((a.part, a.slots),)
+    files = {"explore": "explore.jsonl", "plan": "plans.jsonl", "eval": "model.jsonl", "rl": "rl.jsonl",
+             "student": "student.jsonl"}
+    for s, slots in stages:
         stage["now"] = s
         jobs = stage_jobs(a, s)
         if jobs:
-            execute(jobs, d / {"explore": "explore.jsonl", "plan": "plans.jsonl", "eval": "model.jsonl"}[s], slots,
-                    a.cpu0, batches=a.mode == "realtime" and s != "plan")
+            execute(jobs, d / files[s], slots, a.cpu0, batches=a.mode == "realtime" and s != "plan")
     stop.set()
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=["run", "jobs", "job"])
+    ap.add_argument("what", choices=["run", "jobs", "job", "train-student"])
+    ap.add_argument("--part", default="model", choices=["model", "rl", "student"])
+    ap.add_argument("--policies", default=",".join(POLICIES))
+    ap.add_argument("--seed", type=int, default=1)
+    ap.add_argument("--iters", type=int, default=None, help="DAgger iterations (code checks only)")
+    ap.add_argument("--decisions", type=int, default=None, help="decisions per iteration (code checks only)")
     ap.add_argument("--mode", default="offline", choices=["offline", "realtime"])
     ap.add_argument("--sets", default="T1new,T2new")
     ap.add_argument("--kinds", default=",".join(KINDS))
@@ -220,6 +305,8 @@ def main() -> None:
     ap.add_argument("--explore-mode", default=None, choices=[None, "offline", "realtime"])
     ap.add_argument("--plan-dir", default=None, help="plans of another run (with --explore-mode)")
     ap.add_argument("--repeat", type=int, default=0, help="only the first n laps, recorded as a repeat")
+    ap.add_argument("--hold", default="plan", choices=["plan", "last"],
+                    help="plan: A1 time-aligned plan buffer (main); last: the first command held (secondary)")
     ap.add_argument("--tag", default=None)
     ap.add_argument("--slots", type=int, default=8)
     ap.add_argument("--plan-slots", type=int, default=3)
@@ -236,8 +323,10 @@ def main() -> None:
 
             r = {"job": key(j), "error": traceback.format_exc()}
         print(json.dumps(r, default=float))
+    elif a.what == "train-student":
+        train_student(a.seed, a.iters, a.decisions)
     elif a.what == "jobs":
-        for s in ("explore", "plan", "eval"):
+        for s in (("explore", "plan", "eval") if a.part == "model" else (a.part,)):
             js = stage_jobs(a, s)
             print(f"{s}: {len(js)} jobs" + (f"; first 8: " + "; ".join(f"{j['kind']}/{j['impl']}/{j['case']}"
                                                                          for j in js[:8]) if js else ""))
