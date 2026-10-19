@@ -248,8 +248,10 @@ class AcadosFrenetMPC:
             self.solver.set(i, "u", U[i])
 
     @staticmethod
-    def _shifted(X, U):
-        return X[1:] + [X[-1]], U[1:] + [U[-1]]
+    def _shifted(X, U, k: int = 1):
+        """The plan shifted by k >= 0 steps, the last node / input repeated."""
+        k = max(int(k), 0)
+        return X[k:] + [X[-1]] * min(k, len(X)), U[k:] + [U[-1]] * min(k, len(U))
 
     def _slacks(self) -> tuple[float, float]:
         """(track-limit slack [m], physics-limit slack in FrenetMPC's units) of the current iterate."""
@@ -265,10 +267,33 @@ class AcadosFrenetMPC:
         return max(trk), max(lim)
 
     # ------------------------------------------------------------------ interface
-    def solve(self, x0: np.ndarray, u_prev: np.ndarray) -> tuple[np.ndarray, dict]:
+    def presolve(self, x0: np.ndarray, u_prev: np.ndarray, iters: int = 30) -> None:
+        """L9 A1.4: a plan before the lap starts (untimed): RTI iterations at the initial state
+        until converged (SQP: one solve); the iterate stays aligned with the start time and
+        prepared, so that the next ``solve(..., shift=0)`` continues from it."""
+        xa0 = self._set_x0(np.asarray(x0, float), np.asarray(u_prev, float))
+        if not self.initialised:
+            self._initial_guess(xa0)
+            self.initialised = True
+        if self.nlp == "SQP_RTI":
+            self.solver.options_set("rti_phase", 0)
+            for _ in range(iters):
+                self.solver.solve()
+        else:
+            self.solver.solve()
+        X, U = self._plan()
+        self._last_plan = (X, U)
+        if self.nlp == "SQP_RTI":
+            self.solver.options_set("rti_phase", 1)
+            self.solver.solve()
+
+    def solve(self, x0: np.ndarray, u_prev: np.ndarray, shift: int = 1) -> tuple[np.ndarray, dict]:
         """FrenetMPC's interface. RTI: feedback with the new initial state, then shift and
         preparation for the next call (both timed); SQP: solve to convergence from the shifted
-        previous solution."""
+        previous solution. ``shift`` (L9 A1.3): the warm start is the previous solution shifted by
+        this many 50 ms steps (the steps elapsed since the previous solve started); the default
+        call shifts by one, which the preparation after each call has already done – any other
+        value re-aligns and re-prepares first, inside the timed feedback."""
         xa0 = self._set_x0(np.asarray(x0, float), np.asarray(u_prev, float))
         if not self.initialised:
             self._initial_guess(xa0)
@@ -276,27 +301,28 @@ class AcadosFrenetMPC:
             if self.nlp == "SQP_RTI":                    # the first call prepares too (not timed as feedback)
                 self.solver.options_set("rti_phase", 1)
                 self.solver.solve()
+        t0 = time.perf_counter()
+        last = getattr(self, "_last_plan", None)
+        if shift != 1 and last is not None:
+            self._set_plan(*self._shifted(*last, k=shift))
+            if self.nlp == "SQP_RTI":
+                self.solver.options_set("rti_phase", 1)
+                self.solver.solve()
         if self.nlp == "SQP_RTI":
-            t0 = time.perf_counter()
             self.solver.options_set("rti_phase", 2)
-            status = self.solver.solve()
-            u0 = self.solver.get(0, "u")
-            t_fb = time.perf_counter() - t0
-        else:
-            t0 = time.perf_counter()
-            status = self.solver.solve()
-            u0 = self.solver.get(0, "u")
-            t_fb = time.perf_counter() - t0
-        fallback = (status != 0) and getattr(self, "_last_plan", None) is not None
+        status = self.solver.solve()
+        u0 = self.solver.get(0, "u")
+        t_fb = time.perf_counter() - t0
+        fallback = (status != 0) and last is not None
         if fallback:                                     # L6 handling: the shifted previous plan
-            X, U = self._shifted(*self._last_plan)
+            X, U = self._shifted(*last, k=shift)
             u0 = U[0]
             slack, lim_slack = float("nan"), float("nan")
         else:
             slack, lim_slack = self._slacks()
             X, U = self._plan()
         self._last_plan = (X, U)
-        self._set_plan(*self._shifted(X, U))            # warm start of the next call
+        self._set_plan(*self._shifted(X, U))            # warm start of the next call (one step)
         t_prep = 0.0
         if self.nlp == "SQP_RTI":
             t1 = time.perf_counter()

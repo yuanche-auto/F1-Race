@@ -1,6 +1,6 @@
 # L9 protocol – real-time control under an equal compute budget
 
-Status: **draft, revision 1 (2026-10-18)** after the review of revision 0 (50e2a8d: l9-M1, l9-m1 to
+Status: **binding, revision 1 (2026-10-18; 0af2b60) with amendment A1** after the review of revision 0 (50e2a8d: l9-M1, l9-m1 to
 l9-m4), written before any L9 run. Branch `layer/L9` (from
 `main` at 896b243). ROADMAP: section 4 (L9), rules of section 2. What was measured or seen before
 this draft is listed in section 12.
@@ -220,3 +220,37 @@ H-RT1 and H-RT2 are re-run there when it exists; until then they are marked as n
   An acados example generated, compiled and solved; the project's tests pass there (the RL tests
   skip – torch is not yet installed in WSL). Per-vCPU speed of a fixed workload: 29.3–31.8 ms.
 * No controller has run on T1new or T2new.
+
+## Amendments
+
+* **A1 (2026-10-18), the real-time rule for a controller with a plan – committed before any lap on
+  T1new / T2new; agreed with the reviewer after the smoke runs on X.**
+  *Cause:* the inputs of the NMPC are the steering **rate** and the two forces. Under the rule of
+  section 3 ("the previous command held until a new one is ready") a late IPOPT solve keeps a
+  steering rate running for hundreds of milliseconds and the steering angle drifts. On the first two
+  laps of the smoke set X in the real-time mode every IPOPT controller left the track within
+  70–120 m (deadline misses 100 %, latency growing from ~120 ms to 1–3 s as the car left the plan),
+  while the RTI controllers (~3 ms) drove as offline. No controller deployed with a slow solver is run
+  that way, so H-RT1 would hold because of the rule. Nothing has been seen on T1new / T2new.
+  1. **Plan buffer, time-aligned (the main rule):** a solution started at t_k and ready at t_k + c
+     (rounded up to the simulator step) is executed from then on with its segment
+     j = floor((t − t_k) / 50 ms) at time t – not from u₀, which was meant for t_k. The next solution
+     replaces it as soon as it is ready.
+  2. **Past the end of a plan** (j ≥ N, a latency above 1.5 s): steering rate 0 (the steering angle
+     held), the two forces of the last segment; the number of laps and of 10 ms steps where this
+     happens is reported.
+  3. **Warm start by the elapsed steps (real-time mode):** a new solve starts from the previous
+     solution shifted by the number of 50 ms steps since the previous solve started, not by one
+     (`ShiftFrenetMPC` for IPOPT – FrenetMPC itself unchanged –, `AcadosFrenetMPC.solve(shift=)`
+     re-aligning and re-preparing inside the timed feedback). The offline mode is unchanged (always one
+     step).
+  4. **A plan before the lap starts:** in the real-time mode the controller solves once before t = 0,
+     untimed (IPOPT: one solve from its initial guess; RTI: 30 iterations at the initial state), so
+     that a plan exists at t = 0; the timed computations start at t = 0. The offline mode, which
+     solves at t = 0 with no delay, is unchanged.
+  * The RL policies and the bare tracker have no plan: their previous action stays held (the
+    tracker's own 10 ms loop runs as always).
+  * **The rule of section 3 as written stays as a secondary condition** (`--hold last`, results in
+    `hold_last/`): the first command of a solution applied when ready and held, no plan before the
+    start (the warm start by elapsed steps, a property of the solvers, applies there too).
+  * The rest of section 3 (timing, deadline misses, busy time, preparation of RTI) is unchanged.

@@ -15,8 +15,12 @@ PUBLISHED=$(curl -sS https://pypi.org/pypi/pip/25.2/json | python3 -c "import js
   sha256sum "$HOME/acados/bin/t_renderer" | sed "s|$HOME|~|"
   sha256sum "$WHL"
   echo "# pip 25.2 wheel, SHA-256 published by PyPI: $PUBLISHED"
+  echo "# torch wheel from the PyTorch CPU index (install_rl.sh)"
+  sha256sum /tmp/l9_torch_wheel/torch-*.whl 2>/dev/null | sed "s|/tmp/l9_torch_wheel/||"
   echo "# python in the venv"
   "$HOME/f1race-venv/bin/python" --version
   "$HOME/f1race-venv/bin/pip" --version | cut -d" " -f1,2
+  echo "# pip freeze of the venv"
+  "$HOME/f1race-venv/bin/pip" freeze
 } > "$OUT"
 cat "$OUT"

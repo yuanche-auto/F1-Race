@@ -13,6 +13,8 @@ Fixed before any T1new / T2new result was read:
   Holds if rejected and more laps are completed only by RTI.
 * **Holm** over the two (``report_l7_partC.holm``) and the stricter decision (each at 0.025); where
   they differ, both are stated.
+* The main real-time rule is the plan buffer of amendment A1; the rule of revision 1 (the first
+  command held) is the secondary run hold_last/.
 * Secondary: completion and lap time per controller, implementation and mode; computation time
   (latency and busy time: mean, P95, P99, max) and deadline-miss rate; the loss against the offline
   mode (McNemar, lap time on laps both complete); RTI against IPOPT offline; the ranking per mode
@@ -106,8 +108,9 @@ def main() -> None:
 
     # ---- timing
     md += ["", "## Computation (per call; latency = feedback for RTI; busy = feedback + preparation)", "",
-           "| controller | impl | mode | latency ms mean / P95 / P99 / max | busy ms mean / P99 / max | miss rate | fallbacks |",
-           "|---|---|---|---|---|---|---|"]
+           "| controller | impl | mode | latency ms mean / P95 / P99 / max | busy ms mean / P99 / max | miss rate | fallbacks | "
+           "laps / steps past the plan (A1.2) |",
+           "|---|---|---|---|---|---|---|---|"]
     for k in KINDS:
         for i in IMPLS:
             for m, rec in (("offline", off), ("realtime", rt)):
@@ -121,7 +124,8 @@ def main() -> None:
                 md.append(f"| {k} | {i} | {m} | {np.average(lat[:, 0], weights=w):.1f} / {np.median(lat[:, 1]):.1f} / "
                           f"{np.max(lat[:, 2]):.1f} / {np.max(lat[:, 3]):.1f} | {np.average(busy[:, 0], weights=w):.1f} / "
                           f"{np.max(busy[:, 2]):.1f} / {np.max(busy[:, 3]):.1f} | {miss:.3f} | "
-                          f"{sum(r['fallbacks'] for r in rs)} |")
+                          f"{sum(r['fallbacks'] for r in rs)} | {sum(r.get('plan_exhausted_steps', 0) > 0 for r in rs)} / "
+                          f"{sum(r.get('plan_exhausted_steps', 0) for r in rs)} |")
 
     # ---- loss against offline; RTI vs IPOPT offline; ranking
     md += ["", "## Loss against the offline mode, and RTI against IPOPT offline (exact McNemar; uncorrected)", "",
@@ -183,6 +187,32 @@ def main() -> None:
             md.append(f"* load during real-time {stage} ({len(s)} samples): WSL mean over vCPUs {np.mean(wsl):.1f} % "
                       f"(max {np.max(wsl):.1f} %), Windows total {np.nanmean(win):.1f} % (max {np.nanmax(win):.1f} %)")
 
+    # ---- RL policies, bare tracker (no plan: the previous action held), Part C students
+    for part, f, lab in (("rl", "rl.jsonl", "RL policies and the bare tracker (the nine L5 finals first)"),
+                         ("student", "student.jsonl", "Part C: DAgger students of the RTI `nmpc` (secondary)")):
+        ro = {(r["kind"], r["case"]): r for r in load(d / "offline" / f) if "error" not in r}
+        rr = {(r["kind"], r["case"]): r for r in load(d / "realtime" / f) if "error" not in r}
+        if not ro and not rr:
+            continue
+        md += ["", f"## {lab}", "",
+               "| policy | offline (95 %) | real-time (95 %) | offline : real-time (only), p | latency ms mean / P99 / max | miss rate |",
+               "|---|---|---|---|---|---|"]
+        names = sorted({k for k, _ in ro} | {k for k, _ in rr}, key=lambda n: (n == "B_s1_500k", n == "tracker", n))
+        for p in names:
+            co = {c: bool(r["completed"]) for (k, c), r in ro.items() if k == p}
+            cr = {c: bool(r["completed"]) for (k, c), r in rr.items() if k == p}
+            cells = []
+            for cc in (co, cr):
+                n = sum(cc.values())
+                lo, hi = ci(n, len(cc)) if cc else (float("nan"), float("nan"))
+                cells.append(f"{n}/{len(cc)} ({lo:.2f}–{hi:.2f})" if cc else "–")
+            x, y, pv = mcnemar(co, cr) if co and cr else (0, 0, float("nan"))
+            lat = [r for (k, _), r in rr.items() if k == p and r.get("latency_ms")]
+            tl = (f"{np.mean([r['latency_ms'][0] for r in lat]):.2f} / {max(r['latency_ms'][2] for r in lat):.2f} / "
+                  f"{max(r['latency_ms'][3] for r in lat):.2f}") if lat else "–"
+            mr = f"{np.mean([r['miss_rate'] for r in lat]):.3f}" if lat else "–"
+            md.append(f"| {p} | {cells[0]} | {cells[1]} | {x} : {y}, {pv:.3g} | {tl} | {mr} |")
+
     # ---- repeat, delay, offline exploration
     rep = records(d / "repeat" / "model.jsonl")
     if rep:
@@ -193,8 +223,9 @@ def main() -> None:
                 common = [c for c in a2 if c in a1]
                 if common:
                     md.append(f"* {k}/{i}: {sum(a1[c] != a2[c] for c in common)} of {len(common)} outcomes differ")
-    for tag, lab in (("delay", "20 ms sensor delay (real-time)"), ("offline_explore",
-                                                                     "real-time evaluated lap, offline exploration (l9-m2)")):
+    for tag, lab in (("delay", "20 ms sensor delay (real-time)"),
+                     ("offline_explore", "real-time evaluated lap, offline exploration (l9-m2)"),
+                     ("hold_last", "the rule of revision 1: the first command held, no pre-start plan (A1, secondary)")):
         sec = records(d / tag / "model.jsonl")
         if sec:
             md += ["", f"## {lab}", "", "| controller | impl | completed | against the main real-time run (only this : only main), p |",
@@ -205,6 +236,14 @@ def main() -> None:
                     if cs:
                         x, y, p = mcnemar(cs, comp(rt, k, i))
                         md.append(f"| {k} | {i} | {sum(cs.values())}/{len(cs)} | {x} : {y}, {p:.3g} |")
+            srl = {(r["kind"], r["case"]): bool(r["completed"]) for r in load(d / tag / "rl.jsonl") if "error" not in r}
+            mrl = {(r["kind"], r["case"]): bool(r["completed"]) for r in load(d / "realtime" / "rl.jsonl")
+                   if "error" not in r}
+            for p_ in sorted({k for k, _ in srl}):
+                cs = {c: v for (k, c), v in srl.items() if k == p_}
+                cm = {c: v for (k, c), v in mrl.items() if k == p_}
+                x, y, p = mcnemar(cs, cm)
+                md.append(f"| {p_} | policy | {sum(cs.values())}/{len(cs)} | {x} : {y}, {p:.3g} |")
 
     (out / "L9.md").write_text(NL.join(md) + NL, encoding="utf-8")
     (out / "L9.json").write_text(json.dumps(res, indent=1, default=float))
