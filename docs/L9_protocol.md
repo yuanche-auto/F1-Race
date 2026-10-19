@@ -274,7 +274,12 @@ H-RT1 and H-RT2 are re-run there when it exists; until then they are marked as n
   2. The new plan is aligned to t_k + L̂: at t ≥ t_k + L̂ its segment j = floor((t − (t_k + L̂)) / 50 ms)
      is executed. If the computation takes c < L̂, the switch happens at t_k + L̂ (not earlier); if
      c > L̂, at readiness as in A1, with the same formula for j. The share of solves with c > L̂ is
-     reported. The warm start is shifted by the steps between the plans' alignment times.
+     reported. The warm start is shifted by the steps between the plans' alignment times. The controller
+     stays busy until the plan's alignment time – busy until max(t_k + c, t_k + L̂), the next solve
+     starting at t_k + L̂ – so that a solve finished early cannot be followed by another that would
+     overwrite a plan not yet started (one plan per L̂; review finding a2-M1); reported: the number of
+     solves that would have been free before t_k + L̂, and of them those that would have started
+     another solve before it (a control instant before t_k + L̂ – the case that overwrote plans).
   3. **L̂ = 100 ms, fixed now and not tuned:** the median IPOPT latency on X was ~90 ms, rounded up to
      a multiple of 50 ms. Only for the IPOPT implementations of `lag_identified` and `nmpc`, in the
      real-time mode (`impl = "ipopt_dc"`, `run_l9.py --dc`); the exploration lap of `lag_identified`

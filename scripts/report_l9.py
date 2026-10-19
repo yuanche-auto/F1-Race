@@ -130,8 +130,9 @@ def main() -> None:
     # ---- A2: the delay-compensated IPOPT arm (secondary, no Holm)
     if any(i == "ipopt_dc" for (_, i, _) in rt):
         md += ["", "## A2: IPOPT with delay compensation (L_hat = 100 ms; real-time; secondary, no Holm)", "",
-               "| controller | completed: dc / IPOPT / RTI | dc : IPOPT (only), p | dc : RTI (only), p | latency > L_hat |",
-               "|---|---|---|---|---|"]
+               "| controller | completed: dc / IPOPT / RTI | dc : IPOPT (only), p | dc : RTI (only), p | latency > L_hat | "
+               "solves held to t_k + L_hat / of them a solve would have restarted (a2-M1) |",
+               "|---|---|---|---|---|---|"]
         res["A2"] = {}
         for k in ("nmpc", "lag_identified"):
             cd, ci_, cr = comp(rt, k, "ipopt_dc"), comp(rt, k, "ipopt"), comp(rt, k, "rti")
@@ -140,10 +141,12 @@ def main() -> None:
             x1, y1, p1 = mcnemar(cd, ci_)
             x2, y2, p2 = mcnemar(cd, cr)
             late = [r.get("late_rate", float("nan")) for (kk, ii, _), r in rt.items() if kk == k and ii == "ipopt_dc"]
+            held = sum(r.get("held_to_plan", 0) for (kk, ii, _), r in rt.items() if kk == k and ii == "ipopt_dc")
+            rst = sum(r.get("would_restart", 0) for (kk, ii, _), r in rt.items() if kk == k and ii == "ipopt_dc")
             res["A2"][k] = {"dc": sum(cd.values()), "ipopt": sum(ci_.values()), "rti": sum(cr.values()),
                             "dc_vs_ipopt": [x1, y1, p1], "dc_vs_rti": [x2, y2, p2]}
             md.append(f"| {k} | {sum(cd.values())} / {sum(ci_.values())} / {sum(cr.values())} of {len(cd)} | "
-                      f"{x1} : {y1}, {p1:.3g} | {x2} : {y2}, {p2:.3g} | {np.nanmean(late):.3f} |")
+                      f"{x1} : {y1}, {p1:.3g} | {x2} : {y2}, {p2:.3g} | {np.nanmean(late):.3f} | {held} / {rst} |")
 
     # ---- loss against offline; RTI vs IPOPT offline; ranking
     md += ["", "## Loss against the offline mode, and RTI against IPOPT offline (exact McNemar; uncorrected)", "",

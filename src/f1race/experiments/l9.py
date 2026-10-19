@@ -172,12 +172,19 @@ class _RealTime:
                 self.t_next = t + PERIOD
             else:
                 t_ready = t + math.ceil(lat / self.sim_dt - 1e-9) * self.sim_dt
+                busy_until = t + busy
                 if self.dc_lhat:                         # A2.2: not before t_k + L_hat
                     t_ready = max(t_ready, t_plan)
                     rec["late"] = lat > self.dc_lhat
+                    # a2-M1: busy until the plan's alignment time, so that no later solve overwrites
+                    # a plan that has not started yet (one plan per L_hat)
+                    rec["held_to_plan"] = busy_until < t_plan
+                    # ... and would have started another solve before t_plan (the case that overwrote)
+                    rec["would_restart"] = (math.floor(busy_until / PERIOD - 1e-9) + 1) * PERIOD < t_plan - 1e-9
+                    busy_until = max(busy_until, t_plan)
                 self.pending = (t_ready, t_plan, np.array(u, float), U)
-                self.busy_until = t + busy
-                k = math.floor((t + busy) / PERIOD - 1e-9) + 1     # the first control instant after it
+                self.busy_until = busy_until
+                k = math.floor(busy_until / PERIOD - 1e-9) + 1     # the first control instant at / after it
                 self.t_next = max(t + PERIOD, k * PERIOD)
                 rec.update({"miss": busy > PERIOD, "t_apply": t_ready})
             self.last_start = t_plan
@@ -276,6 +283,8 @@ def timing_summary(calls: list[dict]) -> dict:
            "shift_max": int(max(c.get("shift", 1) for c in calls))}
     if "late" in calls[0]:
         out["late_rate"] = float(np.mean([c["late"] for c in calls]))   # A2: latency above L_hat
+        out["held_to_plan"] = int(sum(c["held_to_plan"] for c in calls))  # a2-M1: free before t_k + L_hat
+        out["would_restart"] = int(sum(c["would_restart"] for c in calls))  # a2-M1: a solve would have started
     if "miss" in calls[0]:
         out["miss_rate"] = float(np.mean([c["miss"] for c in calls]))
     return out
