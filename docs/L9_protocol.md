@@ -254,3 +254,43 @@ H-RT1 and H-RT2 are re-run there when it exists; until then they are marked as n
     `hold_last/`): the first command of a solution applied when ready and held, no plan before the
     start (the warm start by elapsed steps, a property of the solvers, applies there too).
   * The rest of section 3 (timing, deadline misses, busy time, preparation of RTI) is unchanged.
+* **A2 (2026-10-18), a delay-compensated IPOPT arm – secondary; committed before any lap on T1new /
+  T2new; agreed with the reviewer.** *Cause:* under A1 every IPOPT controller still left the track
+  within 94–180 m on the smoke laps of X. A step-by-step trace (Spielberg's nominal car,
+  `nmpc_reserve`, IPOPT, the start straight; `scripts/l9_debug_rt.py`) shows the mechanism: each
+  solve takes ~85–95 ms, so a new plan arrives every 100 ms and its segments 0–1 – meant for the time
+  the solve was running – are never executed; with the steering *rate* as input, the skipped segments
+  leave the real steering angle different from the plan's, and the steering-rate command roughly
+  doubled every 0.1 s (−0.009 rad/s at 0.6 s, −0.117 at 1.0 s, −0.47 at 1.2 s) until the car left the
+  track at 129 m after 1.68 s. The NMPC of L2–L8 has no delay compensation. Without an arm that has
+  one, H-RT1 cannot separate "the solver is slow" from "the latency is not compensated". H-RT1 and
+  H-RT2 stay as they are (this is decided after seeing X; the primary tests are not changed for it).
+  1. At t_k the controller propagates the measured state over [t_k, t_k + L̂] with the inputs already
+     committed there (the active plan's time-aligned segments, A1), with its own discrete model
+     (`FrenetMPC._step`; for the lag-aware model the commanded angle and the angle together), to
+     x̂(t_k + L̂), and solves from x̂ with u_prev = the committed segment of [t_k + L̂ − 50 ms,
+     t_k + L̂) – the last input in effect before the new plan starts. The prediction is part of the
+     timed computation.
+  2. The new plan is aligned to t_k + L̂: at t ≥ t_k + L̂ its segment j = floor((t − (t_k + L̂)) / 50 ms)
+     is executed. If the computation takes c < L̂, the switch happens at t_k + L̂ (not earlier); if
+     c > L̂, at readiness as in A1, with the same formula for j. The share of solves with c > L̂ is
+     reported. The warm start is shifted by the steps between the plans' alignment times.
+  3. **L̂ = 100 ms, fixed now and not tuned:** the median IPOPT latency on X was ~90 ms, rounded up to
+     a multiple of 50 ms. Only for the IPOPT implementations of `lag_identified` and `nmpc`, in the
+     real-time mode (`impl = "ipopt_dc"`, `run_l9.py --dc`); the exploration lap of `lag_identified`
+     in this arm (`nmpc_reserve`) is compensated the same way (section 4: the same implementation and
+     mode as the evaluated lap; `nmpc` has no exploration lap). It runs interleaved with the IPOPT
+     main arm and RTI (section 9).
+  4. Secondary, no Holm: reported against the IPOPT main arm and against RTI on the same laps (exact
+     McNemar each, with p).
+  5. The change rests on X only; nothing has been seen on T1new / T2new.
+  * **Batches (section 9, l9-M1 b):** in the real-time mode `lag_identified` and `nmpc` run in
+    batches of 2 laps × 3 implementations (IPOPT, IPOPT + compensation, RTI), the other controllers
+    in batches of 4 laps × 2 implementations; every batch holds all implementations of the same laps,
+    at most 8 jobs, and the next batch starts when the whole batch has finished.
+  * **Section 12, correction (torch):** `.venv-rl` (Windows) and the WSL venv both have torch
+    2.14.1+cpu – the Windows and the Linux wheel of the same CPU build (the WSL wheel
+    `torch-2.14.1+cpu-cp312-cp312-manylinux_2_28_x86_64.whl` from the PyTorch CPU index, SHA-256
+    5a636357…711f, `scripts/l9_wsl/acados_versions.txt`); the other RL packages have the same
+    versions as `.venv-rl` (`scripts/l9_wsl/requirements-rl-wsl.txt`). The RL loop of L9 reproduces
+    L7's records lap for lap in the offline mode (`B_s1_500k` and `C_s1` on T1's cars 0–5: 12 of 12).

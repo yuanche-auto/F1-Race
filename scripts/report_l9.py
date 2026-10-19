@@ -39,7 +39,7 @@ from report_l7_partB import ci, load, mcnemar  # noqa: E402
 from report_l7_partC import holm  # noqa: E402
 
 KINDS = ("nmpc", "nmpc_reserve", "smpc", "identified", "lag_identified")
-IMPLS = ("ipopt", "rti")
+IMPLS = ("ipopt", "ipopt_dc", "rti")           # ipopt_dc: the A2 arm (real-time only)
 NL = chr(10)
 
 
@@ -126,6 +126,24 @@ def main() -> None:
                           f"{np.max(busy[:, 2]):.1f} / {np.max(busy[:, 3]):.1f} | {miss:.3f} | "
                           f"{sum(r['fallbacks'] for r in rs)} | {sum(r.get('plan_exhausted_steps', 0) > 0 for r in rs)} / "
                           f"{sum(r.get('plan_exhausted_steps', 0) for r in rs)} |")
+
+    # ---- A2: the delay-compensated IPOPT arm (secondary, no Holm)
+    if any(i == "ipopt_dc" for (_, i, _) in rt):
+        md += ["", "## A2: IPOPT with delay compensation (L_hat = 100 ms; real-time; secondary, no Holm)", "",
+               "| controller | completed: dc / IPOPT / RTI | dc : IPOPT (only), p | dc : RTI (only), p | latency > L_hat |",
+               "|---|---|---|---|---|"]
+        res["A2"] = {}
+        for k in ("nmpc", "lag_identified"):
+            cd, ci_, cr = comp(rt, k, "ipopt_dc"), comp(rt, k, "ipopt"), comp(rt, k, "rti")
+            if not cd:
+                continue
+            x1, y1, p1 = mcnemar(cd, ci_)
+            x2, y2, p2 = mcnemar(cd, cr)
+            late = [r.get("late_rate", float("nan")) for (kk, ii, _), r in rt.items() if kk == k and ii == "ipopt_dc"]
+            res["A2"][k] = {"dc": sum(cd.values()), "ipopt": sum(ci_.values()), "rti": sum(cr.values()),
+                            "dc_vs_ipopt": [x1, y1, p1], "dc_vs_rti": [x2, y2, p2]}
+            md.append(f"| {k} | {sum(cd.values())} / {sum(ci_.values())} / {sum(cr.values())} of {len(cd)} | "
+                      f"{x1} : {y1}, {p1:.3g} | {x2} : {y2}, {p2:.3g} | {np.nanmean(late):.3f} |")
 
     # ---- loss against offline; RTI vs IPOPT offline; ranking
     md += ["", "## Loss against the offline mode, and RTI against IPOPT offline (exact McNemar; uncorrected)", "",

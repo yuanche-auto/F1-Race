@@ -2,7 +2,7 @@
 to one vCPU with taskset; single-threaded.
 
     python scripts/run_l9.py run --mode offline  --slots 20                           # T1new + T2new
-    python scripts/run_l9.py run --mode realtime --slots 8                            # interleaved batches
+    python scripts/run_l9.py run --mode realtime --dc --slots 8                       # interleaved batches, A2 arm
     python scripts/run_l9.py run --mode realtime --kinds lag_identified --delay 0.02 --tag delay
     python scripts/run_l9.py run --mode realtime --kinds lag_identified --explore-mode offline \\
         --plan-dir results/L9/offline --tag offline_explore
@@ -202,15 +202,27 @@ def stage_jobs(a, stage: str) -> list[dict]:
         if a.explore_mode:
             return []
         ks = [k for k in kinds if k in IDENT]
+        if a.dc and a.mode == "realtime" and "lag_identified" in ks:
+            jobs = [{**base, "stage": stage, "kind": k, "impl": i, "case": n, "batch": -1}
+                    for k in ks for i in (impls + ["ipopt_dc"] if k == "lag_identified" else impls) for n in names]
+            return jobs
     else:
         ks = kinds
-    jobs = []
+    jobs, batch = [], 0
     for k in ks:
-        if a.mode == "realtime" and stage != "plan":           # interleaved: 4 laps x implementations
-            order = [(n, i) for b in range(0, len(names), 4) for n in names[b:b + 4] for i in impls]
+        ik = list(impls)
+        if a.dc and a.mode == "realtime" and ((stage == "explore" and "lag_identified" in kinds)
+                                              or k in ("nmpc", "lag_identified")):
+            ik.append("ipopt_dc")                              # A2: the compensated arm, interleaved
+        if a.mode == "realtime" and stage != "plan":           # interleaved batches (l9-M1 b, A2)
+            per = max(a.slots // len(ik), 1)                   # 4 laps x 2 or 2 laps x 3 implementations
+            for b in range(0, len(names), per):
+                jobs += [{**base, "stage": stage, "kind": k, "impl": i, "case": n, "batch": batch}
+                         for n in names[b:b + per] for i in ik]
+                batch += 1
         else:
-            order = [(n, i) for i in impls for n in names]
-        jobs += [{**base, "stage": stage, "kind": k, "impl": i, "case": n} for n, i in order]
+            ik = [i for i in ik if not (stage == "plan" and i == "ipopt_dc" and k != "lag_identified")]
+            jobs += [{**base, "stage": stage, "kind": k, "impl": i, "case": n, "batch": -1} for i in ik for n in names]
     return jobs
 
 
@@ -253,7 +265,8 @@ def execute(jobs: list[dict], rec: Path, slots: int, cpu0: int, batches: bool = 
     with open(rec, "a") as fo:
         while queue or running:
             start = not (batches and running)                    # batches: a new batch only when all are done
-            while start and queue and free:
+            head = queue[0].get("batch", -1) if queue else None
+            while start and queue and free and (not batches or queue[0].get("batch", -1) == head):
                 j, cpu = queue.pop(0), free.pop(0)
                 cmd = ["taskset", "-c", str(cpu), sys.executable, str(Path(__file__)), "job", "--spec", json.dumps(j),
                        "--dir", str(rec.parent)]
@@ -305,6 +318,7 @@ def main() -> None:
     ap.add_argument("--explore-mode", default=None, choices=[None, "offline", "realtime"])
     ap.add_argument("--plan-dir", default=None, help="plans of another run (with --explore-mode)")
     ap.add_argument("--repeat", type=int, default=0, help="only the first n laps, recorded as a repeat")
+    ap.add_argument("--dc", action="store_true", help="A2: add the delay-compensated IPOPT arm (real-time)")
     ap.add_argument("--hold", default="plan", choices=["plan", "last"],
                     help="plan: A1 time-aligned plan buffer (main); last: the first command held (secondary)")
     ap.add_argument("--tag", default=None)

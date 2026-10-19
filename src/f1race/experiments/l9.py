@@ -26,7 +26,7 @@ from types import SimpleNamespace
 
 import numpy as np
 
-from ..control.nmpc import FrenetMPC, LagAwareMPCController, MPCController
+from ..control.nmpc import FS, FrenetMPC, LagAwareMPCController, MPCController
 from ..dynamics import DynVehicle
 from ..track import Track
 
@@ -35,6 +35,8 @@ DT, PERIOD, N = 0.01, 0.05, 30
 T_MAX = 121.0                                   # 1.6 x the 5 % plan on Spielberg (as L8)
 KINDS = ("nmpc", "nmpc_reserve", "smpc", "identified", "lag_identified")
 IMPLS = ("ipopt", "rti")
+DC_LHAT = 0.10                                  # A2: the fixed latency estimate of the compensated arm
+DC_KINDS = ("nmpc", "lag_identified")
 MODES = ("offline", "realtime")
 EXPLORE_SEED_OFFSET, NOISE_SEED_OFFSET = 100_000, 200_000      # as L7 / L8
 
@@ -79,7 +81,7 @@ def make_mpc(impl: str, track: Track, model: DynVehicle, plan, eta, backoff=None
     from .l2 import ref_from_plan
 
     ref = ref_from_plan(plan)
-    if impl == "ipopt":
+    if impl in ("ipopt", "ipopt_dc"):
         return ShiftFrenetMPC(track, model, ref, mode="track", N=N, dt=PERIOD, eta=eta, backoff=backoff, steer_lag=lag)
     from ..control.acados_mpc import AcadosFrenetMPC
 
@@ -99,10 +101,11 @@ class _RealTime:
     plan is computed before the lap starts, untimed (A1.4). ``hold="last"`` (the rule of revision 1,
     a secondary condition): the first command of a solution is applied when ready and held."""
 
-    def _rt_init(self, mode: str, delay: float, hold: str = "plan"):
+    def _rt_init(self, mode: str, delay: float, hold: str = "plan", dc_lhat: float | None = None):
         if mode not in MODES or hold not in ("plan", "last"):
             raise ValueError((mode, hold))
         self.rt_mode, self.delay, self.hold = mode, float(delay), hold
+        self.dc_lhat = dc_lhat if mode == "realtime" else None   # A2: delay compensation (real-time only)
         self.pending = None                      # (t_ready, t_start, first command, plan inputs)
         self.active = None                       # (t_start, plan inputs (N, 3))
         self.busy_until = 0.0
@@ -124,6 +127,12 @@ class _RealTime:
         self.exhausted += 1
         return np.array([0.0, U[-1][1], U[-1][2]], float)
 
+    def _committed(self, t: float) -> np.ndarray:
+        """The active plan's command at time t (A1 rule, not counted as exhaustion)."""
+        t0, U = self.active
+        j = int(math.floor((t - t0) / PERIOD + 1e-9))
+        return np.array(U[j], float) if j < len(U) else np.array([0.0, U[-1][1], U[-1][2]], float)
+
     def _schedule(self, t: float, xf: np.ndarray) -> None:
         """Pre-start plan (real-time, once); switch to a solution whose time has come; start a
         computation at a control instant when the controller is free; set the current command."""
@@ -138,9 +147,17 @@ class _RealTime:
                 self.u = self.pending[2]
             self.pending = None
         if not (t + 1e-9 < self.t_next or (rt and t + 1e-9 < self.busy_until)):
-            shift = 1 if (not rt or self.last_start is None) else int(round((t - self.last_start) / PERIOD))
             t0 = time.perf_counter()
-            u, info = self.mpc.solve(xf, self.u, shift=shift)
+            x_solve, u_prev, t_plan = xf, self.u, t
+            if self.dc_lhat and self.active is not None:  # A2: predict over the committed segments
+                n = int(round(self.dc_lhat / PERIOD))
+                Uc = [self._committed(t + i * PERIOD) for i in range(n)]
+                xp = np.array(xf, float)
+                for uc in Uc:
+                    xp = np.asarray(self.mpc._step(xp, uc / np.array([1.0, FS, FS]))).ravel()
+                x_solve, u_prev, t_plan = xp, Uc[-1], t + self.dc_lhat
+            shift = 1 if (not rt or self.last_start is None) else int(round((t_plan - self.last_start) / PERIOD))
+            u, info = self.mpc.solve(x_solve, u_prev, shift=shift)
             wall = time.perf_counter() - t0
             U = self.mpc.prediction()[1]
             if "time_feedback" in info:          # RTI: latency = feedback, busy = feedback + preparation
@@ -155,12 +172,15 @@ class _RealTime:
                 self.t_next = t + PERIOD
             else:
                 t_ready = t + math.ceil(lat / self.sim_dt - 1e-9) * self.sim_dt
-                self.pending = (t_ready, t, np.array(u, float), U)
+                if self.dc_lhat:                         # A2.2: not before t_k + L_hat
+                    t_ready = max(t_ready, t_plan)
+                    rec["late"] = lat > self.dc_lhat
+                self.pending = (t_ready, t_plan, np.array(u, float), U)
                 self.busy_until = t + busy
                 k = math.floor((t + busy) / PERIOD - 1e-9) + 1     # the first control instant after it
                 self.t_next = max(t + PERIOD, k * PERIOD)
                 rec.update({"miss": busy > PERIOD, "t_apply": t_ready})
-            self.last_start = t
+            self.last_start = t_plan
             self.calls.append(rec)
         if self.hold == "plan" and self.active is not None:
             self.u = self._plan_command(t)
@@ -168,9 +188,9 @@ class _RealTime:
 
 class RealTimeMPCController(_RealTime, MPCController):
     def __init__(self, mpc, sim_dt: float = DT, mode: str = "offline", delay: float = 0.0, tc_eta=0.99,
-                 hold: str = "plan"):
+                 hold: str = "plan", dc_lhat: float | None = None):
         MPCController.__init__(self, mpc, sim_dt, tc_eta)
-        self._rt_init(mode, delay, hold)
+        self._rt_init(mode, delay, hold, dc_lhat)
 
     def __call__(self, t: float, x: np.ndarray):
         from ..control.dyn_tracking import traction_limit
@@ -190,9 +210,9 @@ class RealTimeLagMPCController(_RealTime, LagAwareMPCController):
     """``LagAwareMPCController`` (observe="command") under the real-time rule."""
 
     def __init__(self, mpc, sim_dt: float = DT, mode: str = "offline", delay: float = 0.0, tc_eta=0.99,
-                 hold: str = "plan"):
+                 hold: str = "plan", dc_lhat: float | None = None):
         LagAwareMPCController.__init__(self, mpc, sim_dt, tc_eta, observe="command")
-        self._rt_init(mode, delay, hold)
+        self._rt_init(mode, delay, hold, dc_lhat)
 
     def __call__(self, t: float, x: np.ndarray):
         from ..control.dyn_tracking import traction_limit
@@ -230,7 +250,7 @@ def explore_lap(case: dict, track: Track, impl: str, mode: str, name: str, hold:
     o = plans()[0.88]
     path, _ = dyn_reference(track, nom, o)
     mpc = make_mpc(impl, track, nom, o, 0.88, name=name + "_explore")
-    ctl = RealTimeMPCController(mpc, DT, mode, hold=hold)
+    ctl = RealTimeMPCController(mpc, DT, mode, hold=hold, dc_lhat=DC_LHAT if impl == "ipopt_dc" else None)
     sim = make_sim(case, track, EXPLORE_SEED_OFFSET)
     r = sim.run(ctl, x0_from_plan(o, path), t_max=T_MAX)
     state = np.array([sim.observe(x) for x in r.state]) if isinstance(sim, LaggedSim) else r.state.copy()
@@ -254,6 +274,8 @@ def timing_summary(calls: list[dict]) -> dict:
                        float(busy.max())],
            "fallbacks": int(sum(c["fallback"] for c in calls)),
            "shift_max": int(max(c.get("shift", 1) for c in calls))}
+    if "late" in calls[0]:
+        out["late_rate"] = float(np.mean([c["late"] for c in calls]))   # A2: latency above L_hat
     if "miss" in calls[0]:
         out["miss_rate"] = float(np.mean([c["miss"] for c in calls]))
     return out
@@ -331,8 +353,9 @@ def drive(case: dict, kind: str, impl: str, mode: str, delay: float = 0.0, explo
         raise ValueError(kind)
     path, _ = dyn_reference(track, model, o)
     mpc = make_mpc(impl, track, model, o, eta, backoff, lag, name=name)
-    ctl = (RealTimeLagMPCController(mpc, DT, mode, delay, hold=hold) if lag is not None
-           else RealTimeMPCController(mpc, DT, mode, delay, hold=hold))
+    dc = DC_LHAT if impl == "ipopt_dc" else None
+    ctl = (RealTimeLagMPCController(mpc, DT, mode, delay, hold=hold, dc_lhat=dc) if lag is not None
+           else RealTimeMPCController(mpc, DT, mode, delay, hold=hold, dc_lhat=dc))
     sim = make_sim(case, track)
     r = sim.run(ctl, x0_from_plan(o, path), t_max=T_MAX)
     out.update({"completed": bool(r.completed), "lap_time": float(r.lap_time), "stop_reason": r.stop_reason,
