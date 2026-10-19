@@ -11,13 +11,19 @@ T=$R/timeline.tsv
 FROM=${1:-1a}
 log() { printf '%s\t%s\n' "$(date -Iseconds)" "$*" >> "$T"; }
 
-errors() {   # records with a top-level "error" key in a run directory (load.jsonl excluded)
+errors() {   # jobs whose last record has a top-level "error" key (load.jsonl excluded; a job re-run after an
+             # error appends a new record, the error record stays in the file)
   python - "$R/$1" <<'EOF'
 import json, pathlib, sys
 n = 0
 for f in pathlib.Path(sys.argv[1]).glob("*.jsonl"):
     if f.name != "load.jsonl":
-        n += sum("error" in json.loads(l) for l in f.read_text().splitlines() if l.strip())
+        last = {}
+        for l in f.read_text().splitlines():
+            if l.strip():
+                r = json.loads(l)
+                last[r["job"]] = r
+        n += sum("error" in r for r in last.values())
 print(n)
 EOF
 }
