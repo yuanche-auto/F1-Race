@@ -204,7 +204,8 @@ def main() -> None:
         s = [x for x in ld if x.get("stage") == stage]
         if s:
             wsl = [np.mean(list(x["wsl"].values())) for x in s]
-            win = [float(x["windows"].get("_Total", "nan")) for x in s if isinstance(x.get("windows"), dict)]
+            win = [float({k.lower(): v for k, v in x["windows"].items()}.get("_total", "nan"))  # Get-Counter: "_total"
+                   for x in s if isinstance(x.get("windows"), dict)]
             md.append(f"* load during real-time {stage} ({len(s)} samples): WSL mean over vCPUs {np.mean(wsl):.1f} % "
                       f"(max {np.max(wsl):.1f} %), Windows total {np.nanmean(win):.1f} % (max {np.nanmax(win):.1f} %)")
 
@@ -244,6 +245,13 @@ def main() -> None:
                 common = [c for c in a2 if c in a1]
                 if common:
                     md.append(f"* {k}/{i}: {sum(a1[c] != a2[c] for c in common)} of {len(common)} outcomes differ")
+        ex1, ex2 = ({(r["impl"], r["case"]): bool(r["completed"]) for r in load(d / m / "explore.jsonl") if "error" not in r}
+                    for m in ("realtime", "repeat"))
+        for i in IMPLS:                                  # the exploration laps too (A2.6)
+            common = [c for (i_, c) in ex2 if i_ == i and (i, c) in ex1]
+            if common:
+                md.append(f"* exploration/{i}: {sum(ex1[(i, c)] != ex2[(i, c)] for c in common)} of {len(common)} "
+                          f"outcomes differ")
     for tag, lab in (("delay", "20 ms sensor delay (real-time)"),
                      ("offline_explore", "real-time evaluated lap, offline exploration (l9-m2)"),
                      ("hold_last", "the rule of revision 1: the first command held, no pre-start plan (A1, secondary)")):

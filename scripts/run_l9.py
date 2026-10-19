@@ -6,7 +6,7 @@ to one vCPU with taskset; single-threaded.
     python scripts/run_l9.py run --mode realtime --kinds lag_identified --delay 0.02 --tag delay
     python scripts/run_l9.py run --mode realtime --kinds lag_identified --explore-mode offline \\
         --plan-dir results/L9/offline --tag offline_explore
-    python scripts/run_l9.py run --mode realtime --repeat 20 --tag repeat
+    python scripts/run_l9.py run --mode realtime --dc --repeat 20 --tag repeat           # A2.6: with the A2 arm
     python scripts/run_l9.py run --mode realtime --hold last --tag hold_last     # A1: the rule of revision 1
     python scripts/run_l9.py run --part rl --mode realtime --slots 8                 # RL policies, bare tracker
     python scripts/run_l9.py train-student --seed 1                                  # Part C (DAgger)

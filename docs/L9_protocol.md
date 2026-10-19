@@ -289,6 +289,29 @@ H-RT1 and H-RT2 are re-run there when it exists; until then they are marked as n
   4. Secondary, no Holm: reported against the IPOPT main arm and against RTI on the same laps (exact
      McNemar each, with p).
   5. The change rests on X only; nothing has been seen on T1new / T2new.
+  6. **Repeat (section 9):** the compensated arm (`nmpc` and `lag_identified` with `ipopt_dc`, and
+     the exploration laps of the latter) is part of the repeat of section 9 – the first 20 test laps
+     run a second time, interleaved as in the main run (`run_l9.py run --mode realtime --dc --repeat 20
+     --tag repeat`) – and its outcome flips are reported like those of the other arms.
+  7. **Smoke runs on X before and after the a2-M1 fix (not a result; local records
+     `results/L9/smoke_dc`, `smoke_dc2`, `smoke_dc3`).** The fix changes the schedule only when a
+     solve takes c < 50 ms: then the next control instant lies before t_k + L̂ and the old code started
+     another solve there. For 50 ms ≤ c ≤ L̂ the old code already started the next solve at t_k + L̂,
+     after switching to the pending plan, and for c > L̂ max(t_k + c, t_k + L̂) = t_k + c, so both were
+     unchanged. Distances of the compensated arm on X (cars 1 / 2, τ = 0; no lap completed in any
+     run): before the fix (`smoke_dc`) `nmpc` 477 / 484 m, `lag_identified` 442 / 1410 m, the
+     exploration lap 2872 / 2859 m; after the fix (`smoke_dc2`) `nmpc` 2664 / 2844 m,
+     `lag_identified` 438 / 2652 m, the exploration lap 2655 / 2693 m. A third run of the fixed code
+     (`smoke_dc3`, the same code with one more counter) gave 3168 m for `nmpc` on car 1 (2664 m in
+     `smoke_dc2`), with no solve shorter than 50 ms (would_restart = 0 of 500). The runs before the
+     fix recorded only the summary of the latencies (mean / P95 / P99 / max), not every solve, so
+     whether a solve shorter than 50 ms occurred there cannot be checked. The mean latency of the
+     `nmpc` laps was 127–131 ms before the fix and 106–107 ms after it; this can be cause or
+     consequence, since IPOPT's solve time depends on the state. The difference most likely comes
+     from the variation of the measured times between runs – this arm's latencies lie around L̂
+     (share above L̂ 0.30–0.98), and the same fixed code gave 2664 and 3168 m on the same lap – but
+     this cannot be confirmed, and it is not attributed to the fix. Every lap of this arm now records
+     the counts held_to_plan and would_restart, so the case c < 50 ms can be checked lap by lap.
   * **Batches (section 9, l9-M1 b):** in the real-time mode `lag_identified` and `nmpc` run in
     batches of 2 laps × 3 implementations (IPOPT, IPOPT + compensation, RTI), the other controllers
     in batches of 4 laps × 2 implementations; every batch holds all implementations of the same laps,
