@@ -2,7 +2,7 @@
 # L9 runs at RUN_COMMIT in the pinned worktree (docs/L9_protocol.md section 11; the reviewer's order):
 # 1 offline (model controllers, RL) -> 2 real-time main (--dc) and RL -> 3 repeat, delay, offline_explore,
 # hold_last -> 4 Part C (train 3 students, then offline, then real-time). One step at a time, never two;
-# stops at the first error record. Usage: bash l9_run.sh [first step id, default 1a]
+# stops at the first error record; v3: logs appended, the trainers waited for by pid. Usage: bash l9_run.sh [first step id, default 1a]
 source ~/f1race-env.sh
 W="/mnt/c/Users/yuanche/F1-Race-worktrees/F1-Race-wt-L9-run"
 cd "$W" || exit 1
@@ -43,7 +43,7 @@ step() {     # id dir args...
   [ "$id" = "$FROM" ] && ACTIVE=1
   [ $ACTIVE = 1 ] || return 0
   log "start $id ($dir): run_l9.py $*"
-  python scripts/run_l9.py "$@" > "$R/log_$id.txt" 2>&1
+  echo "=== $(date -Iseconds) run_l9.py $*" >> "$R/log_$id.txt"; python scripts/run_l9.py "$@" >> "$R/log_$id.txt" 2>&1
   local rc=$? n
   n=$(errors "$dir")
   log "end $id rc=$rc errors=$n"
@@ -54,9 +54,10 @@ train() {    # Part C: three students at once, each on its own vCPU (untimed; no
   [ "4a" = "$FROM" ] && ACTIVE=1
   [ $ACTIVE = 1 ] || return 0
   log "start 4a: train-student --seed 1..3"
-  for s in 1 2 3; do taskset -c $((s - 1)) python scripts/run_l9.py train-student --seed $s > "$R/log_4a_s$s.txt" 2>&1 & done
-  wait
-  local ok=1
+  local pids="" p ok=1
+  for s in 1 2 3; do taskset -c $((s - 1)) python scripts/run_l9.py train-student --seed $s >> "$R/log_4a_s$s.txt" 2>&1 &
+    pids="$pids $!"; done
+  for p in $pids; do wait $p || ok=0; done   # v3: only the trainers (v2's bare wait also waited for progress and hung)
   for s in 1 2 3; do [ -f "$R/partC/student_s$s.pt" ] || ok=0; done
   log "end 4a students_ok=$ok"
   if [ $ok != 1 ]; then log "STOP at 4a"; rm -f "$R/.running"; exit 1; fi
