@@ -13,6 +13,13 @@ compares several solution methods on the same problem:
 | **L4** | learning the car | identify the parameters from an exploration lap (least squares on the logged dynamics), re-plan, drive with the identified model; noise sensitivity | ✅ done ([docs/L4.md](docs/L4.md)) |
 | **L5** | reinforcement learning | residual soft actor-critic on top of the L1 tracker with an observation history, trained on randomised cars and disturbances; nine training runs, checkpoints selected on full validation laps; compared on the L2 and L3 test sets | ✅ done ([docs/L5.md](docs/L5.md)) |
 | **L6** | structural model error (steering actuator lag) | the fixed baselines of L1–L5; parameter identification vs identification of the lag; correct-structure NMPC; learned residual dynamics with uncertainty; EKF under sensor noise | ✅ done ([docs/L6.md](docs/L6.md); roadmap L6–L10: [docs/ROADMAP_L6-L10.md](docs/ROADMAP_L6-L10.md)) |
+| **L7** | reliable learning | diagnosis of the L5 runs' blind spots; an NMPC safety filter with calibrated risk estimates on top of the learned policies; training that restarts episodes before failure positions | ✅ done ([docs/L7.md](docs/L7.md)) |
+| **L8** | generalisation: new tracks and wet friction, one at a time | the fixed baselines and the trained policies on four unseen tracks and on wet Spielberg; identification + re-planning; short fine-tuning | ✅ done ([docs/L8.md](docs/L8.md)) |
+| **L9** | real time: every controller on one core within the 50 ms control period | the offline implementations (IPOPT) against acados real-time iterations of the same OCP; delay compensation; sensor delay; distilled policies | ✅ done ([docs/L9.md](docs/L9.md)) |
+| **L10** | interactive racing (exploratory) | one opponent of fixed behaviour first | next: protocol ([roadmap](docs/ROADMAP_L6-L10.md)) |
+
+Every layer from L5 on was planned in a pre-registered protocol
+(`docs/L*_protocol.md`, amendments listed at its end) before any test lap ran.
 
 The guiding question of the whole series: *in which settings does a
 learning-based controller beat a model-based one, and why?*
@@ -32,6 +39,11 @@ python scripts/l2_studies.py                         # ~20 min; one parameter at
 python scripts/run_l3.py                             # ~8 h (12 processes) incl. calibrate / iterate / failures; 18 controllers x 30 seeds
 python scripts/run_l4.py                             # ~3 h (7 processes); identify + re-plan on 25 cars (noise: run_l4.py noise)
 pip install -e .[rl] && python scripts/l5_multiseed.py   # L5: 9 training runs, validation, tests (~8 h; selected policies in models/L5)
+python scripts/run_l6.py plans && python scripts/run_l6.py round1 --taus 0.06   # L6 (rounds 1-4 and report: see the script)
+# L7-L9 run from worktrees pinned to one commit; the steps and commands are in each report:
+#   L7: docs/L7.md (scripts/l7_partA.py, run_l7.py, run_l7_partB.py, train_l7.py, run_l7_partC.py; RL extras)
+#   L8: docs/L8.md (scripts/fetch_tracks.py <track>, l8_plans.py, run_l8.py, report_l8.py)
+#   L9: docs/L9.md (WSL with acados, scripts/l9_wsl/; run_l9.py, report_l9.py)
 pytest -m "not slow"                                 # ~2 min (full suite ~12 min, ~30 min if the first L1 guess fails)
 ```
 
@@ -129,6 +141,91 @@ model-based controllers that identify the car (L4, in a favourable setting) or
 calibrate their reserves (L3). See
 [docs/L5.md](docs/L5.md).
 
+## L6 results (a steering actuator lag the models do not have; the 25 cars of L4)
+
+Laps completed of 25, with the controllers seeing their own commanded angle:
+
+| Controller | τ = 10 ms | τ = 30 ms | τ = 60 ms |
+|---|---|---|---|
+| NMPC, nominal model | 12 | 3 | 0 |
+| SMPC (L3, calibration unchanged) | 22 | 22 | 9 |
+| NMPC, parameters identified (L4) | 22 | 0 | 0 |
+| **NMPC + lag model, τ and parameters identified** | **25** | **25** | **24** |
+| NMPC + lag model, true car (reference) | 25 | 24 | 23 |
+| residual RL (L5, unchanged) | 25 | 24 | 23 |
+
+Parameter errors and the structural error fail separately and both have to be
+fixed: identifying parameters in the wrong structure fails from 30 ms on, while
+identifying the lag together with the parameters matches the correct-structure
+reference (lap times 76.8–77.4 s; the RL policy is as reliable, ~4 s per lap
+slower). A learned residual model was not calibrated well enough to carry a
+safety layer (no-go for L7). See [docs/L6.md](docs/L6.md).
+
+## L7 results (reliable learning)
+
+* **Diagnosis of the nine L5 runs:** the blind spots are a few hard corners, and
+  which one a run fails at depends on the run; the failing cars mostly have less
+  grip. Whether the cause is too little experience or an observation that cannot
+  reveal the grip in time is not separable from these data.
+* **Safety layer (H-B, not supported – the opposite):** an NMPC safety filter
+  with a risk estimate that passed its acceptance test lowered the completions of
+  all nine final L5 checkpoints on the test laps (exact signed-rank p = 0.0039; the
+  selected policy 102 → 51 of 105); by a 3-s criterion 88–99 % of its sampled
+  interventions were not needed (an upper bound).
+  More than half of the filtered failures followed runs of failed solves. The
+  result is for this filter (no solver retries); it is not a statement about
+  safety filters in general.
+* **Training from failures (H-C, not supported – the opposite):** restarting 30 %
+  of the episodes before recent failure positions gave a median seed that
+  completes fewer test laps than plain training (50 vs 80 of 105, 4 : 34,
+  p = 6·10⁻⁷); at the level of seeds the two groups do not differ significantly
+  (p = 0.69), the curriculum's seeds are far more spread. Checkpoints selected on
+  validation laps reached 104 and 105 of 105 (a secondary result).
+
+See [docs/L7.md](docs/L7.md) and the protocol [docs/L7_protocol.md](docs/L7_protocol.md).
+
+## L8 results (four unseen tracks; wet Spielberg)
+
+| Controller | new tracks, 25 cars × 4 | wet, friction × 0.85 / × 0.75 (25 cars each) |
+|---|---|---|
+| L1 tracker | 4 / 100 | 0 / 0 |
+| NMPC, nominal | 49 / 100 | 0 / 0 |
+| SMPC (Spielberg calibration) | 81 / 100 | 0 / 0 |
+| **NMPC + lag model, identified, re-planned** | **100 / 100** | **25 / 25** |
+| residual RL (L5 selected) | 0 / 100 | 8 / 0 |
+
+Both primary tests hold (new tracks 100 : 0, p = 1.6·10⁻³⁰; wet 42 : 0,
+p = 4.5·10⁻¹³) – for these two controllers, one of which drives an exploration
+lap and re-plans. None of the 22 trained policies transfers: at most 2 of 100
+laps on the new tracks. With the L3 disturbances on the new tracks the SMPC is the
+most reliable (33 / 40). Short fine-tuning on a target (~5 min per seed) helps
+some seeds on some tracks, none on Austin, and makes the wet worse. Test tracks
+drawn by seed (Zandvoort, São Paulo, Austin, Nürburgring; Norisring replaced by
+the rule when its plans failed). See
+[docs/L8.md](docs/L8.md).
+
+## L9 results (real time: one core, 50 ms control period, T1new + T2new)
+
+| Controller (lag model, τ and parameters identified) | offline | real time |
+|---|---|---|
+| NMPC with IPOPT (as in L2–L8) | 88 / 105 | **0 / 105** |
+| the same with a fixed 100 ms delay compensation | – | 0 / 105 |
+| **the same OCP in acados, real-time iterations** | 74 / 105 | **79 / 105** |
+
+Both primary tests hold: the time limit costs the IPOPT implementation every lap
+(88 : 0, p = 6.5·10⁻²⁷; every IPOPT controller fails within the first 237 m, with
+every solve late), and real-time iterations keep the controller on the track
+(79 : 0, p = 3.3·10⁻²⁴; feedback ~2.4 ms per step) – though below the converged
+IPOPT offline. A 20 ms sensor delay takes this RTI controller from 79 to 0 laps.
+The RL policies, at ~0.3 ms per decision, lose little to the time limit: the
+selected one 99 → 98 of 105; the nine L5 final checkpoints change by −15 to +2
+laps (the largest change B_s2 53 → 38). This compares two implementations of one
+controller on this machine (WSL, acados v0.6.0) and under this rule. See
+[docs/L9.md](docs/L9.md).
+
+**Not yet done:** the protocols of L7–L9 ask for the primary results to be
+re-run in a second Python environment; that is deferred (see [STATUS.md](STATUS.md)).
+
 ## Repository layout
 
 ```
@@ -137,15 +234,21 @@ src/f1race/
   vehicle.py        vehicle parameters, friction ellipse with downforce, power limit
   dynamics.py       dynamic single-track model (L1): tyres, load transfer, axle ellipses
   path.py           closed paths (racing lines) with curvature and its derivative
-  planning/         minimum-curvature QP, QSS speed profile, minimum-time OCP
+  planning/         minimum-curvature QP, QSS speed profile, minimum-time OCP;
+                    robust re-planning by continuation (replan.py, before L7)
   control/          path/speed tracking (L0), dynamic tracker (L1), NMPC and experimental
-                    receding-horizon min-time MPC (L2)
+                    receding-horizon min-time MPC (L2); safety-filter mode of the NMPC
+                    and a CBF-QP filter (L7, safety_filter.py); the same OCP in acados
+                    with real-time iterations (L9, acados_mpc.py)
   sim/              time-domain simulator with constraint monitoring; stochastic
-                    disturbances (L3)
-  estimation/       parameter identification from driving data (L4)
-  rl/               Gymnasium environment for residual RL on the tracker (L5)
-  experiments/      one module per layer
-scripts/            data download and per-layer reproduction scripts
+                    disturbances (L3); steering actuator lag (L6, lagged.py)
+  estimation/       parameter identification from driving data (L4); identification
+                    with the lag, EKF, residual models (L6)
+  rl/               Gymnasium environment for residual RL on the tracker (L5);
+                    failure-start curriculum (L7, curriculum.py)
+  experiments/      one module per layer (l9_distill.py: the L9 DAgger students)
+scripts/            data download and per-layer reproduction scripts; l9_wsl/: the WSL
+                    environment of L9 (acados build, versions, run driver)
 tests/              pytest suite
 docs/               per-layer write-ups and figures, review workflow
 ```
@@ -156,6 +259,10 @@ Track centre lines and widths come from the
 [TUM FTM racetrack-database](https://github.com/TUMFTM/racetrack-database)
 (LGPL-3.0). They are **not** redistributed here: `scripts/fetch_tracks.py`
 downloads them from a pinned upstream commit and checks SHA-256 sums.
+L0–L7 and L9 use Spielberg; L8 also uses the validation tracks Monza and Sakhir
+and the test tracks Zandvoort, SaoPaulo, Austin and Nuerburgring
+(`python scripts/fetch_tracks.py <name>`). Results (`results/`) are not
+committed either.
 
 ## Development process
 
