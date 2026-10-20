@@ -170,7 +170,8 @@ safety layer (no-go for L7). See [docs/L6.md](docs/L6.md).
 * **Safety layer (H-B, not supported – the opposite):** an NMPC safety filter
   with a risk estimate that passed its acceptance test lowered the completions of
   all nine final L5 checkpoints on the test laps (exact signed-rank p = 0.0039; the
-  selected policy 102 → 51 of 105); 88–99 % of its interventions were not needed.
+  selected policy 102 → 51 of 105); by a 3-s criterion 88–99 % of its sampled
+  interventions were not needed (an upper bound).
   More than half of the filtered failures followed runs of failed solves. The
   result is for this filter (no solver retries); it is not a statement about
   safety filters in general.
@@ -197,9 +198,10 @@ Both primary tests hold (new tracks 100 : 0, p = 1.6·10⁻³⁰; wet 42 : 0,
 p = 4.5·10⁻¹³) – for these two controllers, one of which drives an exploration
 lap and re-plans. None of the 22 trained policies transfers: at most 2 of 100
 laps on the new tracks. With the L3 disturbances on the new tracks the SMPC is the
-most reliable (33 / 40). Short fine-tuning on a new track helps some seeds and
-none on one track. Test tracks drawn by seed (Zandvoort, São Paulo, Austin,
-Nürburgring; Norisring replaced by the rule when its plans failed). See
+most reliable (33 / 40). Short fine-tuning on a target (~5 min per seed) helps
+some seeds on some tracks, none on Austin, and makes the wet worse. Test tracks
+drawn by seed (Zandvoort, São Paulo, Austin, Nürburgring; Norisring replaced by
+the rule when its plans failed). See
 [docs/L8.md](docs/L8.md).
 
 ## L9 results (real time: one core, 50 ms control period, T1new + T2new)
@@ -214,10 +216,12 @@ Both primary tests hold: the time limit costs the IPOPT implementation every lap
 (88 : 0, p = 6.5·10⁻²⁷; every IPOPT controller fails within the first 237 m, with
 every solve late), and real-time iterations keep the controller on the track
 (79 : 0, p = 3.3·10⁻²⁴; feedback ~2.4 ms per step) – though below the converged
-IPOPT offline. A 20 ms sensor delay removes every RTI lap. The RL policies, at
-~0.2 ms per decision, lose little to the time limit: the selected one 99 → 98 of
-105, the nine L5 final checkpoints between 0 and 15 laps each. This compares two implementations of one controller on
-this machine (WSL, acados v0.6.0) and under this rule. See [docs/L9.md](docs/L9.md).
+IPOPT offline. A 20 ms sensor delay takes this RTI controller from 79 to 0 laps.
+The RL policies, at ~0.3 ms per decision, lose little to the time limit: the
+selected one 99 → 98 of 105; the nine L5 final checkpoints change by −15 to +2
+laps (the largest change B_s2 53 → 38). This compares two implementations of one
+controller on this machine (WSL, acados v0.6.0) and under this rule. See
+[docs/L9.md](docs/L9.md).
 
 **Not yet done:** the protocols of L7–L9 ask for the primary results to be
 re-run in a second Python environment; that is deferred (see [STATUS.md](STATUS.md)).
