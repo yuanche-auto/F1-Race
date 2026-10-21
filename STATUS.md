@@ -1,4 +1,4 @@
-# STATUS — F1-Race (L0–L9 done; next: L10 protocol)
+# STATUS — F1-Race (L0–L9 done; L10 PAUSED; control expansion phase A in review)
 
 Since 2026-10-14 the project runs on a new machine (below). Reviewer on this machine: Claude
 session **"F1 Race 阶段审查"** (`local_30f94a40-03cb-490d-85b4-12ad1d351d3a`); the reviewer and
@@ -72,7 +72,8 @@ hash, merge to `main` and push only after APPROVE. Workflow: [docs/workflow.md](
 * **L7 section 8 – second environment** (amendment A10, deferred by the user on 2026-10-17): install Python 3.11, build `.venv-311-rl` from the lock file; re-run the acceptance test of estimate (b) and T1 + T2 with and without the main filter for `B_s1_500k` and the median seeds P_s1 / F_s4; report as an addendum to docs/L7.md.
 * **L8 section 9 – second environment** (same deferral): re-run H-G and H-D there – the laps of `lag_identified` and `B_s1_500k` in sets A (25 cars x 4 test tracks) and B (wet 0.85 / 0.75); report as an addendum to docs/L8.md.
 * **L9 – second environment** (section 10; same deferral): re-run H-RT1 and H-RT2 there (`lag_identified` IPOPT offline / real-time, RTI real-time on T1new + T2new); report as an addendum to docs/L9.md. The second environment is still open for the primary tests of L7, L8 and L9 alike; L9's WSL environment (same package versions on another OS and compiler) is not it and does not replace it. WSL environment (Ubuntu 24.04): `~/acados` (v0.6.0), `~/f1race-venv` (lock file, acados_template, torch 2.14.1+cpu, SB3 2.9.0, gymnasium 1.4.0), `source ~/f1race-env.sh`; setup and the run driver in `scripts/l9_wsl/`. Worktrees for pinned runs go under `C:\Users\yuanche\F1-Race-worktrees\`.
-* **L10** (next layer): protocol first (`docs/L10_protocol.md`, ROADMAP rules), reviewed before any run.
+* **L10 – PAUSED — Preserved for Future Development** (2026-10-21, the user's direction): the protocol `docs/L10_protocol.md` revision 1 is binding on branch `layer/L10` (cd4a789 APPROVE, a961b29; pause note 3ba9087); no L10 code or run while paused; nothing of L10 is removed or changed.
+* **Control expansion (L1–L9 advanced control methods; not a layer)** – started 2026-10-21: roadmap [docs/CONTROL_EXPANSION_ROADMAP.md](docs/CONTROL_EXPANSION_ROADMAP.md), progress and review state in [docs/CONTROL_EXPANSION_STATUS.md](docs/CONTROL_EXPANSION_STATUS.md). Phase A (dynamic MPCC) on `cx/A-mpcc`: code, tests and protocol draft [docs/CX_A_protocol.md](docs/CX_A_protocol.md) in review; no benchmark lap yet. The second-environment items above apply to its primary results too.
 
 ## Preparation for L7 (2026-10-14, new machine)
 
