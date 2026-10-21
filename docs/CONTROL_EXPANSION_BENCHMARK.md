@@ -23,7 +23,7 @@ such and are never pooled with them.
 ## Phase A – dynamic MPCC
 
 **Development checks only** (nominal car, Spielberg, code 0061e79; table and reading in
-[CX_A_protocol.md](CX_A_protocol.md) §12): the standard formulation with a terminal speed bound leaves
+[CX_A_protocol.md](CX_A_protocol.md) §9): the standard formulation with a terminal speed bound leaves
 the track at turn 1 with either reference path; with the racing line, a speed bound at every stage and
 q_c ≥ 0.5 it completes the lap (76.05 s at q_c 0.5, 75.76 s at q_c 2; the NMPC on the same lap 76.05 s).
 No benchmark yet: the protocol is in review.

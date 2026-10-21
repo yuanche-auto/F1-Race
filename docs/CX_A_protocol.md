@@ -1,7 +1,8 @@
 # CX-A protocol – dynamic MPCC (control expansion, phase A)
 
-Status: **draft, revision 0 (2026-10-21)**, for review; written after the development checks of
-section 12 and before any lap of the sets of section 2. Branch `cx/A-mpcc` (from `main` c010887);
+Status: **draft, revision 1 (2026-10-21)** after the review of revision 0 (f4d1ee9: cx-M1, cx-M2,
+cx-m1 to cx-m4), for review; written after the development checks of section 9 and before any lap of
+the sets of section 2. Branch `cx/A-mpcc` (from `main` c010887);
 code 0061e79. Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md); literature:
 [CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §A.
 
@@ -16,29 +17,43 @@ it with the existing plan-based controllers.
 
 ## 1. Question and hypotheses
 
-*Does a dynamic MPCC – which maximises progress itself instead of tracking the plan's trajectory, with
-the same model, limits, horizon and solver as the NMPC – complete as many laps as the NMPC, and at what
-lap time, under the model mismatch of L2?*
+*Does a dynamic MPCC – the same model, limits, horizon and solver as the NMPC, but a contouring
+objective (contouring and lag error plus a progress reward) instead of trajectory tracking, the plan's
+speed as an upper bound at every stage instead of a tracked quantity, and a line free to leave the
+plan's – complete as many laps as the NMPC, and at what lap time, under the model mismatch of L2?*
+
+What the primary MPCC can and cannot do (cx-M2): every predicted speed is bounded by the plan's speed
+profile, vx_i ≤ v_ref(θ_i − e_l,i) (section 3); it cannot be faster than the plan at a point of the
+track. What it chooses itself is its line and its speed *below* the plan's. The comparison with `nmpc`
+is therefore one of objective (contouring + progress against tracking position, heading and speed), of
+speed as a bound against speed as a target, and of a free line against the plan's line – not of
+"planning its own speed". Section 5 reports how often the bound is active, so that a lap-time
+difference can be traced to line or to speed.
 
 * **H-A1 (primary):** on the 25 test cars (section 2), `mpcc` and `nmpc` differ in the number of
   completed laps. Exact McNemar, two-sided; holds if significant at its Holm level; direction reported.
 * **H-A2 (primary):** on the test laps both complete, `mpcc` and `nmpc` differ in lap time. Exact
-  signed-rank (mid-ranks, the exact distribution), two-sided; same rule.
+  signed-rank (mid-ranks, the exact distribution), two-sided; same rule. The comparison is
+  conditional on both completing (cx-m2): cars only one controller completes are left out of it, so
+  next to H-A1 the report lists, for every discordant car, each controller's lap time or failure
+  position and stop reason.
 
 Holm over H-A1 and H-A2 (family-wise α = 0.05), with the stricter decision (each at 0.025) reported
-alongside. No direction is predicted: the MPCC can choose its own line and speed within the limits
-(faster, section 12), but it also uses more of the track and of the tyres, which leaves less room for a
-car that differs from the model (L2: failures at three corners from how the car turns).
+alongside. No direction is predicted: the MPCC can choose its own line within the track and its speed
+below the plan's (faster on the nominal car at q_c = 2, section 9), but it also uses more of the track
+and of the tyres, which leaves less room for a car that differs from the model (L2: failures at three
+corners from how the car turns).
 
-Scope: these two controllers with the nominal model, on Spielberg, at η = 0.95; no claim about MPCC in
-general (its weights are tuned on section 2's tuning cars only).
+Scope: these two controllers with the nominal model, on Spielberg, at η = 0.95, each with its setting
+chosen by the same rule on the same tuning cars (section 4; cx-M1); the MPCC's speed bounded by the
+plan's; no claim about MPCC in general.
 
 ## 2. Sets (new draws; none used by L0–L10)
 
 * **Tuning set CXV:** `sample_plants(nominal, 10, seed 301)[1:]` – 10 cars from the L2 ranges,
   Spielberg, one lap each, no lag, no disturbances.
 * **Test set CXT:** `sample_plants(nominal, 25, seed 302)[1:]` – 25 cars, the same conditions. The
-  nominal car is reported separately (it was used for development, section 12) and is not part of a test.
+  nominal car is reported separately (it was used for development, section 9) and is not part of a test.
 * Secondary conditions on CXT (after the primary report): the L6 steering lag τ = 30 ms (nominal-model
   controllers, as L6's rows without a lag model); the L3 disturbances on the nominal car (seeds
   7400–7429; tuning-free); the four L8 test tracks with the nominal car (their L8 plans).
@@ -52,10 +67,11 @@ of 50 ms, IPOPT (tol 10⁻⁴, warm start), track margin 0.3 m unless tuned, the
 (0.99), no solver retries (a failed solve applies the shifted previous plan, as L8).
 
 * **`tracker`** – the 5 % plan and the L1 dynamic tracker (time-optimal planning + tracking, L1).
-* **`nmpc`** – `FrenetMPC` tracking the 5 % plan (L2, unchanged).
+* **`nmpc`** – `FrenetMPC` tracking the 5 % plan (the L2 formulation, unchanged); its tracking-weight
+  scale and margin from section 4 (L2's setting – scale 1, margin 0.3 m – is one point of its grid).
 * **`mpcc`** – `DynamicMPCC(reference="raceline", speed_bound="stages")`: the standard contouring
   formulation with the plan's racing line as reference path and the plan's speed as an upper bound at
-  every stage (section 12 shows why both are needed on this car); weights from section 4.
+  every stage (section 9 shows why both are needed on this car); weights from section 4.
 * **`mpcc_centre`** (secondary) – the same with Liniger's reference path, the centre line.
 * **`mpcc_ca`** (secondary, curvature-aware) – defined by an amendment after the full text of Ma et al.
   (Control Engineering Practice 171, 2026; literature §A.4) has been read; if it cannot be obtained, the
@@ -68,11 +84,21 @@ noise, no delay); none knows the car's parameters (no oracle).
 
 ## 4. Tuning (CXV only)
 
-A grid for `mpcc`: q_c ∈ {0.05, 0.5, 2, 8} × q_v ∈ {0.5, 1, 2} × margin ∈ {0.3, 0.6} m (24 settings ×
-10 cars); the other weights fixed at the module defaults (q_l 50, rate weights as the NMPC). Choice: the
-most completed laps; ties by the mean lap time on the laps every tied setting completes; then the
-smaller q_c. The same grid and rule for `mpcc_centre`. `nmpc` and `tracker` are not tuned (L2 as is).
-The chosen settings and the CXV records go to the reviewer before any CXT lap.
+Both controllers of the primary tests are tuned on the same cars by the same rule (cx-M1), so that H-A1
+and H-A2 compare the methods and not a tuning budget:
+
+* **`mpcc`:** q_c ∈ {0.05, 0.5, 2, 8} × q_v ∈ {0.5, 1, 2} × margin ∈ {0.3, 0.6} m (24 settings); the
+  other weights at the module defaults (q_l 50, rate weights as the NMPC). q_c = 0.05 left the track
+  on the nominal car (section 9); it stays in the grid because the nominal car takes no part in the
+  choice, and the grid was fixed before any CXV lap (cx-m1).
+* **`nmpc`:** a scale c ∈ {0.5, 1, 2} of its three tracking weights (lateral offset, heading, speed:
+  1, 10, 0.2 in L2) × margin ∈ {0.3, 0.6} m (6 settings; the input-rate weights and η unchanged).
+* **Rule (both, and `mpcc_centre` with the `mpcc` grid):** the most completed CXV laps; ties by the
+  mean lap time on the laps every tied setting completes; then the setting closest to the defaults
+  (`mpcc`: the smaller q_c; `nmpc`: c = 1, then margin 0.3 m).
+* `tracker` is not tuned (the L1 baseline; not in a primary test).
+
+The chosen settings and all CXV records go to the reviewer before any CXT lap.
 
 ## 5. Always reported
 
@@ -82,6 +108,11 @@ tracking error; constraint use (minimum edge margin, track and limit slacks); ty
 mean ellipse usage per axle); control effort (steering-rate RMS, force-increment RMS); solve time
 (mean, P95, P99, max) and the share of solves above 50 ms (offline: a would-be deadline miss);
 non-converged solves and fallbacks; the adaptation data budget (none for these controllers).
+**Speed bound and speed (cx-M2):** for `mpcc` and `mpcc_centre`, per lap, the share of solves in which
+the bound is active at stage 0 and the share of all predicted stages 1 … N in which it is active
+(vx_i ≥ v_ref(θ_i − e_l,i) − 0.01 m/s); for every controller the distribution (P5, median, P95) of the
+car's speed divided by the plan's speed at its projection, over the lap; and the lateral distance
+between the car and the plan's line (mean, max |·|).
 
 ## 6. Statistics
 
@@ -95,14 +126,17 @@ environment exists.
 
 ## 8. Compute and order
 
-1. Code review of `control/mpcc.py`, its tests and this protocol (0061e79 and the protocol commit).
-2. Tuning on CXV: 48 settings × 10 cars ≈ 480 MPCC laps (~4 min each, ~32 CPU-h; 20 jobs at once);
-   results to the reviewer.
+1. Code review of `control/mpcc.py` and its tests (packet 1, f4d1ee9: APPROVE) and of this protocol;
+   then the runner and report code (with the metrics of section 5), reviewed before any CXV lap.
+2. Tuning on CXV: 48 MPCC settings and 6 NMPC settings × 10 cars ≈ 540 laps (~4 min each, ~36 CPU-h;
+   20 jobs at once); results to the reviewer.
+   The `mpcc_ca` amendment (section 3) is submitted and reviewed before any CXT lap (cx-m3); without it
+   `mpcc_ca` is not run.
 3. CXT: 4 controllers × 25 cars (+ the nominal car), then the secondary conditions; pinned worktree,
    input SHA-256 list, single-threaded BLAS, one process per job, `results/CX/A/`.
 4. Report section in CONTROL_EXPANSION_BENCHMARK.md, review, merge of `cx/A-mpcc`.
 
-## 12. Development checks before this draft (disclosure)
+## 9. Development checks before this draft (disclosure)
 
 Nominal car, Spielberg, one lap from the plan start, code 0061e79, records `results/CX/A/dev/`
 (git-ignored). These laps chose the reference-path and speed-bound options of section 3; the weights

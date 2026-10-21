@@ -54,7 +54,7 @@ zones, docs/L2.md section 4), so without it the horizon runs into corners it can
 simplified Pacejka model without load transfer; (4) ``reference="raceline"`` - with the centre line
 and a 1.5 s horizon the car stays near the centre line on the straights and enters corners on a tighter
 line than the speed profile of the terminal bound was computed for (development check on Spielberg,
-docs/CX_A_protocol.md section 12).
+docs/CX_A_protocol.md section 9).
 
 At every solve theta_0 is the projection of the measured CG on the centre line (Liniger: theta
 initialised from the measured progress), unwrapped against the previous solve.
