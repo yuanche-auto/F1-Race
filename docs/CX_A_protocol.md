@@ -98,6 +98,14 @@ and H-A2 compare the methods and not a tuning budget:
 * **Rule (both, and `mpcc_centre` with the `mpcc` grid):** the most completed CXV laps; ties by the
   mean lap time on the laps every tied setting completes; then the setting closest to the defaults
   (`mpcc`: the smaller q_c; `nmpc`: c = 1, then margin 0.3 m).
+  *Clarification of revision 1, as fixed in the code reviewed at 6bcc6ef (`experiments/cx_a.select`),
+  written down before any CXV lap (review m1):* (i) the mean-lap-time step uses only the CXV cars that
+  **every** tied setting completes; if they share none, the step is skipped (a comparison on different
+  cars would favour settings that complete only the easy ones); (ii) the full order of closeness to the
+  defaults is, for `mpcc` / `mpcc_centre`, the smaller q_c, then the smaller |log q_v| (q_v nearest 1),
+  then the smaller q_v, then the smaller margin; for `nmpc`, the smaller |log c| (c nearest 1), then the
+  smaller c, then the smaller margin; (iii) settings with different numbers of CXV laps stop the
+  selection with an error.
 * `tracker` is not tuned (the L1 baseline; not in a primary test).
 
 The chosen settings and all CXV records go to the reviewer before any CXT lap.
