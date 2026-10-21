@@ -1,7 +1,7 @@
 # CX-A protocol – dynamic MPCC (control expansion, phase A)
 
-Status: **draft, revision 1 (2026-10-21)** after the review of revision 0 (f4d1ee9: cx-M1, cx-M2,
-cx-m1 to cx-m4), for review; written after the development checks of section 9 and before any lap of
+Status: **binding, revision 1 (2026-10-21; e8a5cd5, APPROVE)** after the review of revision 0 (f4d1ee9:
+cx-M1, cx-M2, cx-m1 to cx-m4); written after the development checks of section 9 and before any lap of
 the sets of section 2. Branch `cx/A-mpcc` (from `main` c010887);
 code 0061e79. Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md); literature:
 [CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §A.
@@ -46,7 +46,9 @@ corners from how the car turns).
 
 Scope: these two controllers with the nominal model, on Spielberg, at η = 0.95, each with its setting
 chosen by the same rule on the same tuning cars (section 4; cx-M1); the MPCC's speed bounded by the
-plan's; no claim about MPCC in general.
+plan's; no claim about MPCC in general. The two grids differ in size (`mpcc` 24 settings, `nmpc` 6), so
+the best of 24 on 10 tuning cars is a stronger selection than the best of 6 – an optimistic bias on
+CXV that the disjoint test cars CXT do not carry (review nit of e8a5cd5).
 
 ## 2. Sets (new draws; none used by L0–L10)
 
