@@ -1,7 +1,7 @@
 # L10 protocol – interactive racing, step 1: one opponent of fixed behaviour
 
-Status: **draft, revision 1 (2026-10-21)** after the review of revision 0 (d7f540e: l10-M1, l10-M2,
-l10-m1 to l10-m4), for review; written before any L10 code or run. Branch `layer/L10` (from `main` at
+Status: **binding, revision 1 (2026-10-21; cd4a789, APPROVE)** after the review of revision 0 (d7f540e:
+l10-M1, l10-M2, l10-m1 to l10-m4); written before any L10 code or run. Branch `layer/L10` (from `main` at
 c010887). ROADMAP: section 4 (L10, exploratory), rules of section 2.
 Nothing about opponents has been measured or seen before this draft (section 13).
 
