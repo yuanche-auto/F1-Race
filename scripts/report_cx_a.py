@@ -75,32 +75,60 @@ def _row(rs: list[dict], kind: str) -> str:
     n = len(rs)
     done = [r for r in rs if r["completed"]]
     lt = f"{np.mean([r['lap_time'] for r in done]):.3f}" if done else "–"
+
     def m(key, i=None, f=np.mean):
-        v = [r[key] if i is None else r[key][i] for r in rs if key in r]
+        v = [r[key] if i is None else r[key][i] for r in rs if r.get(key) is not None]
         return f"{f(v):.3f}" if v else "–"
     solve = "–"
     if any("solve_ms_mean_p95_p99_max" in r for r in rs):
         solve = (f"{m('solve_ms_mean_p95_p99_max', 0)} / {m('solve_ms_mean_p95_p99_max', 1)} / "
                  f"{m('solve_ms_mean_p95_p99_max', 2, np.max)} / {m('solve_ms_mean_p95_p99_max', 3, np.max)}")
-    return (f"| {kind} | {fmt_ci(len(done), n)} | {lt} | {m('min_edge_margin', None, np.min)} | "
+    slack = "–"
+    if any("track_slack_max_mean" in r for r in rs):
+        slack = (f"{m('track_slack_max_mean', 0, np.max)} / {m('track_slack_max_mean', 1)} / "
+                 f"{m('limit_slack_max', None, np.max)}")
+    return (f"| {kind} | {fmt_ci(len(done), n)} | {lt} | {m('min_edge_margin', None, np.min)} | {slack} | "
             f"{m('tyre_usage_max_front_rear', 0)} / {m('tyre_usage_max_front_rear', 1)} | "
             f"{m('tyre_usage_mean_front_rear', 0)} / {m('tyre_usage_mean_front_rear', 1)} | "
-            f"{m('centre_offset_abs_mean_max', 0)} | {m('plan_line_offset_abs_mean_max', 0)} / {m('plan_line_offset_abs_mean_max', 1, np.max)} | "
+            f"{m('centre_offset_abs_mean_max', 0)} / {m('centre_offset_abs_mean_max', 1, np.max)} | "
+            f"{m('plan_line_offset_abs_mean_max', 0)} / {m('plan_line_offset_abs_mean_max', 1, np.max)} | "
             f"{m('speed_over_plan_p5_p50_p95', 0)} / {m('speed_over_plan_p5_p50_p95', 1)} / {m('speed_over_plan_p5_p50_p95', 2)} | "
-            f"{m('steer_rate_rms')} | {m('force_increment_rms_N')} | {solve} | {m('solves_over_50ms')} | "
+            f"{m('steer_rate_rms')} | {m('force_increment_rms_N')} | {m('force_increment_rms_50ms_N')} | {solve} | "
+            f"{m('solves_over_50ms')} | "
             f"{sum(r.get('not_converged', 0) for r in rs)} / {sum(r.get('fallbacks', 0) for r in rs)} | "
-            f"{m('bound_active_stage0_measured')} | {m('bound_active_stages_1_N')} |")
+            f"{m('bound_active_stage0_measured')} | {m('bound_active_stages_1_N')} | "
+            f"{sum(r.get('bound_stage_stats_fallbacks_excluded', 0) for r in rs) if any('bound_stage_stats_fallbacks_excluded' in r for r in rs) else '–'} |")
+
+
+def _check(recs: list[dict], sel: dict) -> None:
+    """Review m2 of 6bcc6ef: no error records; every controller has the 25 CXT cars and the nominal car;
+    every record's setting is the one chosen on CXV (the tracker: none)."""
+    from f1race.experiments.cx_a import cases
+
+    errors = [r["job"] for r in recs if "error" in r]
+    if errors:
+        raise SystemExit(f"{len(errors)} error records in test.jsonl, e.g. {errors[:3]} - re-run them first")
+    need = {c["name"] for c in cases("CXT")} | {c["name"] for c in cases("NOM")}
+    for k in KINDS:
+        have = {r["case"] for r in recs if r["kind"] == k}
+        if have != need:
+            raise SystemExit(f"{k}: {len(need - have)} cars missing, {len(have - need)} unexpected")
+        want = {} if k == "tracker" else sel["kinds"][k]["setting"]
+        bad = [r["case"] for r in recs if r["kind"] == k and r["setting"] != want]
+        if bad:
+            raise SystemExit(f"{k}: records with a setting other than selected.json's ({bad[:3]})")
 
 
 def test(d: Path) -> None:
     recs = load(d / "test.jsonl")
     sel = json.loads((d / "selected.json").read_text())
-    errors = [r["job"] for r in recs if "error" in r]
-    cxt = {k: {r["case"]: r for r in recs if "error" not in r and r["kind"] == k and r["set"] == "CXT"} for k in KINDS}
+    _check(recs, sel)
+    cxt = {k: {r["case"]: r for r in recs if r["kind"] == k and r["set"] == "CXT"} for k in KINDS}
     comp = {k: {c: bool(r["completed"]) for c, r in v.items()} for k, v in cxt.items()}
     md = ["# CX-A – dynamic MPCC against the NMPC (docs/CX_A_protocol.md, revision 1)", "",
-          f"Error records: {len(errors)} {errors[:5]}. Settings chosen on CXV (selected.json, tune.jsonl SHA-256 "
-          f"{sel['tune_sha256'][:12]}…): " + "; ".join(f"{k} `{v['setting_key']}`" for k, v in sel["kinds"].items()) + ".", ""]
+          f"Error records: none; every controller has the 25 CXT cars and the nominal car with the settings chosen on "
+          f"CXV (selected.json, tune.jsonl SHA-256 {sel['tune_sha256'][:12]}…): "
+          + "; ".join(f"{k} `{v['setting_key']}`" for k, v in sel["kinds"].items()) + ".", ""]
 
     # ---- primary tests
     x, y, p1 = mcnemar(comp["mpcc"], comp["nmpc"])
@@ -118,10 +146,12 @@ def test(d: Path) -> None:
            f"{hb['H-A2']['level']:.3f} | **{hb['H-A2']['rejected']}** | {sr['p'] <= 0.025} |", "",
            "H-A2 is conditional on both completing (cx-m2); the discordant cars of H-A1:", "",
            "| car | mpcc | nmpc |", "|---|---|---|"]
+
+    def cell(r):
+        return (f"{r['lap_time']:.3f} s" if r["completed"]
+                else f"{r['stop_reason']} at s = {r['failure_s']:.0f} m ({r['distance']:.0f} m)")
     for c in sorted(set(comp["mpcc"]) & set(comp["nmpc"])):
         if comp["mpcc"][c] != comp["nmpc"][c]:
-            cell = lambda r: (f"{r['lap_time']:.3f} s" if r["completed"] else f"{r['stop_reason']} at s = {r['failure_s']:.0f} m "
-                              f"({r['distance']:.0f} m)")
             md.append(f"| {c} | {cell(cxt['mpcc'][c])} | {cell(cxt['nmpc'][c])} |")
 
     # ---- secondary comparisons (uncorrected)
@@ -131,20 +161,39 @@ def test(d: Path) -> None:
         xx, yy, pp = mcnemar(comp[a_], comp[b_])
         md.append(f"| {a_} vs {b_} | {xx} : {yy} | {pp:.4g} |")
 
+    # ---- stop reasons and the failures (review m3)
+    md += ["", "## Stop reasons and failure positions on CXT", "", "| controller | stop reasons | not completed: car, s at failure (distance) |",
+           "|---|---|---|"]
+    for k in KINDS:
+        rs = sorted(cxt[k].values(), key=lambda r: r["case"])
+        counts = {}
+        for r in rs:
+            counts[r["stop_reason"]] = counts.get(r["stop_reason"], 0) + 1
+        fails = ", ".join(f"{r['case']} {r['failure_s']:.0f} m ({r['distance']:.0f} m)" for r in rs if not r["completed"]) or "–"
+        md.append(f"| {k} | " + ", ".join(f"{v} {c}" for c, v in sorted(counts.items())) + f" | {fails} |")
+
     # ---- section 5 metrics
-    head = ("| controller | completed (95 %) | mean lap s | min edge margin m | max tyre use F / R | mean tyre use F / R | "
-            "mean centre offset m | plan-line offset mean / max m | speed / plan speed P5 / P50 / P95 | steer-rate RMS | "
-            "force-increment RMS N | solve ms mean / P95 / P99 / max | share > 50 ms | not converged / fallbacks | "
-            "bound active stage 0 (measured) | bound active stages 1…N |")
-    sep = "|" + "---|" * 16
-    md += ["", "## Metrics of section 5 – CXT (means over the laps; P99 and max: the largest)", "", head, sep]
+    head = ("| controller | completed (95 %) | mean lap s | min edge margin m | track slack max / mean, limit slack max | "
+            "max tyre use F / R | mean tyre use F / R | centre offset mean / max m | plan-line offset mean / max m | "
+            "speed / plan speed P5 / P50 / P95 | steer-rate RMS | force increment RMS N (10 ms) | force increment RMS N (50 ms) | "
+            "solve ms mean / P95 / P99 / max | share > 50 ms | not converged / fallbacks | bound active stage 0 (measured) | "
+            "bound active stages 1…N | fallback solves left out of the stage statistic |")
+    sep = "|" + "---|" * 19
+    md += ["", "## Metrics of section 5 – CXT (means over the laps; P99, max and slack maxima: the largest)", "", head, sep]
     for k in KINDS:
         md.append(_row(list(cxt[k].values()), k))
     md += ["", "## The nominal car (development car; not part of a test)", "", head, sep]
     for k in KINDS:
-        md.append(_row([r for r in recs if "error" not in r and r["kind"] == k and r["set"] == "NOM"], k))
-    md += ["", "Stage 0 of the bound is the measured speed against v_ref(θ₀ − e_l,0) − 0.01 m/s; the constraint acts on "
-           "stages 1 … N only.", "", "Second environment: not run – H-A1 and H-A2 are not cross-checked (protocol section 7)."]
+        md.append(_row([r for r in recs if r["kind"] == k and r["set"] == "NOM"], k))
+    md += ["", "Definitions: *plan-line offset* – the lateral distance between the car and the 5 % plan's line at the car's "
+           "projection; for `nmpc` this is its tracking error (section 5). *Force increment* – the RMS of the change of the "
+           "applied net longitudinal force (F_drive + F_brake, F_brake ≤ 0) between simulator steps (10 ms: what the actuator "
+           "sees, including traction control) and between samples 50 ms apart (every controller alike); an MPC changes its "
+           "input every 50 ms and the tracker every 10 ms, so the 10 ms column is not comparable across them – the 50 ms "
+           "column is descriptive only. *Bound active* – stage 0 is the measured speed against v_ref(θ₀ − e_l,0) − 0.01 m/s "
+           "(the constraint acts on stages 1 … N only); stages 1 … N from the predictions of the converged solves (fallback "
+           "solves, whose prediction is the shifted guess, are counted in the last column and left out).", "",
+           "Second environment: not run – H-A1 and H-A2 are not cross-checked (protocol section 7)."]
     out = d / "report"
     out.mkdir(exist_ok=True)
     (out / "CX_A.md").write_text(NL.join(md) + NL, encoding="utf-8")

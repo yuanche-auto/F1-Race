@@ -66,6 +66,10 @@ def test_select_rule():
     assert r["setting"] == b
     with pytest.raises(ValueError):                                        # unequal lap counts
         cx_a.select(_recs("mpcc", [(a, [76.0, 77.0]), (b, [76.0])]), "mpcc")
+    other = _recs("mpcc", [(b, [76.0, 77.0])])
+    other[1]["case"] = "CXV_car9"                                         # same count, another car (n2)
+    with pytest.raises(ValueError):
+        cx_a.select(_recs("mpcc", [(a, [76.0, 77.0])]) + other, "mpcc")
 
 
 def test_report_tune_and_test(tmp_path, monkeypatch):
@@ -89,20 +93,35 @@ def test_report_tune_and_test(tmp_path, monkeypatch):
     test = []
     rng = np.random.default_rng(1)
     for kind in cx_a.KINDS:
-        for i in range(1, 26):
-            done = not (kind == "nmpc" and i <= 6) and not (kind == "mpcc" and i == 7)
-            test.append({"job": f"test|{kind}|x|CXT_car{i}", "kind": kind, "set": "CXT", "case": f"CXT_car{i}",
+        st = {} if kind == "tracker" else sel["kinds"][kind]["setting"]
+        for i in list(range(1, 26)) + [0]:
+            name, set_ = (f"CXT_car{i}", "CXT") if i else ("NOM_car0", "NOM")
+            done = not (kind == "nmpc" and 1 <= i <= 6) and not (kind == "mpcc" and i == 7)
+            test.append({"job": f"test|{kind}|x|{name}", "kind": kind, "set": set_, "case": name, "setting": st,
                          "completed": done, "lap_time": 76.0 + rng.normal(0, 0.1) - (0.2 if kind == "mpcc" else 0.0),
                          "stop_reason": "lap completed" if done else "off track", "failure_s": None if done else 3800.0,
                          "distance": 4315.0 if done else 3800.0, "min_edge_margin": 0.2,
                          "bound_active_stage0_measured": 0.3, "bound_active_stages_1_N": 0.4})
-    (tmp_path / "test.jsonl").write_text("\n".join(json.dumps(r) for r in test) + "\n")
+    write = lambda rs: (tmp_path / "test.jsonl").write_text("\n".join(json.dumps(r) for r in rs) + "\n")
+    write(test[:-1])                                                       # a car missing -> refused (m2)
+    with pytest.raises(SystemExit):
+        report_cx_a.test(tmp_path)
+    bad = [dict(r) for r in test]
+    bad[30]["setting"] = {"c": 2.0, "margin": 0.3}                       # nmpc with another setting -> refused
+    write(bad)
+    with pytest.raises(SystemExit):
+        report_cx_a.test(tmp_path)
+    write(test + [{"job": "test|mpcc|x|CXT_car3", "error": "boom"}])     # last record an error -> refused
+    with pytest.raises(SystemExit):
+        report_cx_a.test(tmp_path)
+    write(test)
     report_cx_a.test(tmp_path)
     res = json.loads((tmp_path / "report" / "CX_A.json").read_text())
     assert res["H-A1"][:2] == [6, 1]                                        # cars 1-6 only mpcc, car 7 only nmpc
     assert res["H-A2"]["n"] == 18 and res["holm"]["H-A2"]["rejected"]      # mpcc 0.2 s faster on 18 cars
     md = (tmp_path / "report" / "CX_A.md").read_text(encoding="utf-8")
     assert "| CXT_car7 |" in md and "off track at s = 3800 m" in md
+    assert "| nmpc | 19 lap completed, 6 off track |" in md                 # stop reasons (m3)
 
 
 @pytest.mark.skipif(not CACHE.exists(), reason="run scripts/run_l1.py first")
@@ -122,3 +141,12 @@ def test_bound_recorder_one_solve(track):
     assert ctl.active_stages[-1] == pytest.approx(np.mean(X[1:, 3] >= vref(X[1:, 7] - el[1:]) - cx_a.BOUND_TOL))
     el0 = float(mpc.errors_fn(x0[0], x0[1], ctl.ctl.theta)[1])
     assert ctl.active0[-1] == bool(x0[3] >= vref(ctl.ctl.theta - el0) - cx_a.BOUND_TOL)
+    solve = mpc.solve                                                      # a fallback solve (n1)
+
+    def failing(*a, **k):
+        u, info = solve(*a, **k)
+        info["fallback"] = mpc.stats[-1]["fallback"] = True
+        return u, info
+    mpc.solve = failing
+    ctl(0.05, x0)
+    assert len(ctl.active0) == 2 and len(ctl.active_stages) == 1 and ctl.fallback_solves == 1

@@ -89,7 +89,9 @@ def _vref_fn(o, length: float):
 
 class BoundRecorder:
     """``MPCCController`` that also records, at every solve, the speed bound's activity (protocol
-    section 5): at stage 0 from the measurement, over stages 1 ... N from the prediction."""
+    section 5): at stage 0 from the measurement, over stages 1 ... N from the prediction. A fallback
+    solve's "prediction" is the shifted initial guess, not a solution: it is left out of the stage
+    statistic and counted (review n1 of 6bcc6ef); the measured stage-0 entry is kept for every solve."""
 
     def __init__(self, mpc, sim_dt: float, o):
         from ..control.mpcc import MPCCController
@@ -100,6 +102,7 @@ class BoundRecorder:
         self._el = mpc.errors_fn.map(mpc.N + 1)
         self.active0: list[bool] = []
         self.active_stages: list[float] = []
+        self.fallback_solves = 0
 
     @property
     def log(self):
@@ -114,8 +117,11 @@ class BoundRecorder:
             th0 = self.ctl.theta
             el0 = float(self.mpc.errors_fn(x[0], x[1], th0)[1])
             self.active0.append(bool(x[3] >= self.vref(th0 - el0) - BOUND_TOL))
-            act = X[1:, 3] >= self.vref(X[1:, 7] - el[1:]) - BOUND_TOL
-            self.active_stages.append(float(np.mean(act)))
+            if self.mpc.stats[-1]["fallback"]:
+                self.fallback_solves += 1
+            else:
+                act = X[1:, 3] >= self.vref(X[1:, 7] - el[1:]) - BOUND_TOL
+                self.active_stages.append(float(np.mean(act)))
         return u
 
 
@@ -152,7 +158,11 @@ def lap(case: dict, kind: str, setting: dict) -> dict:
         "tyre_usage_max_front_rear": [float(np.max(res.usage[:, 0])), float(np.max(res.usage[:, 1]))],
         "tyre_usage_mean_front_rear": [float(np.mean(res.usage[:, 0])), float(np.mean(res.usage[:, 1]))],
         "steer_rate_rms": float(np.sqrt(np.mean(U[:, 0] ** 2))),
+        # applied net longitudinal force (F_brake <= 0), differences over 10 ms (what the actuator sees, incl.
+        # traction control) and over 50 ms (every controller sampled alike - an MPC changes its input every
+        # 50 ms, the tracker every 10 ms, so the 10 ms value is not comparable across them; review m4)
         "force_increment_rms_N": float(np.sqrt(np.mean(np.diff(f_tot) ** 2))) if len(f_tot) > 1 else 0.0,
+        "force_increment_rms_50ms_N": float(np.sqrt(np.mean(np.diff(f_tot[::5]) ** 2))) if len(f_tot) > 5 else 0.0,
         "adaptation_data": "none",
     }
     if mpc is not None:
@@ -172,6 +182,7 @@ def lap(case: dict, kind: str, setting: dict) -> dict:
     if isinstance(ctl, BoundRecorder):
         out["bound_active_stage0_measured"] = float(np.mean(ctl.active0)) if ctl.active0 else math.nan
         out["bound_active_stages_1_N"] = float(np.mean(ctl.active_stages)) if ctl.active_stages else math.nan
+        out["bound_stage_stats_fallbacks_excluded"] = ctl.fallback_solves
     out["wall_s"] = time.time() - t0
     return out
 
@@ -192,6 +203,9 @@ def select(records: list[dict], kind: str) -> dict:
     n_cases = {len(d["done"]) for d in by.values()}
     if len(n_cases) != 1:
         raise ValueError(f"{kind}: settings with different numbers of laps {sorted(n_cases)}")
+    car_sets = {frozenset(d["done"]) for d in by.values()}
+    if len(car_sets) != 1:                              # review n2: the same cars for every setting
+        raise ValueError(f"{kind}: settings driven on different cars")
     table = {k: {"setting": d["setting"], "completed": sum(v is not None for v in d["done"].values()),
                  "laps": len(d["done"])} for k, d in by.items()}
     best = max(t["completed"] for t in table.values())
