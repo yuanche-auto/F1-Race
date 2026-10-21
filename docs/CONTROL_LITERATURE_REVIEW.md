@@ -60,8 +60,24 @@ here on the strength of an abstract.
   ellipse constraints with curvature–velocity coupling constraints bound the feasible speed.
 * Compared with feed-forward/feedback, MPCC, MPC-CBF and LPV-MPC (lap-time reductions of 1.7–4.3 s
   claimed in the abstract).
-* **The basis for the "curvature-aware MPCC" of phase A**, which is defined only after the full text
-  has been read (an amendment of the phase-A protocol); the abstract does not give the weight function.
+* The full text could not be obtained (2026-10-21); the curvature-aware MPCC of phase A is therefore based on
+  CiMPCC (§A.8), whose formulation is open – CX-A amendment A1. This paper is not implemented.
+
+### A.8 Li, Xie, Hu, Su – *Reduce Lap Time for Autonomous Racing with Curvature-Integrated MPCC Local Trajectory Planning Method* (CiMPCC), arXiv:2502.03695 (Feb 2025; full text read, HTML v1)
+
+* **Formulation:** the centre line's curvature by finite differences (eq. 5), a moving-average filter (eq. 7) and
+  min-max normalisation K ∈ [0, 1] (eq. 8); β = g(K) = exp(−α K²) at the centre-line point nearest the car
+  (eqs. 9–10); the cost J_Ci = Σ_k (1 − β)‖v_k − v_low‖²_{R3} + β‖v_k − v_high‖²_{R3} added to a standard MPCC
+  (contour and lag error weight Q = diag(800, 800), progress γ = 40, rate and input-reference penalties).
+* **Assumptions / setting:** kinematic bicycle model, 1:10 car (F1TENTH stack), N = 10, CasADi NLP with multiple
+  shooting and warm start; constant aggressive / safe speeds (safe ≈ 0.65 × aggressive).
+* **Results (as reported):** 17 laps on one self-built track; mean lap 14.20 s against 16.11 s (standard MPCC)
+  and 16.08 s (minimum-curvature line + velocity planning); the abstract's 11.4–12.5 % and the conclusion's
+  11.8 % differ slightly; no statistical test; parameters tuned at runtime.
+* **Open source:** none stated.
+* **Differences from our `mpcc_ca`** (CX-A amendment A1): the dynamic model; v_high = the plan's speed at each
+  stage (also the stage bound) and v_low = 0.65 v_high instead of two constants; a 50 ms, 30-stage horizon.
+* **Known limitations:** one car, one track, no model mismatch evaluated (the authors list it as future work).
 
 ### A.5 Nguyen, Nguyen, Amine, Vo-Duy, Mangharam, Nghiem – *AD-MPCC: Adaptive Differentiable Model Predictive Contouring Control for Autonomous Racing*, arXiv:2607.00141 (v1 30 Jun 2026, v2 11 Sep 2026; abstract)
 

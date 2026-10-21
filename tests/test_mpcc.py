@@ -140,3 +140,25 @@ def test_progress_unwraps_across_the_lap_end(track):
     p1, p2 = track.point_at(np.array([track.length - 1.0]))[0], track.point_at(np.array([1.0]))[0]
     assert ctl.progress(np.array([p1[0], p1[1]])) == pytest.approx(track.length - 1.0, abs=0.05)
     assert ctl.progress(np.array([p2[0], p2[1]])) == pytest.approx(track.length + 1.0, abs=0.05)
+
+
+@pytest.mark.skipif(not CACHE.exists(), reason="run scripts/run_l1.py first")
+def test_curvature_speed_option(track):
+    """CiMPCC option (amendment A1): K is the smoothed, min-max normalised |curvature| in [0, 1]; beta =
+    exp(-alpha K^2) lies in [exp(-alpha), 1], is 1 where K = 0 and smallest where K = 1; with the option
+    off the NLP keeps its 12 parameters (unchanged), with it on beta is a 13th; the NLP still solves."""
+    from f1race.control.mpcc import MPCCController
+    from f1race.experiments.l1 import dyn_reference
+    from f1race.experiments.l2 import x0_from_plan
+
+    off = _mpcc(track, reference="raceline", speed_bound="stages")
+    on = _mpcc(track, reference="raceline", speed_bound="stages", curvature_speed={"alpha": 3.0, "w_ca": 0.1})
+    assert off.solver.size_in("p")[0] == 12 and on.solver.size_in("p")[0] == 13
+    assert on._K.min() == pytest.approx(0.0) and on._K.max() == pytest.approx(1.0)
+    s_flat, s_tight = track.s[np.argmin(on._K)], track.s[np.argmax(on._K)]
+    assert on.beta(s_flat) == pytest.approx(1.0) and on.beta(s_tight) == pytest.approx(np.exp(-3.0))
+    o = _plan()
+    path, _ = dyn_reference(track, DynVehicle(), o)
+    MPCCController(on, 0.01)(0.0, x0_from_plan(o, path))
+    assert on.stats[-1]["status"] in ("Solve_Succeeded", "Solved_To_Acceptable_Level")
+    assert 0.0 < on.stats[-1]["beta"] <= 1.0

@@ -150,3 +150,18 @@ def test_bound_recorder_one_solve(track):
     mpc.solve = failing
     ctl(0.05, x0)
     assert len(ctl.active0) == 2 and len(ctl.active_stages) == 1 and ctl.fallback_solves == 1
+
+
+def test_ca_grid_and_secondary_sets():
+    """Amendment A1's grid keeps mpcc's base; the secondary sets of protocol section 2."""
+    base = {"q_c": 2.0, "q_v": 1.0, "margin": 0.3}
+    g = cx_a.ca_grid(base)
+    assert len(g) == 6 and all({k: s[k] for k in base} == base for s in g)
+    r = cx_a.select(_recs("mpcc_ca", [(g[5], [76.0]), (g[0], [76.0])]), "mpcc_ca")    # tie -> smaller w_ca
+    assert r["setting"]["w_ca"] == 0.02
+    lag, cxt = cx_a.cases("CXT_LAG30"), cx_a.cases("CXT")
+    assert [c["info"] for c in lag] == [c["info"] for c in cxt] and {c["tau"] for c in lag} == {0.03}
+    assert [c["dist_seed"] for c in cx_a.cases("CXD")] == list(range(7400, 7430))
+    assert {c["track"] for c in cx_a.cases("CXL8")} == {"Zandvoort", "SaoPaulo", "Austin", "Nuerburgring"}
+    assert all(c["tau"] == 0.0 and c["dist_seed"] is None and c["track"] == "Spielberg"
+               for set_ in ("CXV", "CXT", "NOM") for c in cx_a.cases(set_))

@@ -58,6 +58,17 @@ docs/CX_A_protocol.md section 9).
 
 At every solve theta_0 is the projection of the measured CG on the centre line (Liniger: theta
 initialised from the measured progress), unwrapped against the previous solve.
+
+``curvature_speed`` (optional; default off – the NLP is then unchanged): the curvature-integrated speed
+cost of Li, Xie, Hu, Su, *Reduce Lap Time for Autonomous Racing with Curvature-Integrated MPCC Local
+Trajectory Planning Method* (CiMPCC, arXiv:2502.03695, eqs. 5-10): the centre line's |curvature|,
+smoothed by a moving average (``window`` m) and min-max normalised over the track to K in [0, 1], gives at
+the car's projection theta_0 the weight beta = exp(-alpha K(theta_0)^2) (one beta per solve, a parameter of
+the NLP); the cost adds  sum_{i=1..N} h w_ca [(1 - beta)(vx_i - v_low,i)^2 + beta (vx_i - v_high,i)^2]
+(CiMPCC eq. 10). **Adaptation, stated:** CiMPCC uses two constant speeds (aggressive / safe, ratio 0.65)
+for a 1:10 car; this car's speed ranges from ~25 to ~90 m/s, so v_high,i = v_ref(theta_i - e_l,i) (the plan's
+speed, also the bound) and v_low,i = ``c_low`` v_high,i with c_low = 0.65, CiMPCC's ratio; CiMPCC's model is
+kinematic, ours the dynamic model above.
 """
 from __future__ import annotations
 
@@ -94,7 +105,8 @@ class DynamicMPCC:
     def __init__(self, track: Track, veh: DynVehicle, ref: dict, N: int = 30, dt: float = 0.05,
                  eta: float = 0.95, margin: float = 0.3, weights: dict | None = None,
                  v_theta_max: float = 120.0, terminal_speed: bool = True, max_iter: int = 500,
-                 reference: str = "centre", speed_bound: str | None = None):
+                 reference: str = "centre", speed_bound: str | None = None,
+                 curvature_speed: dict | None = None):
         """``ref``: arrays over centre-line arclength ref['s'] with keys vx (a brakeable speed
         profile, e.g. an L1 plan solved with the same ``eta``, for the speed bound) and n (the
         plan's lateral offset, for ``reference="raceline"`` only). ``weights``: q_c, q_l, q_v,
@@ -108,6 +120,15 @@ class DynamicMPCC:
         if speed_bound not in ("none", "terminal", "stages"):
             raise ValueError(speed_bound)
         self.speed_bound = speed_bound
+        cs = None if curvature_speed is None else {"window": 50.0, "c_low": 0.65, **curvature_speed}
+        if cs is not None:
+            if not {"alpha", "w_ca"} <= set(cs):
+                raise ValueError("curvature_speed needs alpha and w_ca")
+            k = np.abs(track.kappa)
+            n_w = max(int(round(cs["window"] / track.ds)), 1)
+            km = np.convolve(np.concatenate([k[-n_w:], k, k[:n_w]]), np.ones(n_w) / n_w, mode="same")[n_w:-n_w]
+            self._K = (km - km.min()) / (km.max() - km.min())       # CiMPCC eqs. 5-8 on the centre line
+        self.curvature_speed = cs
         self.terminal_speed = speed_bound != "none"
         w = {"q_c": 0.05, "q_l": 50.0, "q_v": 1.0, "drate": 1.0, "dF": 0.5, "dv": 0.01,
              "slack": 1e4, "limit_slack": 1e6}
@@ -171,7 +192,7 @@ class DynamicMPCC:
         U = ca.SX.sym("U", nu, N)
         S = ca.SX.sym("S", 2, N + 1)                    # track slacks (front, rear axle point)
         T = ca.SX.sym("T", 4, N)                        # ellipse (front, rear) and slip slacks
-        P = ca.SX.sym("P", nx + nu)                     # initial state, previous input
+        P = ca.SX.sym("P", nx + nu + (1 if cs else 0))  # initial state, previous input (, beta)
         g, lbg, ubg = [], [], []
         J = 0
         g.append(Xs[:, 0] - P[:nx]); lbg += [0] * nx; ubg += [0] * nx
@@ -188,7 +209,7 @@ class DynamicMPCC:
             lbg += [-ca.inf, -ca.inf, -ca.inf, -ap, -ca.inf, -ap, -ca.inf, -eta, -eta]
             ubg += [eta**2, eta**2, ap, ca.inf, ap, ca.inf, veh.P_max, eta, eta]
             J += w["limit_slack"] * h * (ca.sumsqr(T[:, i]) + 10.0 * ca.sum1(T[:, i]))
-            du = U[:, i] - (P[nx:] if i == 0 else U[:, i - 1])
+            du = U[:, i] - (P[nx:nx + nu] if i == 0 else U[:, i - 1])
             J += h * (w["drate"] * U[0, i] ** 2 + w["dF"] * (du[1] ** 2 + du[2] ** 2) / h
                       + w["dv"] * du[3] ** 2 / h)
             J += -w["q_v"] * h * U[3, i]                # progress (Liniger: - gamma v_k T_s)
@@ -205,6 +226,9 @@ class DynamicMPCC:
                 # at the car's approximate projection theta - e_l (Liniger: e_l ~ theta_A - theta_P),
                 # so that a theta lagging behind the car cannot loosen the bound in a braking zone
                 g.append(Xs[3, i] - vref(thi - el)); lbg.append(-ca.inf); ubg.append(0.0)
+            if cs:                                       # CiMPCC eq. 10, adapted (module docstring)
+                beta, vh = P[nx + nu], vref(thi - el)
+                J += h * cs["w_ca"] * ((1 - beta) * (Xs[3, i] - cs["c_low"] * vh) ** 2 + beta * (Xs[3, i] - vh) ** 2)
 
         z = ca.vertcat(ca.vec(Xs), ca.vec(U), ca.vec(S), ca.vec(T))
         self.nx, self.nu = nx, nu
@@ -259,6 +283,10 @@ class DynamicMPCC:
         solve (no Solve_Succeeded / Solved_To_Acceptable_Level) applies the shifted previous plan
         (as ``FrenetMPC``'s default)."""
         p = np.concatenate([x0, [u_prev[0], u_prev[1] / FS, u_prev[2] / FS, u_prev[3]]])
+        beta = None
+        if self.curvature_speed:
+            beta = self.beta(x0[7])
+            p = np.concatenate([p, [beta]])
         if self.z is None:
             z0, args = self.initial_guess(x0, u_prev), {}
         else:
@@ -283,8 +311,15 @@ class DynamicMPCC:
         info = {"status": st["return_status"], "iter": st["iter_count"], "time": time.time() - t0,
                 "slack": float(np.max(z[self.Si])), "limit_slack": float(np.max(z[self.Ti])),
                 "fallback": fallback}
+        if beta is not None:
+            info["beta"] = beta
         self.stats.append(info)
         return u, info
+
+    def beta(self, theta: float) -> float:
+        """CiMPCC's weight exp(-alpha K^2) at the centre-line arclength ``theta`` (eq. 9)."""
+        K = float(self.track.interp(self._K, theta))
+        return float(np.exp(-self.curvature_speed["alpha"] * K ** 2))
 
     def prediction(self) -> tuple[np.ndarray, np.ndarray]:
         """Predicted states (N + 1, 8) and inputs (N, 4, forces in N) of the last solve."""

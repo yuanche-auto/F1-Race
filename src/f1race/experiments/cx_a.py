@@ -9,6 +9,14 @@ controllers and one lap with every metric of protocol section 5.
   ``mpcc`` / ``mpcc_centre`` (``DynamicMPCC`` with the racing line / centre line as reference path and the
   speed bound at every stage; setting: ``q_c``, ``q_v``, ``margin``). Shared: nominal model, eta 0.95,
   N = 30 x 50 ms, IPOPT, traction control 0.99, no retries.
+* ``mpcc_ca`` (amendment A1, secondary): ``mpcc`` with the CiMPCC curvature-weighted speed cost
+  (``DynamicMPCC(curvature_speed=...)``); its base (q_c, q_v, margin) is ``mpcc``'s CXV choice, and only
+  ``alpha`` and ``w_ca`` are tuned on CXV (``ca_grid``), after the main tuning.
+* Secondary conditions (section 2, after the primary report): ``CXT_LAG30`` – the CXT cars with the L6
+  steering lag tau = 30 ms (commanded angle observed, nominal-model controllers as L6's rows without a lag
+  model); ``CXD`` – the nominal car under the L3 disturbances (seeds 7400–7429, with L3's measurement noise);
+  ``CXL8`` – the nominal car on the four L8 test tracks with their L8 plans (time limit 1.6 x the plan, as
+  L8). The simulator is L7's ``make_sim_for`` (as L7–L9).
 * ``lap(case, kind, setting)``: the record of section 5. The MPCC's speed-bound activity: at stage 0 a
   *measured* quantity (the state of stage 0 is the measurement; the bound acts on stages 1 ... N) –
   vx >= v_ref(theta_0 - e_l,0) - 0.01 m/s – and over the predicted stages 1 ... N of every solve.
@@ -24,6 +32,8 @@ from ..dynamics import DynVehicle
 from .l2 import PERTURBATION, ref_from_plan, sample_plants, x0_from_plan  # noqa: F401  (PERTURBATION: tests)
 
 SETS = {"CXV": (301, 10), "CXT": (302, 25)}
+SECONDARY = ("CXT_LAG30", "CXD", "CXL8")
+LAG_TAU, DIST_SEEDS = 0.03, tuple(range(7400, 7430))
 ETA, DT, T_MAX, MPC_DT, N = 0.95, 0.01, 121.0, 0.05, 30
 KINDS = ("tracker", "nmpc", "mpcc", "mpcc_centre")
 TRACKER_GAINS = {"k_p": 0.06, "x_la": 12.0, "k_r": 0.05, "kv": 8.0}          # L2Config.tracker
@@ -32,6 +42,12 @@ MPCC_GRID = [{"q_c": qc, "q_v": qv, "margin": m}
              for qc in (0.05, 0.5, 2.0, 8.0) for qv in (0.5, 1.0, 2.0) for m in (0.3, 0.6)]
 NMPC_GRID = [{"c": c, "margin": m} for c in (0.5, 1.0, 2.0) for m in (0.3, 0.6)]
 BOUND_TOL = 0.01                                                               # m/s, protocol section 5
+CA_EXTRA = [{"alpha": a, "w_ca": w} for a in (1.0, 3.0) for w in (0.02, 0.1, 0.5)]   # amendment A1
+
+
+def ca_grid(base: dict) -> list[dict]:
+    """mpcc_ca's CXV grid: mpcc's chosen (q_c, q_v, margin) with each (alpha, w_ca) of CA_EXTRA."""
+    return [{**{k: base[k] for k in ("q_c", "q_v", "margin")}, **e} for e in CA_EXTRA]
 
 
 def grid(kind: str) -> list[dict]:
@@ -43,18 +59,29 @@ def setting_key(setting: dict) -> str:
 
 
 def cases(name: str) -> list[dict]:
+    """The laps of a set; every case has ``track`` (Spielberg unless CXL8), ``tau`` (0 unless CXT_LAG30) and
+    ``dist_seed`` (None unless CXD)."""
+    base = {"track": "Spielberg", "tau": 0.0, "dist_seed": None}
+    nom = {"info": {"nominal": True}, "plant": DynVehicle()}
     if name == "NOM":
-        return [{"set": "NOM", "car": 0, "info": {"nominal": True}, "plant": DynVehicle(), "name": "NOM_car0"}]
-    seed, n = SETS[name]
+        return [{**base, **nom, "set": "NOM", "car": 0, "name": "NOM_car0"}]
+    if name == "CXD":
+        return [{**base, **nom, "set": name, "car": 0, "dist_seed": d, "name": f"CXD_dist{d}"} for d in DIST_SEEDS]
+    if name == "CXL8":
+        from .l8 import TEST
+
+        return [{**base, **nom, "set": name, "car": 0, "track": t, "name": f"CXL8_{t}"} for t in TEST]
+    lag = name == "CXT_LAG30"
+    seed, n = SETS["CXT" if lag else name]
     cars = sample_plants(DynVehicle(), n, seed)
-    return [{"set": name, "car": i, "info": cars[i][0], "plant": cars[i][1], "name": f"{name}_car{i}"}
-            for i in range(1, n + 1)]
+    return [{**base, "set": name, "car": i, "info": cars[i][0], "plant": cars[i][1], "tau": LAG_TAU if lag else 0.0,
+             "name": f"{name}_car{i}"} for i in range(1, n + 1)]
 
 
-def plan():
+def plan(track: str = "Spielberg"):
     from .l8 import plans_for
 
-    return plans_for("Spielberg")[ETA]
+    return plans_for(track)[ETA]
 
 
 def build(kind: str, setting: dict, track, o):
@@ -74,10 +101,12 @@ def build(kind: str, setting: dict, track, o):
         mpc = FrenetMPC(track, model, ref_from_plan(o), mode="track", N=N, dt=MPC_DT, eta=ETA,
                         margin=setting["margin"], weights=w)
         return MPCController(mpc, DT), mpc, x0
-    if kind in ("mpcc", "mpcc_centre"):
+    if kind in ("mpcc", "mpcc_centre", "mpcc_ca"):
+        cs = {"alpha": setting["alpha"], "w_ca": setting["w_ca"]} if kind == "mpcc_ca" else None
         mpc = DynamicMPCC(track, model, ref_from_plan(o), N=N, dt=MPC_DT, eta=ETA, margin=setting["margin"],
                           weights={"q_c": setting["q_c"], "q_v": setting["q_v"]},
-                          reference="raceline" if kind == "mpcc" else "centre", speed_bound="stages")
+                          reference="centre" if kind == "mpcc_centre" else "raceline", speed_bound="stages",
+                          curvature_speed=cs)
         return BoundRecorder(mpc, DT, o), mpc, x0
     raise ValueError(kind)
 
@@ -132,13 +161,17 @@ def _pct(a, qs=(5, 50, 95)) -> list[float]:
 
 def lap(case: dict, kind: str, setting: dict) -> dict:
     """One lap of ``kind`` with ``setting`` on ``case``; the metrics of protocol section 5."""
-    from ..sim.dynamic import DynamicSim
     from ..track import Track
+    from .l7 import make_sim_for
 
     t0 = time.time()
-    track, o = Track.load("Spielberg"), plan()
+    tname = case.get("track", "Spielberg")
+    track, o = Track.load(tname), plan(tname)
+    t_max = T_MAX if tname == "Spielberg" else 1.6 * float(o.lap_time)       # L8's rule elsewhere
     ctl, mpc, x0 = build(kind, setting, track, o)
-    res = DynamicSim(track, case["plant"], DT).run(ctl, x0, t_max=T_MAX)
+    sim = make_sim_for({"plant": case["plant"], "tau": case.get("tau", 0.0),
+                        "dist_seed": case.get("dist_seed")}, track)          # DynamicSim, LaggedSim or StochasticSim
+    res = sim.run(ctl, x0, t_max=t_max)
     X, U = res.state, res.inputs
     L = track.length
     s_c, n_c = track.project(X[:, 0], X[:, 1])
@@ -147,7 +180,8 @@ def lap(case: dict, kind: str, setting: dict) -> dict:
     f_tot = U[:, 1] + U[:, 2]
     out = {
         "kind": kind, "setting": setting, "setting_key": setting_key(setting), "case": case["name"],
-        "set": case["set"], "car": case["car"], "plant": case["info"],
+        "set": case["set"], "car": case["car"], "plant": case["info"], "track": tname,
+        "tau": case.get("tau", 0.0), "dist_seed": case.get("dist_seed"), "t_max": t_max,
         "completed": bool(res.completed), "lap_time": float(res.lap_time), "stop_reason": res.stop_reason,
         "distance": float(res.progress[-1]),
         "failure_s": None if res.completed else float(s_c[-1]),
@@ -191,7 +225,8 @@ def select(records: list[dict], kind: str) -> dict:
     """The tuning rule of protocol section 4 on the CXV records of one controller: most completed laps;
     ties by the mean lap time on the laps every tied setting completes (skipped if they share none);
     then the setting closest to the defaults (mpcc: smaller q_c, then q_v nearest 1, then margin 0.3;
-    nmpc: c nearest 1, then the smaller c, then margin 0.3). Returns {"setting", "table"}."""
+    nmpc: c nearest 1, then the smaller c, then margin 0.3; mpcc_ca (amendment A1): the smaller w_ca, then
+    the smaller alpha). Returns {"setting", "table"}."""
     by: dict[str, dict] = {}
     for r in records:
         if r.get("kind") != kind or "error" in r:
@@ -223,6 +258,8 @@ def select(records: list[dict], kind: str) -> dict:
         st = by[k]["setting"]
         if kind == "nmpc":
             return (abs(math.log(st["c"])), st["c"], st["margin"])
+        if kind == "mpcc_ca":                         # closest to the cost being off: small w_ca, then alpha
+            return (st["w_ca"], st["alpha"])
         return (st["q_c"], abs(math.log(st["q_v"])), st["q_v"], st["margin"])
 
     chosen = min(tied, key=closeness)

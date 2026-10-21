@@ -182,3 +182,28 @@ What they showed, and how it shaped section 3:
   leave the track by 2–45 mm at the penultimate corner, at tyre use ~0.99; a larger margin (0.6 m) does
   not prevent it, q_c 0.5 and 2 do. Hence q_c and the margin are in section 4's grid; these two laps on
   the nominal car are not a selection of the final weights.
+
+## Amendments
+
+* **A1 (2026-10-21), the curvature-aware MPCC `mpcc_ca` – secondary; submitted before any CXT lap (cx-m3).**
+  *Source:* the full text of Ma et al. (Control Engineering Practice 171, 2026) could not be obtained (only its
+  abstract, which names a curvature-dependent weight between contouring and lag error and curvature–velocity
+  coupling constraints, without the weight function). `mpcc_ca` is therefore based on the open full text of
+  **Li, Xie, Hu, Su, *Reduce Lap Time for Autonomous Racing with Curvature-Integrated MPCC Local Trajectory
+  Planning Method* (CiMPCC), arXiv:2502.03695 (2025)**, a curvature-aware MPCC whose formulation is fully given
+  (literature §A.8); Ma et al. is not implemented.
+  1. *Definition* (`DynamicMPCC(curvature_speed={alpha, w_ca})`, default off): the centre line's |curvature|,
+     smoothed by a 50 m moving average and min-max normalised over the track to K ∈ [0, 1] (CiMPCC eqs. 5–8);
+     at the car's projection θ₀, β = exp(−α K(θ₀)²) (eq. 9), one β per solve, a parameter of the NLP; the cost
+     adds Σ_{i=1..N} h w_ca [(1 − β)(vx_i − v_low,i)² + β (vx_i − v_high,i)²] (eq. 10).
+  2. *Adaptation, stated:* CiMPCC uses two constant speeds (aggressive / safe, ratio ≈ 0.65) for a 1:10 car
+     with a kinematic model; this car's speed ranges from ~25 to ~90 m/s, so v_high,i = v_ref(θ_i − e_l,i) (the
+     plan's speed, which also bounds every stage) and v_low,i = 0.65 v_high,i; the model is the dynamic one of
+     `DynamicMPCC`. Everything else is `mpcc` (racing-line reference, stage speed bound).
+  3. *Tuning (CXV only, after section 4's selection):* the base (q_c, q_v, margin) is `mpcc`'s CXV choice;
+     α ∈ {1, 3} × w_ca ∈ {0.02, 0.1, 0.5} (6 settings × 10 cars); the rule of section 4, and among ties the
+     smaller w_ca, then the smaller α (closest to the cost being off). The choice and its CXV records go to the
+     reviewer with the main tuning results; `mpcc_ca` then runs on CXT and the nominal car with the other
+     controllers (`run_cx_a.py test --with-ca`).
+  4. *Reported:* as `mpcc` (section 5), plus β; secondary comparisons `mpcc_ca` against `mpcc` and against
+     `nmpc` (exact McNemar, uncorrected, next to the other secondary comparisons). Not part of H-A1 / H-A2.

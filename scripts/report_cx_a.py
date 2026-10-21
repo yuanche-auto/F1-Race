@@ -1,6 +1,8 @@
 """Control expansion phase A report (docs/CX_A_protocol.md, revision 1).
 
     python scripts/report_cx_a.py tune     # CXV: the rule of section 4 -> results/CX/A/selected.json + report/tune.md
+    python scripts/report_cx_a.py tune_ca  # amendment A1: mpcc_ca on CXV -> results/CX/A/selected_ca.json + report/tune_ca.md
+    python scripts/report_cx_a.py secondary  # CXT_LAG30, CXD, CXL8 (secondary, uncorrected) -> report/CX_A_secondary.md
     python scripts/report_cx_a.py test     # CXT: H-A1, H-A2 (Holm and the stricter decision), discordant cars,
                                            # the metrics of section 5 per controller; NOM apart -> report/CX_A.md
 
@@ -71,6 +73,31 @@ def tune(d: Path) -> None:
     print(json.dumps(out["kinds"], indent=1))
 
 
+def tune_ca(d: Path) -> None:
+    """Amendment A1: the same rule on mpcc_ca's CXV records (base: mpcc's choice in selected.json)."""
+    path = d / "tune_ca.jsonl"
+    recs = load(path)
+    errors = [r["job"] for r in recs if "error" in r]
+    if errors:
+        raise SystemExit(f"{len(errors)} error records in tune_ca.jsonl: {errors[:3]}")
+    base = json.loads((d / "selected.json").read_text())["kinds"]["mpcc"]["setting"]
+    if any({k: r["setting"][k] for k in ("q_c", "q_v", "margin")} != base for r in recs):
+        raise SystemExit("tune_ca.jsonl has records whose base is not mpcc's choice in selected.json")
+    sel = select(recs, "mpcc_ca")
+    out = {"tune_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+           "selected_json_sha256": hashlib.sha256((d / "selected.json").read_bytes()).hexdigest(),
+           "kinds": {"mpcc_ca": {"setting": sel["setting"], "setting_key": sel["setting_key"]}}}
+    md = ["# CX-A amendment A1 – mpcc_ca tuning on CXV", "", f"chosen: `{sel['setting_key']}`", "",
+          "| setting | completed of CXV | mean lap on the laps all tied settings complete |", "|---|---|---|"]
+    for k, t in sorted(sel["table"].items(), key=lambda kv: (-kv[1]["completed"], kv[0])):
+        m = t.get("mean_lap_common")
+        md.append(f"| `{k}` | {t['completed']}/{t['laps']} | {'' if m is None else f'{m:.3f} s'} |")
+    (d / "selected_ca.json").write_text(json.dumps(out, indent=1))
+    (d / "report").mkdir(exist_ok=True)
+    (d / "report" / "tune_ca.md").write_text(NL.join(md) + NL, encoding="utf-8")
+    print(json.dumps(out["kinds"], indent=1))
+
+
 def _row(rs: list[dict], kind: str) -> str:
     n = len(rs)
     done = [r for r in rs if r["completed"]]
@@ -100,7 +127,7 @@ def _row(rs: list[dict], kind: str) -> str:
             f"{sum(r.get('bound_stage_stats_fallbacks_excluded', 0) for r in rs) if any('bound_stage_stats_fallbacks_excluded' in r for r in rs) else '–'} |")
 
 
-def _check(recs: list[dict], sel: dict) -> None:
+def _check(recs: list[dict], sel: dict, kinds=KINDS) -> None:
     """Review m2 of 6bcc6ef: no error records; every controller has the 25 CXT cars and the nominal car;
     every record's setting is the one chosen on CXV (the tracker: none)."""
     from f1race.experiments.cx_a import cases
@@ -109,7 +136,7 @@ def _check(recs: list[dict], sel: dict) -> None:
     if errors:
         raise SystemExit(f"{len(errors)} error records in test.jsonl, e.g. {errors[:3]} - re-run them first")
     need = {c["name"] for c in cases("CXT")} | {c["name"] for c in cases("NOM")}
-    for k in KINDS:
+    for k in kinds:
         have = {r["case"] for r in recs if r["kind"] == k}
         if have != need:
             raise SystemExit(f"{k}: {len(need - have)} cars missing, {len(have - need)} unexpected")
@@ -122,8 +149,12 @@ def _check(recs: list[dict], sel: dict) -> None:
 def test(d: Path) -> None:
     recs = load(d / "test.jsonl")
     sel = json.loads((d / "selected.json").read_text())
-    _check(recs, sel)
-    cxt = {k: {r["case"]: r for r in recs if r["kind"] == k and r["set"] == "CXT"} for k in KINDS}
+    kinds = KINDS
+    if any(r.get("kind") == "mpcc_ca" for r in recs):           # amendment A1
+        sel = {**sel, "kinds": {**sel["kinds"], **json.loads((d / "selected_ca.json").read_text())["kinds"]}}
+        kinds = KINDS + ("mpcc_ca",)
+    _check(recs, sel, kinds)
+    cxt = {k: {r["case"]: r for r in recs if r["kind"] == k and r["set"] == "CXT"} for k in kinds}
     comp = {k: {c: bool(r["completed"]) for c, r in v.items()} for k, v in cxt.items()}
     md = ["# CX-A – dynamic MPCC against the NMPC (docs/CX_A_protocol.md, revision 1)", "",
           f"Error records: none; every controller has the 25 CXT cars and the nominal car with the settings chosen on "
@@ -155,16 +186,19 @@ def test(d: Path) -> None:
             md.append(f"| {c} | {cell(cxt['mpcc'][c])} | {cell(cxt['nmpc'][c])} |")
 
     # ---- secondary comparisons (uncorrected)
-    md += ["", "## Secondary comparisons on CXT (exact McNemar, uncorrected; 3 comparisons)", "",
+    pairs = [("mpcc_centre", "nmpc"), ("mpcc_centre", "mpcc"), ("tracker", "nmpc")]
+    if "mpcc_ca" in kinds:
+        pairs += [("mpcc_ca", "mpcc"), ("mpcc_ca", "nmpc")]
+    md += ["", f"## Secondary comparisons on CXT (exact McNemar, uncorrected; {len(pairs)} comparisons)", "",
            "| comparison | only first : only second | p |", "|---|---|---|"]
-    for a_, b_ in (("mpcc_centre", "nmpc"), ("mpcc_centre", "mpcc"), ("tracker", "nmpc")):
+    for a_, b_ in pairs:
         xx, yy, pp = mcnemar(comp[a_], comp[b_])
         md.append(f"| {a_} vs {b_} | {xx} : {yy} | {pp:.4g} |")
 
     # ---- stop reasons and the failures (review m3)
     md += ["", "## Stop reasons and failure positions on CXT", "", "| controller | stop reasons | not completed: car, s at failure (distance) |",
            "|---|---|---|"]
-    for k in KINDS:
+    for k in kinds:
         rs = sorted(cxt[k].values(), key=lambda r: r["case"])
         counts = {}
         for r in rs:
@@ -180,10 +214,10 @@ def test(d: Path) -> None:
             "bound active stages 1…N | fallback solves left out of the stage statistic |")
     sep = "|" + "---|" * 19
     md += ["", "## Metrics of section 5 – CXT (means over the laps; P99, max and slack maxima: the largest)", "", head, sep]
-    for k in KINDS:
+    for k in kinds:
         md.append(_row(list(cxt[k].values()), k))
     md += ["", "## The nominal car (development car; not part of a test)", "", head, sep]
-    for k in KINDS:
+    for k in kinds:
         md.append(_row([r for r in recs if r["kind"] == k and r["set"] == "NOM"], k))
     md += ["", "Definitions: *plan-line offset* – the lateral distance between the car and the 5 % plan's line at the car's "
            "projection; for `nmpc` this is its tracking error (section 5). *Force increment* – the RMS of the change of the "
@@ -201,12 +235,51 @@ def test(d: Path) -> None:
     print(f"written {out / 'CX_A.md'}")
 
 
+def secondary(d: Path) -> None:
+    """Protocol section 2's secondary conditions: per condition and controller the completed laps, the mean lap
+    time and the failures; mpcc against nmpc by exact McNemar (uncorrected, 3 comparisons)."""
+    from f1race.experiments.cx_a import SECONDARY, cases
+
+    recs = load(d / "secondary.jsonl")
+    sel = json.loads((d / "selected.json").read_text())
+    errors = [r["job"] for r in recs if "error" in r]
+    if errors:
+        raise SystemExit(f"{len(errors)} error records in secondary.jsonl, e.g. {errors[:3]}")
+    md = ["# CX-A – secondary conditions (protocol section 2; uncorrected)", ""]
+    for set_ in SECONDARY:
+        need = {c["name"] for c in cases(set_)}
+        by = {}
+        for k in KINDS:
+            rs = {r["case"]: r for r in recs if r["kind"] == k and r["set"] == set_}
+            if set(rs) != need:
+                raise SystemExit(f"{set_} / {k}: {len(need - set(rs))} laps missing")
+            want = {} if k == "tracker" else sel["kinds"][k]["setting"]
+            if any(r["setting"] != want for r in rs.values()):
+                raise SystemExit(f"{set_} / {k}: a setting other than selected.json's")
+            by[k] = rs
+        md += [f"## {set_} ({len(need)} laps)", "", "| controller | completed (95 %) | mean lap s | not completed: lap, s at failure |",
+               "|---|---|---|---|"]
+        for k in KINDS:
+            rs = sorted(by[k].values(), key=lambda r: r["case"])
+            done = [r for r in rs if r["completed"]]
+            lt = f"{np.mean([r['lap_time'] for r in done]):.3f}" if done else "–"
+            fails = ", ".join(f"{r['case']} {r['stop_reason']} {r['failure_s']:.0f} m" for r in rs if not r["completed"]) or "–"
+            md.append(f"| {k} | {fmt_ci(len(done), len(rs))} | {lt} | {fails} |")
+        x, y, p = mcnemar({c: bool(r["completed"]) for c, r in by["mpcc"].items()},
+                          {c: bool(r["completed"]) for c, r in by["nmpc"].items()})
+        md += ["", f"mpcc : nmpc (only one completes) {x} : {y}, exact McNemar p = {p:.4g} (uncorrected).", ""]
+    out = d / "report"
+    out.mkdir(exist_ok=True)
+    (out / "CX_A_secondary.md").write_text(NL.join(md) + NL, encoding="utf-8")
+    print(f"written {out / 'CX_A_secondary.md'}")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=["tune", "test"])
+    ap.add_argument("what", choices=["tune", "tune_ca", "test", "secondary"])
     ap.add_argument("--dir", default=str(ROOT / "results" / "CX" / "A"))
     a = ap.parse_args()
-    (tune if a.what == "tune" else test)(Path(a.dir))
+    {"tune": tune, "tune_ca": tune_ca, "test": test, "secondary": secondary}[a.what](Path(a.dir))
 
 
 if __name__ == "__main__":
