@@ -1,7 +1,8 @@
 # L10 protocol – interactive racing, step 1: one opponent of fixed behaviour
 
-Status: **draft, revision 0 (2026-10-19)**, for review; written before any L10 code or run. Branch
-`layer/L10` (from `main` at c010887). ROADMAP: section 4 (L10, exploratory), rules of section 2.
+Status: **draft, revision 1 (2026-10-21)** after the review of revision 0 (d7f540e: l10-M1, l10-M2,
+l10-m1 to l10-m4), for review; written before any L10 code or run. Branch `layer/L10` (from `main` at
+c010887). ROADMAP: section 4 (L10, exploratory), rules of section 2.
 Nothing about opponents has been measured or seen before this draft (section 13).
 
 ## 0. What L0–L9 left
@@ -43,6 +44,12 @@ point within the time limit without contact, without leaving the track and witho
 Holm over H-I1 and H-I2 (family-wise α = 0.05), with the stricter decision (each at 0.025) reported
 alongside, as in L7–L9. Scope: both compare controllers on these scenarios, with this opponent model
 and these predictions; no claim about racing against reactive or strategic opponents in general.
+**What a clean lap measures (l10-m1):** the opponent's speed factor is at most 0.92, so a lap behind it
+takes about 82–89 s, within the 121 s limit – a controller that only brakes and follows also gets a
+clean lap. H-I1 and H-I2 therefore measure mainly *not touching* the opponent, not *passing* it.
+Next to each primary test the report gives, for the same two controllers on the same scenarios,
+the number of overtakes (exact McNemar, secondary) and the lap-time loss against their alone laps
+(section 7).
 
 Reasoning written before any run: an opponent-unaware controller on the same racing line runs into a
 slower car ahead within seconds. A collision constraint lets an NMPC brake or pass; whether it passes
@@ -58,9 +65,15 @@ factor k, initial gap g, and (for the lane-change behaviour) a random seed.
 * **Test set T (run once per controller): Spielberg.** s₀ ∈ {j · L / 8, j = 0 … 7} (L = 4 315.7 m),
   g ∈ {30, 60} m (centre to centre along the centre line, opponent ahead), k ∈ {0.85, 0.92},
   behaviour ∈ {hold, lane, block} – **96 scenarios**. Lane-change seed = the scenario's index.
-* **Tuning set V: Monza** (an L8 validation track, its L8 plans): s₀ ∈ {j · L / 4, j = 0 … 3}, the
-  same g, k and behaviours – 48 scenarios, lane-change seeds 1 000 + index. Every setting of
-  section 5 that is not fixed in this protocol is chosen on V only (section 11).
+* **Tuning set V: Spielberg, scenarios disjoint from T** (l10-M1): s₀ ∈ {L / 16 + j · L / 4,
+  j = 0 … 3} (between T's start points), the same g, k and behaviours – 48 scenarios, lane-change
+  seeds 1 000 + index. Every setting of section 5 that is not fixed in this protocol is chosen on V
+  only (section 11). V and T share the track and its corners, but not the start points or the
+  positions where the cars meet; as in L0–L9, where V and T were both on Spielberg (with different
+  cars). *Why not another track:* the RL policies do not drive unseen tracks (L8: `B_s1_500k` 0 of 100
+  laps on four new tracks, the nine L5 finals 0–2), so on a validation track such as Monza the
+  proposal of `filter_cv` would itself leave the track and its alone laps would fail; tuning there
+  would select for rescuing a policy that cannot drive the track, not for avoiding the opponent.
 * **Start:** a rolling start – the ego in the state of its 5 % plan at s₀ (as the L2 laps start at
   s = 0), the opponent at s₀ + g on its own path at speed k · v_plan. The ego drives one lap
   (L metres) from s₀; time limit 1.6 × the 5 % plan's lap time (121 s on Spielberg, as L8 / L9).
@@ -70,7 +83,10 @@ factor k, initial gap g, and (for the lane-change behaviour) a random seed.
 * **Pre-screen of the opponent (before any ego lap; a rule fixed now):** the opponent drives each
   scenario alone for 121 s. A lane-change scenario whose opponent leaves the track or spins gets the
   next seed (index + 96 · m, m = 1, 2, 3); hold and block scenarios that fail are reported and kept
-  out (block alone is hold). Replacements are listed.
+  out (block alone is hold). Replacements are listed. **Stop rule (l10-m2):** if for any behaviour
+  more than a quarter of its scenarios in T or in V fail the pre-screen with their first seed (lane)
+  or at all (hold, block), no ego lap runs: the opponent model is reported as not good enough and
+  revised by an amendment, rather than drawing seeds until enough pass.
 
 ## 3. The opponent
 
@@ -87,9 +103,11 @@ behaviour is fixed per scenario; the ego is not told which.
   racing line at k · v_plan, but while the ego is behind within 40 m along the track the opponent's
   lateral target becomes the ego's lateral offset (clipped as above), reached at most at 2 m/s
   laterally with a 0.3 s reaction delay; the speed rule as for lane. Back to the racing line when
-  the ego is ahead or more than 40 m behind. *Reviewer: if "following" was meant differently in the
-  ROADMAP (for example an opponent that starts behind and follows the ego), this is the place to
-  change it.*
+  the ego is ahead or more than 40 m behind. This is an *interpretation*: the ROADMAP lists "holding
+  the line, following, random lane changes" without defining them. Since the ego always starts
+  behind the opponent, an opponent that follows the ego from behind would only appear after an
+  overtake; that behaviour is **not tested** in step 1. Block is a reactive rule, but a fixed one, so
+  the opponent's behaviour stays "fixed but unknown".
 
 If the opponent leaves the track or spins without contact during an ego lap, it is removed and the
 ego's lap continues; such events are counted and reported per controller.
@@ -135,6 +153,12 @@ unselected distribution first). The identification controllers of L4–L8 (`iden
   (`FrenetMPC(mode="filter")`, N = 30, nominal model, η = 0.95, no back-offs – the car is the nominal
   one) with the collision constraint and the CV prediction applies the closest admissible input.
   Secondary: the nine final L5 checkpoints behind the same filter (the unselected distribution).
+  How well they drive Spielberg alone (l10-m3): on T1new + T2new (cars with parameter errors, lags of
+  0–60 ms and L3 disturbances; L9 offline) they completed A_s1 69, A_s2 101, A_s3 65, B_s1 91, B_s2 53,
+  B_s3 92, C_s1 62, C_s2 75, C_s3 58 and `B_s1_500k` 99 of 105. On the nominal car from the start
+  points of L10 their alone laps (section 2) measure it; a scenario is read against the policy's
+  alone lap from the same start point, to separate "cannot drive this start alone" from "stopped
+  by the opponent or the filter".
 
 Information parity (ROADMAP rule 3): every controller knows the track and its 5 % plan (the RL
 policies their L5 observation, which contains no opponent); the aware ones also get the opponent's
@@ -167,8 +191,8 @@ these scenarios.
 
 ## 9. Go / no-go and step 2
 
-* **Go for T:** after tuning, at least one aware NMPC (`nmpc_cv` or `nmpc_line`) completes at least
-  24 of the 48 V scenarios clean. Otherwise no T lap runs; L10 step 1 reports V and the failure modes
+* **Go for T:** after tuning, with the shared setting (section 11), `nmpc_cv` or `nmpc_line`
+  completes at least 24 of the 48 V scenarios clean. Otherwise no T lap runs; L10 step 1 reports V and the failure modes
   and stops there (ROADMAP rule 5).
 * **Step 2** is decided with the user after the step-1 report and a literature check; the criteria,
   fixed now: if the best aware controller's contacts concentrate on the reactive opponent (block:
@@ -191,15 +215,20 @@ when it exists; until then they are marked as not cross-checked.
    runner and the report code. Checked on V smoke scenarios only; **reviewed before any tuning run.**
 2. Pre-screen of the opponents on V and T (opponent alone; no ego lap).
 3. **Tuning on V:** the 2 × 2 × 2 = 8 settings of (a_s, a_n, w_c), each with `nmpc_cv`, `nmpc_line` and
-   `filter_cv` on the 48 V scenarios; for each controller the setting with the most clean laps, ties
-   by fewer contacts, then lower mean lap time. The chosen settings, the go / no-go result and the V
-   records go to the reviewer before any T lap.
+   `filter_cv` on the 48 V scenarios. **One setting, shared by all three in the primary tests
+   (l10-M2):** the setting with the most clean laps of `nmpc_cv` and `nmpc_line` together, ties by
+   fewer contacts of the two together, then lower mean lap time of the two. So H-I1 differs only in
+   the prediction and H-I2 only in "RL behind the filter" against "NMPC". Secondary: `filter_cv`
+   with its own best setting by the same rule applied to it alone, run on T only if it differs from
+   the shared one. The chosen settings, the go / no-go result and the V records go to the reviewer
+   before any T lap.
 4. T: alone laps, then the 96 scenarios for every controller of section 5 (offline, deterministic up
    to the solvers; up to 20 jobs at once, one process per job, single-threaded BLAS).
 5. Report, review, merge.
 
 Estimate: an aware NMPC lap ~5–8 min (IPOPT with the collision rows); V tuning ~580 such laps
-(~60 CPU-h), T ~1 150 (`nmpc_cv`, `nmpc_line`, `filter_cv` × 10 policies; ~130 CPU-h); the unaware
+(~60 CPU-h), T ~1 150 (`nmpc_cv`, `nmpc_line`, `filter_cv` × 10 policies; ~130 CPU-h; +96 if the
+separately tuned `filter_cv` runs); the unaware
 laps end at the first contact and are short. Windows `.venv` / `.venv-rl` (no acados needed),
 pinned worktree, input SHA-256 list as in L7–L9.
 
