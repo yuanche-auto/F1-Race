@@ -158,6 +158,13 @@ def true_theta(case: dict) -> np.ndarray:
     return th
 
 
+def lap_position(s, length: float) -> np.ndarray:
+    """Position along the lap of an unwrapped centre-line arclength sequence: its start mapped into (-L/2, L/2] (the start
+    state projects to s = L - 1e-11, just before the line) and the progress added."""
+    s = np.asarray(s, float)
+    return np.mod(s[0] + 0.5 * length, length) - 0.5 * length + (s - s[0])
+
+
 def friction_field(sim):
     dist = getattr(sim, "dist", None)
     return None if dist is None else dist.friction
@@ -291,7 +298,7 @@ def adaptation_metrics(case: dict, ctl, sim, etas, track) -> dict:
     out["settle_from_start_s"] = 0.0 if not bad.size else (None if bad[-1] == len(t) - 1 else float(t[bad[-1] + 1]))
     d = case.get("drift")
     if d is not None:
-        q = np.mod(s, track.length)
+        q = lap_position(s, track.length)          # not mod L: the lap starts at s = L - 1e-11 (packet 4)
         on, end = q >= d["s_on"], q >= d["s_on"] + d["ell"]
         out["mu_abs_err_before_during_after_p50_p95"] = [_pct(ae[~on]), _pct(ae[on & ~end]), _pct(ae[end])]
         if on.any():

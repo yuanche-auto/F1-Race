@@ -10,6 +10,7 @@ results/CX/D/dev/ with the commit and the dirty flag.
     python scripts/cx_d_dev.py drifts     # 7: the drifts drawn for CDD and CDV_D (review m2)
     python scripts/cx_d_dev.py gate       # the gate of item 6 from laps.jsonl (with nmpc on the DEV drifts, review n2)
     python scripts/cx_d_dev.py cdd-failures --records <test.jsonl>   # descriptive, after the primary report
+    python scripts/cx_d_dev.py cdd-rerun --records <test.jsonl>      # the drift field's start (packet 4)
 
 Timing (item 5) is in the lap records (estimator us per update, NMPC solve ms).
 """
@@ -307,7 +308,8 @@ def _replay_one(args) -> dict:
                ("mu", "m", "ClA", "CdA", "Iz", "B", "aero_front"), conv)),
            "err_end": err[-1].tolist(), "mu_abs_err_p50_p95": [float(np.percentile(np.abs(err[:, 0]), q)) for q in (50, 95)]}
     if field is not None:
-        on = np.mod(s[1:], tr.length) >= case["drift"]["s_on"]
+        q = cx_d.lap_position(np.unwrap(s, period=tr.length), tr.length)[1:]    # not mod L (the start is at L - 1e-11)
+        on = q >= case["drift"]["s_on"]
         if on.any():
             i0 = int(np.flatnonzero(on)[0])
             a = np.abs(err[i0:, 0])
@@ -354,6 +356,104 @@ def replay(workers: int) -> None:
     _write("replay.json", {"replays": out})
 
 
+class _StartFixDrift(cx_d.DriftField):
+    """The drift field with the start state's projection (s = L - 1e-11) counted as the start of the lap, not its end."""
+
+    def __call__(self, s):
+        q = np.mod(np.asarray(s, float), self.length)
+        q = np.where(q > self.length - 1e-3, 0.0, q)
+        w = np.clip((q - self.s_on) / self.ell, 0.0, 1.0)
+        out = 1.0 - (1.0 - self.f_end) * w
+        return float(out) if np.ndim(out) == 0 else out
+
+
+def _rerun_one(args) -> dict:
+    """One CDD lap of the benchmark again, with the drift field as run (``original``) or with the start fixed
+    (``startfix``)."""
+    variant, kind, setting, case_name = args
+    from run_cx_d import _case
+
+    if variant == "startfix":
+        cx_d.DriftField = _StartFixDrift
+    t0 = time.time()
+    try:
+        rec = cx_d.lap(_case(case_name), kind, setting)
+    except Exception:                                   # noqa: BLE001
+        import traceback
+        return {"variant": variant, "kind": kind, "case": case_name, "error": traceback.format_exc()}
+    rec.update(variant=variant, wall_job_s=time.time() - t0)
+    return rec
+
+
+def cdd_rerun(workers: int, records: Path) -> None:
+    """Packet 4: the start of every drift lap projects to s = L - 1e-11, so the drift field gave f_end for the first
+    simulator step and the onset diagnostics counted from the lap start. (a) ``adaptive`` on CDD again with the field as
+    run: the laps must reproduce test.jsonl, the diagnostics are now from the onset; (b) nmpc, adaptive,
+    adaptive_oracle and tube on CDD with the start fixed: do the outcomes change?"""
+    from report_cx_a import load
+
+    names = [c["name"] for c in cx_d.cases("CDD")]
+    jobs = [("original", "adaptive", {"lam_mu": 0.995}, n) for n in names]
+    jobs += [("startfix", k, {"lam_mu": 0.995} if k == "adaptive" else {}, n)
+             for k in ("nmpc", "adaptive", "adaptive_oracle", "tube") for n in names]
+    path = DEV / "cdd_rerun.jsonl"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    done = set()
+    if path.exists():
+        done = {(r["variant"], r["kind"], r["case"]) for r in map(json.loads, path.read_text().splitlines())
+                if "error" not in r}
+    todo = [j for j in jobs if (j[0], j[1], j[3]) not in done]
+    print(len(todo), "laps", flush=True)
+    if todo:
+        with get_context("spawn").Pool(min(workers, len(todo)), maxtasksperchild=1) as pool, \
+                open(path, "a", encoding="utf-8") as fo:
+            for rec in pool.imap_unordered(_rerun_one, todo):
+                fo.write(json.dumps(rec, default=float) + "\n")
+                fo.flush()
+    recs = [json.loads(l) for l in path.read_text().splitlines() if l.strip()]
+    test = {(r["kind"], r["case"]): r for r in load(records)}
+    keys = ("completed", "lap_time", "stop_reason", "distance", "failure_s", "min_edge_margin", "tyre_usage_max_front_rear",
+            "plan_line_offset_abs_mean_max", "mu_abs_err_p50_p95", "too_fast_share")
+    out = {"records": str(records), "errors": sum("error" in r for r in recs), "original_same_as_test": 0,
+           "original_diff": [], "startfix": {}}
+    for r in recs:
+        if "error" in r:
+            continue
+        o = test[(r["kind"], r["case"])]
+        if r["variant"] == "original":
+            bad = [k for k in keys if json.dumps(r.get(k)) != json.dumps(o.get(k))]
+            if bad:
+                out["original_diff"].append(f"{r['case']}: {bad}")
+            else:
+                out["original_same_as_test"] += 1
+        else:
+            s_ = out["startfix"].setdefault(r["kind"], {"laps": 0, "completed_startfix": 0, "completed_test": 0,
+                                                         "outcome_changed": [], "lap_time_diff_max_abs": 0.0})
+            s_["laps"] += 1
+            s_["completed_startfix"] += int(r["completed"])
+            s_["completed_test"] += int(o["completed"])
+            if r["completed"] != o["completed"]:
+                s_["outcome_changed"].append(r["case"])
+            elif r["completed"]:
+                s_["lap_time_diff_max_abs"] = max(s_["lap_time_diff_max_abs"], abs(r["lap_time"] - o["lap_time"]))
+    orig = [r for r in recs if r.get("variant") == "original" and "error" not in r]
+    v = [r.get("drift_settle_delay_s") for r in orig]
+    ok = [x for x in v if x is not None]
+    med = lambda a: float(np.median(a)) if a else None
+    out["adaptive_onset_diagnostics"] = {
+        "settle_delay_s_median_min_max": [med(ok), min(ok), max(ok)] if ok else None, "never": len(v) - len(ok),
+        "completed_settle_median": med([r["drift_settle_delay_s"] for r in orig if r["completed"]
+                                        and r["drift_settle_delay_s"] is not None]),
+        "failed_settle_median": med([r["drift_settle_delay_s"] for r in orig if not r["completed"]
+                                     and r["drift_settle_delay_s"] is not None]),
+        "abs_err_p95_before_during_after_median": [float(np.nanmedian([r["mu_abs_err_before_during_after_p50_p95"][i][1]
+                                                                       for r in orig])) for i in range(3)],
+        "per_lap": [{"case": r["case"], "completed": r["completed"], "settle_s": r["drift_settle_delay_s"],
+                     "p95_before_during_after": [x[1] for x in r["mu_abs_err_before_during_after_p50_p95"]],
+                     "after_onset_max": r.get("mu_abs_err_after_onset_max")} for r in sorted(orig, key=lambda r: r["car"])]}
+    _write("cdd_rerun.json", out)
+
+
 def cdd_failures(path: Path) -> None:
     """Descriptive, after the primary report (review of packet 3): where on CDD each controller's laps end relative to
     the drift – before the onset, during the decline, after its end – and whether the drift is still under way at the
@@ -397,7 +497,7 @@ def cdd_failures(path: Path) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("what", choices=["unchanged", "step", "nlp", "plans", "laps", "replay", "drifts", "gate",
-                                     "cdd-failures"])
+                                     "cdd-failures", "cdd-rerun"])
     ap.add_argument("--records", default=None, help="cdd-failures: the test.jsonl to read")
     ap.add_argument("--workers", type=int, default=20)
     ap.add_argument("--base", default="55c5925")
@@ -418,6 +518,8 @@ def main() -> None:
         gate()
     elif a.what == "cdd-failures":
         cdd_failures(Path(a.records))
+    elif a.what == "cdd-rerun":
+        cdd_rerun(a.workers, Path(a.records))
     else:
         _write("drifts.json", {"CDD": cx_d.drift_summary("CDD"), "CDV_D": cx_d.drift_summary("CDV_D"),
                                "CDD_draws": [c["drift"] for c in cx_d.cases("CDD")]})
