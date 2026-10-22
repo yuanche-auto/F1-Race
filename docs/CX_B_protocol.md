@@ -387,6 +387,20 @@ Nominal car only; records in `results/CX/B/dev/` (git-ignored), each with its co
    at 3.70–3.85 km the rear axle reaches 0.96 of its ellipse (usage before saturation) with vy up to +2.43 m/s,
    from 3 755 m to the end no sample is free of penalties (ESS 1.0) and the car slides wide at the exit – the corner where phase A's MPCC with a low
    contouring weight also left by millimetres.
+8. **The gate at the K in force (review g1 of packet 3; `gate_k1024.jsonl`, 99955f4):** `mppi_lp`'s nine first-step
+   settings (2 Hz, K_RT = 1 024) on the nominal car, replicate 0, development laps (no selection; 9 jobs in
+   parallel):
+
+   | λ \ c_σ | 0.5 | 1 | 2 |
+   |---|---|---|---|
+   | 0.1 | off at 3 839 m | off at 470 m | off at 456 m |
+   | 1 | off at 3 839 m | off at 3 831 m | off at 461 m |
+   | 10 | off at 462 m | off at 1 400 m | off at 462 m |
+
+   **None completes the nominal lap: the gate of 9.6 fails at K_RT = 1 024 for the primary as well** (and for the
+   white-noise `mppi`, 9 / 9 at K 2 048). Five leave at turn 1 (the larger noise or the extreme temperatures), three
+   at the 3.84 km corner, one at 1.4 km. Median ESS 1.0–1.3 at λ 0.1, 4.5–32 at λ 1 (c_σ ≤ 1), 21–256 at λ 10; step
+   medians 25.5–33.0 ms (9 laps in parallel). Amendment B3 (proposed) follows.
 
 ## Amendments
 
@@ -468,3 +482,23 @@ Nominal car only; records in `results/CX/B/dev/` (git-ignored), each with its co
      than `nmpc`; the benchmark measures by how much, at this budget.
   7. *Alternative, not proposed:* close phase B without a benchmark and report the development result (T-RO MPPI
      does not complete the nominal lap at the real-time CPU budget; LP-MPPI 2 of 8) – H-B1 / H-B2 untested.
+* **B3 (proposed 2026-10-22, for review) – after the gate failed at the K in force (section 9, result 8): how phase B
+  ends.** *Cause:* at K_RT = 1 024 none of `mppi_lp`'s nine first-step settings completes the nominal lap; with
+  B2's own evidence (K 2 048: 1 of 3; K 8 192 offline: 1 of 3) and the white-noise results (0 of 17), MPPI on the
+  NMPC's problem does not reliably drive the nominal car at any budget tried, and not once at the real-time
+  budget. The gate's question – is the problem solvable at this budget? – is answered: no, on the nominal car.
+  Options:
+  1. *Proposed:* **run the pre-registered tuning and benchmark unchanged at K_RT = 1 024, with the gate of 9.6
+     waived by this amendment.** The development result is the finding; the benchmark turns it into the
+     pre-registered comparison on 50 test cars (H-B1, H-B2 with Holm), with `mppi_big` (4 096, offline) as the
+     budget sensitivity and the white-noise `mppi` alongside. Cost is small: MPPI laps that leave early end early,
+     and the 51 `nmpc` / `mpcc` laps take ~15 min with 20 workers. The CXV tuning will likely see 0 of 10 for
+     every setting and fall to the closeness rule (the grid centre); that is reported as such. The report states
+     that the gate failed, that the benchmark ran under B3, and that H-B1 is expected to favour `nmpc`; no claim
+     beyond "at this CPU budget".
+  2. *Alternative:* close phase B without a benchmark – the development result (sections 9.4–9.8) is the phase's
+     result; H-B1 / H-B2 untested.
+  3. *Not proposed:* drop the real-time budget for the primary (e.g. K 8 192 offline) – a different question, and
+     still 1 of 3 on the nominal car; or change the method again (the unperturbed U as a sample, an adaptive
+     temperature or covariance, B.10) – development without a single literature-backed candidate that addresses
+     the 3.84 km failure; these go to the frontier list.
