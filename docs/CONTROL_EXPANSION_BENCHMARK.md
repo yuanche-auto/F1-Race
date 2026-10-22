@@ -286,12 +286,12 @@ cars outside the test set; it describes the mechanism, not the test.)
 ### Reading
 
 * **Tightening by the model's uncertainty turns the L2 cars' failures into completions:** 49 of 50 against 16 of 50,
-  33 : 0, at a cost of 1.6 s per lap (2 %) where both complete. The numerical path explains 2 of the 33 discordant cars at
-  most (`nmpc_param`).
+  33 : 0, at a cost of 1.6 s per lap (2 %) where both complete. The numerical path alone produces 2 discordant cars
+  (`nmpc_param` against `nmpc`) – small against 33.
 * **It is not a uniform reserve:** the uniform 12 % reserve (`nmpc_reserve`) gains 5 cars (5 : 0, p 0.06) and costs 2.9 s;
   the tube gains 33 and is 1.4 s *faster* than the uniform reserve where both complete. The tube's η_k varies along the
-  horizon and the lap (P50 0.90, capped at 0.70 in the fast corners, near 0.95 on the straights) – reserve where the
-  uncertainty acts, little where it does not.
+  horizon and the lap (P50 0.90, P95 0.95, capped at 0.70 in the fast corners) – reserve where the uncertainty acts,
+  little where it does not.
 * **The friction-and-force part does most of it:** the track tube alone (`tube_track`) gains 7 cars (7 : 0, p 0.016,
   uncorrected) and loses 26 against the full tube. Under `param_tightening` η_k also lowers the axles' longitudinal-force
   limits (clarification m2), so the friction reserve and the force limits act together here and cannot be separated.
