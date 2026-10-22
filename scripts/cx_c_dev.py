@@ -1,0 +1,230 @@
+"""Control expansion phase C – the development checks of docs/CX_C_protocol.md section 9 (9.1 and 9.2 are unit tests in
+tests/test_tube.py), on the nominal car and the development cars CXDEV only (records in results/CX/C/dev/, each with
+the commit and a dirty flag; not results of the protocol).
+
+    python scripts/cx_c_dev.py wcheck      # 9.3 the vertex disturbance bound against 1 000 random L2 cars -> dev/wcheck.json
+    python scripts/cx_c_dev.py laps        # 9.6 (+ 9.5 timing) NOM with the 6 settings -> dev/laps.jsonl, the gate
+    python scripts/cx_c_dev.py cxdev       # 9.4 nmpc and tube (c_R 1) on the 5 development cars -> dev/cxdev.jsonl
+    python scripts/cx_c_dev.py null        # review c1 of packet 2: the tube path without tightening against nmpc -> dev/null.jsonl
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+import time
+from multiprocessing import get_context
+from pathlib import Path
+
+for _v in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS"):
+    os.environ.setdefault(_v, "1")
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+DEV = ROOT / "results" / "CX" / "C" / "dev"
+
+
+def _git() -> dict:
+    g = lambda *a: subprocess.run(["git", *a], cwd=ROOT, capture_output=True, text=True).stdout.strip()
+    return {"commit": g("rev-parse", "HEAD"), "dirty": bool(g("status", "--porcelain", "--untracked-files=no"))}
+
+
+def wcheck() -> None:
+    """Section 9.3: at 100 states of nmpc's nominal lap (phase B's record results/CX/B/dev/nmpc_nom.npz: the measured
+    state and the applied first input of every solve), the one-step mismatch of 1 000 random cars drawn uniformly from
+    the L2 box against the vertex maximum, per state component."""
+    from dataclasses import replace
+
+    import numpy as np
+
+    from f1race.control.nmpc import FrenetMPC
+    from f1race.control.tube import Tube, frenet_step
+    from f1race.dynamics import DynVehicle
+    from f1race.experiments import cx_a, cx_c
+    from f1race.experiments.l2 import PERTURBATION, ref_from_plan
+    from f1race.track import Track
+
+    track, o = Track.load("Spielberg"), cx_a.plan()
+    mpc = FrenetMPC(track, DynVehicle(), ref_from_plan(o), N=30, dt=0.05, eta=0.95, margin=0.6, param_tightening=True)
+    tube = Tube(mpc, PERTURBATION, margin=0.6)
+    d = np.load(ROOT / "results" / "CX" / "B" / "dev" / "nmpc_nom.npz")
+    idx = np.linspace(1, len(d["x0"]) - 1, 100).astype(int)
+    X, U = d["x0"][idx], d["U"][idx, 0]
+    rng = np.random.default_rng(93)
+    f = {k: rng.uniform(*PERTURBATION[k], size=(1000, 1)) for k in PERTURBATION}
+    nom = DynVehicle()
+    cars = replace(nom, mu_x=nom.mu_x * f["mu"], mu_y=nom.mu_y * f["mu"], m=nom.m * f["m"], ClA=nom.ClA * f["ClA"],
+                   CdA=nom.CdA * f["CdA"], Iz=nom.Iz * f["Iz"], B=nom.B * f["B"], aero_front=nom.aero_front + f["aero_front"])
+    with np.errstate(all="ignore"):
+        base = frenet_step(nom, tube.kap, X, U, 0.05)
+        rnd = np.abs(frenet_step(cars, tube.kap, X[None], U[None], 0.05) - base[None])      # (1000, 100, 7)
+        ver = np.abs(frenet_step(tube.vertex_veh, tube.kap, X[None], U[None], 0.05) - base[None]).max(axis=0)
+    names = ["s", "n", "xi", "vx", "vy", "r", "delta"]
+    exceed = rnd > ver[None] * (1 + 1e-9) + 1e-12
+    out = {"states": len(idx), "cars": 1000, **_git(),
+           "share_exceeding_vertex_max_per_component": dict(zip(names, exceed.mean(axis=(0, 1)).tolist())),
+           "largest_ratio_random_over_vertex_per_component": dict(zip(names, np.nanmax(
+               np.where(ver[None] > 0, rnd / np.maximum(ver[None], 1e-300), 0.0), axis=(0, 1)).tolist())),
+           "vertex_max_median_per_component": dict(zip(names, np.median(ver, axis=0).tolist()))}
+    DEV.mkdir(parents=True, exist_ok=True)
+    (DEV / "wcheck.json").write_text(json.dumps(out, indent=1))
+    print(json.dumps(out, indent=1))
+
+
+def _lap_job(args):
+    kind, setting, case_name = args
+    from f1race.experiments import cx_c
+
+    case = next(c for s_ in ("NOM", "CXDEV") for c in cx_c.cases(s_) if c["name"] == case_name)
+    rec = cx_c.lap(case, kind, setting)
+    rec.update(_git())
+    return rec
+
+
+def _pool(jobs, path: Path) -> list[dict]:
+    DEV.mkdir(parents=True, exist_ok=True)
+    out = []
+    with get_context("spawn").Pool(len(jobs), maxtasksperchild=1) as pool, open(path, "w") as fo:
+        for r in pool.imap_unordered(_lap_job, jobs):
+            fo.write(json.dumps(r, default=float) + "\n")
+            fo.flush()
+            out.append(r)
+            print(r["kind"], r["setting_key"], r["case"], r["completed"], round(r["lap_time"], 3) if r["completed"] else "",
+                  r["stop_reason"], round(r["distance"]), "capped", r.get("capped_track_share_mean"),
+                  r.get("capped_eta_share_mean"), "cover", r.get("coverage_exceed_share"), flush=True)
+    return out
+
+
+def laps() -> None:
+    """Section 9.6: NOM with the 6 settings (and 9.5: the tube times of these laps). Gate: tube completes NOM with at least
+    one setting whose capped shares (track and eta) are both at most one half."""
+    from f1race.experiments import cx_c
+
+    jobs = [(k, s_, "NOM_car0") for k in cx_c.TUBE_KINDS for s_ in cx_c.TUBE_GRID]
+    recs = _pool(jobs, DEV / "laps.jsonl")
+    ok = [r["setting_key"] for r in recs if r["kind"] == "tube" and r["completed"]
+          and r["capped_track_share_mean"] <= 0.5 and r["capped_eta_share_mean"] <= 0.5]
+    print("gate (9.6):", "passed by " + ", ".join(ok) if ok else "FAILED - an amendment before any CXV lap")
+
+
+def cxdev() -> None:
+    """Section 9.4: nmpc and tube (c_R 1) on the five development cars; the tube's coverage and back-offs per lap."""
+    from f1race.experiments import cx_c
+
+    names = [c["name"] for c in cx_c.cases("CXDEV")]
+    jobs = [("nmpc", cx_c.fixed_setting("nmpc"), n) for n in names] + [("tube", {"c_R": 1.0}, n) for n in names]
+    _pool(jobs, DEV / "cxdev.jsonl")
+
+
+def null() -> None:
+    """Review c1 of packet 2: the tube's code path (mpc_lap, FrenetMPC(param_tightening=True), the tube computed at every
+    solve) with no tightening handed to the NLP, on NOM, against nmpc's lap through cx_b.lap -> dev/null.jsonl."""
+    from f1race.experiments import cx_c
+
+    jobs = [("tube", {"c_R": 1.0, "null": 1}, "NOM_car0"), ("nmpc", cx_c.fixed_setting("nmpc"), "NOM_car0")]
+    recs = {r["kind"]: r for r in _pool(jobs, DEV / "null.jsonl")}
+    a, b = recs["tube"], recs["nmpc"]
+    print("tube path without tightening:", a["completed"], a["lap_time"], round(a["distance"], 3), "| nmpc:", b["completed"],
+          b["lap_time"], round(b["distance"], 3), "| difference", a["lap_time"] - b["lap_time"])
+
+
+def _capmap_job(case_name):
+    import numpy as np
+
+    from f1race.experiments import cx_c
+    from f1race.experiments.l7 import make_sim_for
+    from f1race.experiments.l8 import plans_for
+    from f1race.track import Track
+
+    case = next(c for s_ in ("NOM", "CXDEV") for c in cx_c.cases(s_) if c["name"] == case_name)
+    track, plans = Track.load("Spielberg"), plans_for("Spielberg")
+    ctl, mpc, tube, x0 = cx_c.build("tube", {"c_R": 1.0}, track, plans)
+    rows = []
+    inner = ctl.__call__
+
+    def call(t, x):
+        n0 = len(ctl.tube_log)
+        u = inner(t, x)
+        if len(ctl.tube_log) > n0:
+            X, _ = mpc.prediction()
+            rows.append((X[:-1, 0] % track.length, ctl.tube_log[-1]["eta"].copy()))
+        return u
+    sim = make_sim_for({"plant": case["plant"], "tau": 0.0, "dist_seed": None}, track)
+    res = sim.run(call, x0, t_max=cx_c.T_MAX)
+    s = np.concatenate([r[0] for r in rows])
+    capped = np.concatenate([r[1] <= cx_c.ETA_MIN + 1e-9 for r in rows])
+    bins = np.arange(0.0, track.length + 50.0, 50.0)
+    tot, _ = np.histogram(s, bins)
+    cap, _ = np.histogram(s[capped], bins)
+    return {"case": case_name, "completed": bool(res.completed), "lap_time": float(res.lap_time),
+            "bins_m": bins[:-1].tolist(), "stages": tot.tolist(), "capped": cap.tolist(), **_git()}
+
+
+def capmap() -> None:
+    """Review n2 of packet 2: where tube's eta_k is capped at eta_min - every predicted stage of every solve attributed to
+    its predicted position (50 m bins), tube c_R 1 on NOM and the five CXDEV cars -> dev/capmap.json."""
+    import numpy as np
+
+    from f1race.experiments import cx_c
+
+    names = ["NOM_car0"] + [c["name"] for c in cx_c.cases("CXDEV")]
+    with get_context("spawn").Pool(len(names), maxtasksperchild=1) as pool:
+        recs = list(pool.imap_unordered(_capmap_job, names))
+    bins = np.array(recs[0]["bins_m"])
+    tot = np.sum([r["stages"] for r in recs], axis=0)
+    cap = np.sum([r["capped"] for r in recs], axis=0)
+    share = np.where(tot > 0, cap / np.maximum(tot, 1), 0.0)
+    top = np.argsort(-cap)[:12]
+    out = {"laps": [{k: r[k] for k in ("case", "completed", "lap_time")} for r in recs], "capped_total": int(cap.sum()),
+           "stages_total": int(tot.sum()),
+           "top_bins_by_capped_stages": [{"from_m": float(bins[i]), "capped": int(cap[i]), "share_of_stages_there": float(share[i]),
+                                          "share_of_all_capped": float(cap[i] / max(cap.sum(), 1))} for i in top],
+           "bins_m": bins.tolist(), "stages": tot.tolist(), "capped": cap.tolist(), **_git()}
+    DEV.mkdir(parents=True, exist_ok=True)
+    (DEV / "capmap.json").write_text(json.dumps(out, indent=1))
+    print(json.dumps({k: out[k] for k in ("laps", "capped_total", "stages_total", "top_bins_by_capped_stages")}, indent=1))
+
+
+def null_cause() -> None:
+    """Review c1 follow-up: is the difference between the tube path without tightening and nmpc the parameterised NLP?
+    (a) nmpc's controller (MPCController) on FrenetMPC(param_tightening=True) with its default eta 0.95 / back-off 0 on NOM;
+    (b) one solve of each NLP from the same states (5 % plan at four places, cold start): the largest difference of the
+    applied input and of the predicted states, and both IPOPT statuses / iteration counts -> dev/null_cause.json."""
+    import numpy as np
+
+    from f1race.control.nmpc import FrenetMPC, MPCController
+    from f1race.dynamics import DynVehicle
+    from f1race.experiments import cx_a, cx_c
+    from f1race.experiments.l1 import dyn_reference
+    from f1race.experiments.l2 import ref_from_plan, x0_from_plan
+    from f1race.sim.dynamic import DynamicSim
+    from f1race.track import Track
+
+    track, o = Track.load("Spielberg"), cx_a.plan()
+    w = {k: v * 2.0 for k, v in cx_a.NMPC_TRACK_W.items()}
+    mk = lambda pt: FrenetMPC(track, DynVehicle(), ref_from_plan(o), mode="track", N=30, dt=0.05, eta=0.95, margin=0.6,
+                              weights=w, param_tightening=pt)
+    path, _ = dyn_reference(track, DynVehicle(), o)
+    res = DynamicSim(track, DynVehicle(), cx_c.DT).run(MPCController(mk(True), cx_c.DT), x0_from_plan(o, path),
+                                                         t_max=cx_c.T_MAX)
+    out = {"param_nlp_lap": {"completed": bool(res.completed), "lap_time": float(res.lap_time),
+                             "distance": float(res.progress[-1])}, "single_solves": [], **_git()}
+    for s in (100.0, 380.0, 2700.0, 3800.0):
+        x0 = np.array([s] + [float(np.interp(s, o.s, getattr(o, k))) for k in ("n", "xi", "vx", "vy", "r", "delta")])
+        a, b = mk(False), mk(True)
+        ua, ia = a.solve(x0, np.array([0.0, 2000.0, 0.0]))
+        ub, ib = b.solve(x0, np.array([0.0, 2000.0, 0.0]))
+        Xa, _ = a.prediction()
+        Xb, _ = b.prediction()
+        out["single_solves"].append({"s": s, "u_diff": np.abs(ua - ub).tolist(), "X_diff_max": float(np.abs(Xa - Xb).max()),
+                                     "status": [ia["status"], ib["status"]], "iter": [ia["iter"], ib["iter"]]})
+    (DEV / "null_cause.json").write_text(json.dumps(out, indent=1))
+    print(json.dumps(out, indent=1))
+
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("what", choices=("wcheck", "laps", "cxdev", "null", "null-cause", "capmap"))
+    a = ap.parse_args()
+    {"wcheck": wcheck, "laps": laps, "cxdev": cxdev, "null": null, "null-cause": null_cause, "capmap": capmap}[a.what]()

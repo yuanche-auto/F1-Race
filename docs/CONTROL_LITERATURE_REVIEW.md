@@ -228,11 +228,105 @@ B.5) and 1:28 (B.6) scale cars, at 6–11 m/s or less; this car runs at up to ~9
   sample is drawn; adds a probabilistic constraint layer. Not read; noted because the same limitation applies
   to the penalty formulation of CX-B (§3) and is measured there (steps without a penalty-free sample).
 
-## Phases C–G and the frontier methods
+## Phase C – robust tube MPC
+
+Checked 2026-10-22. Full texts as arXiv HTML; the journal classics of linear tube MPC were not obtained in full
+(no open copy found) and are cited for their formulation as it is restated in the full texts read (C.4).
+
+### C.1 Mayne, Seron, Raković – *Robust model predictive control of constrained linear systems with bounded disturbances*, Automatica 41(2), 2005, 219–224 (bibliographic + abstract)
+
+* Linear discrete-time systems with bounded additive disturbances; the online problem has the nominal model's
+  initial state as a decision variable (abstract). The tube formulation as restated in C.4 and in the textbook
+  literature: x = z + e, the applied input u = v + K(x − z), e kept in a robust positively invariant set Z of
+  e⁺ = (A + BK)e + w, the nominal problem solved with tightened constraints X ⊖ Z, U ⊖ KZ.
+* Not read in full; cited as the origin of the "nominal plus ancillary feedback" tube.
+
+### C.2 Chisci, Rossiter, Zappa – *Systems with persistent disturbances: predictive control with restricted constraints*, Automatica 37(7), 2001, 1019–1028 (bibliographic)
+
+* Constraint tightening with a fixed stabilising feedback, the restricted constraints computed offline so that the
+  online problem stays a nominal one (as described by secondary sources and by C.6's code documentation, which
+  builds on it). Not read.
+
+### C.3 Mayne, Kerrigan, van Wyk, Falugi – *Tube-based robust nonlinear model predictive control*, Int. J. Robust Nonlinear Control 21(11), 2011, 1341–1353 (abstract)
+
+* Extends tube MPC to nonlinear systems with additive disturbances; the local linear controller is replaced by an
+  ancillary MPC that keeps the disturbed trajectories in a tube around a nominal reference trajectory (abstract;
+  conference version IFAC NOLCOS 2007). Two optimisation problems per step. Not read in full.
+
+### C.4 Köhler, Soloperto, Müller, Allgöwer – *A computationally efficient robust model predictive control framework for uncertain nonlinear systems*, IEEE TAC 2021 (arXiv:1910.12081, extended version; full text read, ar5iv, two passes)
+
+* **Assumptions:** a local incremental Lyapunov function V_δ(x, z, v) with c_δ,l ‖x − z‖² ≤ V_δ ≤ c_δ,u ‖x − z‖² (4a),
+  ‖κ(x, z, v) − v‖² ≤ κ_max V_δ (4b) and V_δ(x⁺, z⁺, v⁺) ≤ ρ² V_δ (4c) for an incrementally stabilising feedback κ;
+  the model mismatch d_w ∈ 𝒲(x, u) bounded through w̃_δ(z, v, c) (10a, b); constraints g_j Lipschitz with L_j.
+* **Online problem (eq. 11):** the nominal model from the measured state (x_{0|t} = x_t), a scalar tube
+  s_{k+1|t} = ρ s_{k|t} + w_{k|t}, s_{0|t} = 0, w_{k|t} ≥ w̃_δ(x_{k|t}, u_{k|t}, s_{k|t}), tightened constraints
+  g_j(x_{k|t}, u_{k|t}) + c_j s_{k|t} ≤ 0 with c_j = L_j √(1/c_δ,l + κ_max), s ≤ s̄, terminal set; the applied input is
+  the nominal u*_{0|t} – κ appears in the analysis only. Recursive feasibility, constraint satisfaction and
+  practical stability (Theorem 1).
+* **Offline:** constant P, K from LMIs (V_δ = ‖x − z‖²_P, κ = v + K(x − z); quadrotor example: ρ_c from a bisection,
+  c_δ,l 0.016, c_δ,u 23.63, discrete ρ = 0.944 at h = 0.3 s, w̄ = 0.48), or control contraction metrics; c_j from a linear
+  programme over the constraint polytope.
+* **Results (as reported):** additive case at nominal-MPC cost, against ~500 × for an online-optimised tube; far
+  less conservative than Lipschitz-based tubes (with L = 1.8, N = 10 the Lipschitz tube needs the disturbance cut by
+  99 %); parametric uncertainty: ~4.5 × a nominal solve with the state-dependent bound.
+* **Limitations (stated):** conservatism of the offline V_δ and of the simple stabilisability description; the nominal
+  cost ignores the tube; dynamic uncertainty (e.g. an actuator lag) not covered ("still an open problem").
+* **Relevance:** the scheme the racing papers C.8 / C.9 build on; it fits the existing NMPC – the tube enters as
+  per-stage constraint back-offs, which `FrenetMPC(param_tightening=True)` already takes (L3, L6).
+
+### C.5 Sasfi, Zeilinger, Köhler – *Robust adaptive MPC using control contraction metrics*, arXiv:2209.11713 (v2 Jul 2023; abstract)
+
+* A homothetic tube from a control contraction metric for continuous-time nonlinear systems with bounded parametric
+  uncertainty and additive disturbance, plus set-membership parameter adaptation; planar quadrotor. The tightening
+  constants of C.8 follow it. Adaptive part: a phase D topic.
+
+### C.6 Wischnewski, Euler, Gümüş, Lohmann – *Tube model predictive control for an autonomous race car*, Vehicle System Dynamics 60(9), 2022, 3151–3173 (online 2021; abstract + the open-source code's documentation)
+
+* A friction-limited point-mass model with additive lateral and longitudinal disturbance; an approximate tube of
+  reachable sets over the horizon tightens state and input constraints so that the problem stays a QP (OSQP);
+  full-scale race car context (TUM, Roborace / Indy Autonomous Challenge). Hardware-in-the-loop with a nonlinear
+  dual-track model: fewer constraint violations at comparable lap times against a nominal MPC and an infinite-horizon
+  LQR (abstract). The code (github.com/TUMFTM/mod_vehicle_dynamics_control, documentation read) actuates
+  accelerations through lower-level controllers and names C.1 and C.2 as its basis.
+* The full text (and the TUM dissertation's chapter) was not read: no equations of the tube are taken from it.
+
+### C.7 Wischnewski et al. – *A Tube-MPC Approach to Autonomous Multi-Vehicle Racing on High-Speed Ovals*, IEEE T-IV 8(1), 2022, 368–378 (bibliographic)
+
+### C.8 Bongard, Krieger, Lohmann – *Dynamic Constraint Tightening for Nonlinear MPC for Autonomous Racing via Contraction Analysis*, arXiv:2602.04744 (v1 4 Feb 2026; full text read, HTML)
+
+* **Model:** dynamic single-track model in curvilinear coordinates (s, d, Δψ, v_x, v_y, ψ̇, δ, throttle T, brake B;
+  rate inputs), simplified Pacejka lateral tyres. **Uncertainty:** extra lateral tyre forces equivalent to ±2.5 % of
+  the Pacejka peak factor, ±150 N lateral / longitudinal force disturbances.
+* **Tube:** a state-dependent control contraction metric (no constant metric was found) from SOS programming (YALMIP,
+  MOSEK) on a reduced model with linearised tyre curves; tube size σ̇ = −(β − L_E) σ + f_σ(x, u), f_σ the worst case
+  over parameter / disturbance vertices in the metric; tightened constraints h_j + c_j σ ≤ 0 on the lateral deviation
+  and an octagonal acceleration envelope; c_j, L_E from the metric (after C.5).
+* **MPC:** 36 × 67 ms (2.4 s), RK4, acados SQP-RTI (HPIPM); solve median 2.25 ms against 1.86 ms nominal.
+* **Results (simulation only, Yas Marina; plant with Pacejka B, C, D −5 % and 200 N disturbances):** no constraint
+  violation with the tightening, violations and infeasibility without; in a rear-grip loss test the nominal
+  controller spins, the tightened one recovers. No lap-time comparison.
+* **Limitations (stated):** conservative metric, narrow uncertainty set chosen on purpose, simulation only.
+
+### C.9 Bongard, Jank, Sagmeister, Lohmann – *Robust Nonlinear Trajectory Tracking Control for Autonomous Racing on Three-Dimensional Tracks*, arXiv:2604.19452 (v2 13 Jul 2026; full text read, HTML)
+
+* C.8 extended to 3D tracks: the tube size σ is a state of the prediction model, σ̇ = −(β − L_E − C_σ) σ + f_σ(x, u),
+  growing with v_x, v_y, yaw rate and the throttle / brake inputs; tightening of the path deviation, the acceleration
+  envelope and the terminal speed bound; 36 × 60 ms, acados RTI at 100 Hz (~3.4 ms); high-fidelity double-track
+  simulation of Monza at up to 255 km/h; results shown graphically. Simulation only; the tightening is 2D.
+
+### C.10 Mi, Shao, Liu, Wang, Xu – *Integration of Motion Planning and Control for High-Performance Automated Vehicles Using Tube-Based Nonlinear MPC*, IEEE T-IV 9(2), 2024, 3859–3875 (abstract)
+
+* Tube-based NMPC with boundary-layer sliding-mode ancillary control on a kinematic model with slip-angle terms;
+  constraints tightened by tube coordinate transformation, interval analysis and robust optimisation; racing
+  simulations over different road frictions (abstract).
+
+**Tools note:** the offline designs of C.4 / C.5 / C.8 need an SDP or SOS solver (LMIs, CCM); none is installed here
+(no cvxpy, MOSEK, SCS). The CX-C protocol states how its offline constants are obtained instead.
+
+## Phases D–G and the frontier methods
 
 Entries are written at the start of each phase, before its code (roadmap section 3). Classic sources
-to start from (not yet read; listed so that the check is planned, not as claims): tube MPC – Mayne, Seron, Raković (2005) and Mayne et
-al. (nonlinear tube MPC, 2011); RLS / MHE – Rawlings, Mayne, Diehl (*Model Predictive Control: Theory,
+to start from (not yet read; listed so that the check is planned, not as claims): RLS / MHE – Rawlings, Mayne, Diehl (*Model Predictive Control: Theory,
 Computation, and Design*); LMPC – Rosolia and Borrelli (iterative LMPC, IEEE TAC 2018) and the racing
 application (Rosolia, Borrelli, 2019/2020); CBF / HOCBF / predictive safety filters – Ames et al.,
 Xiao and Belta, Wabersich and Zeilinger; advanced-step NMPC – Zavala and Biegler (2009).

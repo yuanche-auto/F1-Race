@@ -221,3 +221,113 @@ Run 2026-10-22 02:25–02:56 at d93b5e9 in the same worktree, 504 laps, no error
   as a number (NaN ≠ NaN); the comparison was corrected (baa69cb, with a test) and the report regenerated from the same
   records with that code from the main checkout – a hand note in `timeline.tsv`, the first version kept as
   `report/CX_B_secondary_d93b5e9_nanbug.md`.
+
+## Phase C – robust tube MPC (constraint tightening by an error tube)
+
+Protocol [CX_C_protocol.md](CX_C_protocol.md) (revision 0 with its clarifications; amendment C1). Runs from the pinned
+worktree `F1-Race-worktrees/F1-Race-wt-CXC-run` (inputs identical to the main checkout and to phase B's run): CXV tuning
+2026-10-22 05:57–06:13 at 8b6b40d (`RUN_COMMIT_tune`; 60 laps), CCT and NOM 06:16–07:06 at eab7c63 (`RUN_COMMIT`;
+amendment C1 added `nmpc_param` to the runner and report tables only; 306 laps); no error record. Records (git-ignored)
+in that worktree's `results/CX/C/`: `tune.jsonl` (ddcc9d8a4229…), `selected.json` (d38527d58885…), `test.jsonl`
+(bcf5e9f743d8…), `report/CX_C.md`, `timeline.tsv`.
+
+**Settings chosen on CXV** (10 tuning cars): `tube` c_R 1 (10 of 10 with every c_R; the lowest mean lap on the common
+cars, 79.78 s), `tube_track` c_R 0.1 (3 of 10 with every c_R – the same three cars `nmpc` completed there in phase A).
+
+### Primary tests (50 test cars CCT): both hold
+
+| test | result | p | Holm |
+|---|---|---|---|
+| H-C1 completed laps, `tube` : `nmpc` | 49 / 50 against 16 / 50; only one completes 33 : 0 | 2.3 · 10⁻¹⁰ | **holds** (also at 0.025) – in `tube`'s favour |
+| H-C2 lap time on the 16 cars both complete | `tube` slower on all 16, mean +1.61 s, median +1.68 s (0.51–2.20 s) | 3.1 · 10⁻⁵ | **holds** (also at 0.025) – `tube` slower |
+
+`nmpc`'s 34 failures: turn 1 16, ~2.2 km 2, ~2.7 km 7, ~3.83 km 5, ~4.01 km 4; `tube` leaves the track once (car 39 at
+3 820 m) and completes the other 33 in 78.3–82.3 s. Not cross-checked in a second environment (protocol §7).
+
+**The numerical-path control (amendment C1).** `nmpc_param` – `nmpc`'s problem in the tube's parameterised NLP and code
+path with no tightening – completes 18 of 50; against `nmpc` only one completes 2 : 0 (p 0.5) and the lap times on the 16
+common cars differ by −0.06 s on average (p 0.19). The numerical path accounts for 2 discordant cars against H-C1's 33:
+H-C1 is not an artefact of it. `tube` against `nmpc_param` (the same path, only the tightening differs; descriptive):
+31 : 0, +1.65 s on the 18 cars both complete.
+
+### Secondary (uncorrected; 10 comparisons) and description
+
+| comparison | only first : only second | McNemar p | both complete | lap time first − second | signed-rank p |
+|---|---|---|---|---|---|
+| `tube` vs `nmpc_reserve` (uniform η 0.88, 12 % plan) | 28 : 0 | 7.5 · 10⁻⁹ | 21 | **−1.39 s** (median −1.25) | 9.5 · 10⁻⁷ |
+| `tube_track` vs `nmpc` | 7 : 0 | 0.016 | 16 | +0.12 s | 0.065 |
+| `tube_track` vs `tube` | 0 : 26 | 3.0 · 10⁻⁸ | 23 | −1.34 s | 2.4 · 10⁻⁷ |
+| `nmpc_reserve` vs `nmpc` | 5 : 0 | 0.063 | 16 | +2.85 s | 3.1 · 10⁻⁵ |
+| `nmpc_param` vs `nmpc` (noise floor) | 2 : 0 | 0.5 | 16 | −0.06 s | 0.19 |
+
+| controller | completed (95 %) | where the others leave |
+|---|---|---|
+| `tracker` | 2 / 50 (0.00–0.14) | turn 1 23, ~1.4 km 1, ~2.7 km 16, ~3.0 km 8 |
+| `nmpc` | 16 / 50 (0.20–0.47) | turn 1 16, ~2.2 km 2, ~2.7 km 7, ~3.83 km 5, ~4.01 km 4 |
+| `nmpc_param` | 18 / 50 (0.23–0.51) | turn 1 16, ~2.2 km 2, ~2.7 km 8, ~3.83 km 5, ~4.01 km 1 |
+| `nmpc_reserve` | 21 / 50 (0.28–0.57) | turn 1 16, ~2.2 km 1, ~2.7 km 3, ~3.83 km 9 |
+| `tube` | **49 / 50 (0.89–1.00)** | ~3.83 km 1 |
+| `tube_track` | 23 / 50 (0.32–0.61) | turn 1 11, ~2.7 km 7, ~3.83 km 9 |
+
+**Tube diagnostics (CCT, `tube`):** track back-off P50 0.05 m, P95 0.25 m; η_k P5 0.70 (the cap), P50 0.90; 15 % of the
+predicted stages capped at η 0.70, the track back-off never; the realised lateral error of the axle points exceeds the
+back-off on 6.5 % of the covered stages (a diagnostic of scale: the realised error is the re-solving NMPC's, the bound
+assumes the ancillary feedback – clarification m1). The tube adds 11.5 ms per solve (mean; P99 23 ms), IPOPT ~180 ms
+(offline, 20 jobs in parallel).
+
+**Where the friction tube is capped (review n2; development diagnostic `results/CX/C/dev/capmap.json`, 36d7a6a – the
+nominal car and the five development cars, `tube` c_R 1, every predicted stage attributed to its predicted position):**
+73 % of all capped stages lie in the fast sections 2.6–2.8 km (73 % of the stages there capped), 2.95–3.15 km (69 %) and
+3.7–3.85 km (67 %) – the corners where `nmpc` leaves at ~2.7 and ~3.83 km – and 82 % including their approaches
+(2.35–2.85, 2.95–3.2 and 3.7–3.9 km); another 5.5 % lie at 3.95–4.05 km (22 % of the stages there; `nmpc` leaves at
+~4.01 km on 4 cars), 3 % at 1.05–1.2 km, and 2 % at turn 1 (400–550 m; 6 % of the stages there), where `nmpc` loses
+most cars but the uncapped tightening suffices (review m1 of packet 4: an earlier version gave 82 % for the three
+sections alone). At the fast corners the tube asks for more reserve than
+the cap of 0.70 allows: there the controller is not robust in the tube's own sense, yet completes. (Development data on
+cars outside the test set; it describes the mechanism, not the test.)
+
+### Reading
+
+* **Tightening by the model's uncertainty turns the L2 cars' failures into completions:** 49 of 50 against 16 of 50,
+  33 : 0, at a cost of 1.6 s per lap (2 %) where both complete. The numerical path alone produces 2 discordant cars
+  (`nmpc_param` against `nmpc`) – small against 33.
+* **It is not a uniform reserve:** the uniform 12 % reserve (`nmpc_reserve`) gains 5 cars (5 : 0, p 0.06) and costs 2.9 s;
+  the tube gains 33 and is 1.4 s *faster* than the uniform reserve where both complete. The tube's η_k varies along the
+  horizon and the lap (P50 0.90, P95 0.95, capped at 0.70 in the fast corners) – reserve where the uncertainty acts,
+  little where it does not.
+* **The friction-and-force part does most of it:** the track tube alone (`tube_track`) gains 7 cars (7 : 0, p 0.016,
+  uncorrected) and loses 26 against the full tube. Under `param_tightening` η_k also lowers the axles' longitudinal-force
+  limits (clarification m2), so the friction reserve and the force limits act together here and cannot be separated.
+* **Against L2's lesson** ("a friction reserve does not cover an error in how the car turns", docs/L2.md §4–5): a
+  *uniform* reserve indeed helps little (5 cars here, 5 in L2); a reserve shaped by the propagated uncertainty helps a lot.
+  The tube's disturbance set includes the tyre-stiffness, aero-balance and downforce ranges that L2 found decisive, and
+  propagates their effect through the error dynamics into the friction usage of the following stages.
+* **Limits:** the tube is told the L2 parameter ranges – exactly the support of the test cars' distribution (a
+  favourable prior; a mis-specified box is untested); no robustness guarantee (a linearisation, vertex bounds at the
+  nominal point, caps; protocol §3.5); one track at η 0.95; offline (IPOPT without a time budget, +11.5 ms for the tube);
+  the tuning asymmetry runs the other way this time (3 tube settings against `nmpc`'s 6). On the development cars `tube`
+  completed 5 of 5 and `nmpc` 2 of 5 – background only, not evidence (review n3).
+
+### Secondary conditions (protocol §2; uncorrected; 3 McNemar comparisons)
+
+Run 2026-10-22 07:27–08:23 at eab7c63 in the same worktree, 420 laps, no error record (`secondary.jsonl`
+16d58eb9e999…; `report/CX_C_secondary.md`). The five controllers of protocol §3 with their CCT settings.
+
+| condition | `tracker` | `nmpc` | `nmpc_reserve` | `tube` | `tube_track` | `tube` : `nmpc` (p) |
+|---|---|---|---|---|---|---|
+| CCT_LAG30 (50 cars, 30 ms steering lag) | 2 | 4 | 3 | **45** | 17 | 41 : 0 (9 · 10⁻¹³) |
+| CXD (nominal car, L3 disturbances, 30 seeds) | 0 | 4 | 3 | **28** | 7 | 24 : 0 (1.2 · 10⁻⁷) |
+| CXL8 (nominal car, 4 new tracks) | 0 | 4 | 4 | 4 | 3 | 0 : 0 (1) |
+
+* **Under the steering lag** (which no controller models; L6's 30 ms) `nmpc` leaves at turn 1 on 45 of 50 cars, `tube`
+  completes 45 (failures: ~3.82 km 4, ~1.4 km 1); the uniform reserve completes 3.
+* **Under the L3 disturbances** (measurement noise, gusts, friction varying along the track – none of them in the tube's
+  disturbance set, which is the L2 parameter box) `tube` completes 28 of 30 (failures at ~1.4 km and turn 1), `nmpc` 4.
+* **New tracks:** `nmpc`, `nmpc_reserve` and `tube` complete all four, `tube_track` three (it leaves at Austin, 1 383 m);
+  `tube` is slower than `nmpc` (mean 96.71 against 93.16 s; per track +2.8 to +4.9 s), about as slow as the uniform
+  reserve (97.18 s).
+* **Reproducibility (clarification m3):** `nmpc`'s 34 laps on CXD and CXL8 are identical to phase B's records
+  (`F1-Race-wt-CXB-run/results/CX/B/secondary.jsonl`, 2219e5634a68…) in every field that does not measure time – 34 of 34.
+* Reading: the tube's tightening, sized from the L2 parameter box, also covers conditions it was not built for (a
+  steering lag, stochastic disturbances) on these cars and this track – a large margin effect; its price on the nominal
+  car and the new tracks is 2–5 s per lap. These are secondary, uncorrected comparisons.
