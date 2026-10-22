@@ -1,11 +1,13 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-22 (phase C: protocol APPROVE; code, tests and development checks done; packet 2 in review). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-22 (phase C: packet 2 APPROVE; CXV tuning done – tube 10 of 10; packet 3 in review). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
 * **Current phase:** C – robust tube MPC, branch `cx/C-tube` from `main` 2858db4: protocol revision 0 **APPROVE** (9006b4a)
   with clarifications m1–m3, n1–n3 (f0b25fb); `control/tube.py`, `experiments/cx_c.py`, runner / report / dev scripts and
   tests (0689c41, db3b075); development checks of §9 done – gate passed (NOM 6 of 6 settings; CXDEV `nmpc` 2 of 5,
-  `tube` 5 of 5); packet 2 sent; no CXV lap.
+  `tube` 5 of 5); packet 2 (635c61f) **APPROVE**; c1 zero-tightening control (76.454 vs 76.400 s, the parameterised
+  NLP's numerical path; 8b6b40d). CXV tuning 05:57–06:13 in `F1-Race-worktrees/F1-Race-wt-CXC-run` at 8b6b40d (60 laps,
+  no error): `tube` 10 of 10 with every c_R → c_R 1; `tube_track` 3 of 10 → c_R 0.1; packet 3 sent; no CCT lap.
 * **Phase B:** done – final review of b276f56 **APPROVE**, `cx/B-mppi` merged to `main` (--no-ff) 2026-10-22 as **2858db4**.
   Phase B result: MPPI on the NMPC's problem at the real-time CPU budget (numpy, K 1 024) completes 0 of 50 test cars
   against the NMPC's 12 – **H-B1 holds for `nmpc`** (0 : 12, p 0.0005; confirmatory, after the development gate failed
