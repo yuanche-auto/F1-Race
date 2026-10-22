@@ -196,3 +196,28 @@ car. Step times under the benchmark's load: `mppi_lp` mean 41.9 ms, P95 52.3 ms,
   §9.4); the primary was changed after the gate failed (B2) and the gate itself was waived (B3). The follow-up
   candidates (the unperturbed sequence as a sample, adaptive temperature or covariance, SMPPI, a GPU implementation,
   the 3.84 km failure mechanism) are listed in [CONTROL_METHOD_MATRIX.md](CONTROL_METHOD_MATRIX.md).
+
+### Secondary conditions (protocol §2; uncorrected; 3 McNemar comparisons)
+
+Run 2026-10-22 02:25–02:56 at d93b5e9 in the same worktree, 504 laps, no error record (`secondary.jsonl`
+2219e5634a68…; `report/CX_B_secondary.md`). All controllers with their CBT settings, replicate 0.
+
+| condition | `tracker` | `nmpc` | `mpcc` | `mppi` | `mppi_lp` | `mppi_big` |
+|---|---|---|---|---|---|---|
+| CBT_LAG30 (50 cars, 30 ms steering lag) | 3 | 0 | 1 | 0 | 0 | 1 |
+| CXD (nominal car, L3 disturbances, 30 seeds) | 0 | 4 | 10 | 0 | 1 | 4 |
+| CXL8 (nominal car, 4 new tracks) | 0 | 4 | 4 | 0 | 0 | 1 (São Paulo, 84.21 s; `nmpc` 79.38 s) |
+
+* `mppi_lp` : `nmpc` (only one completes): CBT_LAG30 0 : 0 (p = 1), CXD 1 : 4 (p = 0.375), CXL8 0 : 4 (p = 0.125).
+* **With the 30 ms lag every controller fails**: `nmpc` leaves at turn 1 on 48 of 50 cars (its model has no lag, as L6's
+  rows without a lag model); the MPPIs as without the lag, mostly at turn 1.
+* **Under the L3 disturbances the larger budget matches `nmpc`'s count** (`mppi_big` 4, `nmpc` 4 of 30; not the same seeds
+  necessarily, and `mpcc` completes 10); `mppi_lp` at K 1 024 completes 1, and its failures move from turn 1 to ~1.4 km
+  (15 of 29).
+* **New tracks:** `nmpc` and `mpcc` complete all four (as in phase A); the MPPIs at K 1 024 none, `mppi_big` one.
+* **Reproducibility (clarification n3):** `nmpc`'s and `mpcc`'s 68 laps on CXD and CXL8 are identical to phase A's records
+  (`F1-Race-wt-CXA-run/results/CX/A/secondary.jsonl`, f3a3a5399e0a…) in every field that does not measure time – 68 of 68.
+  The report generated at d93b5e9 listed 46 "differences", all of them the NaN lap time of a not-completed lap compared
+  as a number (NaN ≠ NaN); the comparison was corrected (baa69cb, with a test) and the report regenerated from the same
+  records with that code from the main checkout – a hand note in `timeline.tsv`, the first version kept as
+  `report/CX_B_secondary_d93b5e9_nanbug.md`.
