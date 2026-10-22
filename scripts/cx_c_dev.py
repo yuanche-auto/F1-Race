@@ -129,6 +129,63 @@ def null() -> None:
           b["lap_time"], round(b["distance"], 3), "| difference", a["lap_time"] - b["lap_time"])
 
 
+def _capmap_job(case_name):
+    import numpy as np
+
+    from f1race.experiments import cx_c
+    from f1race.experiments.l7 import make_sim_for
+    from f1race.experiments.l8 import plans_for
+    from f1race.track import Track
+
+    case = next(c for s_ in ("NOM", "CXDEV") for c in cx_c.cases(s_) if c["name"] == case_name)
+    track, plans = Track.load("Spielberg"), plans_for("Spielberg")
+    ctl, mpc, tube, x0 = cx_c.build("tube", {"c_R": 1.0}, track, plans)
+    rows = []
+    inner = ctl.__call__
+
+    def call(t, x):
+        n0 = len(ctl.tube_log)
+        u = inner(t, x)
+        if len(ctl.tube_log) > n0:
+            X, _ = mpc.prediction()
+            rows.append((X[:-1, 0] % track.length, ctl.tube_log[-1]["eta"].copy()))
+        return u
+    sim = make_sim_for({"plant": case["plant"], "tau": 0.0, "dist_seed": None}, track)
+    res = sim.run(call, x0, t_max=cx_c.T_MAX)
+    s = np.concatenate([r[0] for r in rows])
+    capped = np.concatenate([r[1] <= cx_c.ETA_MIN + 1e-9 for r in rows])
+    bins = np.arange(0.0, track.length + 50.0, 50.0)
+    tot, _ = np.histogram(s, bins)
+    cap, _ = np.histogram(s[capped], bins)
+    return {"case": case_name, "completed": bool(res.completed), "lap_time": float(res.lap_time),
+            "bins_m": bins[:-1].tolist(), "stages": tot.tolist(), "capped": cap.tolist(), **_git()}
+
+
+def capmap() -> None:
+    """Review n2 of packet 2: where tube's eta_k is capped at eta_min - every predicted stage of every solve attributed to
+    its predicted position (50 m bins), tube c_R 1 on NOM and the five CXDEV cars -> dev/capmap.json."""
+    import numpy as np
+
+    from f1race.experiments import cx_c
+
+    names = ["NOM_car0"] + [c["name"] for c in cx_c.cases("CXDEV")]
+    with get_context("spawn").Pool(len(names), maxtasksperchild=1) as pool:
+        recs = list(pool.imap_unordered(_capmap_job, names))
+    bins = np.array(recs[0]["bins_m"])
+    tot = np.sum([r["stages"] for r in recs], axis=0)
+    cap = np.sum([r["capped"] for r in recs], axis=0)
+    share = np.where(tot > 0, cap / np.maximum(tot, 1), 0.0)
+    top = np.argsort(-cap)[:12]
+    out = {"laps": [{k: r[k] for k in ("case", "completed", "lap_time")} for r in recs], "capped_total": int(cap.sum()),
+           "stages_total": int(tot.sum()),
+           "top_bins_by_capped_stages": [{"from_m": float(bins[i]), "capped": int(cap[i]), "share_of_stages_there": float(share[i]),
+                                          "share_of_all_capped": float(cap[i] / max(cap.sum(), 1))} for i in top],
+           "bins_m": bins.tolist(), "stages": tot.tolist(), "capped": cap.tolist(), **_git()}
+    DEV.mkdir(parents=True, exist_ok=True)
+    (DEV / "capmap.json").write_text(json.dumps(out, indent=1))
+    print(json.dumps({k: out[k] for k in ("laps", "capped_total", "stages_total", "top_bins_by_capped_stages")}, indent=1))
+
+
 def null_cause() -> None:
     """Review c1 follow-up: is the difference between the tube path without tightening and nmpc the parameterised NLP?
     (a) nmpc's controller (MPCController) on FrenetMPC(param_tightening=True) with its default eta 0.95 / back-off 0 on NOM;
@@ -168,6 +225,6 @@ def null_cause() -> None:
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=("wcheck", "laps", "cxdev", "null", "null-cause"))
+    ap.add_argument("what", choices=("wcheck", "laps", "cxdev", "null", "null-cause", "capmap"))
     a = ap.parse_args()
-    {"wcheck": wcheck, "laps": laps, "cxdev": cxdev, "null": null, "null-cause": null_cause}[a.what]()
+    {"wcheck": wcheck, "laps": laps, "cxdev": cxdev, "null": null, "null-cause": null_cause, "capmap": capmap}[a.what]()
