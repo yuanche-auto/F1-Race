@@ -8,7 +8,7 @@
     python scripts/report_cx_b.py secondary [--phase-a PATH]   # CBT_LAG30, CXD, CXL8 (uncorrected) and the
                                              # reproducibility check against phase A's secondary.jsonl -> report/CX_B_secondary.md
 
-H-B1: exact McNemar, mppi (replicate 0) vs nmpc on the 50 CBT cars. H-B2: exact signed-rank (mid-ranks, the
+H-B1: exact McNemar, mppi_lp (replicate 0; the primary since amendment B2) vs nmpc on the 50 CBT cars. H-B2: exact signed-rank (mid-ranks, the
 exact distribution, scripts/l9_supplement.py) on the lap times of the cars both complete. Holm over the two
 (alpha 0.05) and each at 0.025. Everything else uncorrected, with the number of comparisons.
 """
@@ -72,12 +72,15 @@ def tune(d: Path) -> None:
     Ks = {r["setting"]["K"] for r in recs}
     if len(Ks) != 1 or Ks != {cx_b.K_RT}:
         raise SystemExit(f"tuning records with K {sorted(Ks)}, K_RT is {cx_b.K_RT}")
-    sel = cx_b.select(recs, "mppi")
+    if {r["kind"] for r in recs} != {cx_b.PRIMARY} or {r["setting"].get("f_c") for r in recs} != {cx_b.LP_FC_STAGE1}:
+        raise SystemExit("tune.jsonl must hold mppi_lp at f_c = 2 Hz only (amendment B2.2, first step)")
+    sel = cx_b.select(recs, cx_b.PRIMARY, "grid")
     out = {"tune_sha256": _sha(path), "K": cx_b.K_RT, "inputs": recs[0].get("inputs"),
-           "kinds": {"mppi": {"setting": sel["setting"], "setting_key": sel["setting_key"]}}}
+           "kinds": {cx_b.PRIMARY: {"setting": sel["setting"], "setting_key": sel["setting_key"]}}}
     step, ess, nofree = (_diag(recs, "step_ms_mean_p50_p95_p99_max"), _diag(recs, "ess_p5_p50_p95"),
                          _diag(recs, "no_penalty_free_sample_share"))
-    md = ["# CX-B tuning of `mppi` on CXV (protocol section 4)", "", f"K = {cx_b.K_RT}, inputs `{out['inputs']}`; "
+    md = ["# CX-B tuning of `mppi_lp` on CXV, first step: λ × c_σ at 2 Hz (protocol section 4, amendment B2.2)", "",
+          f"K = {cx_b.K_RT}, inputs `{out['inputs']}`; "
           f"chosen: `{sel['setting_key']}`", ""] + _table(sel)
     md += ["", "Description (median over the 10 laps; not part of the rule): step time median ms, ESS median, share of "
            "steps without a penalty-free sample.", "", "| setting | step ms | ESS | no penalty-free sample |", "|---|---|---|---|"]
@@ -92,13 +95,21 @@ def tune_lp(d: Path) -> None:
     path = d / "tune_lp.jsonl"
     recs = load(path)
     _errors(recs, "tune_lp.jsonl")
-    base = json.loads((d / "selected.json").read_text())["kinds"]["mppi"]["setting"]
-    if any({k: r["setting"][k] for k in base} != base for r in recs):
-        raise SystemExit("tune_lp.jsonl has records whose base is not mppi's choice in selected.json")
-    sel = cx_b.select(recs, "mppi_lp")
+    base = json.loads((d / "selected.json").read_text())["kinds"][cx_b.PRIMARY]["setting"]
+    keep = [k for k in base if k != "f_c"]
+    if any({k: r["setting"][k] for k in keep} != {k: base[k] for k in keep} for r in recs):
+        raise SystemExit("tune_lp.jsonl has records whose (lam, c_sigma, K) is not the first step's choice")
+    # the 2 Hz setting is the first step's choice: its laps must repeat the first step's exactly (same seeds)
+    first = {r["case"]: (r["completed"], r["lap_time"], r["distance"]) for r in load(d / "tune.jsonl")
+             if r.get("setting") == base}
+    again = {r["case"]: (r["completed"], r["lap_time"], r["distance"]) for r in recs if r["setting"] == base}
+    same = sum(first.get(c) == v for c, v in again.items())
+    sel = cx_b.select(recs, cx_b.PRIMARY, "f_c")
     out = {"tune_lp_sha256": _sha(path), "selected_json_sha256": _sha(d / "selected.json"),
            "kinds": {"mppi_lp": {"setting": sel["setting"], "setting_key": sel["setting_key"]}}}
-    md = ["# CX-B tuning of `mppi_lp` on CXV (protocol sections 3.5 and 4)", "", f"chosen: `{sel['setting_key']}`", ""]
+    md = ["# CX-B tuning of `mppi_lp` on CXV, second step: f_c (protocol sections 3.5 and 4, amendment B2.2)", "",
+          f"chosen: `{sel['setting_key']}`; the 2 Hz laps repeat the first step's in {same} of {len(again)} cases "
+          "(outcome, lap time, distance).", ""]
     (d / "selected_lp.json").write_text(json.dumps(out, indent=1))
     (d / "report").mkdir(exist_ok=True)
     (d / "report" / "tune_lp.md").write_text(NL.join(md + _table(sel)) + NL, encoding="utf-8")
@@ -108,18 +119,20 @@ def tune_lp(d: Path) -> None:
 def _settings(d: Path) -> dict:
     sel = json.loads((d / "selected.json").read_text())
     sel_lp = json.loads((d / "selected_lp.json").read_text())
-    m = sel["kinds"]["mppi"]["setting"]
-    return {**{k: cx_b.baseline_setting(k) for k in cx_b.BASELINES}, "mppi": m,
-            "mppi_lp": sel_lp["kinds"]["mppi_lp"]["setting"], "mppi_big": cx_b.big_setting(m)}
+    if sel_lp.get("selected_json_sha256") != _sha(d / "selected.json"):
+        raise SystemExit("selected_lp.json was not made on the present selected.json")
+    lp = sel_lp["kinds"][cx_b.PRIMARY]["setting"]
+    return {**{k: cx_b.baseline_setting(k) for k in cx_b.BASELINES}, "mppi": cx_b.white_setting(lp["K"]),
+            "mppi_lp": lp, "mppi_big": cx_b.big_setting(lp)}
 
 
 def _check(recs: list[dict], st: dict, sets: tuple[str, ...]) -> None:
-    """No error records; every controller has every case of ``sets`` (mppi on CBT / NOM with replicates 0-2)
+    """No error records; every controller has every case of ``sets`` (the primary on CBT / NOM with replicates 0-2)
     with the setting chosen on CXV (selected.json / selected_lp.json)."""
     _errors(recs, "the records")
     need = {c["name"] for s_ in sets for c in cx_b.cases(s_)}
     for k in cx_b.KINDS:
-        reps = (0, 1, 2) if (k == "mppi" and "CBT" in sets) else (0,)
+        reps = (0, 1, 2) if (k == cx_b.PRIMARY and "CBT" in sets) else (0,)
         for rep in reps:
             have = {r["case"] for r in recs if r["kind"] == k and (r.get("replicate") or 0) == rep}
             if have != need:
@@ -201,34 +214,35 @@ def test(d: Path) -> None:
                                         and (r.get("replicate") or 0) == rep}
     cbt = {k: by(k) for k in cx_b.KINDS}
     comp = {k: {c: bool(r["completed"]) for c, r in v.items()} for k, v in cbt.items()}
-    n = len(comp["mppi"])
+    P = cx_b.PRIMARY                                 # mppi_lp since amendment B2
+    n = len(comp[P])
     md = ["# CX-B – MPPI against the NMPC (docs/CX_B_protocol.md)", "",
-          f"Error records: none; every controller has the {n} CBT cars and the nominal car (mppi with replicates 0–2) with "
+          f"Error records: none; every controller has the {n} CBT cars and the nominal car ({P} with replicates 0–2) with "
           "the settings chosen on CXV: " + "; ".join(f"{k} `{cx_b.setting_key(v)}`" for k, v in st.items()) + ".", ""]
     # ---- primary
-    x, y, p1 = mcnemar(comp["mppi"], comp["nmpc"])
-    both = sorted(c for c in comp["mppi"] if comp["mppi"][c] and comp["nmpc"].get(c))
-    diffs = [cbt["mppi"][c]["lap_time"] - cbt["nmpc"][c]["lap_time"] for c in both]
+    x, y, p1 = mcnemar(comp[P], comp["nmpc"])
+    both = sorted(c for c in comp[P] if comp[P][c] and comp["nmpc"].get(c))
+    diffs = [cbt[P][c]["lap_time"] - cbt["nmpc"][c]["lap_time"] for c in both]
     sr = exact_signed_rank(diffs)
     hb = holm({"H-B1": p1, "H-B2": sr["p"]})
-    md += [f"## Primary tests ({n} CBT cars; mppi replicate 0)", "",
+    md += [f"## Primary tests ({n} CBT cars; {P} replicate 0)", "",
            "| test | comparison | result | p | Holm level | holds (Holm) | holds (each at 0.025) |", "|---|---|---|---|---|---|---|",
-           f"| H-B1 | completed laps, mppi : nmpc (only one completes) | {x} : {y} (mppi {sum(comp['mppi'].values())}, "
+           f"| H-B1 | completed laps, {P} : nmpc (only one completes) | {x} : {y} ({P} {sum(comp[P].values())}, "
            f"nmpc {sum(comp['nmpc'].values())} of {n}) | {p1:.4g} | {hb['H-B1']['level']:.3f} | **{hb['H-B1']['rejected']}** | "
            f"{p1 <= 0.025} |",
-           f"| H-B2 | lap time mppi − nmpc on the {len(both)} cars both complete | mean "
+           f"| H-B2 | lap time {P} − nmpc on the {len(both)} cars both complete | mean "
            f"{np.mean(diffs) if diffs else math.nan:+.3f} s, median {np.median(diffs) if diffs else math.nan:+.3f} s, "
            f"W+ {sr['W_plus']:.1f} (n {sr['n']}) | {sr['p']:.4g} | {hb['H-B2']['level']:.3f} | **{hb['H-B2']['rejected']}** | "
            f"{sr['p'] <= 0.025} |", "", "H-B2 is conditional on both completing; the discordant cars of H-B1:", "",
-           "| car | mppi | nmpc |", "|---|---|---|"]
-    for c in sorted(set(comp["mppi"]) & set(comp["nmpc"])):
-        if comp["mppi"][c] != comp["nmpc"][c]:
-            md.append(f"| {c} | {_cell(cbt['mppi'][c])} | {_cell(cbt['nmpc'][c])} |")
+           f"| car | {P} | nmpc |", "|---|---|---|"]
+    for c in sorted(set(comp[P]) & set(comp["nmpc"])):
+        if comp[P][c] != comp["nmpc"][c]:
+            md.append(f"| {c} | {_cell(cbt[P][c])} | {_cell(cbt['nmpc'][c])} |")
     # ---- secondary (12)
-    rep = {r_: {c: bool(rr["completed"]) for c, rr in by("mppi", r_).items()} for r_ in (1, 2)}
-    pairs = [("mppi", "mpcc"), ("mppi_lp", "mppi"), ("mppi_lp", "nmpc"), ("mppi_big", "mppi"), ("mppi_big", "nmpc")]
+    rep = {r_: {c: bool(rr["completed"]) for c, rr in by(P, r_).items()} for r_ in (1, 2)}
+    pairs = [(P, "mpcc"), ("mppi", P), ("mppi", "nmpc"), ("mppi_big", P), ("mppi_big", "nmpc")]     # B2.4
     md += ["", "## Secondary comparisons on CBT (uncorrected; 12 comparisons: 5 pairs × McNemar and signed-rank, "
-           "replicates 1 and 2 of mppi against nmpc)", "",
+           f"replicates 1 and 2 of {P} against nmpc; amendment B2.4)", "",
            "| comparison | only first : only second | McNemar p | both complete | lap time first − second mean / median s | signed-rank p |",
            "|---|---|---|---|---|---|"]
     out_sec = {}
@@ -242,14 +256,14 @@ def test(d: Path) -> None:
                   f"{(np.mean(dd) if dd else math.nan):+.3f} / {(np.median(dd) if dd else math.nan):+.3f} | {s2['p']:.4g} |")
     for r_ in (1, 2):
         xx, yy, pp = mcnemar(rep[r_], comp["nmpc"])
-        out_sec[f"mppi_r{r_}-nmpc"] = {"mcnemar": [xx, yy, pp]}
-        md.append(f"| mppi replicate {r_} vs nmpc | {xx} : {yy} | {pp:.4g} | – | – | – |")
+        out_sec[f"{P}_r{r_}-nmpc"] = {"mcnemar": [xx, yy, pp]}
+        md.append(f"| {P} replicate {r_} vs nmpc | {xx} : {yy} | {pp:.4g} | – | – | – |")
     # ---- replicates
-    reps = {0: comp["mppi"], **rep}
-    flip = sorted(c for c in comp["mppi"] if len({reps[r_][c] for r_ in reps}) > 1)
-    all3 = sorted(c for c in comp["mppi"] if all(reps[r_][c] for r_ in reps))
-    spread = [np.ptp([by("mppi", r_)[c]["lap_time"] for r_ in reps]) for c in all3]
-    md += ["", "## Repeatability of mppi (replicates 0, 1, 2 – different random streams)", "",
+    reps = {0: comp[P], **rep}
+    flip = sorted(c for c in comp[P] if len({reps[r_][c] for r_ in reps}) > 1)
+    all3 = sorted(c for c in comp[P] if all(reps[r_][c] for r_ in reps))
+    spread = [np.ptp([by(P, r_)[c]["lap_time"] for r_ in reps]) for c in all3]
+    md += ["", f"## Repeatability of {P} (replicates 0, 1, 2 – different random streams)", "",
            f"Completed: {', '.join(f'r{r_} {sum(v.values())}/{n}' for r_, v in reps.items())}. Cars whose outcome changes "
            f"between replicates: {len(flip)}" + (f" ({', '.join(flip)})" if flip else "") + f". Lap-time range over the "
            f"replicates on the {len(all3)} cars all three complete: "
@@ -265,7 +279,7 @@ def test(d: Path) -> None:
         fails = ", ".join(f"{r['case']} {r['failure_s']:.0f} m ({r['distance']:.0f} m)" for r in rs if not r["completed"]) or "–"
         md.append(f"| {k} | " + ", ".join(f"{v} {c}" for c, v in sorted(counts.items())) + f" | {fails} |")
     # ---- metrics
-    md += ["", "## Metrics of section 5 – CBT (means over the laps; P99, max and maxima: the largest; mppi replicate 0)", "",
+    md += ["", f"## Metrics of section 5 – CBT (means over the laps; P99, max and maxima: the largest; {P} replicate 0)", "",
            HEAD, SEP] + [_row(list(cbt[k].values()), k) for k in cx_b.KINDS]
     md += ["", "### MPPI diagnostics – CBT (replicate 0)", "", MHEAD, "|" + "---|" * 10]
     md += [_mrow(list(cbt[k].values()), k) for k in cx_b.MPPI_KINDS]
@@ -284,6 +298,11 @@ def test(d: Path) -> None:
            "*Plan-line offset* – the lateral distance between the car and the 5 % plan's line at the car's projection (the tracking "
            "error of nmpc and of the MPPIs, which solve nmpc's problem). *Force increment* – as phase A (10 ms not comparable "
            "across controllers; 50 ms descriptive).", "",
+           "Budget (review n1 of packet 2): K was fixed by the *median* step time (section 3.4); the P95 / P99 columns and the "
+           "share of steps above 50 ms show how often a step would miss a 50 ms period.", "",
+           "Limitation (review n2 of packet 2): in the T-RO form used here the nominal sequence U is not itself a sample and the "
+           "weighted mean carries the samples' noise into the update, so one iteration can make a near-optimal U worse "
+           "(section 9.4); implementations that keep the unperturbed U as a sample are not tested here (frontier list).", "",
            "Second environment: not run – H-B1 and H-B2 are not cross-checked (protocol section 7)."]
     out = d / "report"
     out.mkdir(exist_ok=True)
@@ -307,7 +326,7 @@ def secondary(d: Path, phase_a: Path | None) -> None:
     md = ["# CX-B – secondary conditions (protocol section 2; uncorrected)", ""]
     for set_ in cx_b.SECONDARY:
         bs = {k: {r["case"]: r for r in recs if r["kind"] == k and r["set"] == set_} for k in cx_b.KINDS}
-        md += [f"## {set_} ({len(bs['mppi'])} laps)", "", "| controller | completed (95 %) | mean lap s | not completed: lap, s at failure |",
+        md += [f"## {set_} ({len(bs[cx_b.PRIMARY])} laps)", "", "| controller | completed (95 %) | mean lap s | not completed: lap, s at failure |",
                "|---|---|---|---|"]
         for k in cx_b.KINDS:
             rs = sorted(bs[k].values(), key=lambda r: r["case"])
@@ -315,9 +334,9 @@ def secondary(d: Path, phase_a: Path | None) -> None:
             lt = f"{np.mean([r['lap_time'] for r in done]):.3f}" if done else "–"
             fails = ", ".join(f"{r['case']} {r['stop_reason']} {r['failure_s']:.0f} m" for r in rs if not r["completed"]) or "–"
             md.append(f"| {k} | {fmt_ci(len(done), len(rs))} | {lt} | {fails} |")
-        x, y, p = mcnemar({c: bool(r["completed"]) for c, r in bs["mppi"].items()},
+        x, y, p = mcnemar({c: bool(r["completed"]) for c, r in bs[cx_b.PRIMARY].items()},
                           {c: bool(r["completed"]) for c, r in bs["nmpc"].items()})
-        md += ["", f"mppi : nmpc (only one completes) {x} : {y}, exact McNemar p = {p:.4g} (uncorrected).", ""]
+        md += ["", f"{cx_b.PRIMARY} : nmpc (only one completes) {x} : {y}, exact McNemar p = {p:.4g} (uncorrected).", ""]
     md += ["## Reproducibility of nmpc and mpcc on CXD and CXL8 against phase A (clarification n3)", ""]
     if phase_a is None or not phase_a.exists():
         md.append("Phase A's secondary.jsonl not given – not checked.")

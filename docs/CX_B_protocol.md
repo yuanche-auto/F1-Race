@@ -23,7 +23,7 @@ sequence, constraints only as penalties, noisy inputs.
 
 *Does MPPI – minimising **the same optimal control problem as the NMPC** (the NMPC's model, horizon,
 tracking objective and limits, its soft limits as their exact penalties), with a fixed sample budget that
-fits a 50 ms control period on one core – complete as many laps as the NMPC, which solves that problem to
+fits a 50 ms control period on one core (by the median step time, section 3.4) – complete as many laps as the NMPC, which solves that problem to
 convergence with IPOPT, and at what lap time, under the model mismatch of L2?*
 
 The comparison isolates the optimiser: same information, same objective, same model; the NMPC gets IPOPT
@@ -32,6 +32,12 @@ set before any tuning lap (section 3.4). A difference in laps can come from MPPI
 finite sample), from its different handling of limits (penalties on the samples instead of constraints;
 no infeasible solves, no fallbacks), or from its sampling noise in the applied inputs; section 5 reports
 quantities that separate these.
+
+*Since amendment B2 (approved 2026-10-22) the primary MPPI is `mppi_lp` (section 3.5): read `mppi_lp` for `mppi` in
+H-B1 and H-B2; the white-noise `mppi` is a secondary, untuned controller.* *Clarification (review n1 of packet 2):*
+"fits a 50 ms control period" is meant by the median step time (section 3.4); at K = 2 048 the P95 of the
+development laps was ~54 ms, above 50 ms – the report lists the step-time percentiles and the share of steps
+above 50 ms.
 
 * **H-B1 (primary):** on the 50 test cars CBT (section 2), `mppi` and `nmpc` differ in the number of
   completed laps. Exact McNemar, two-sided; holds if significant at its Holm level; direction reported.
@@ -53,7 +59,10 @@ implementation or machine; no claim about MPPI with a GPU, with a learned model,
 with another cost (e.g. a progress reward), or about sampling-based MPC in general. **Tuning freedom:** `nmpc`
 was tuned on CXV over 6 objective settings (phase A); `mppi` solves the chosen objective and tunes only its
 sampling parameters on the same 10 CXV cars, 9 settings (section 4) – not a symmetric budget, stated as in
-phase A.
+phase A. *Since amendment B2 (review c3 of packet 2):* the primary `mppi_lp` is tuned on CXV over 9 + 3 = 12
+settings (λ × c_σ at 2 Hz, then f_c) against `nmpc`'s 6, and the primary controller itself was changed after
+the development gate on the nominal car failed for the white-noise `mppi` (section 9, B2) – a second asymmetry,
+stated.
 
 ## 2. Sets
 
@@ -149,7 +158,9 @@ One iteration per 50 ms control step (B.3). At the first call of a lap, U = 0 an
 first solve also starts from a crude guess and runs to convergence). Random numbers: one
 `numpy.random.default_rng` per lap, seeded with (set code, car index, replicate) – NOM 0, CXV 1, CBT 2,
 CBT_LAG30 3, CXD 4 (car index = disturbance seed), CXL8 5 (car index = track index) – fixed here, so every lap
-is reproducible.
+is reproducible. *Clarification (review n3 of packet 2):* the seed does not depend on the setting, so on CXV all
+settings of a controller see the same random stream on the same car (common random numbers) – the comparison
+of settings in the tuning is paired.
 
 **Deviations from B.3, stated:**
 (a) **no importance-sampling control-cost term** (γ uᵀΣ⁻¹v, γ = 0): in the derivation it is the control cost
@@ -409,8 +420,12 @@ Nominal car only; records in `results/CX/B/dev/` (git-ignored), each with its co
      NMPC's hard limits met within tolerance, feasible inputs a fixed point, with one force non-zero the
      clipping of revision 0, the direction of the force pair kept (packet 2); c3 the overlap for MPPI and the
      NMPC with the remark of B1.2 (report).
-* **B2 (proposed 2026-10-22, for review) – after the development gate (9.6) failed for `mppi`: the low-pass-noise
-  MPPI becomes the primary controller.** *Cause:* section 9, results 4, 6 and 7: no setting of `mppi` (white noise,
+* **B2 (2026-10-22; proposed in eea5a49, APPROVED by the reviewer 2026-10-22 with packet 2, c3fca85) – after the
+  development gate (9.6) failed for `mppi`: the low-pass-noise MPPI becomes the primary controller.** Review
+  conditions: c1 K is re-timed with `mppi_lp` (the grid centre, 2 Hz) for K = 1 024 and 2 048 under section 3.4's
+  conditions before any CXV lap (2 048 if its median is ≤ 40 ms, otherwise 1 024 without a further amendment;
+  section 9.5); c2 the trace details of 9.7 regenerated as records or marked as unarchived; c3 the scope's tuning
+  freedom (done). B2.7 not adopted. *Cause:* section 9, results 4, 6 and 7: no setting of `mppi` (white noise,
   T-RO's sampling) completes the nominal lap – 9 of 9 grid settings, and the grid centre with two more random
   streams, with 4 iterations per step and with 4 K samples, 17 laps, all off track, 15 of them at turn 1; one
   MPPI iteration from a near-optimal sequence makes it worse in 16 of 20 checked solves. `mppi_lp` (LP-MPPI, B.5)

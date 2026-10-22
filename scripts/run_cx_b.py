@@ -4,12 +4,12 @@ stages run from a pinned worktree (roadmap section 1); records in results/CX/B/ 
 stage|kind|setting|case|r<replicate>).
 
     python scripts/run_cx_b.py jobs                         # the job lists (counts)
-    python scripts/run_cx_b.py tune    [--workers 20]       # CXV: the 9 mppi settings at K_RT
+    python scripts/run_cx_b.py tune    [--workers 20]       # CXV: mppi_lp's 9 settings (lam x c_sigma) at 2 Hz, K_RT
     python scripts/report_cx_b.py tune                      # the rule of section 4 -> results/CX/B/selected.json
-    python scripts/run_cx_b.py tune_lp [--workers 20]       # CXV: mppi_lp's 3 cut-offs on mppi's choice
+    python scripts/run_cx_b.py tune_lp [--workers 20]       # CXV: mppi_lp's 3 cut-offs on that choice (B2.2)
     python scripts/report_cx_b.py tune_lp                   # -> results/CX/B/selected_lp.json (both to the reviewer)
-    python scripts/run_cx_b.py test    [--workers 20]       # CBT + NOM: tracker, nmpc, mpcc, mppi (replicates 0-2),
-                                                            # mppi_lp, mppi_big
+    python scripts/run_cx_b.py test    [--workers 20]       # CBT + NOM: tracker, nmpc, mpcc, mppi (untuned),
+                                                            # mppi_lp (replicates 0-2), mppi_big (amendment B2)
     python scripts/run_cx_b.py secondary [--workers 20]     # CBT_LAG30, CXD, CXL8, after report/CX_B.md
     python scripts/run_cx_b.py smoke [--kinds ...]          # code check on the nominal car only (results/CX/B/smoke/)
 
@@ -35,7 +35,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from f1race.experiments import cx_b  # noqa: E402
 
 OUT = ROOT / "results" / "CX" / "B"
-REPLICATES = (0, 1, 2)                     # mppi on CBT (section 5); only replicate 0 enters H-B1 / H-B2
+REPLICATES = (0, 1, 2)                     # the primary (mppi_lp since B2) on CBT; only replicate 0 enters H-B1 / H-B2
 
 
 def _key(j: tuple) -> str:
@@ -70,7 +70,7 @@ def tune_jobs() -> list[tuple]:
     if cx_b.K_RT is None:
         raise SystemExit("K_RT is not fixed (protocol section 3.4: the timing of section 9.5, reviewed in packet 2)")
     names = [c["name"] for c in cx_b.cases("CXV")]
-    return [j for g in cx_b.MPPI_GRID for j in _jobs("tune", "mppi", {**g, "K": cx_b.K_RT}, names)]
+    return [j for s_ in cx_b.lp_stage1(cx_b.K_RT) for j in _jobs("tune", cx_b.PRIMARY, s_, names)]
 
 
 def _sha(p: Path) -> str:
@@ -100,14 +100,16 @@ def _selected_lp() -> dict:
 
 
 def settings(sel: dict, sel_lp: dict) -> dict:
-    m = sel["kinds"]["mppi"]["setting"]
-    return {**{k: cx_b.baseline_setting(k) for k in cx_b.BASELINES}, "mppi": m,
-            "mppi_lp": sel_lp["kinds"]["mppi_lp"]["setting"], "mppi_big": cx_b.big_setting(m)}
+    """Amendment B2: mppi_lp from the two tuning steps, mppi untuned (the grid centre at mppi_lp's K), mppi_big =
+    mppi_lp's setting with 4 K."""
+    lp = sel_lp["kinds"]["mppi_lp"]["setting"]
+    return {**{k: cx_b.baseline_setting(k) for k in cx_b.BASELINES}, "mppi": cx_b.white_setting(lp["K"]),
+            "mppi_lp": lp, "mppi_big": cx_b.big_setting(lp)}
 
 
 def test_jobs(st: dict) -> list[tuple]:
     names = [c["name"] for c in cx_b.cases("CBT")] + [c["name"] for c in cx_b.cases("NOM")]
-    return [j for k in cx_b.KINDS for j in _jobs("test", k, st[k], names, REPLICATES if k == "mppi" else (0,))]
+    return [j for k in cx_b.KINDS for j in _jobs("test", k, st[k], names, REPLICATES if k == cx_b.PRIMARY else (0,))]
 
 
 def secondary_jobs(st: dict) -> list[tuple]:
@@ -147,14 +149,14 @@ def main() -> None:
     if a.what == "jobs":
         n_cbt = len(cx_b.cases("CBT")) + 1
         n2 = sum(len(cx_b.cases(s_)) for s_ in cx_b.SECONDARY)
-        print(f"tune: {len(cx_b.MPPI_GRID) * 10} laps (CXV 10 cars x 9 mppi settings); tune_lp: 30 laps")
-        print(f"test: {n_cbt} cases x (3 baselines + 3 mppi replicates + mppi_lp + mppi_big) = {n_cbt * 8} laps")
+        print(f"tune: {len(cx_b.MPPI_GRID) * 10} laps (CXV 10 cars x 9 mppi_lp settings at 2 Hz); tune_lp: 30 laps")
+        print(f"test: {n_cbt} cases x (3 baselines + mppi + 3 mppi_lp replicates + mppi_big) = {n_cbt * 8} laps")
         print(f"secondary: {len(cx_b.KINDS)} controllers x {n2} laps (CBT_LAG30 50, CXD 30, CXL8 4) = {len(cx_b.KINDS) * n2}")
         return
     if a.what == "tune":
         _run(tune_jobs(), OUT / "tune.jsonl", a.workers)
     elif a.what == "tune_lp":
-        base = _selected()["kinds"]["mppi"]["setting"]
+        base = _selected()["kinds"]["mppi_lp"]["setting"]
         names = [c["name"] for c in cx_b.cases("CXV")]
         _run([j for s_ in cx_b.lp_grid(base) for j in _jobs("tune", "mppi_lp", s_, names)], OUT / "tune_lp.jsonl",
              a.workers)
@@ -167,7 +169,7 @@ def main() -> None:
     else:
         small = {"lam": 1.0, "c_sigma": 1.0, "K": 64}
         st = {**{k: cx_b.baseline_setting(k) for k in cx_b.BASELINES}, "mppi": small,
-              "mppi_lp": {**small, "f_c": 2.0}, "mppi_big": cx_b.big_setting(small)}
+              "mppi_lp": {**small, "f_c": 2.0}, "mppi_big": cx_b.big_setting({**small, "f_c": 2.0})}
         jobs = [j for k in a.kinds.split(",") for j in _jobs("smoke", k, st[k], ["NOM_car0"])]
         _run(jobs, OUT / "smoke" / "smoke.jsonl", a.workers)
 

@@ -9,6 +9,9 @@ only (records in results/CX/B/dev/, each with the commit and a dirty flag; not r
     python scripts/cx_b_dev.py laps --K K      # 9.6 the 9 grid settings and mppi_lp at the centre on NOM -> dev/laps.jsonl
     python scripts/cx_b_dev.py nomdiag --K K   # after 9.6 (no mppi setting completed NOM): white vs low-pass noise and
                                                #     more iterations per step, replicates 0-2 -> dev/nom_diagnostic.jsonl
+    python scripts/cx_b_dev.py nomdiag-big --K K   # the same with 4 K samples -> dev/nom_diagnostic_big.jsonl
+    python scripts/cx_b_dev.py timing-lp       # review c1 of packet 2: the K rule on mppi_lp, K 1024 / 2048 -> dev/timing_lp.json
+    python scripts/cx_b_dev.py trace --K K     # review c2: the traces quoted in 9.7 -> dev/traces.npz, dev/traces.json
 """
 from __future__ import annotations
 
@@ -124,12 +127,84 @@ def checks() -> None:
         print(r_)
 
 
-def timing_one(K: int) -> dict:
+def timing_one(K: int, kind: str = "mppi") -> dict:
     cx_a, cx_b, track, o = _setup()
     case = cx_b.cases("NOM")[0]
-    rec = cx_b.mppi_lap(case, "mppi", {**cx_b.GRID_CENTRE, "K": K}, replicate=0)
+    setting = {**cx_b.GRID_CENTRE, "K": K, **({"f_c": cx_b.LP_FC_STAGE1} if kind == "mppi_lp" else {})}
+    rec = cx_b.mppi_lap(case, kind, setting, replicate=0)
     rec.update(_git())
     return rec
+
+
+def timing_lp() -> None:
+    """Review c1 of packet 2 (amendment B2): the K rule of section 3.4 on the primary, mppi_lp at the grid centre
+    (2 Hz), K = 1 024 and 2 048, one complete nominal lap each, one after the other in fresh processes."""
+    from f1race.experiments import cx_b
+
+    recs = []
+    for K in (1024, 2048):
+        p = subprocess.run([sys.executable, __file__, "timing-one", "--K", str(K), "--kind", "mppi_lp"], cwd=ROOT,
+                           capture_output=True, text=True)
+        if p.returncode != 0:
+            raise RuntimeError(p.stderr[-2000:])
+        rec = json.loads(p.stdout.strip().splitlines()[-1])
+        recs.append(rec)
+        print(K, rec["completed"], rec["lap_time"], rec["stop_reason"], round(rec["distance"]), rec["solves"], "steps;",
+              "step ms mean/P50/P95/P99/max", [round(x, 1) for x in rec["step_ms_mean_p50_p95_p99_max"]],
+              "share > 50 ms", round(rec["steps_over_50ms"], 3), flush=True)
+    med = {r["setting"]["K"]: r["step_ms_mean_p50_p95_p99_max"][1] for r in recs}
+    chosen = 2048 if med[2048] <= cx_b.K_BUDGET_MS else 1024
+    (DEV / "timing_lp.json").write_text(json.dumps({"rule": "review c1: 2048 if its median step <= 40 ms, else 1024",
+                                                    "chosen_K": chosen, "records": recs, **_git()}, indent=1))
+    print("K_RT:", chosen)
+
+
+def trace(K: int) -> None:
+    """Review c2 of packet 2: the two laps whose traces section 9.7 quotes, recorded per simulator step and per
+    MPPI step (mppi replicate 0 and mppi_lp at 2 Hz replicate 1; the grid centre, K) -> dev/traces.npz, and the
+    quoted quantities -> dev/traces.json."""
+    import numpy as np
+
+    from f1race.dynamics import DynVehicle
+    from f1race.sim.dynamic import DynamicSim
+
+    cx_a, cx_b, track, o = _setup()
+    L = track.length
+    out, summary = {}, {}
+    for name, kind, setting, rep in (("mppi_r0", "mppi", {**cx_b.GRID_CENTRE, "K": K}, 0),
+                                     ("mppi_lp_r1", "mppi_lp", {**cx_b.GRID_CENTRE, "K": K, "f_c": 2.0}, 1)):
+        ctl, mp, x0 = cx_b.build_mppi(kind, setting, track, o, cx_b.rng_seed(cx_b.cases("NOM")[0], rep))
+        res = DynamicSim(track, DynVehicle(), cx_b.DT).run(ctl, x0, t_max=cx_b.T_MAX)
+        X, U = res.state, res.inputs
+        s, n = track.project(X[:, 0], X[:, 1])
+        vref = cx_a._vref_fn(o, L)(s)
+        st = mp.stats
+        ess = np.array([q["ess"] for q in st])
+        nofree = np.array([q["no_free"] for q in st])
+        step_s = s[::5][: len(st)]
+        prog = res.progress
+        out.update({f"{name}_{k}": v for k, v in dict(
+            t=res.t, s=s, n=n, vx=X[:, 3], vy=X[:, 4], r=X[:, 5], delta=X[:, 6], vref=vref, F_drive=U[:, 1],
+            F_brake=U[:, 2], usage=res.usage, margin=res.margin, progress=prog, ess=ess, no_free=nofree,
+            step_s=step_s).items()})
+        straight = prog < 300.0
+        # the last run of steps with no penalty-free sample that reaches the end of the lap
+        k = len(nofree)
+        while k > 0 and nofree[k - 1]:
+            k -= 1
+        win = (prog > 3700.0) & (prog < 3850.0)
+        summary[name] = {"kind": kind, "setting": setting, "replicate": rep, "completed": bool(res.completed),
+                         "distance": float(prog[-1]), "stop_reason": res.stop_reason,
+                         "main_straight_speed_below_plan_max_mps": float(np.max((vref - X[:, 3])[straight])),
+                         "main_straight_overlap_median_N": float(np.median(np.minimum(U[straight, 1], -U[straight, 2]))),
+                         "steps_without_penalty_free_sample_until_the_end_from_s": (float(step_s[k]) if k < len(nofree)
+                                                                                   else None),
+                         "ess_from_there_max": float(ess[k:].max()) if k < len(nofree) else None,
+                         "window_3700_3850m_rear_usage_max": float(res.usage[win, 1].max()) if win.any() else None,
+                         "window_3700_3850m_vy_max": float(X[win, 4].max()) if win.any() else None}
+        print(name, summary[name], flush=True)
+    np.savez_compressed(DEV / "traces.npz", **out)
+    (DEV / "traces.json").write_text(json.dumps({"K": K, "laps": summary, **_git()}, indent=1))
 
 
 def timing() -> None:
@@ -260,8 +335,10 @@ def nomdiag(K: int) -> None:
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=("checks", "timing", "timing-one", "gap", "laps", "nomdiag", "nomdiag-big"))
+    ap.add_argument("what", choices=("checks", "timing", "timing-one", "timing-lp", "gap", "laps", "nomdiag",
+                                     "nomdiag-big", "trace"))
     ap.add_argument("--K", type=int)
+    ap.add_argument("--kind", default="mppi")
     a = ap.parse_args()
     DEV.mkdir(parents=True, exist_ok=True)
     if a.what == "checks":
@@ -269,7 +346,11 @@ if __name__ == "__main__":
     elif a.what == "timing":
         timing()
     elif a.what == "timing-one":
-        print(json.dumps(timing_one(a.K)))
+        print(json.dumps(timing_one(a.K, a.kind)))
+    elif a.what == "timing-lp":
+        timing_lp()
+    elif a.what == "trace":
+        trace(a.K)
     elif a.what == "gap":
         gap(a.K)
     elif a.what == "nomdiag":

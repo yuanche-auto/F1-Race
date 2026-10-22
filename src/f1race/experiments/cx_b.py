@@ -11,7 +11,9 @@ grids, the MPPI controllers and one lap with every metric of protocol section 5.
   (``control/mppi.py``) solve ``nmpc``'s optimal control problem (its weights scaled by c = 2, margin 0.6, eta 0.95,
   N = 30 x 50 ms) behind ``nmpc.MPCController``.
 * Settings: ``mppi`` – ``lam`` and ``c_sigma`` (the noise scale on SIGMA_BASE), ``K``; ``mppi_lp`` – the same and
-  ``f_c`` (Butterworth order 2); ``mppi_big`` – ``mppi``'s with 4 K.
+  ``f_c`` (Butterworth order 2); ``mppi_big`` – ``mppi_lp``'s with 4 K (low-pass, amendment B2).
+* Amendment B2 (approved): the primary is ``mppi_lp`` – tuned on CXV over ``MPPI_GRID`` at f_c = 2 Hz (``lp_stage1``),
+  then over ``LP_FC`` on that choice (``lp_grid``); ``mppi`` (white noise) is untuned, ``WHITE_SETTING``.
 * Random numbers of an MPPI lap: ``default_rng((SET_CODE[set], car, replicate))`` (section 3.2).
 """
 from __future__ import annotations
@@ -41,18 +43,31 @@ K_CANDIDATES, K_BUDGET_MS = (256, 512, 1024, 2048, 4096), 40.0              # se
 K_RT: int | None = None                         # fixed by the timing of section 9.5 (packet 2), then a constant
 GRID_CENTRE = {"lam": 1.0, "c_sigma": 1.0}
 INPUTS = "three"                                # MPPI's sampled inputs: the NMPC's three (amendment B1, approved)
+PRIMARY = "mppi_lp"                             # amendment B2 (approved)
+LP_FC_STAGE1 = 2.0                              # B2.2: the cut-off of the first tuning step
 
 
 def baseline_setting(kind: str) -> dict:
     return {"tracker": {}, "nmpc": NMPC_SETTING, "mpcc": MPCC_SETTING}[kind]
 
 
+def lp_stage1(K: int) -> list[dict]:
+    """B2.2, first step: mppi_lp over lam x c_sigma at f_c = 2 Hz."""
+    return [{**g, "K": int(K), "f_c": LP_FC_STAGE1} for g in MPPI_GRID]
+
+
 def lp_grid(base: dict) -> list[dict]:
-    """mppi_lp's CXV grid on mppi's chosen (lam, c_sigma, K)."""
+    """B2.2, second step: f_c in LP_FC on the first step's (lam, c_sigma, K)."""
     return [{**base, "f_c": fc} for fc in LP_FC]
 
 
+def white_setting(K: int) -> dict:
+    """B2.3: the untuned white-noise mppi, the grid centre."""
+    return {**GRID_CENTRE, "K": int(K)}
+
+
 def big_setting(base: dict) -> dict:
+    """mppi_big: the given setting (since B2 mppi_lp's, with its f_c) with 4 K."""
     return {**base, "K": 4 * int(base["K"])}
 
 
@@ -95,7 +110,9 @@ def build_mppi(kind: str, setting: dict, track, o, seed, diagnostics: bool = Tru
     model = DynVehicle()
     path, _ = dyn_reference(track, model, o)
     w = {k: v * NMPC_SETTING["c"] for k, v in cx_a.NMPC_TRACK_W.items()}
-    lowpass = (float(setting["f_c"]), LP_ORDER) if kind == "mppi_lp" else None
+    if (kind == "mppi_lp") != ("f_c" in setting) and kind != "mppi_big":
+        raise ValueError(f"{kind} with setting {setting}")
+    lowpass = (float(setting["f_c"]), LP_ORDER) if "f_c" in setting else None      # mppi_big: low-pass since B2
     mp = MPPI(track, model, ref_from_plan(o), N=N, dt=MPC_DT, eta=ETA, margin=NMPC_SETTING["margin"], weights=w,
               K=int(setting["K"]), lam=float(setting["lam"]),
               sigma=tuple(float(setting["c_sigma"]) * s for s in SIGMA_BASE), seed=seed, lowpass=lowpass,
@@ -206,11 +223,12 @@ def lap(case: dict, kind: str, setting: dict, replicate: int = 0) -> dict:
     return rec
 
 
-def select(records: list[dict], kind: str) -> dict:
+def select(records: list[dict], kind: str, stage: str = "grid") -> dict:
     """The tuning rule of protocol section 4 on the CXV records (replicate 0) of ``mppi`` or ``mppi_lp``: most
     completed laps; ties by the mean lap time on the cars every tied setting completes (skipped if none); then the
-    setting closest to the grid's centre - ``mppi``: the smaller |log lam|, |log c_sigma|, lam, c_sigma;
-    ``mppi_lp``: the higher f_c. Settings with different numbers of laps, or on different cars, stop it."""
+    setting closest to the grid's centre - ``stage="grid"`` (lam x c_sigma; B2.2's first step): the smaller
+    |log lam|, |log c_sigma|, lam, c_sigma; ``stage="f_c"`` (B2.2's second step): the f_c closest to 2 Hz
+    (|log(f_c / 2)|), then the higher. Settings with different numbers of laps, or on different cars, stop it."""
     by: dict[str, dict] = {}
     for r in records:
         if r.get("kind") != kind or "error" in r or r.get("replicate", 0) != 0:
@@ -237,8 +255,8 @@ def select(records: list[dict], kind: str) -> dict:
 
     def closeness(k):
         st = by[k]["setting"]
-        if kind == "mppi_lp":
-            return (-st["f_c"],)
+        if stage == "f_c":
+            return (abs(math.log(st["f_c"] / LP_FC_STAGE1)), -st["f_c"])
         return (abs(math.log(st["lam"])), abs(math.log(st["c_sigma"])), st["lam"], st["c_sigma"])
 
     chosen = min(tied, key=closeness)
