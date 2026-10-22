@@ -223,6 +223,21 @@ def _diag_job(args):
     return rec
 
 
+def nomdiag_big(K: int) -> None:
+    """The nominal car: the grid centre with 4 K samples (offline, mppi_big's budget), white and low-pass (2 Hz)
+    noise, replicates 0-2 - whether the failures of 9.6 / nomdiag are a matter of the sample budget."""
+    from f1race.experiments import cx_b
+
+    c = {**cx_b.GRID_CENTRE, "K": 4 * K}
+    jobs = [("mppi_big", c, r) for r in (0, 1, 2)] + [("mppi_lp", {**c, "f_c": 2.0}, r) for r in (0, 1, 2)]
+    with get_context("spawn").Pool(len(jobs), maxtasksperchild=1) as pool, open(DEV / "nom_diagnostic_big.jsonl", "w") as fo:
+        for r in pool.imap_unordered(_diag_job, jobs):
+            fo.write(json.dumps(r) + "\n")
+            fo.flush()
+            print(r["kind"], r["setting_key"], "r", r["replicate"], r["completed"], r["lap_time"], r["stop_reason"],
+                  round(r["distance"]), "no-free", round(r["no_penalty_free_sample_share"], 3), flush=True)
+
+
 def nomdiag(K: int) -> None:
     """The nominal car only: the grid centre with white noise (mppi) and with low-pass noise (mppi_lp, f_c 1 / 2 / 4
     Hz), and with white noise but 4 iterations per step at K / 4 (about the same time per step); replicates 0-2
@@ -245,7 +260,7 @@ def nomdiag(K: int) -> None:
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=("checks", "timing", "timing-one", "gap", "laps", "nomdiag"))
+    ap.add_argument("what", choices=("checks", "timing", "timing-one", "gap", "laps", "nomdiag", "nomdiag-big"))
     ap.add_argument("--K", type=int)
     a = ap.parse_args()
     DEV.mkdir(parents=True, exist_ok=True)
@@ -259,5 +274,7 @@ if __name__ == "__main__":
         gap(a.K)
     elif a.what == "nomdiag":
         nomdiag(a.K)
+    elif a.what == "nomdiag-big":
+        nomdiag_big(a.K)
     else:
         laps(a.K)
