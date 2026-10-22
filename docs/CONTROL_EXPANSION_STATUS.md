@@ -1,9 +1,10 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-22 (phase B done: final review APPROVE; merged to main; phase C next). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-22 (phase C: literature and protocol revision 0 in review). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
-* **Current phase:** B done – final review of b276f56 **APPROVE**, `cx/B-mppi` merged to `main` (--no-ff) 2026-10-22
-  (merge hash recorded in phase C's first commit); next C – tube MPC (literature and protocol first).
+* **Current phase:** C – robust tube MPC, branch `cx/C-tube` from `main` 2858db4: literature (§C) and protocol revision 0
+  (`docs/CX_C_protocol.md`) sent for review; no code yet.
+* **Phase B:** done – final review of b276f56 **APPROVE**, `cx/B-mppi` merged to `main` (--no-ff) 2026-10-22 as **2858db4**.
   Phase B result: MPPI on the NMPC's problem at the real-time CPU budget (numpy, K 1 024) completes 0 of 50 test cars
   against the NMPC's 12 – **H-B1 holds for `nmpc`** (0 : 12, p 0.0005; confirmatory, after the development gate failed
   and was waived by amendment B3); H-B2 not testable; 4 K samples offline 2 of 50; not cross-checked.
@@ -39,7 +40,8 @@ Last updated: 2026-10-22 (phase B done: final review APPROVE; merged to main; ph
 | A | runner and report (`experiments/cx_a.py`, `scripts/run_cx_a.py`, `scripts/report_cx_a.py`) | yes | yes – `tests/test_cx_a.py`, 7 tests (5 at 6bcc6ef) | smoke on the nominal car; the CXV / CXT / secondary runs | **APPROVE** (6bcc6ef … e2cea5d) | **yes** |
 | A | `mpcc_ca` (CiMPCC-based, amendment A1) and the secondary conditions; soft speed bound (amendment A2) | yes | yes – `tests/test_mpcc.py` 8, `tests/test_cx_a.py` 7 | smoke on cases outside every set (`results/CX/A/dev/secondary_smoke.jsonl`); A2 diagnostic on CXV cars 2 / 5 / 7; CXT | **APPROVE** (94cba68 … e2cea5d) | **yes** |
 | B | `control/mppi.py` (`MPPI`), `experiments/cx_b.py`, `scripts/run_cx_b.py`, `scripts/report_cx_b.py`, `scripts/cx_b_dev.py` | yes (57146e4 … baa69cb) | yes – `tests/test_mppi.py` 12, `tests/test_cx_b.py` 6 | development checks 9.1–9.8 on the nominal car; CXV tuning; CBT benchmark; secondary conditions | protocol rev 0, B1, B2, B3 and packets 2–6 **APPROVE**; final review b276f56 **APPROVE** | **yes – phase B completed** |
-| C–G | – | not started | – | – | – | – |
+| C | `control/tube.py` (planned; protocol `docs/CX_C_protocol.md` rev 0) | not started – protocol first | – | – | protocol rev 0 in review | – |
+| D–G | – | not started | – | – | – | – |
 
 ## Review record
 
@@ -91,7 +93,7 @@ the runner smoke (`smoke/`). Benchmark: worktree `F1-Race-worktrees/F1-Race-wt-C
 
 ## Next actions
 
-1. Phase C (tube MPC): branch `cx/C-tube` from the new `main`; record the phase-B merge hash in its first commit;
-   literature entries (CONTROL_LITERATURE_REVIEW.md §C) and the protocol `docs/CX_C_protocol.md` for review; no code
-   before the protocol is approved.
-2. Phase B follow-up candidates (CONTROL_METHOD_MATRIX.md) stay unscheduled.
+1. Phase C (tube MPC): review of the literature entries (§C) and protocol revision 0 (packet 1); no code before its APPROVE.
+2. Then `control/tube.py`, tests, the development checks of CX-C §9, the runner and report (packet 2); CXV tuning; CCT;
+   secondary conditions; final review, merge.
+3. Phase B follow-up candidates (CONTROL_METHOD_MATRIX.md) stay unscheduled.
