@@ -281,3 +281,42 @@ only (records in `results/CX/B/dev/` with the commit and a dirty flag), reported
    grid centre). **Gate:** if no setting completes the nominal lap, the grid or the formulation is revised by
    an amendment reviewed before any CXV lap (as CX-A amendment A2) – not tuned on CXV until something works.
    These laps choose nothing: the selection is section 4's, on CXV.
+
+## Amendments
+
+* **B1 (proposed 2026-10-22, for review), MPPI samples the NMPC's three inputs – after development check 9.2,
+  before the K timing and any development lap.**
+  *Cause:* section 3.1 replaced the NMPC's two longitudinal inputs by one net force F_x and left open whether
+  the NMPC's optimum drives and brakes at once (checked in 9.2). It does. On `nmpc`'s nominal lap (c 2, margin
+  0.6: 76.40 s, 1 528 solves; `results/CX/B/dev/checks.json`, code 57146e4) the overlap min(F_d, −F_b) of the
+  applied stage-0 input is mostly negligible – median 35 N, 21 N in the solves whose net force drives – but it is
+  above 1 kN in 7.9 % of all solves and in 31 % of the braking solves (median 200 N, P90 1.8 kN, max 5.7 kN), in
+  the braking zones at 0.2–0.4, 1.2, 2.0, 2.5–2.9 and 3.6–3.9 km – where the L2 cars fail (CX-A: turn 1, ~2.7 km,
+  ~3.83 km). Driving the rear axle while braking moves the effective brake balance forward (the brake split is
+  fixed at 60 / 40): a degree of freedom the net force cannot express. Evaluated through the net-force
+  parameterisation (overlap removed), IPOPT's inputs cost 1.3 · 10⁴ to 1.6 · 10⁶ (ellipse penalties) instead of
+  < 10 at 6 of the 20 checked solves. The small overlaps elsewhere come from the input-rate cost, a sum over the
+  two force channels (a change split over both costs half).
+  1. *Definition:* MPPI samples u = [δ̇, F_d, F_b] with independent noise N(0, diag(σ_δ̇², σ_F², σ_F²)) – the
+     NMPC's own inputs and input set; the noise scale c_σ multiplies all three. Clamps: the steering rate and
+     angle as section 3.1; F_d ≥ 0, F_b ≤ 0 and F_d ≤ P_max / vx by clipping; the two axles' longitudinal-force
+     limits – linear in (F_d, F_b) at a given state – by scaling the force pair towards (0, 0) by the largest
+     factor in [0, 1] that meets both (direction-preserving; with one force non-zero it is the clipping of
+     revision 0). J is evaluated on the clamped three inputs as before (section 3.1 is then the NMPC's problem
+     without a restriction). Everything else in sections 3.2–3.5 unchanged (U, ε, v have three columns).
+  2. *Known consequence, reported:* clipping at F_d = 0 and F_b = 0 makes the perturbations one-sided there
+     (mean +0.4 σ_F before weighting), so where the cost is indifferent – the overlap direction, e.g. on a
+     straight below the power limit – the update can drift towards overlap until the rate and tracking costs
+     stop it. Section 5 adds per lap the overlap min(F_d, −F_b) of MPPI's applied inputs (median, P90, max),
+     next to the NMPC's.
+  3. *Alternative, not proposed:* keep the net force of revision 0 and state that MPPI solves the NMPC's problem
+     restricted to F_d · F_b = 0 – the comparison of optimisers would then include that restriction exactly in
+     the braking zones where the laps are decided.
+  4. *Also from 9.2, for the record:* MPPI's cost equals the NLP's objective with the slacks eliminated on the
+     rollout of IPOPT's inputs (largest relative difference 1.3 · 10⁻¹⁴ at the 20 solves; constraint violation
+     < 10⁻¹⁵). At IPOPT's own iterate it does not: IPOPT's slack variables sit at about −10⁻⁸ (its bound
+     relaxation), which the linear penalty terms (10 w h per slack, w up to 10⁶) turn into an objective of about
+     −0.35 instead of ~0.1, and its dynamics defects reach 4.5 · 10⁻⁴. The optimality-gap check (9.4) therefore
+     uses as IPOPT's optimum J* the cost of IPOPT's three inputs on the rollout.
+  5. The K timing (section 3.4) and every development lap run after the reviewer's decision, with the decided
+     parameterisation.
