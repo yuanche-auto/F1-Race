@@ -1,6 +1,7 @@
 # CX-C protocol – robust tube MPC (control expansion, phase C)
 
-Status: **draft, revision 0 (2026-10-22), for review** – written after the literature check
+Status: **binding, revision 0 (2026-10-22; 9006b4a, APPROVE)** with the clarifications of its review (m1–m3, n1–n3;
+marked *"clarification of revision 0"*), written down before any development check of section 9 – written after the literature check
 ([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §C) and **before any tube-MPC code**: no module, test,
 runner or lap of phase C exists (section 9). Branch `cx/C-tube` (from `main` 2858db4, the merge of phase B).
 Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
@@ -37,7 +38,9 @@ Scope: the nominal model, Spielberg, η = 0.95, `nmpc`'s objective and margin (p
 tube of section 3 (a linearisation-based approximation – no robustness guarantee is claimed, section 3.5); the L2
 parameter ranges as the uncertainty. **Information budget:** `tube` knows the *ranges* of the L2 parameters (a prior
 the protocol hands it), not the parameters of the car; `nmpc` does not use them; `nmpc_reserve` uses a fixed reserve.
-No oracle. Offline, as phases A and B (IPOPT without a time budget).
+No oracle. Offline, as phases A and B (IPOPT without a time budget). *Clarification of revision 0 (review n3):* the
+tuning asymmetry runs the other way this time – `tube` has 3 settings on CXV, `nmpc`'s objective was chosen from 6
+(phase A).
 
 ## 2. Sets
 
@@ -50,7 +53,10 @@ No oracle. Offline, as phases A and B (IPOPT without a time budget).
 * **NOM:** the nominal car, reported separately.
 * **Secondary conditions** (after the primary report, as phases A / B): `CCT_LAG30` (the CCT cars with the L6 30 ms
   steering lag), `CXD` (nominal car, L3 disturbances, seeds 7400–7429), `CXL8` (nominal car, the four L8 tracks).
-  `nmpc` / `mpcc` there reproduce phase A / B records (expected identical in every field that does not measure time).
+  *Clarification of revision 0 (review m3):* the secondary conditions run the five controllers of section 3 (`tracker`,
+  `nmpc`, `nmpc_reserve`, `tube`, `tube_track`, with their CCT settings); `nmpc` there serves as the reproducibility
+  check against phase B's records (expected identical in every field that does not measure time; `mpcc` is not run in
+  phase C).
 * Start, laps, time limit as phases A / B.
 
 ## 3. Controllers
@@ -59,8 +65,9 @@ Shared: the nominal model, η = 0.95, the 5 % plan, N = 30 × 50 ms, IPOPT, the 
 
 * **`tracker`** – plan + L1 tracker (baseline, not tuned).
 * **`nmpc`** – `FrenetMPC` tracking the 5 % plan, c 2, margin 0.6 (phases A / B, unchanged).
-* **`nmpc_reserve`** (secondary baseline) – L2's "NMPC on plan 12 %": `nmpc`'s objective (c 2, margin 0.6) tracking the
-  η = 0.88 plan (`results/L2/plan_088.pkl`) with η = 0.88 in the MPC – the uniform, uncertainty-blind reserve.
+* **`nmpc_reserve`** (secondary baseline) – a variant of L2's "NMPC on plan 12 %" (review n2: L2 used the weights c 1,
+  margin 0.3): `nmpc`'s objective (c 2, margin 0.6) tracking the η = 0.88 plan (`results/L2/plan_088.pkl`) with η = 0.88
+  in the MPC – the uniform, uncertainty-blind reserve.
 * **`tube`** (primary) – `nmpc` with the per-solve tightening of sections 3.1–3.4 (`FrenetMPC(param_tightening=True)`,
   as L6's cautious NMPC).
 * **`tube_track`** (secondary, ablation) – `tube` with the track back-offs only (η not tightened): is it the lateral
@@ -75,7 +82,10 @@ own step function). The ancillary feedback is a time-varying LQR along the predi
 `nmpc`'s stage weights, Q = h · diag(0, w_n, w_ξ, w_v, 0, 0, 0) and R = c_R · diag(h w_δ̇, w_dF, w_dF) (c = 2: w_n 2,
 w_ξ 20, w_v 0.4, w_δ̇ 1, w_dF 0.5; forces in 10⁴ N, as the NLP), terminal P_N = Q; gains K_k. Closed-loop error dynamics
 e_{k+1} = (A_k + B_k K_k) e_k + w_k. (Linear tube MPC with a fixed feedback, C.1 / C.2; along a nonlinear prediction by
-linearisation, as the "approximate tube of reachable sets" of C.6.)
+linearisation, as the "approximate tube of reachable sets" of C.6.) *Clarification of revision 0 (review m1):* K is
+**not applied** in closed loop – the applied input is the NMPC's u*_{0|t} and the nominal restarts from the measured
+state at every solve (e_0 = 0), as in C.2 / C.4's constraint tightening; K only shapes the error reachable sets, i.e.
+the tube is the error bound the system *would* have if K acted between solves.
 
 ### 3.2 Disturbance set W_k (the L2 parameter ranges)
 
@@ -95,6 +105,10 @@ y = Cₒ e its bound at stage k is b_k(Cₒ) = Σ_{j<k} Σ_i |(Cₒ Φ_{k,j+1})_
   cos ξ_k e_ξ): back-off b_k^track = max of the two, added to the NMPC's margin (`backoff`, per stage).
 * **Friction ellipses** – each axle's usage² (linearised in (e, u − v = K e) at (z_k, v_k)): back-off Δ_k = max over the
   two axles; the per-stage friction factor becomes η_k = sqrt(max(η² − Δ_k, η_min²)), η_min = 0.70 (`eta`, per stage).
+  *Clarification of revision 0 (review m2):* under `param_tightening`, η_k also enters the hard limits on each axle's
+  longitudinal force (|F_x / (μ_x F_z)| ≤ η_k, `nmpc.py`), so the tube tightens those too, and η_min = 0.70 bounds them
+  as well – a property of the existing interface, kept and read as part of the tube; `tube_track` leaves η at 0.95
+  everywhere, so the ablation separates exactly the track part from the friction-and-force part.
 * **Caps:** b_k^track ≤ b_max = half of the narrowest track width minus body (otherwise no nominal trajectory remains),
   η_k ≥ η_min. A capped stage is not robust in the sense of the tube; the share of capped stages is reported
   (robust-feasibility diagnostic, section 5).
@@ -109,7 +123,9 @@ gives a weaker feedback and a wider tube. The tube is computed from the previous
 
 The tube is an approximation: (a) it uses the linearisation along the previous prediction, not an incremental
 Lyapunov function or a contraction metric (C.4, C.8 need SDP / SOS solvers, which are not available here – literature
-"Tools note"); (b) the disturbance set is the vertex maximum of the one-step mismatch, not a proven bound; (c) the
+"Tools note"); (b) the disturbance set is the vertex maximum of the one-step mismatch, not a proven bound, and it is
+evaluated at the nominal (z_k, v_k) – the mismatch at the perturbed points (z_k + e, v_k + K e) that the error actually
+visits is not covered (review n1); (c) the
 caps can remove robustness; (d) no terminal set. The scheme is therefore a **constraint-tightened NMPC with a
 model-based tube**, in the spirit of C.2 / C.6, with no claim of recursive feasibility or guaranteed constraint
 satisfaction. Section 9 measures how well the tube covers the actual prediction errors of cars from the L2 box.
@@ -130,7 +146,9 @@ offsets; constraint use (minimum edge margin, slacks); tyre usage; control effor
 **For the tube controllers**, per lap: the track back-off and the friction factor η_k (P5 / P50 / P95 over stages and
 solves, and at stage N), the share of capped stages, and the **coverage**: for every solve, the realised error between
 the measured state 1 … 10 stages later and the solve's prediction, against that stage's back-off (share of stages
-where the realised lateral error exceeds b_k^track).
+where the realised lateral error exceeds b_k^track). *Clarification of revision 0 (review m1):* the realised error is
+that of the re-solving NMPC with the nominal input held open loop over those stages, the bound assumes K acting – two
+different systems; the coverage is a diagnostic of the tube's scale, not a test of a guarantee.
 
 ## 6. Statistics
 
