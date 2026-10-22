@@ -1,8 +1,10 @@
 # CX-B protocol – model predictive path integral control (control expansion, phase B)
 
-Status: **draft, revision 0 (2026-10-21), for review** – written after the literature check
-([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §B) and **before any MPPI code**: no MPPI module,
-test, runner or lap exists (section 9). Branch `cx/B-mppi` (from `main` b68d0a4, the merge of phase A).
+Status: **binding, revision 0 (2026-10-21; 0b94d1a, APPROVE)** with the clarifications of its review (m1, m2,
+n1–n4; marked *"clarification of revision 0"* below), written down before any MPPI timing or development lap.
+Written after the literature check ([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §B) and
+**before any MPPI code**: at 0b94d1a no MPPI module, test, runner or lap existed (section 9). Branch `cx/B-mppi`
+(from `main` b68d0a4, the merge of phase A).
 Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
 ## 0. What L0–L9 and phase A left
@@ -45,7 +47,9 @@ H-B1 can hold at Holm's first level (0.025) only if at least 7 cars are discorda
 calculation is possible without data, and a "not supported" may again be a statement about power.
 
 Scope: these two controllers, the nominal model, Spielberg, η = 0.95, `nmpc`'s objective and margin as chosen
-on CXV in phase A; MPPI with the budget of section 3.4 – no claim about MPPI with a GPU, with a learned model,
+on CXV in phase A; MPPI with the budget of section 3.4 – a **CPU, numpy implementation**, whose K is set by the
+speed of this implementation on this machine (review n4), so the results do not carry over to another
+implementation or machine; no claim about MPPI with a GPU, with a learned model,
 with another cost (e.g. a progress reward), or about sampling-based MPC in general. **Tuning freedom:** `nmpc`
 was tuned on CXV over 6 objective settings (phase A); `mppi` solves the chosen objective and tunes only its
 sampling parameters on the same 10 CXV cars, 9 settings (section 4) – not a symmetric budget, stated as in
@@ -58,7 +62,8 @@ phase A.
   results are known to the builder (disclosed; it is a tuning set).
 * **Test set CBT** (new draw): `sample_plants(nominal, 50, seed 312)[1:]` – 50 cars from the L2 ranges,
   Spielberg, one lap each, no lag, no disturbances. Car seed 312 is used by no L-layer, by L10's protocol or by
-  phase A (checked: L-layers use car seeds 0, 1, 7, 8, 9, 99; phase A 301, 302).
+  phase A (checked: L-layers use car seeds 0, 1, 7, 8, 9, 10, 99 – 10 is L7 / L9's T1new, added in the review (n1); phase A
+  301, 302).
 * **NOM:** the nominal car – development (section 9) and reported separately; not part of a test.
 * **Secondary conditions** (after the primary report; as phase A, so that rows are comparable):
   `CBT_LAG30` – the CBT cars with the L6 steering lag τ = 30 ms (commanded angle observed; nominal-model
@@ -66,7 +71,11 @@ phase A.
   7400–7429 (phase A's set; with L3's measurement noise; tuning-free); `CXL8` – the nominal car on the four
   L8 test tracks with their L8 plans (time limit 1.6 × the plan). `CXD` and `CXL8` repeat phase A's
   conditions; the phase-A records of `nmpc` and `mpcc` there are compared with this phase's re-runs as a
-  reproducibility check (the code of both is unchanged).
+  reproducibility check (the code of both is unchanged). *Clarification of revision 0 (review n3):* with the
+  code and the inputs unchanged the re-runs are expected to be **identical** to phase A's records in every
+  quantity that does not measure time (outcome, lap time, distance, trajectory metrics; phase A showed these
+  controllers to be deterministic); any difference is reported as such and the re-run is then not used as a
+  new result.
 * Start: the state of the 5 % plan at s = 0; one lap; time limit 121 s on Spielberg (1.6 × the plan).
 
 ## 3. Controllers
@@ -121,12 +130,19 @@ much, is checked on `nmpc`'s nominal lap (section 9).
 Given the nominal sequence U = (u_0 … u_{N−1}) and the measured Frenet state x_0:
 
 1. Draw ε_k,i ~ N(0, Σ), Σ = diag(σ_δ̇², σ_F²), independent over k = 1 … K and i (white noise, B.3).
-2. v_k,i = u_i + ε_k,i for the first (1 − α) K samples, v_k,i = ε_k,i (zero mean) for the rest, α = 0.01 (B.3:
-   "less than one percent").
+2. v_k,i = u_i + ε_k,i for the first K − K₀ samples, v_k,i = ε_k,i (zero mean) for the last K₀, α = 0.01 (B.3:
+   "less than one percent"). *Clarification of revision 0 (review m2):* K₀ = max(1, ⌊α K⌋) – 2 of 256, 5 of 512,
+   10 of 1 024, 20 of 2 048, 40 of 4 096.
 3. Roll out all K samples in one batched (numpy) RK4 integration with the clamped inputs v′_k,i = g(x_k,i, v_k,i).
 4. S_k = J(v′_k) (section 3.1); ρ = min_k S_k; w_k = exp(−(S_k − ρ)/λ) / Σ_j exp(−(S_j − ρ)/λ).
 5. U ← Σ_k w_k v′_k (B.9's form; equals U + Σ w (v′ − U)); apply u_0; shift U by one stage, the last
    entry (0, 0) (B.3, Table II).
+
+*Clarification of revision 0 (review m1a):* if **no sample is valid** – every sample has vx < 2 m/s at some
+stage or a cost that is not finite, so every weight is 0 and step 4 would divide by zero – step 5's average is
+skipped: U is left as it was (the sequence shifted at the end of the previous step), its u_0 is applied and U
+is shifted. Such steps are counted (section 5) and the case is covered by a unit test; during the 20
+iterations of a lap's first call an iteration without a valid sample leaves U unchanged in the same way.
 
 One iteration per 50 ms control step (B.3). At the first call of a lap, U = 0 and 20 iterations (the NMPC's
 first solve also starts from a crude guess and runs to convergence). Random numbers: one
@@ -154,7 +170,10 @@ applies the updated u_0. Section 5 counts the steps in which no sample was free 
 
 K is the largest of {256, 512, 1 024, 2 048, 4 096} whose **median** MPPI step time on the nominal development
 lap (section 9; one process, no other job running, single-threaded BLAS) is at most **40 ms** – 80 % of the
-50 ms control period of L9's rule, on this machine's one core. K is then fixed for `mppi` and `mppi_lp`;
+50 ms control period of L9's rule, on this machine's one core. *Clarification of revision 0 (review m1b):* the
+timing uses the grid's centre setting (λ 1, c_σ 1; the step time hardly depends on λ); if even K = 256 has a
+median above 40 ms, the rule selects nothing and an amendment goes to the reviewer – neither a K below 256
+nor a looser 40 ms is adopted without it. K is then fixed for `mppi` and `mppi_lp`;
 `mppi_big` uses 4 K. The measured step times of every K go to the reviewer with the code (packet 2). The
 benchmark itself runs offline with 20 jobs in parallel, so its step times include that load and are reported
 as such (the real-time question belongs to phase G).
@@ -166,7 +185,11 @@ digital Butterworth low-pass filter of order 2 and cut-off f_c (sampling rate 20
 `lfilter`, zero initial state) and **rescaled** by 1 / ‖h‖₂ (h the filter's impulse response over 30 stages), so
 that the filtered noise has the stationary standard deviation σ again and only its spectrum changes (LP-MPPI
 states neither; without rescaling a 1 Hz filter would cut the exploration by ~3×, confounding the filter with
-the noise level). Everything else as `mppi`, with `mppi`'s CXV setting.
+the noise level). *Clarification of revision 0 (review n2):* with the zero initial state the filter has a
+transient – the first stages' filtered noise has a smaller variance than σ² (the first value is b₀ ε₀) – and
+the 1 / ‖h‖₂ scaling corrects only the stationary variance; the applied input u_0 is therefore perturbed less
+in `mppi_lp` than in `mppi`. Accepted as part of the variant (LP-MPPI's applied control is not filtered either),
+and stated. Everything else as `mppi`, with `mppi`'s CXV setting.
 
 ## 4. Tuning (CXV only, one lap per car and setting, replicate 0)
 
@@ -197,7 +220,8 @@ non-converged solves and fallbacks; the speed / plan-speed ratio (P5, median, P9
 the plan's line. **For the MPPIs in addition**, per lap: the effective sample size 1 / Σ w_k² (P5, median, P95
 over the steps), the share of steps in which **no sample is free of penalties** (ρ contains a track or limit
 penalty – the case B.11 describes), the share of samples with a penalty, the number of samples given weight 0
-(vx < 2 m/s or a non-finite cost), and the cost of the nominal sequence before and after each update.
+(vx < 2 m/s or a non-finite cost), the steps without any valid sample (clarification m1a; U only shifted), and
+the cost of the nominal sequence before and after each update.
 **Repeatability:** `mppi` runs CBT with replicates 0, 1, 2 (only replicate 0 enters H-B1 / H-B2); reported:
 completions per replicate, the cars whose outcome changes between replicates, the lap-time spread of the cars
 all three complete.
