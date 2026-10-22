@@ -1,6 +1,6 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-22 (phase C merged as 4b4e091; phase D: CDT / CDD done – H-D1 and H-D2 hold; packet 4 in review). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-22 (phase C merged as 4b4e091; phase D: packet 4 APPROVE – H-D1 and H-D2 hold; secondary conditions running). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
 * **Current phase:** D – adaptive MPC / online identification, branch `cx/D-adaptive` from `main` 4b4e091: literature
   §D.1–D.14 and the protocol [CX_D_protocol.md](CX_D_protocol.md) revision 0 **APPROVE** (314129d) with clarifications
@@ -21,7 +21,9 @@ Last updated: 2026-10-22 (phase C merged as 4b4e091; phase D: CDT / CDD done –
   (34 : 0, 34 / 0, p 1.2 · 10⁻¹⁰); `nmpc_param` 0 : 0 on both; `adaptive_oracle` 42 (CDT) and 44 (CDD), `identified` 50
   and 0, `tube` 46 and 2, `adaptive_bank` 1 and 0. The drift's start (the start state projects to s = L − 1e-11: the first
   10 ms at f_end, the onset diagnostics from the lap start) – found after the report, diagnostics fixed (c8035cb),
-  re-run check: no car's outcome changes; packet 4 (report, re-run check, benchmark text) in review.
+  re-run check: no car's outcome changes; packet 4 (report, re-run check, benchmark text) **APPROVE** – `DriftField` kept
+  as run (a known flaw, stated in protocol §2; the fix listed for later phases). Secondary conditions (840 laps) started
+  in the same worktree at cd484bd.
 * **Phase C:** done – final review of 3dec001 **APPROVE**, `cx/C-tube` merged to `main` (--no-ff) 2026-10-22 as
   **4b4e091**. Phase C result: `nmpc`'s constraints tightened by an error tube from the L2 parameter box complete 49 of 50 new
   test cars against `nmpc`'s 16 – **H-C1 holds** (33 : 0, p 2.3 · 10⁻¹⁰; numerical-path control 2 : 0), **H-C2 holds**
@@ -76,7 +78,7 @@ Last updated: 2026-10-22 (phase C merged as 4b4e091; phase D: CDT / CDD done –
 | A | `mpcc_ca` (CiMPCC-based, amendment A1) and the secondary conditions; soft speed bound (amendment A2) | yes | yes – `tests/test_mpcc.py` 8, `tests/test_cx_a.py` 7 | smoke on cases outside every set (`results/CX/A/dev/secondary_smoke.jsonl`); A2 diagnostic on CXV cars 2 / 5 / 7; CXT | **APPROVE** (94cba68 … e2cea5d) | **yes** |
 | B | `control/mppi.py` (`MPPI`), `experiments/cx_b.py`, `scripts/run_cx_b.py`, `scripts/report_cx_b.py`, `scripts/cx_b_dev.py` | yes (57146e4 … baa69cb) | yes – `tests/test_mppi.py` 12, `tests/test_cx_b.py` 6 | development checks 9.1–9.8 on the nominal car; CXV tuning; CBT benchmark; secondary conditions | protocol rev 0, B1, B2, B3 and packets 2–6 **APPROVE**; final review b276f56 **APPROVE** | **yes – phase B completed** |
 | C | `control/tube.py` (`Tube`, `TubeMPCController`), `experiments/cx_c.py`, `scripts/{run,report}_cx_c.py`, `scripts/cx_c_dev.py` | yes (0689c41 … eab7c63) | yes – `tests/test_tube.py` 8, `tests/test_cx_c.py` 5 | development checks §9 on NOM and CXDEV; CXV tuning; CCT; secondary conditions | protocol rev 0, C1 and packets 2–5 **APPROVE**; final review 3dec001 **APPROVE** | **yes – phase C completed** |
-| D | `estimation/{rls,bank}.py`, `control/adaptive_mpc.py`, `FrenetMPC(param_model=True)`, `experiments/cx_d.py`, `scripts/{run,report}_cx_d.py`, `scripts/cx_d_{dev,plans}.py` | yes (6f54f30 … ea4ac82) | yes – `tests/test_adaptive.py` 8, `tests/test_cx_d.py` 5 | development checks §9 on NOM and DEV (gate passed) | protocol rev 0 and literature §D **APPROVE** (packet 1, m1–m3 / n1–n3); packets 2, 3 **APPROVE**; packet 4 (CDT / CDD) in review | – |
+| D | `estimation/{rls,bank}.py`, `control/adaptive_mpc.py`, `FrenetMPC(param_model=True)`, `experiments/cx_d.py`, `scripts/{run,report}_cx_d.py`, `scripts/cx_d_{dev,plans}.py` | yes (6f54f30 … ea4ac82) | yes – `tests/test_adaptive.py` 8, `tests/test_cx_d.py` 5 | development checks §9 on NOM and DEV (gate passed) | protocol rev 0 and literature §D **APPROVE** (packet 1, m1–m3 / n1–n3); packets 2–4 **APPROVE**; secondary conditions running | – |
 | E–G | – | not started | – | – | – | – |
 
 ## Review record
@@ -110,6 +112,7 @@ Last updated: 2026-10-22 (phase C merged as 4b4e091; phase D: CDT / CDD done –
 | 2026-10-22 | 314129d | phase D packet 1: literature D.1–D.14, protocol revision 0 | **APPROVE** | m1 the ceiling reading (gap to the oracle) and CDT_NOISE; m2 the drawn drifts before CDV, H-D1 / H-D2 dependent; m3 the MHE removed; n1–n3 |
 | 2026-10-22 | cd484bd (6f54f30 …) | phase D packet 2: code, tests, development checks (gate passed) | **APPROVE** | (a) tie-break to the smaller setting accepted; (b) `adaptive_bank` kept as registered; n1 read too-fast with completion; n2 RUN_COMMIT + timeline for the runs |
 | 2026-10-22 | cd484bd (run) | phase D packet 3: CDV tuning (120 laps; `adaptive` λ_μ 0.995, `adaptive_bank` W 0.2) | **APPROVE** | report notes: the CDD failures against the drift's progress, the bank as not applicable, CDV background only |
+| 2026-10-22 | cd484bd (run); c8035cb, 8d27088 | phase D packet 4: CDT / CDD (707 laps), H-D1 27 : 0 and H-D2 34 : 0 hold; the drift-start artefact and its re-run check (decision rule fixed before it) | **APPROVE** | `DriftField` kept as run; the flaw stated in protocol §2; the start fix listed for later phases |
 
 ## Tests
 
@@ -152,7 +155,7 @@ Phase D: `results/CX/D/plans/` (main checkout) – the new plans of the library 
 
 ## Next actions
 
-1. Phase D: review of packet 4 (CDT / CDD report, the drift-start check, the benchmark text); then the secondary
-   conditions (840 laps) after it.
+1. Phase D: the secondary conditions (840 laps; nmpc on CXD against phase C's records), packet 5, then the final review
+   of `cx/D-adaptive` and the merge.
 2. Phase B follow-up candidates (CONTROL_METHOD_MATRIX.md) stay unscheduled; phase C's tube around phase D's adaptive
    model (robust adaptive MPC, literature D.13) is a candidate after phase D.

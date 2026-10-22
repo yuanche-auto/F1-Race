@@ -63,6 +63,10 @@ gap `adaptive` – `adaptive_oracle` (completions and lap time), which the repor
   length ℓ, then f_end to the end of the lap; s_on ~ U(600, 2 600) m, ℓ ~ U(100, 1 500) m (from a sudden drop, as a
   rain shower or a wet patch, to a gradual one, as tyre wear), f_end ~ U(0.75, 0.90) (L8's wet levels span 0.75–0.85).
   The plant's friction is the car's μ factor times f(s). The drift is one-way within the lap (it does not recover).
+  *Known flaw of the runs (packet 4; the review kept the definition):* the lap's start state projects to
+  s = L − 1.4 · 10⁻¹¹, so the field as implemented (`cx_d.DriftField`, a function of s mod L) gives f = f_end for the
+  **first 10 ms step** of every drift lap instead of f = 1; the sensitivity check with the start fixed changed no lap's
+  outcome (section 9, the note on the drift's start).
   The final grip μ·f_end lies in [0.69, 0.93]; below 0.70 (L4's lower bound for μ, section 3.1) an estimate sits on
   the bound, as for 9 of L8's wet 0.75 cars, which all completed. *Clarification of revision 0 (review n3):* the drift
   only falls within the lap and changes only μ_x and μ_y; "only the grip changes" is also the premise of `adaptive`'s
