@@ -307,3 +307,26 @@ cars outside the test set; it describes the mechanism, not the test.)
   nominal point, caps; protocol §3.5); one track at η 0.95; offline (IPOPT without a time budget, +11.5 ms for the tube);
   the tuning asymmetry runs the other way this time (3 tube settings against `nmpc`'s 6). On the development cars `tube`
   completed 5 of 5 and `nmpc` 2 of 5 – background only, not evidence (review n3).
+
+### Secondary conditions (protocol §2; uncorrected; 3 McNemar comparisons)
+
+Run 2026-10-22 07:27–08:23 at eab7c63 in the same worktree, 420 laps, no error record (`secondary.jsonl`
+16d58eb9e999…; `report/CX_C_secondary.md`). The five controllers of protocol §3 with their CCT settings.
+
+| condition | `tracker` | `nmpc` | `nmpc_reserve` | `tube` | `tube_track` | `tube` : `nmpc` (p) |
+|---|---|---|---|---|---|---|
+| CCT_LAG30 (50 cars, 30 ms steering lag) | 2 | 4 | 3 | **45** | 17 | 41 : 0 (9 · 10⁻¹³) |
+| CXD (nominal car, L3 disturbances, 30 seeds) | 0 | 4 | 3 | **28** | 7 | 24 : 0 (1.2 · 10⁻⁷) |
+| CXL8 (nominal car, 4 new tracks) | 0 | 4 | 4 | 4 | 3 | 0 : 0 (1) |
+
+* **Under the steering lag** (which no controller models; L6's 30 ms) `nmpc` leaves at turn 1 on 45 of 50 cars, `tube`
+  completes 45 (failures: ~3.82 km 4, ~1.4 km 1); the uniform reserve completes 3.
+* **Under the L3 disturbances** (measurement noise, gusts, friction varying along the track – none of them in the tube's
+  disturbance set, which is the L2 parameter box) `tube` completes 28 of 30 (failures at ~1.4 km and turn 1), `nmpc` 4.
+* **New tracks:** every MPC completes all four; `tube` is slower than `nmpc` (mean 96.71 against 93.16 s; per track +2.8 to
+  +4.9 s), about as slow as the uniform reserve (97.18 s); `tube_track` leaves at Austin (1 383 m).
+* **Reproducibility (clarification m3):** `nmpc`'s 34 laps on CXD and CXL8 are identical to phase B's records
+  (`F1-Race-wt-CXB-run/results/CX/B/secondary.jsonl`, 2219e5634a68…) in every field that does not measure time – 34 of 34.
+* Reading: the tube's tightening, sized from the L2 parameter box, also covers conditions it was not built for (a
+  steering lag, stochastic disturbances) on these cars and this track – a large margin effect; its price on the nominal
+  car and the new tracks is 2–5 s per lap. These are secondary, uncorrected comparisons.
