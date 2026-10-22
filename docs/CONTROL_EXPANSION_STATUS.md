@@ -1,6 +1,6 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-22 (phase C merged as 4b4e091; phase D: code and development checks done, gate passed; packet 2 requested). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-22 (phase C merged as 4b4e091; phase D: packet 2 APPROVE; CDV tuning done, selections sent for review). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
 * **Current phase:** D – adaptive MPC / online identification, branch `cx/D-adaptive` from `main` 4b4e091: literature
   §D.1–D.14 and the protocol [CX_D_protocol.md](CX_D_protocol.md) revision 0 **APPROVE** (314129d) with clarifications
@@ -12,8 +12,11 @@ Last updated: 2026-10-22 (phase C merged as 4b4e091; phase D: code and developme
   NLPs unchanged to the bit; `estimation/rls.py`, `estimation/bank.py`, `control/adaptive_mpc.py`, `experiments/cx_d.py`,
   scripts, tests 8 + 5); 13-plan library (8 new plans); development checks of §9 done – **gate passed** (`adaptive_oracle`
   NOM and 5 of 5 DEV drifts; `adaptive` NOM with every λ_μ; DEV_C `nmpc` 2 / `adaptive` 5 of 5, DEV_D 0 / 5 of 5); the
-  model bank does not identify the cars (replays, §9 item 4 – kept as registered, for the reviewer); packet 2 requested.
-  No CDV lap before its review.
+  model bank does not identify the cars (replays, §9 item 4); packet 2 (cd484bd) **APPROVE** – the tie-break accepted,
+  `adaptive_bank` kept as registered. CDV tuning 11:05–11:28 in `F1-Race-worktrees/F1-Race-wt-CXD-run` at cd484bd (120 laps,
+  no error; `tune.jsonl` f59485d0fb5c…, `selected.json` b7e631a95b6f…): `adaptive` λ_μ 0.995 – 19 of 20 (0.99: 17, 0.999: 14);
+  `adaptive_bank` W 0.2 – 1 of 20 (0.1 and 0.5: 0; most laps end at turn 1, ~463 m). Selections sent for review; CDT /
+  CDD (707 laps) wait for it.
 * **Phase C:** done – final review of 3dec001 **APPROVE**, `cx/C-tube` merged to `main` (--no-ff) 2026-10-22 as
   **4b4e091**. Phase C result: `nmpc`'s constraints tightened by an error tube from the L2 parameter box complete 49 of 50 new
   test cars against `nmpc`'s 16 – **H-C1 holds** (33 : 0, p 2.3 · 10⁻¹⁰; numerical-path control 2 : 0), **H-C2 holds**
@@ -68,7 +71,7 @@ Last updated: 2026-10-22 (phase C merged as 4b4e091; phase D: code and developme
 | A | `mpcc_ca` (CiMPCC-based, amendment A1) and the secondary conditions; soft speed bound (amendment A2) | yes | yes – `tests/test_mpcc.py` 8, `tests/test_cx_a.py` 7 | smoke on cases outside every set (`results/CX/A/dev/secondary_smoke.jsonl`); A2 diagnostic on CXV cars 2 / 5 / 7; CXT | **APPROVE** (94cba68 … e2cea5d) | **yes** |
 | B | `control/mppi.py` (`MPPI`), `experiments/cx_b.py`, `scripts/run_cx_b.py`, `scripts/report_cx_b.py`, `scripts/cx_b_dev.py` | yes (57146e4 … baa69cb) | yes – `tests/test_mppi.py` 12, `tests/test_cx_b.py` 6 | development checks 9.1–9.8 on the nominal car; CXV tuning; CBT benchmark; secondary conditions | protocol rev 0, B1, B2, B3 and packets 2–6 **APPROVE**; final review b276f56 **APPROVE** | **yes – phase B completed** |
 | C | `control/tube.py` (`Tube`, `TubeMPCController`), `experiments/cx_c.py`, `scripts/{run,report}_cx_c.py`, `scripts/cx_c_dev.py` | yes (0689c41 … eab7c63) | yes – `tests/test_tube.py` 8, `tests/test_cx_c.py` 5 | development checks §9 on NOM and CXDEV; CXV tuning; CCT; secondary conditions | protocol rev 0, C1 and packets 2–5 **APPROVE**; final review 3dec001 **APPROVE** | **yes – phase C completed** |
-| D | `estimation/{rls,bank}.py`, `control/adaptive_mpc.py`, `FrenetMPC(param_model=True)`, `experiments/cx_d.py`, `scripts/{run,report}_cx_d.py`, `scripts/cx_d_{dev,plans}.py` | yes (6f54f30 … ea4ac82) | yes – `tests/test_adaptive.py` 8, `tests/test_cx_d.py` 5 | development checks §9 on NOM and DEV (gate passed) | protocol rev 0 and literature §D **APPROVE** (packet 1, m1–m3 / n1–n3); packet 2 requested | – |
+| D | `estimation/{rls,bank}.py`, `control/adaptive_mpc.py`, `FrenetMPC(param_model=True)`, `experiments/cx_d.py`, `scripts/{run,report}_cx_d.py`, `scripts/cx_d_{dev,plans}.py` | yes (6f54f30 … ea4ac82) | yes – `tests/test_adaptive.py` 8, `tests/test_cx_d.py` 5 | development checks §9 on NOM and DEV (gate passed) | protocol rev 0 and literature §D **APPROVE** (packet 1, m1–m3 / n1–n3); packet 2 **APPROVE**; CDV selections in review | – |
 | E–G | – | not started | – | – | – | – |
 
 ## Review record
@@ -100,6 +103,7 @@ Last updated: 2026-10-22 (phase C merged as 4b4e091; phase D: code and developme
 | 2026-10-22 | eab7c63 (run); 306d39f | phase C packet 5: secondary conditions (420 laps), nmpc reproduces phase B 34 of 34 | **APPROVE** | n1 the new-tracks sentence (tube_track 3 of 4) – fixed before the merge |
 | 2026-10-22 | 3dec001 | **phase C final review** (whole branch vs main 2858db4: 19 commits, 12 files, +1913 / −13) | **APPROVE** | the three standing checks pass; status lines marked done before the merge |
 | 2026-10-22 | 314129d | phase D packet 1: literature D.1–D.14, protocol revision 0 | **APPROVE** | m1 the ceiling reading (gap to the oracle) and CDT_NOISE; m2 the drawn drifts before CDV, H-D1 / H-D2 dependent; m3 the MHE removed; n1–n3 |
+| 2026-10-22 | cd484bd (6f54f30 …) | phase D packet 2: code, tests, development checks (gate passed) | **APPROVE** | (a) tie-break to the smaller setting accepted; (b) `adaptive_bank` kept as registered; n1 read too-fast with completion; n2 RUN_COMMIT + timeline for the runs |
 
 ## Tests
 
@@ -139,7 +143,6 @@ git-ignored.
 
 ## Next actions
 
-1. Phase D: review of packet 2 (code, tests, the development checks of protocol section 9 with the drawn drifts, the
-   model-bank finding, the tuning tie-break); then the CDV tuning (120 laps) from a pinned worktree.
+1. Phase D: review of the CDV selections (packet 3); then CDT + NOM and CDD (707 laps) in the same worktree at cd484bd.
 2. Phase B follow-up candidates (CONTROL_METHOD_MATRIX.md) stay unscheduled; phase C's tube around phase D's adaptive
    model (robust adaptive MPC, literature D.13) is a candidate after phase D.
