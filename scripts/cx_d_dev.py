@@ -9,6 +9,7 @@ results/CX/D/dev/ with the commit and the dirty flag.
     python scripts/cx_d_dev.py replay [--workers 12] # 4: the estimators fed offline with recorded laps
     python scripts/cx_d_dev.py drifts     # 7: the drifts drawn for CDD and CDV_D (review m2)
     python scripts/cx_d_dev.py gate       # the gate of item 6 from laps.jsonl (with nmpc on the DEV drifts, review n2)
+    python scripts/cx_d_dev.py cdd-failures --records <test.jsonl>   # descriptive, after the primary report
 
 Timing (item 5) is in the lap records (estimator us per update, NMPC solve ms).
 """
@@ -353,9 +354,51 @@ def replay(workers: int) -> None:
     _write("replay.json", {"replays": out})
 
 
+def cdd_failures(path: Path) -> None:
+    """Descriptive, after the primary report (review of packet 3): where on CDD each controller's laps end relative to
+    the drift – before the onset, during the decline, after its end – and whether the drift is still under way at the
+    corner at ~3.83 km (s_on + l > 3 830 m); for the adaptive controllers the settle delay of completed and failed laps."""
+    from report_cx_a import load
+
+    recs = [r for r in load(path) if "error" not in r and r["set"] == "CDD"]
+    out = {"source": str(path), "kinds": {}}
+    for k in cx_d.KINDS:
+        rs = [r for r in recs if r["kind"] == k]
+        rows = {"laps": len(rs), "completed": sum(r["completed"] for r in rs)}
+        late = [r for r in rs if r["drift"]["s_on"] + r["drift"]["ell"] > 3830.0]
+        rows["drift_under_way_at_3830m"] = {"laps": len(late), "completed": sum(r["completed"] for r in late)}
+        rest = [r for r in rs if r["drift"]["s_on"] + r["drift"]["ell"] <= 3830.0]
+        rows["drift_ended_before_3830m"] = {"laps": len(rest), "completed": sum(r["completed"] for r in rest)}
+        where = {"before onset": 0, "during the decline": 0, "after its end": 0, "no position": 0}
+        for r in rs:
+            if r["completed"]:
+                continue
+            s, d = r.get("failure_s"), r["drift"]
+            if s is None:
+                where["no position"] += 1
+            elif s < d["s_on"]:
+                where["before onset"] += 1
+            elif s < d["s_on"] + d["ell"]:
+                where["during the decline"] += 1
+            else:
+                where["after its end"] += 1
+        rows["failures"] = where
+        rows["failure_s"] = sorted(round(r["failure_s"]) for r in rs if not r["completed"] and r.get("failure_s") is not None)
+        if k in cx_d.ADAPTIVE_KINDS:
+            for lab, sub in (("completed", [r for r in rs if r["completed"]]), ("failed", [r for r in rs if not r["completed"]])):
+                v = [r.get("drift_settle_delay_s") for r in sub if "drift_settle_delay_s" in r]
+                ok = [x for x in v if x is not None]
+                rows[f"settle_delay_{lab}"] = {"n": len(v), "never": len(v) - len(ok),
+                                               "median_s": float(np.median(ok)) if ok else None}
+        out["kinds"][k] = rows
+    _write("cdd_failures.json", out)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=["unchanged", "step", "nlp", "plans", "laps", "replay", "drifts", "gate"])
+    ap.add_argument("what", choices=["unchanged", "step", "nlp", "plans", "laps", "replay", "drifts", "gate",
+                                     "cdd-failures"])
+    ap.add_argument("--records", default=None, help="cdd-failures: the test.jsonl to read")
     ap.add_argument("--workers", type=int, default=20)
     ap.add_argument("--base", default="55c5925")
     a = ap.parse_args()
@@ -373,6 +416,8 @@ def main() -> None:
         replay(a.workers)
     elif a.what == "gate":
         gate()
+    elif a.what == "cdd-failures":
+        cdd_failures(Path(a.records))
     else:
         _write("drifts.json", {"CDD": cx_d.drift_summary("CDD"), "CDV_D": cx_d.drift_summary("CDV_D"),
                                "CDD_draws": [c["drift"] for c in cx_d.cases("CDD")]})
