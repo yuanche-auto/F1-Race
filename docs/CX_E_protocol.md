@@ -1,8 +1,9 @@
 # CX-E protocol – learning MPC, lap to lap (control expansion, phase E)
 
-Status: **draft, revision 0 (2026-10-22), for review** – written after the literature check
-([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §E) and **before any phase-E code**: no module, test, runner
-or lap of phase E exists (section 9). Branch `cx/E-lmpc` (from `main` ae87f41, the merge of phase D).
+Status: **binding, revision 0 (2026-10-22; d1c2043, APPROVE)** with the clarifications of its review (m1–m4, n1, n2;
+marked *"clarification of revision 0"*), written down before any phase-E code. Revision 0 was written after the literature
+check ([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §E) and before any phase-E code: no module, test,
+runner or lap of phase E existed (section 9). Branch `cx/E-lmpc` (from `main` ae87f41, the merge of phase D).
 Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
 ## 0. What L0–L9 and phases A–D left
@@ -31,6 +32,16 @@ Holm over H-E1 and H-E2 (α 0.05), each at 0.025 alongside. No direction is pred
 for H-E2 at least 7 discordant cars, all one way, are needed (`identified` completed 50 of 50 phase-D cars, so H-E2 may
 well be untestable in one direction – reported as it comes).
 
+*Clarification of revision 0 (review m1):* **the exposure of H-E2 is unequal.** `lmpc`'s tenth learning lap is completed
+only if its two initialisation laps and all ten learning laps run without leaving the track (a failure ends the car's
+sequence, section 2) – ten learning laps in a row – while `identified` has one scored lap (its exploration lap's failure
+is counted apart, as L8). H-E2 is therefore systematically against `lmpc`; this is intended (a crash while learning is a
+failure), and section 5 reports the survival curve and the per-lap completion rates.
+*Clarification of revision 0 (review m2):* **H-E1 is conditional** on both completing; with `identified` near 50 of 50,
+these are essentially the cars on which `lmpc` survives its ten learning laps – possibly the easier cars. Section 5
+describes how the cars `lmpc` completes and those it does not differ (in `identified`'s lap time and in the car's
+parameters).
+
 Scope: Spielberg, the nominal model, η = 0.95 (the friction margin of every NMPC here), N = 30 × 50 ms, IPOPT, offline
 (no time budget). **Information budget:** `lmpc` gets the track, the nominal model, the measured state, its own inputs and
 **every lap it has driven on this car** – two initialisation laps and the learning laps before the current one (up to 11
@@ -52,6 +63,10 @@ budget; the lap-time curve over the learning laps (section 5) shows where `lmpc`
   s = 0 (the flying start of phases A–D), one lap scored (time at s = L, interpolated); every lap is driven on for 250 m
   past the line, unscored, so that the stored data cover the region beyond the finish (E.2 uses consecutive laps for
   this). A lap that leaves the track or spins ends the car's sequence: the remaining learning laps count as not completed.
+  *Clarification of revision 0 (review m3):* **arclength through the line:** a stored lap's s is unwrapped from 0 at
+  its start; the 250 m past the line are stored as s ∈ (L, L + 250]; the time-to-go c = T_l − t is negative there. The
+  controller's s is unwrapped the same way (as `MPCController`); when the predicted s_N passes L, the local safe set is
+  selected by that unwrapped s, i.e. among the stored points past the line.
 * Time limit 121 s per lap, as phases A–D.
 
 ## 3. Controllers
@@ -84,7 +99,13 @@ the finish – and the 250 m past it):
   other soft constraints; the slack is reported), and the cost  w_T cᵀλ + the NMPC's input-rate costs; no reference
   line or speed. The stage cost of E.2 (1 per step) is the constant N h here and is left out; the terminal cost is the
   time to the finish from the horizon's end (E.2's convex combination of costs-to-go, an approximation). w_T = 100 per
-  second (fixed; time dominates the input costs).
+  second (fixed; time dominates the input costs). *Clarification of revision 0 (review n2):* w_T is not tuned because it
+  only has to make the time term much larger than the input-rate terms (a 0.1 s gain against input costs of order
+  10⁻² per solve); the order of magnitude is checked on NOM's development laps (section 9), not selected.
+  *Clarification of revision 0 (review m3):* δ, the seventh state, is **not** in the terminal condition: it is the
+  integral of the input δ̇ and E.2's model has the steering angle as an input, not a state; constraining it to a convex
+  combination of stored angles could leave the terminal state at a steering angle no stored trajectory continues from
+  smoothly, and leaving it free lets the optimiser choose it within the angle and rate limits.
 * **Model (E.4):** the NMPC's nominal step plus, for (v_x, v_y, r) at stage k, an affine correction Γ_k z_k,
   z = (v_x, v_y, r, δ, δ̇, F_drive, F_brake, 1), regressed before each solve from the stored laps' 50 ms transitions (the
   state, the input held, the state 50 ms later; the residual against the nominal step): the M = 80 nearest samples to
@@ -120,12 +141,19 @@ As phases A–D, for every scored lap; and per car the **lap-time curve** over t
 time, completed, stop reason), the iteration at which `lmpc` first beats `identified`'s lap (if ever), the terminal slack
 (share of solves above 10⁻³), the number of stored points used, the regression's fallback share (stages with Γ = 0) and its
 one-step residual before / after the correction on the next lap's data, the solve time.
+*Clarifications of revision 0:* (review m1) the **survival curve** – the number of cars still driving after each learning
+lap and the lap of the first failure – and the **completion rate of each learning lap conditional on entering it**;
+(review m2) for `lmpc`'s tenth learning lap, the cars it completes against those it does not: `identified`'s lap time and
+the seven parameter factors (medians, ranges – a description); (review m4) **failures of the initialisation** (both
+initialisation laps failed – `lmpc` not started) **counted apart from failures during the learning laps**; H-E2 counts
+both as not completed, as registered, and the reading separates them.
 
 ## 6. Statistics
 
 Exact signed-rank and McNemar, exact intervals, Holm over H-E1 and H-E2. Secondary, uncorrected (5): on CET `lmpc` –
 `nmpc` (McNemar and signed-rank, `lmpc`'s tenth learning lap), `lmpc_nominal` – `lmpc` (both, tenth laps), and `lmpc`'s
-tenth – first learning lap (signed-rank on the cars that complete both: the improvement). The secondary conditions:
+tenth – first learning lap (signed-rank on the cars that complete both: the improvement). *Clarification of revision 0
+(review n1):* the cars that complete the tenth lap have survived all ten – the improvement is measured on survivors. The secondary conditions:
 completions per controller and `lmpc` – `identified` McNemar per condition (2), uncorrected.
 
 ## 7. Second environment
@@ -149,6 +177,8 @@ On NOM and DEV only (records in `results/CX/E/dev/` with commit and dirty flag):
 
 1. **NLP:** with the safe set made of one stored `nmpc` lap's states at the solve's own predicted terminal state and
    Γ ≡ 0, one solve's prediction is feasible and its terminal slack zero; the convex-hull rows and λ's simplex hold.
+   *Clarification of revision 0 (review m3):* also one solve near the line (s_N past L): the terminal condition is
+   feasible and λ selects stored points past the line.
 2. **Regression:** on stored laps of a DEV car, the corrected step's one-step residual in (v_x, v_y, r) against the
    nominal step's (in- and out-of-sample on the next lap); Γ = 0 where no sample is in the bandwidth.
 3. **Initialisation:** the two laps on NOM and the DEV cars (completed? lap times).
