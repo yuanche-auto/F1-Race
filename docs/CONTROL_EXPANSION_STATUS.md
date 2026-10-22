@@ -15,7 +15,7 @@ Last updated: 2026-10-21 (phase B: protocol revision 0 in review). Roadmap: [CON
 | phase | module | developed | unit-tested | closed-loop checked | reviewed | accepted |
 |---|---|---|---|---|---|---|
 | A | `control/mpcc.py` (`DynamicMPCC`, `MPCCController`, `path_errors`) | yes (0061e79) | yes – `tests/test_mpcc.py`, 8 tests | development laps; CXV tuning; CXT benchmark; secondary conditions | **APPROVE** (f4d1ee9 … e2cea5d) | **yes – phase A completed** |
-| A | runner and report (`experiments/cx_a.py`, `scripts/run_cx_a.py`, `scripts/report_cx_a.py`) | yes | yes – `tests/test_cx_a.py`, 5 tests | smoke on the nominal car; the CXV / CXT / secondary runs | **APPROVE** (6bcc6ef … e2cea5d) | **yes** |
+| A | runner and report (`experiments/cx_a.py`, `scripts/run_cx_a.py`, `scripts/report_cx_a.py`) | yes | yes – `tests/test_cx_a.py`, 7 tests (5 at 6bcc6ef) | smoke on the nominal car; the CXV / CXT / secondary runs | **APPROVE** (6bcc6ef … e2cea5d) | **yes** |
 | A | `mpcc_ca` (CiMPCC-based, amendment A1) and the secondary conditions; soft speed bound (amendment A2) | yes | yes – `tests/test_mpcc.py` 8, `tests/test_cx_a.py` 7 | smoke on cases outside every set (`results/CX/A/dev/secondary_smoke.jsonl`); A2 diagnostic on CXV cars 2 / 5 / 7; CXT | **APPROVE** (94cba68 … e2cea5d) | **yes** |
 | B | `control/mppi.py` (planned; protocol `docs/CX_B_protocol.md` rev 0) | not started – protocol first | – | – | protocol rev 0 in review | – |
 | C–G | – | not started | – | – | – | – |
@@ -35,7 +35,7 @@ Last updated: 2026-10-21 (phase B: protocol revision 0 in review). Roadmap: [CON
 
 ## Tests
 
-`tests/test_mpcc.py` (6) and the full suite – see the latest review packet for the command and output.
+`tests/test_mpcc.py` (8) and `tests/test_cx_a.py` (7) at e2cea5d (6 and 5 at 6bcc6ef), and the full suite – see the latest review packet for the command and output.
 
 ## Results
 
