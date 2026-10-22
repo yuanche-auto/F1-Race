@@ -7,6 +7,8 @@ only (records in results/CX/B/dev/, each with the commit and a dirty flag; not r
                                                #     process with nothing else running -> dev/timing.json (the K rule)
     python scripts/cx_b_dev.py gap --K K       # 9.4 optimality gap at 20 states of nmpc's nominal lap -> dev/gap.json
     python scripts/cx_b_dev.py laps --K K      # 9.6 the 9 grid settings and mppi_lp at the centre on NOM -> dev/laps.jsonl
+    python scripts/cx_b_dev.py nomdiag --K K   # after 9.6 (no mppi setting completed NOM): white vs low-pass noise and
+                                               #     more iterations per step, replicates 0-2 -> dev/nom_diagnostic.jsonl
 """
 from __future__ import annotations
 
@@ -212,9 +214,39 @@ def laps(K: int) -> None:
                   round(r["no_penalty_free_sample_share"], 3), flush=True)
 
 
+def _diag_job(args):
+    kind, setting, rep = args
+    from f1race.experiments import cx_b
+
+    rec = cx_b.mppi_lap(cx_b.cases("NOM")[0], kind, setting, replicate=rep)
+    rec.update(_git())
+    return rec
+
+
+def nomdiag(K: int) -> None:
+    """The nominal car only: the grid centre with white noise (mppi) and with low-pass noise (mppi_lp, f_c 1 / 2 / 4
+    Hz), and with white noise but 4 iterations per step at K / 4 (about the same time per step); replicates 0-2
+    (replicate 0 of mppi and of mppi_lp at 2 Hz repeats the 9.6 laps)."""
+    from f1race.experiments import cx_b
+
+    c = {**cx_b.GRID_CENTRE, "K": K}
+    jobs = ([("mppi", c, r) for r in (0, 1, 2)] + [("mppi_lp", {**c, "f_c": 2.0}, r) for r in (0, 1, 2)]
+            + [("mppi_lp", {**c, "f_c": f}, 0) for f in (1.0, 4.0)]
+            + [("mppi", {**c, "K": K // 4, "iters": 4}, r) for r in (0, 1, 2)])
+    with get_context("spawn").Pool(len(jobs), maxtasksperchild=1) as pool, open(DEV / "nom_diagnostic.jsonl", "w") as fo:
+        for r in pool.imap_unordered(_diag_job, jobs):
+            fo.write(json.dumps(r) + "
+")
+            fo.flush()
+            print(r["kind"], r["setting_key"], "r", r["replicate"], r["completed"], r["lap_time"], r["stop_reason"],
+                  round(r["distance"]), "step ms", [round(x, 1) for x in r["step_ms_mean_p50_p95_p99_max"]], "no-free",
+                  round(r["no_penalty_free_sample_share"], 3), "overlap", [round(x) for x in r["overlap_N_p50_p90_max"]],
+                  flush=True)
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=("checks", "timing", "timing-one", "gap", "laps"))
+    ap.add_argument("what", choices=("checks", "timing", "timing-one", "gap", "laps", "nomdiag"))
     ap.add_argument("--K", type=int)
     a = ap.parse_args()
     DEV.mkdir(parents=True, exist_ok=True)
@@ -226,5 +258,7 @@ if __name__ == "__main__":
         print(json.dumps(timing_one(a.K)))
     elif a.what == "gap":
         gap(a.K)
+    elif a.what == "nomdiag":
+        nomdiag(a.K)
     else:
         laps(a.K)

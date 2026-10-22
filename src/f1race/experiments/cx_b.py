@@ -99,7 +99,7 @@ def build_mppi(kind: str, setting: dict, track, o, seed, diagnostics: bool = Tru
     mp = MPPI(track, model, ref_from_plan(o), N=N, dt=MPC_DT, eta=ETA, margin=NMPC_SETTING["margin"], weights=w,
               K=int(setting["K"]), lam=float(setting["lam"]),
               sigma=tuple(float(setting["c_sigma"]) * s for s in SIGMA_BASE), seed=seed, lowpass=lowpass,
-              diagnostics=diagnostics, inputs=inputs or INPUTS)
+              diagnostics=diagnostics, inputs=inputs or INPUTS, iters_per_step=int(setting.get("iters", 1)))
     return MPCController(mp, DT), mp, x0_from_plan(o, path)
 
 

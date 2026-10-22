@@ -96,13 +96,15 @@ class MPPI:
     def __init__(self, track: Track, veh: DynVehicle, ref: dict, N: int = 30, dt: float = 0.05,
                  eta: float = 0.95, margin: float = 0.3, weights: dict | None = None, K: int = 1024,
                  lam: float = 1.0, sigma=(0.03, 2000.0), alpha: float = 0.01, seed=0, first_iters: int = 20,
-                 lowpass: tuple[float, int] | None = None, diagnostics: bool = True, inputs: str = "net"):
+                 lowpass: tuple[float, int] | None = None, diagnostics: bool = True, inputs: str = "net",
+                 iters_per_step: int = 1):
         """``ref``: arrays over centre-line arclength ref['s'] with keys n, xi, vx (``FrenetMPC``'s);
         ``weights``: ``FrenetMPC``'s keys (n, xi, v, drate, dF, slack, limit_slack); ``sigma``: noise standard
         deviations of the steering rate [rad/s] and of each force [N]; ``seed``: anything
         ``numpy.random.default_rng`` takes (the runner passes (set code, car, replicate)); ``inputs``: "net" –
         the sampled input is [delta_rate, F_x] (protocol revision 0), "three" – [delta_rate, F_drive, F_brake],
-        the NMPC's own inputs (proposed amendment B1)."""
+        the NMPC's own inputs (amendment B1); ``iters_per_step``: MPPI iterations per call after the first (1 in
+        the protocol; more only in the development diagnostic of the nominal car)."""
         if inputs not in ("net", "three"):
             raise ValueError(inputs)
         self.inputs, self.nu = inputs, 2 if inputs == "net" else 3
@@ -128,6 +130,7 @@ class MPPI:
         self.K0 = max(1, int(np.floor(self.alpha * self.K)))
         self.rng = np.random.default_rng(seed)
         self.first_iters = int(first_iters)
+        self.iters_per_step = int(iters_per_step)
         self.diagnostics = bool(diagnostics)
         self.lowpass = lowpass
         self._lp = None
@@ -298,7 +301,7 @@ class MPPI:
         u_prev = np.asarray(u_prev, float)
         U_before = self.U.copy()
         t0 = time.perf_counter()
-        iters = 1 if self.started else self.first_iters
+        iters = self.iters_per_step if self.started else self.first_iters
         recs = [self.iterate(x0, u_prev) for _ in range(iters)]
         self.started = True
         u = self.clamp(x0[None], self.U[:1])[0]
