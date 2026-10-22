@@ -129,8 +129,45 @@ def null() -> None:
           b["lap_time"], round(b["distance"], 3), "| difference", a["lap_time"] - b["lap_time"])
 
 
+def null_cause() -> None:
+    """Review c1 follow-up: is the difference between the tube path without tightening and nmpc the parameterised NLP?
+    (a) nmpc's controller (MPCController) on FrenetMPC(param_tightening=True) with its default eta 0.95 / back-off 0 on NOM;
+    (b) one solve of each NLP from the same states (5 % plan at four places, cold start): the largest difference of the
+    applied input and of the predicted states, and both IPOPT statuses / iteration counts -> dev/null_cause.json."""
+    import numpy as np
+
+    from f1race.control.nmpc import FrenetMPC, MPCController
+    from f1race.dynamics import DynVehicle
+    from f1race.experiments import cx_a, cx_c
+    from f1race.experiments.l1 import dyn_reference
+    from f1race.experiments.l2 import ref_from_plan, x0_from_plan
+    from f1race.sim.dynamic import DynamicSim
+    from f1race.track import Track
+
+    track, o = Track.load("Spielberg"), cx_a.plan()
+    w = {k: v * 2.0 for k, v in cx_a.NMPC_TRACK_W.items()}
+    mk = lambda pt: FrenetMPC(track, DynVehicle(), ref_from_plan(o), mode="track", N=30, dt=0.05, eta=0.95, margin=0.6,
+                              weights=w, param_tightening=pt)
+    path, _ = dyn_reference(track, DynVehicle(), o)
+    res = DynamicSim(track, DynVehicle(), cx_c.DT).run(MPCController(mk(True), cx_c.DT), x0_from_plan(o, path),
+                                                         t_max=cx_c.T_MAX)
+    out = {"param_nlp_lap": {"completed": bool(res.completed), "lap_time": float(res.lap_time),
+                             "distance": float(res.progress[-1])}, "single_solves": [], **_git()}
+    for s in (100.0, 380.0, 2700.0, 3800.0):
+        x0 = np.array([s] + [float(np.interp(s, o.s, getattr(o, k))) for k in ("n", "xi", "vx", "vy", "r", "delta")])
+        a, b = mk(False), mk(True)
+        ua, ia = a.solve(x0, np.array([0.0, 2000.0, 0.0]))
+        ub, ib = b.solve(x0, np.array([0.0, 2000.0, 0.0]))
+        Xa, _ = a.prediction()
+        Xb, _ = b.prediction()
+        out["single_solves"].append({"s": s, "u_diff": np.abs(ua - ub).tolist(), "X_diff_max": float(np.abs(Xa - Xb).max()),
+                                     "status": [ia["status"], ib["status"]], "iter": [ia["iter"], ib["iter"]]})
+    (DEV / "null_cause.json").write_text(json.dumps(out, indent=1))
+    print(json.dumps(out, indent=1))
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=("wcheck", "laps", "cxdev", "null"))
+    ap.add_argument("what", choices=("wcheck", "laps", "cxdev", "null", "null-cause"))
     a = ap.parse_args()
-    {"wcheck": wcheck, "laps": laps, "cxdev": cxdev, "null": null}[a.what]()
+    {"wcheck": wcheck, "laps": laps, "cxdev": cxdev, "null": null, "null-cause": null_cause}[a.what]()
