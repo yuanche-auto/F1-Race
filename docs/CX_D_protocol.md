@@ -278,3 +278,79 @@ On NOM and DEV only (records in `results/CX/D/dev/` with commit and dirty flag):
 7. *Clarification of revision 0 (review m2):* **the drifts drawn for CDD** (and CDV), reported after the implementation
    and before any CDV lap – they depend on no controller: the distributions of s_on, ℓ and f_end, the number of cars with
    μ·f_end < 0.70, and the shares of drifts that end (s_on + ℓ) before the corners at ~2.7 km and ~3.83 km.
+
+### 9. Results of the development checks (2026-10-22; packet 2)
+
+NOM and the development cars only; records in `results/CX/D/dev/` (git-ignored), each with its commit (fb8305b;
+`unchanged.json` ea4ac82) and `dirty = false`.
+
+0. **The existing NLPs are unchanged** (`unchanged.json`): `FrenetMPC` of this branch and of 55c5925 (before
+   `param_model`), for the default, `param_tightening`, `steer_lag`, `mode="filter"`, `mode="mpcc"` and
+   `soft_limits=5` – objective and constraint function equal to the bit at 5 random points each, all bounds identical.
+1. **Step model** (`step.json`, `tests/test_adaptive.py`): 3 cars (two DEV cars and the nominal) × friction factor 1.0
+   and 0.8 × 500 random states and inputs (444–463 of each 500 saturated): the CasADi step differs from the
+   simulator's by at most 4.4 · 10⁻¹⁶ in (v_x, v_y, r), the numpy step not at all; ∂ŷ/∂θ against central differences
+   1.4–5.7 · 10⁻⁸ relative. The saturation is written as a division by sqrt(max(u², 1)) – the simulator's rule; the
+   first version (through `ellipse_usage`) had an infinite derivative where an axle carries no force (a straight with
+   no front force), found by the unit test.
+2. **Parameterised NLP** (`nlp.json`): the 13-plan library, built in 0.38 s; at 4 states of `nmpc`'s NOM lap one cold
+   solve against `FrenetMPC` with the nominal car and the 5 % plan, with a vertex car, with the 0.88 plan and with the
+   0.67 plan: inputs at most 3.7 · 10⁻¹⁰ N apart (relative ≤ 9.3 · 10⁻¹⁴), predictions ≤ 2.3 · 10⁻¹³, the same IPOPT
+   status and iteration count every time.
+3. **Plan library** (`plans.json`, `plans/plans_cxd_log.json`): all eight new plans solved, each by one direct solve
+   from the next plan above (1.1–1.5 min each); none dropped. Lap times of the 13 plans:
+
+   | η_p | 0.67 | 0.70 | 0.73 | 0.76 | 0.79 | 0.82 | 0.85 | 0.88 | 0.91 | 0.93 | 0.95 | 0.97 | 1.00 |
+   |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+   | lap s | 91.33 | 88.96 | 86.80 | 84.84 | 83.05 | 81.39 | 79.87 | 78.45 | 77.15 | 76.35 | 75.60 | 74.89 | 73.91 |
+
+   All on the s grid of the 0.95 plan; the plan coordinate's interpolant reproduces every plan's v_x exactly at
+   integer j. (The plan file records commit fb8305b: the script started at 6f54f30 and records HEAD when it writes;
+   the planning code is the same – its fingerprint is checked at every load.)
+4. **Estimator replays** (`replay.json`): the RLS (3 λ_μ) and the bank (3 W) fed offline with 11 recorded laps (`nmpc`
+   on NOM and on DEV_C – which leaves at 3.83 km on cars 2–4 –, `adaptive_oracle` on DEV_D). Development data, no
+   selection.
+   * **RLS, constant cars:** on NOM exact from the start; on 4 of the 5 DEV cars every factor within 2 % from 0–500 m
+     of the lap (the first corners) for every λ_μ – except car 4's ClA with λ_μ 0.999 (from 1.36 km). **DEV car 3** (μ 0.929, ClA 1.065): μ and ClA move
+     together along a ridge (μ·F_z nearly preserved: μ̂ high, ClÂ low) – μ within 2 % only from 2.2 km (λ_μ 0.995),
+     0.44 km (0.999), 3.7 km (0.99); ClA never with 0.99. Forgetting only on μ lets μ follow recent data along that
+     ridge.
+   * **RLS, drifts** (λ_μ 0.995 / 0.999 / 0.99): settled (|μ̂ − μf| < 0.02 at every later step) 4.1–54.7 s after the
+     onset / 14.6 s – never (2 of 5) / 4.0 s – never (1 of 5); |μ̂ − μf| after the onset P95 0.015–0.083 / 0.023–0.092 /
+     0.012–0.088.
+   * **Model bank (D.9): it does not identify these cars.** |μ̂ − μ| P50 0.05–0.16, P95 0.25–0.50 (drifts: up to 0.59);
+     almost no factor ever within 2 %; 330–1 150 model switches per lap (fewer with longer W); exact on NOM, where the
+     nominal car is a member. Two mechanisms: (a) directions without excitation – μ on the straights (D.6) – leave many
+     members with nearly the same window cost, and the argmin switches among them; (b) 20 001 random vectors in the
+     7-dimensional box of L4's bounds are about a quarter of each range apart (20 000^(1/7) ≈ 4 per dimension), so no
+     member is within 2 % of a car. This is D.9's method with this phase's seven parameters and bounds (D.9: 8 tyre and
+     drag parameters of a scale car, bounds set relative to the truth). **Proposed: keep `adaptive_bank` as registered**
+     (a secondary controller; its result is informative as it is); the reviewer may decide otherwise.
+5. **Timing** (under 20 parallel jobs): RLS 266–283 µs per update (100 per second); bank 13.6–14.0 ms per update (~110 s
+   of a lap's wall time); NMPC solve with `param_model` 184–195 ms mean against `nmpc`'s 173–195 ms in the same runs.
+6. **Development laps** (`laps.jsonl`, `gate.json`; 39 laps, no error):
+
+   | set | `nmpc` | `adaptive` (λ_μ 0.995) | `adaptive_oracle` |
+   |---|---|---|---|
+   | NOM | 76.400 s | 76.399 s (every λ_μ) | 76.399 s |
+   | DEV_C (constant) | 2 of 5 (cars 1, 5; cars 2–4 off at 3 828–3 829 m, as phase C's CXDEV) | 5 of 5 | 5 of 5 |
+   | DEV_D (drift) | 0 of 5 (off at 1 401–2 740 m) | 5 of 5 | 5 of 5 |
+
+   On NOM also `adaptive_bank` (every W) and `nmpc_param` 76.399 s. Lap time `adaptive` − `adaptive_oracle`: DEV_C
+   −0.06 … +0.88 s, DEV_D −0.60 … +0.16 s. Too-fast share of `adaptive`: up to 0.27 on four DEV_C cars, 1.0 on car 3
+   (the ridge of item 4), 0.07–0.79 on DEV_D. **Gate: passed** – `adaptive_oracle` completes NOM and 5 of the 5 DEV
+   drifts, `adaptive` completes NOM with every λ_μ. Background (review n2): `nmpc` completes 0 of the 5 DEV drifts,
+   `adaptive` 5 of 5. Runner smoke (`results/CX/D/smoke/`): `nmpc` 76.400 s, `tube` 78.279 s – phase C's laps.
+7. **The drifts drawn** (`drifts.json`, review m2; independent of any controller):
+
+   | set | s_on min / median / max m | ℓ min / median / max m | f_end min / median / max | μ·f_end min / median / max | μ·f_end < 0.70 | drift ends before 2.7 km / 3.83 km |
+   |---|---|---|---|---|---|---|
+   | CDD (50) | 624 / 1 768 / 2 524 | 183 / 1 152 / 1 486 | 0.751 / 0.843 / 0.900 | 0.718 / 0.805 / 0.906 | 0 | 46 % / 100 % |
+   | CDV_D (10) | 1 018 / 1 512 / 2 448 | 342 / 946 / 1 493 | 0.758 / 0.843 / 0.883 | 0.730 / 0.806 / 0.893 | 0 | 60 % / 90 % |
+
+   Every CDD drift has begun before 2.7 km and ended before 3.83 km, so every CDD lap meets the corner at ~3.83 km –
+   where L2's failures concentrate – at the final, lowest grip.
+
+**Tuning tie (code, for the reviewer):** section 4 breaks a remaining tie by "the middle setting of the grid"; when the
+lowest and the highest setting are tied without the middle one, both are equally far from it – `cx_d.select` then takes
+the smaller value (λ_μ 0.99, W 0.1). Stated here before any CDV lap.

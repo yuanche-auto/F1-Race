@@ -50,7 +50,7 @@ def _write(name: str, obj) -> None:
 
 def unchanged(base: str) -> None:
     """The NLP (objective, constraint function, bounds) of the existing FrenetMPC options, built by this commit's nmpc.py
-    and by ``base``'s (``git show``), evaluated at random points: identical to the bit?"""
+    and by ``base``'s (``git show``), evaluated at random points – identical to the bit or not."""
     import importlib.util
     import tempfile
 
