@@ -187,3 +187,36 @@ On NOM and the development cars CXDEV only (records in `results/CX/C/dev/` with 
    setting, and its tightening must not be capped on more than half of the stages of the lap; otherwise the tube is
    revised by an amendment before any CXV lap (the roadmap's main risk: "a disturbance set that is neither empty nor
    so large that the tightened problem is infeasible").
+
+### 9. Results of the development checks (2026-10-22; packet 2)
+
+Nominal car and CXDEV only; records in `results/CX/C/dev/` (git-ignored), each with its commit and `dirty = false`.
+
+1. **Linearisation** – `tests/test_tube.py::test_jacobians_match_finite_differences`: the CasADi Jacobians of the NMPC's
+   step against central differences at four stages of a prediction (A to 10⁻⁶, B to 10⁻⁵ relative); the numpy step
+   used for the disturbance set equals the NMPC's step for the nominal car and for a vertex car (10⁻¹²).
+2. **Reachable-set bound** – `test_reach_bounds_are_the_support_function`: 10⁴ random box-disturbance sequences never
+   exceed b_k; the sign-matched vertex sequence attains b_N (10⁻¹²); `test_tv_lqr_converges_to_the_stationary_gain`.
+3. **Disturbance set** (`wcheck.json`, db3b075): at 100 states of `nmpc`'s nominal lap (phase B's record), the one-step
+   mismatch of 1 000 random cars from the L2 box exceeds the vertex maximum in no component (largest ratio 0.97);
+   median vertex bounds per 50 ms step: vx 0.036 m/s, vy 0.062 m/s, r 0.011 rad/s, n 1.5 mm.
+4. **Development cars CXDEV** (`cxdev.jsonl`, db3b075): `nmpc` completes 2 of 5 (cars 1, 5: 76.25, 75.91 s; cars 2–4 off
+   at 3 828–3 829 m); `tube` (c_R 1) completes 5 of 5 (77.76–79.11 s); its η is capped on ~16 % of the stages, the track
+   back-off almost never; the realised lateral error exceeds the back-off on 5.6–10.4 % of the covered stages.
+   Development data – no test, no selection.
+5. **Timing** (the NOM laps of 6, six in parallel): the tube computation 6.2–8.7 ms per solve (mean; P99 11–16 ms,
+   max 14–19 ms), on top of IPOPT's ~136 ms mean.
+6. **Development laps on NOM** (`laps.jsonl`, db3b075):
+
+   | setting | `tube` lap | `tube_track` lap | `tube`: capped η share, track | coverage exceed share `tube` / `tube_track` |
+   |---|---|---|---|---|
+   | c_R 0.1 | 78.70 s | 76.75 s | 0.17, 0 | 10.5 % / 4.0 % |
+   | c_R 1 | 78.28 s | 77.04 s | 0.16, 0 | 6.0 % / 3.0 % |
+   | c_R 10 | 78.05 s | 77.35 s | 0.15, 0 | 4.3 % / 2.5 % |
+
+   `nmpc` on the same car: 76.40 s. Track back-off P50 0.03–0.07 m, P95 0.17–0.99 m; `tube`'s η_k P5 0.70 (the cap),
+   P50 0.89–0.92. **Gate (6): passed** – `tube` completes the nominal lap with every setting, with no more than 17 % of
+   the stages capped. A stronger feedback (smaller c_R) narrows the track tube but widens the friction tube (the
+   feedback's input deviations K e enter the usage), so `tube`'s laps are slower at c_R 0.1.
+   Runner smoke (`results/CX/C/smoke/`): `tracker` 75.574 s, `nmpc` 76.400 s (as phase B), `nmpc_reserve` 79.048 s,
+   `tube_track` 77.036 s, `tube` 78.279 s (as the development lap – deterministic).
