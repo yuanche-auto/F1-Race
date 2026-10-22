@@ -61,7 +61,8 @@ def test_model_matches_frenet_mpc(track):
 
 
 @needs_plan
-def test_cost_is_the_nlp_objective_with_eliminated_slacks(track):
+@pytest.mark.parametrize("inputs", ["net", "three"])
+def test_cost_is_the_nlp_objective_with_eliminated_slacks(track, inputs):
     """Section 3.1 / 9.2: for the inputs of an IPOPT solution and for perturbed (penalised) samples, the states
     of the rollout with the eliminated slacks are feasible for the NLP, every positive slack is tight, and the
     NLP's objective there equals MPPI's cost."""
@@ -69,13 +70,13 @@ def test_cost_is_the_nlp_objective_with_eliminated_slacks(track):
 
     from f1race.control.nmpc import FS
 
-    mpc, mp = _nmpc(track), _mppi(track, K=8)
+    mpc, mp = _nmpc(track), _mppi(track, K=8, inputs=inputs)
     x0, u_prev = _x0(), np.array([0.0, 3000.0, 0.0])
     mpc.solve(x0, u_prev)
     Uz = mpc.z[mpc.Ui] * np.array([1.0, FS, FS])
-    V = np.stack([Uz[:, 0], Uz[:, 1] + Uz[:, 2]], axis=1)[None]
+    V = (Uz if inputs == "three" else np.stack([Uz[:, 0], Uz[:, 1] + Uz[:, 2]], axis=1))[None]
     rng = np.random.default_rng(1)
-    V = np.concatenate([V, V + rng.normal(size=(4, 30, 2)) * np.array([0.1, 5000.0])])
+    V = np.concatenate([V, V + rng.normal(size=(4, 30, mp.nu)) * mp.sigma * np.array([3.0] + [2.5] * (mp.nu - 1))])
     r = mp.rollout(x0, V, u_prev, detail=True)
     J = ca.Function("J", [mpc._nlp["x"], mpc._nlp["p"]], [mpc._nlp["f"]])
     G = ca.Function("G", [mpc._nlp["x"], mpc._nlp["p"]], [mpc._nlp["g"]])
@@ -124,31 +125,48 @@ def test_clamp_keeps_the_hard_limits(track):
     X[:, 6] = rng.uniform(-0.2, 0.2, 2000)
     V3 = mp.clamp(X, inside)
     assert np.allclose(V3[:, 0], inside[:, 0]) and np.allclose(V3[:, 1] + V3[:, 2], inside[:, 1])
+    # three inputs (amendment B1): the same limits; the force pair keeps its direction; inside: unchanged
+    W3 = np.column_stack([rng.normal(0, 2, 2000), np.abs(rng.normal(0, 3e4, 2000)), -np.abs(rng.normal(0, 4e4, 2000))])
+    X[:, 6] = rng.uniform(-0.4, 0.4, 2000)
+    C = mp.clamp(X, W3)
+    assert np.all(C[:, 1] >= 0) and np.all(C[:, 2] <= 0) and np.all(C[:, 1] * X[:, 3] <= veh.P_max * (1 + 1e-12))
+    F = tyre_forces(veh, X[:, 3], X[:, 4], X[:, 5], X[:, 6], C[:, 1], C[:, 2])
+    for ax in ("f", "r"):
+        assert np.all(np.abs(F[f"fx{ax}"] / (veh.mu_x * F[f"fz{ax}"])) <= 0.95 + 1e-9)
+    pw = W3[:, 1] * X[:, 3] <= veh.P_max                      # not clipped by the power: scaled pair
+    assert np.allclose(C[pw, 1] * W3[pw, 2], C[pw, 2] * W3[pw, 1], rtol=1e-9, atol=1e-3)
+    assert np.mean(C[:, 1] * C[:, 2] < 0) > 0.5                  # drive and brake at once are possible
+    small = np.column_stack([inside[:, 0], rng.uniform(0, 1500, 2000), rng.uniform(-1500, 0, 2000)])
+    assert np.allclose(mp.clamp(X, small)[:, 1:], small[:, 1:])
 
 
 @needs_plan
-def test_iteration_rules(track):
+@pytest.mark.parametrize("inputs", ["net", "three"])
+def test_iteration_rules(track, inputs):
     """Section 3.2 / 9.3: K0 = max(1, floor(alpha K)); lambda -> 0 picks the best sample; samples that all equal
     U leave it unchanged; the weights sum to one (U is a convex combination)."""
     assert [_mppi(track, K=k).K0 for k in (256, 512, 1024, 2048, 4096, 8)] == [2, 5, 10, 20, 40, 1]
     x0, u_prev = _x0(), np.zeros(3)
     rng = np.random.default_rng(3)
-    mp = _mppi(track, K=16, lam=1e-12)
+    mp = _mppi(track, K=16, lam=1e-12, inputs=inputs)
     U0 = np.column_stack([rng.uniform(-0.05, 0.05, 30), rng.uniform(-2000, 2000, 30)])
-    E = rng.normal(size=(16, 30, 2)) * mp.sigma
+    if inputs == "three":
+        U0 = np.column_stack([U0[:, 0], np.maximum(U0[:, 1], 0) + 300.0, np.minimum(U0[:, 1], 0) - 300.0])
+    E = rng.normal(size=(16, 30, mp.nu)) * mp.sigma
     mp.U, mp.noise = U0.copy(), (lambda: E)
     V = U0[None] + E
     V[16 - mp.K0:] = E[16 - mp.K0:]
     r = mp.rollout(x0, V, u_prev)
     k = int(np.argmin(r["cost"]))
     rec = mp.iterate(x0, u_prev)
-    assert np.allclose(mp.U, np.stack([r["V3"][k, :, 0], r["V3"][k, :, 1] + r["V3"][k, :, 2]], axis=1))
+    best = r["V3"][k] if inputs == "three" else np.stack([r["V3"][k, :, 0], r["V3"][k, :, 1] + r["V3"][k, :, 2]], axis=1)
+    assert np.allclose(mp.U, best)
     assert rec["ess"] == pytest.approx(1.0) and not rec["no_valid"]
-    mp = _mppi(track, K=4, lam=1.0)
-    mp.K0, mp.U, mp.noise = 0, U0.copy(), (lambda: np.zeros((4, 30, 2)))
+    mp = _mppi(track, K=4, lam=1.0, inputs=inputs)
+    mp.K0, mp.U, mp.noise = 0, U0.copy(), (lambda: np.zeros((4, 30, mp.nu)))
     mp.iterate(x0, u_prev)
     assert np.allclose(mp.U, U0, rtol=0, atol=1e-9)
-    mp = _mppi(track, K=64, lam=1.0)
+    mp = _mppi(track, K=64, lam=1.0, inputs=inputs)
     mp.U = U0.copy()
     r0 = mp.rng.bit_generator.state
     E = mp.noise()
@@ -156,24 +174,25 @@ def test_iteration_rules(track):
     V = U0[None] + E
     V[64 - mp.K0:] = E[64 - mp.K0:]
     r = mp.rollout(x0, V, u_prev)
-    Vc = np.stack([r["V3"][..., 0], r["V3"][..., 1] + r["V3"][..., 2]], axis=-1)
+    Vc = r["V3"] if inputs == "three" else np.stack([r["V3"][..., 0], r["V3"][..., 1] + r["V3"][..., 2]], axis=-1)
     mp.iterate(x0, u_prev)
     assert np.all(mp.U >= Vc.min(axis=0) - 1e-9) and np.all(mp.U <= Vc.max(axis=0) + 1e-9)
 
 
 @needs_plan
-def test_solve_shift_seed_and_no_valid_sample(track):
+@pytest.mark.parametrize("inputs", ["net", "three"])
+def test_solve_shift_seed_and_no_valid_sample(track, inputs):
     """Section 3.2: apply u_0 of the updated sequence and shift it (last entry 0); the same seed gives the same
     inputs; clarification m1a: without a valid sample U is only shifted and its u_0 applied."""
     x0, u_prev = _x0(), np.zeros(3)
-    a, b, c = (_mppi(track, K=32, seed=(2, 5, 0)), _mppi(track, K=32, seed=(2, 5, 0)),
-               _mppi(track, K=32, seed=(2, 5, 1)))
+    a, b, c = (_mppi(track, K=32, seed=(2, 5, 0), inputs=inputs), _mppi(track, K=32, seed=(2, 5, 0), inputs=inputs),
+               _mppi(track, K=32, seed=(2, 5, 1), inputs=inputs))
     ua = [a.solve(x0, u_prev)[0] for _ in range(3)]
     ub = [b.solve(x0, u_prev)[0] for _ in range(3)]
     uc = [c.solve(x0, u_prev)[0] for _ in range(3)]
     assert all(np.array_equal(p, q) for p, q in zip(ua, ub)) and not all(np.array_equal(p, q) for p, q in zip(ua, uc))
     assert a.stats[0]["iters"] == 20 and a.stats[1]["iters"] == 1
-    assert np.array_equal(a.U, np.vstack([a.U_last[1:], np.zeros((1, 2))]))
+    assert np.array_equal(a.U, np.vstack([a.U_last[1:], np.zeros((1, a.nu))]))
     assert np.allclose(ua[-1], a.clamp(x0[None], a.U_last[:1])[0])
     slow = x0.copy()
     slow[3] = 1.0                                       # no sample reaches vx >= 2 m/s within 50 ms
@@ -195,7 +214,8 @@ def test_lowpass_noise(track):
 
 
 @needs_plan
-def test_closed_loop_smoke(track):
+@pytest.mark.parametrize("inputs", ["net", "three"])
+def test_closed_loop_smoke(track, inputs):
     """MPPI behind the NMPC's controller interface for 1 s on the nominal car."""
     from f1race.control.nmpc import MPCController
     from f1race.experiments.l1 import dyn_reference
@@ -204,7 +224,7 @@ def test_closed_loop_smoke(track):
 
     o, veh = _plan(), DynVehicle()
     path, _ = dyn_reference(track, veh, o)
-    mp = _mppi(track, K=64)
+    mp = _mppi(track, K=64, inputs=inputs)
     res = DynamicSim(track, veh, 0.01).run(MPCController(mp, 0.01), x0_from_plan(o, path), t_max=1.0)
     assert res.stop_reason == "time limit" and len(mp.stats) == 20
     assert all(np.isfinite(s["time"]) and np.isfinite(s["cost_after"]) for s in mp.stats)

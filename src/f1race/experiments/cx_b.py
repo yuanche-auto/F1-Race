@@ -40,6 +40,7 @@ LP_FC, LP_ORDER = (1.0, 2.0, 4.0), 2
 K_CANDIDATES, K_BUDGET_MS = (256, 512, 1024, 2048, 4096), 40.0              # section 3.4
 K_RT: int | None = None                         # fixed by the timing of section 9.5 (packet 2), then a constant
 GRID_CENTRE = {"lam": 1.0, "c_sigma": 1.0}
+INPUTS = "net"                                  # MPPI's sampled inputs: "net" (revision 0) or "three" (amendment B1)
 
 
 def baseline_setting(kind: str) -> dict:
@@ -83,7 +84,7 @@ def rng_seed(case: dict, replicate: int) -> tuple[int, int, int]:
     return (SET_CODE[case["set"]], car, int(replicate))
 
 
-def build_mppi(kind: str, setting: dict, track, o, seed, diagnostics: bool = True):
+def build_mppi(kind: str, setting: dict, track, o, seed, diagnostics: bool = True, inputs: str | None = None):
     """(controller, mppi, x0); the model is the nominal car, the problem is nmpc's (NMPC_SETTING)."""
     from ..control.mppi import MPPI
     from ..control.nmpc import MPCController
@@ -98,8 +99,15 @@ def build_mppi(kind: str, setting: dict, track, o, seed, diagnostics: bool = Tru
     mp = MPPI(track, model, ref_from_plan(o), N=N, dt=MPC_DT, eta=ETA, margin=NMPC_SETTING["margin"], weights=w,
               K=int(setting["K"]), lam=float(setting["lam"]),
               sigma=tuple(float(setting["c_sigma"]) * s for s in SIGMA_BASE), seed=seed, lowpass=lowpass,
-              diagnostics=diagnostics)
+              diagnostics=diagnostics, inputs=inputs or INPUTS)
     return MPCController(mp, DT), mp, x0_from_plan(o, path)
+
+
+def overlap_metrics(U: np.ndarray) -> dict:
+    """Drive and brake at once in the applied inputs (simulator steps; amendment B1): min(F_drive, -F_brake)."""
+    ov = np.minimum(U[:, 1], -U[:, 2])
+    return {"overlap_N_p50_p90_max": [float(np.percentile(ov, 50)), float(np.percentile(ov, 90)), float(ov.max())],
+            "overlap_over_1kN_share": float(np.mean(ov > 1000.0))}
 
 
 def _pct(a, qs=(5, 50, 95)) -> list[float]:
@@ -135,7 +143,7 @@ def mppi_lap(case: dict, kind: str, setting: dict, replicate: int = 0) -> dict:
              if np.isfinite(s_.get("cost_before", np.nan)) and s_.get("cost_before", 0) > 0]
     return {
         "kind": kind, "setting": setting, "setting_key": setting_key(setting), "replicate": int(replicate),
-        "rng_seed": list(seed), "case": case["name"], "set": case["set"], "car": case["car"], "plant": case["info"],
+        "rng_seed": list(seed), "inputs": mp.inputs, "K": mp.K, "K0": mp.K0, "case": case["name"], "set": case["set"], "car": case["car"], "plant": case["info"],
         "track": tname, "tau": case.get("tau", 0.0), "dist_seed": case.get("dist_seed"), "t_max": t_max,
         "completed": bool(res.completed), "lap_time": float(res.lap_time), "stop_reason": res.stop_reason,
         "distance": float(res.progress[-1]), "failure_s": None if res.completed else float(s_c[-1]),
@@ -165,14 +173,73 @@ def mppi_lap(case: dict, kind: str, setting: dict, replicate: int = 0) -> dict:
         "cost_after_worse_share": float(np.mean(np.asarray(ratio) > 1.0)) if ratio else math.nan,
         "track_slack_max_mean": [float(np.nanmax([s_["slack"] for s_ in st])), float(np.nanmean([s_["slack"] for s_ in st]))],
         "limit_slack_max": float(np.nanmax([s_["limit_slack"] for s_ in st])),
+        **overlap_metrics(U),
         "wall_s": time.time() - t0,
     }
 
 
 def lap(case: dict, kind: str, setting: dict, replicate: int = 0) -> dict:
-    """One lap: the baselines through phase A's ``cx_a.lap`` (unchanged), the MPPIs through ``mppi_lap``."""
-    if kind in BASELINES:
+    """One lap: the baselines through phase A's ``cx_a.lap`` (its code path unchanged; the simulator's result is
+    captured on the way to add the overlap of the applied inputs), the MPPIs through ``mppi_lap``."""
+    if kind not in BASELINES:
+        return mppi_lap(case, kind, setting, replicate)
+    from . import l7
+
+    orig, captured = l7.make_sim_for, {}
+
+    def make_sim_for(case_, track, seed_offset: int = 0):
+        sim = orig(case_, track, seed_offset)
+        run = sim.run
+
+        def run_and_keep(*a, **kw):
+            captured["res"] = run(*a, **kw)
+            return captured["res"]
+        sim.run = run_and_keep
+        return sim
+
+    l7.make_sim_for = make_sim_for                  # cx_a.lap imports it from l7 when it is called
+    try:
         rec = cx_a.lap(case, kind, setting)
-        rec["replicate"] = None
-        return rec
-    return mppi_lap(case, kind, setting, replicate)
+    finally:
+        l7.make_sim_for = orig
+    rec.update(replicate=None, **overlap_metrics(captured["res"].inputs))
+    return rec
+
+
+def select(records: list[dict], kind: str) -> dict:
+    """The tuning rule of protocol section 4 on the CXV records (replicate 0) of ``mppi`` or ``mppi_lp``: most
+    completed laps; ties by the mean lap time on the cars every tied setting completes (skipped if none); then the
+    setting closest to the grid's centre - ``mppi``: the smaller |log lam|, |log c_sigma|, lam, c_sigma;
+    ``mppi_lp``: the higher f_c. Settings with different numbers of laps, or on different cars, stop it."""
+    by: dict[str, dict] = {}
+    for r in records:
+        if r.get("kind") != kind or "error" in r or r.get("replicate", 0) != 0:
+            continue
+        d = by.setdefault(r["setting_key"], {"setting": r["setting"], "done": {}})
+        d["done"][r["case"]] = r["lap_time"] if r["completed"] else None
+    if not by:
+        raise ValueError(f"no records for {kind}")
+    if len({len(d["done"]) for d in by.values()}) != 1:
+        raise ValueError(f"{kind}: settings with different numbers of laps")
+    if len({frozenset(d["done"]) for d in by.values()}) != 1:
+        raise ValueError(f"{kind}: settings driven on different cars")
+    table = {k: {"setting": d["setting"], "completed": sum(v is not None for v in d["done"].values()),
+                 "laps": len(d["done"])} for k, d in by.items()}
+    best = max(t_["completed"] for t_ in table.values())
+    tied = [k for k, t_ in table.items() if t_["completed"] == best]
+    if len(tied) > 1:
+        common = set.intersection(*({c for c, v in by[k]["done"].items() if v is not None} for k in tied))
+        if common:
+            mean = {k: float(np.mean([by[k]["done"][c] for c in common])) for k in tied}
+            for k in tied:
+                table[k]["mean_lap_common"] = mean[k]
+            tied = [k for k in tied if mean[k] == min(mean.values())]
+
+    def closeness(k):
+        st = by[k]["setting"]
+        if kind == "mppi_lp":
+            return (-st["f_c"],)
+        return (abs(math.log(st["lam"])), abs(math.log(st["c_sigma"])), st["lam"], st["c_sigma"])
+
+    chosen = min(tied, key=closeness)
+    return {"setting": by[chosen]["setting"], "setting_key": chosen, "table": table}

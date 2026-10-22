@@ -10,7 +10,9 @@ objective and limits - so that it differs from the NMPC only in the optimiser.
 Model (the NMPC's, nominal parameters, batched over the samples in numpy):
 
 State   x = [s, n, xi, vx, vy, r, delta]   (Frenet, as ``FrenetMPC``)
-Input   u = [delta_rate, F_x]              sampled; F_drive = max(F_x, 0), F_brake = min(F_x, 0)
+Input   u = [delta_rate, F_x]              sampled (``inputs="net"``, revision 0); F_drive = max(F_x, 0),
+                                           F_brake = min(F_x, 0)
+        u = [delta_rate, F_drive, F_brake] sampled (``inputs="three"``, the NMPC's inputs; proposed amendment B1)
 
     s'  = (vx cos xi - vy sin xi) / (1 - n kappa(s)),   n' = vx sin xi + vy cos xi,   xi' = r - kappa(s) s'
     (vx, vy, r)' from dynamics.body_accel (no force saturation, as the NMPC),   delta' = delta_rate
@@ -35,7 +37,8 @@ NMPC's hard limits are clamps of the sampled inputs inside the rollout (T-RO's g
 +-delta_rate_max and so that delta stays within +-delta_max over the stage (exact: delta_rate is constant in a
 stage); F_drive <= P_max / vx; each axle's longitudinal force |F_x,axle| <= eta mu_x F_z,axle, solved in closed
 form (the normal loads depend on the force linearly through the load transfer, the rolling resistance on
-F_zf + F_zr only). A sample with vx < 2 m/s at a predicted stage (the NMPC's state bound) or a cost that is
+F_zf + F_zr only); with three inputs (B1) F_drive >= 0, F_brake <= 0 and the power are clipped and the force
+pair is scaled towards (0, 0) by the largest factor in [0, 1] that meets both axle limits (linear in the pair). A sample with vx < 2 m/s at a predicted stage (the NMPC's state bound) or a cost that is
 not finite is not valid (weight 0).
 
 One MPPI iteration (protocol section 3.2):
@@ -93,11 +96,16 @@ class MPPI:
     def __init__(self, track: Track, veh: DynVehicle, ref: dict, N: int = 30, dt: float = 0.05,
                  eta: float = 0.95, margin: float = 0.3, weights: dict | None = None, K: int = 1024,
                  lam: float = 1.0, sigma=(0.03, 2000.0), alpha: float = 0.01, seed=0, first_iters: int = 20,
-                 lowpass: tuple[float, int] | None = None, diagnostics: bool = True):
+                 lowpass: tuple[float, int] | None = None, diagnostics: bool = True, inputs: str = "net"):
         """``ref``: arrays over centre-line arclength ref['s'] with keys n, xi, vx (``FrenetMPC``'s);
         ``weights``: ``FrenetMPC``'s keys (n, xi, v, drate, dF, slack, limit_slack); ``sigma``: noise standard
-        deviations of the steering rate [rad/s] and of F_x [N]; ``seed``: anything ``numpy.random.default_rng``
-        takes (the runner passes (set code, car, replicate))."""
+        deviations of the steering rate [rad/s] and of each force [N]; ``seed``: anything
+        ``numpy.random.default_rng`` takes (the runner passes (set code, car, replicate)); ``inputs``: "net" –
+        the sampled input is [delta_rate, F_x] (protocol revision 0), "three" – [delta_rate, F_drive, F_brake],
+        the NMPC's own inputs (proposed amendment B1)."""
+        if inputs not in ("net", "three"):
+            raise ValueError(inputs)
+        self.inputs, self.nu = inputs, 2 if inputs == "net" else 3
         self.track, self.veh, self.N, self.dt = track, veh, int(N), float(dt)
         self.eta, self.margin = float(eta), float(margin)
         w = dict(DEFAULT_WEIGHTS)
@@ -112,7 +120,10 @@ class MPPI:
         self.vref = _periodic(ref["s"], ref["vx"], L)
         self.body = veh.half_width + margin
         self.K, self.lam = int(K), float(lam)
-        self.sigma = np.asarray(sigma, float)
+        sig = np.asarray(sigma, float)
+        self.sigma = np.array([sig[0], sig[1], sig[-1]]) if self.nu == 3 and sig.size == 2 else sig
+        if self.sigma.size != self.nu:
+            raise ValueError("sigma has the wrong length")
         self.alpha = float(alpha)
         self.K0 = max(1, int(np.floor(self.alpha * self.K)))
         self.rng = np.random.default_rng(seed)
@@ -129,7 +140,7 @@ class MPPI:
             imp[0] = 1.0
             g = lfilter(b, a, imp)
             self._lp = (b, a, 1.0 / float(np.sqrt(np.sum(g * g))))
-        self.U = np.zeros((self.N, 2))                     # nominal sequence [delta_rate, F_x]
+        self.U = np.zeros((self.N, self.nu))               # nominal sequence ([delta_rate, F_x] or 3 inputs)
         self.U_last = None
         self.started = False
         self.stats: list[dict] = []
@@ -138,7 +149,8 @@ class MPPI:
 
     # ------------------------------------------------------------------ model
     def clamp(self, X: np.ndarray, V: np.ndarray) -> np.ndarray:
-        """Clamped inputs (M, 3) [delta_rate, F_drive, F_brake] in N for states X (M, 7) and samples V (M, 2)."""
+        """Clamped inputs (M, 3) [delta_rate, F_drive, F_brake] in N for states X (M, 7) and samples V (M, 2:
+        [delta_rate, F_x]) or (M, 3: the three inputs; the force pair scaled towards 0 onto the axle limits)."""
         veh, h, eta = self.veh, self.dt, self.eta
         d, vx, vy = X[:, 6], X[:, 3], X[:, 4]
         dr = np.clip(V[:, 0], -veh.delta_rate_max, veh.delta_rate_max)
@@ -149,6 +161,18 @@ class MPPI:
         bfz = veh.m * G * veh.lr / veh.L + veh.aero_front * veh.q_lift * v2       # F_zf = bfz - (F - res) hl
         brz = veh.m * G * veh.lf / veh.L + (1.0 - veh.aero_front) * veh.q_lift * v2  # F_zr = brz + (F - res) hl
         em, bf = eta * veh.mu_x, veh.brake_front
+        if V.shape[1] == 3:                               # (amendment B1) the NMPC's three inputs
+            fd = np.minimum(np.maximum(V[:, 1], 0.0), veh.P_max / np.maximum(vx, 1e-3))
+            fb = np.minimum(V[:, 2], 0.0)
+            scale = np.ones_like(fd)
+            # the axle limits as rows a_d F_d + a_b F_b <= b (front; rear, driving; rear, braking)
+            for a_d, a_b, b in ((em * hl, em * hl - bf, em * (bfz + res * hl)),
+                                (1.0 - em * hl, 1.0 - bf - em * hl, em * (brz - res * hl)),
+                                (-1.0 - em * hl, -(1.0 - bf) - em * hl, em * (brz - res * hl))):
+                lhs = a_d * fd + a_b * fb
+                with np.errstate(divide="ignore", invalid="ignore"):
+                    scale = np.where(lhs > b, np.minimum(scale, np.clip(b / lhs, 0.0, 1.0)), scale)
+            return np.stack([dr, fd * scale, fb * scale], axis=1)
         with np.errstate(divide="ignore", invalid="ignore"):
             fd_max = np.minimum(em * (brz - res * hl) / (1.0 - em * hl), veh.P_max / np.maximum(vx, 1e-3))
             fb_min = np.maximum(em * (bfz + res * hl) / (em * hl - bf),           # front axle
@@ -235,7 +259,7 @@ class MPPI:
 
     # -------------------------------------------------------------- iteration
     def noise(self) -> np.ndarray:
-        E = self.rng.standard_normal((self.K, self.N, 2))
+        E = self.rng.standard_normal((self.K, self.N, self.nu))
         if self._lp is not None:
             from scipy.signal import lfilter
 
@@ -261,7 +285,7 @@ class MPPI:
         wts = np.zeros(K)
         wts[valid] = np.exp(-(S[valid] - rho) / self.lam)
         wts /= wts.sum()
-        Vc = np.stack([r["V3"][..., 0], r["V3"][..., 1] + r["V3"][..., 2]], axis=-1)
+        Vc = r["V3"] if self.nu == 3 else np.stack([r["V3"][..., 0], r["V3"][..., 1] + r["V3"][..., 2]], axis=-1)
         self.U = np.einsum("k,knj->nj", wts, Vc)
         out.update(no_valid=False, ess=float(1.0 / np.sum(wts * wts)), no_free=bool(np.all(pen[valid])),
                    best_penalised=bool(pen[int(np.argmin(S))]))
@@ -293,7 +317,7 @@ class MPPI:
                         slack=float(d["sigma_max"][1]), limit_slack=float(d["tau_max"][1]))
             self._pred = (d["X"][1].copy(), d["V3"][1].copy())
         self.U_last = self.U.copy()                        # the sequence whose u_0 was applied
-        self.U = np.vstack([self.U[1:], np.zeros((1, 2))])  # shift; the last entry (0, 0)
+        self.U = np.vstack([self.U[1:], np.zeros((1, self.nu))])  # shift; the last entry 0
         self.stats.append(info)
         return u, info
 
