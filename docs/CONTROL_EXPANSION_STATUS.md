@@ -1,6 +1,6 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-22 (phase B: B3 APPROVE – benchmark with the gate waived; CXV tuning running at d93b5e9). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-22 (phase B: CXV tuning done – 0 of 10 everywhere, the grid centre chosen; packet 4 in review). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
 * **Current phase:** B – MPPI, branch `cx/B-mppi` from `main` b68d0a4: literature (§B of the literature review) and
   protocol revision 0 (`docs/CX_B_protocol.md`) **APPROVE** (0b94d1a) with clarifications m1, m2, n1–n4 written in;
@@ -13,7 +13,9 @@ Last updated: 2026-10-22 (phase B: B3 APPROVE – benchmark with the gate waived
   g1: the gate at K_RT fails for `mppi_lp` too (0 of 9 nominal laps) → **amendment B3** (e9fb7e1) **APPROVE**, option 1:
   the pre-registered tuning and benchmark run with the gate waived (d1, d4 in d93b5e9). CXV tuning step 1 started
   2026-10-22 01:56 in `F1-Race-worktrees/F1-Race-wt-CXB-run` at d93b5e9 (inputs identical to the main checkout and to
-  phase A's run). A done (final review of e2cea5d
+  phase A's run). CXV tuning done (01:56–01:59; 120 laps, no error record): every setting 0 of 10 in both steps – the
+  rule falls to the grid centre, `mppi_lp` λ 1, c_σ 1, f_c 2 Hz, K 1 024 (an uninformative tuning, review d3);
+  packet 4 (the selections) sent; CBT waits for the reviewer. A done (final review of e2cea5d
   APPROVE; `cx/A-mpcc` merged to `main` --no-ff as **b68d0a4**, 2026-10-21).
 * **Original reviewer:** session `local_30f94a40-03cb-490d-85b4-12ad1d351d3a` ("F1 Race 阶段审查"), the
   reviewer of L7–L9 – reached by SendMessage with this id (its pipe address changes after restarts).
