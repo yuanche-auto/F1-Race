@@ -338,6 +338,19 @@ Nominal car only; records in `results/CX/B/dev/` (git-ignored), each with its co
    (iii) after the three-input option (working tree before d80e1a6, which also moved the net-force bounds into
    their branch): two inputs 9.8 / 13.4 / 20.0 / 35.2 / 85.6 ms, three inputs 10.0 / 14.5 / 21.4 / 36.6 /
    91.8 ms. No other change was made for speed.
+   **Re-timing on the primary (review c1 of packet 2, after amendment B2; `timing_lp.json`, b3742e7):** `mppi_lp` at
+   the grid centre (2 Hz), the same conditions, one complete nominal lap per K:
+
+   | K | lap | steps | step ms mean / P50 / P95 / P99 / max | steps above 50 ms |
+   |---|---|---|---|---|
+   | 1 024 | off track at 3 831 m | 1 432 | 27.3 / **25.0** / 41.0 / 48.3 / 59.0 | 0.8 % |
+   | 2 048 | 82.21 s (as in 9.6) | 1 645 | 46.4 / **44.6** / 61.1 / 71.0 / 82.1 | 27 % |
+
+   The low-pass filtering of the K × 30 × 3 noise values adds ~6 ms at K 2 048 (44.6 against the white noise's
+   38.4 ms); the median at K 2 048 is above 40 ms, so by the rule of c1 **K_RT = 1 024** (no further amendment),
+   and `mppi_big` = 4 K = **4 096**. `mppi` (white, untuned, B2.3) runs at the same K = 1 024. The development laps
+   of 6 and 7 were at K 2 048; at K 1 024 the primary's nominal lap above left the track at 3 831 m (the 3.84 km
+   corner of 7).
 6. **Development laps** (`laps.jsonl`, 2695112; K 2 048; 10 jobs in parallel, so the step times carry that load):
 
    | controller, setting | result | ESS median | no penalty-free sample | overlap N P50 / P90 |
@@ -362,15 +375,16 @@ Nominal car only; records in `results/CX/B/dev/` (git-ignored), each with its co
    | `mppi_lp` f_c 1 / 4 Hz, K 2 048 (replicate 0) | 0 of 2 | 3 838 / 1 398 m |
    | `mppi_lp` f_c 2 Hz, K 8 192 (offline) | 1 of 3 (80.70 s) | 3 839, 3 846 m |
 
-   Reading (traces of replicate 0 of `mppi` and replicate 1 of `mppi_lp` from scratchpad scripts, not kept as
-   records): with white noise the car is up to ~6 m/s below the plan on the main straight (applied overlap ~1 kN),
-   brakes for turn 1 in time, but turns in too slowly; from ~427 m every sample carries a penalty (ESS 1) and
-   it leaves at the exit. More samples or more iterations per step do not change this; low-pass noise does –
+   Reading (the traces of replicate 0 of `mppi` and replicate 1 of `mppi_lp`, K 2 048 – first seen in scratchpad
+   scripts, then recorded for review c2 of packet 2 by `cx_b_dev.py trace`: `traces.npz`, `traces.json`, b3742e7;
+   the numbers below are the recorded ones): with white noise the car is up to 8.2 m/s below the plan on the
+   main straight (first 300 m; applied overlap median 971 N), brakes for turn 1 in time, but turns in too slowly;
+   from 424 m to the end of its lap no sample is free of penalties (ESS 1.0 throughout) and it leaves at the exit. More samples or more iterations per step do not change this; low-pass noise does –
    every low-pass lap at 2 Hz passes turn 1. A white-noise perturbation spread over 30 stages moves a smooth
    input change (a steering or braking ramp) by only ~σ / √30 per iteration; the low-pass noise puts its
    variance there (LP-MPPI's argument, B.5). The low-pass laps then leave at ~3.84 km in 5 of 8: in the corner
-   at 3.70–3.84 km the rear axle runs at 0.93–0.95 of its ellipse with vy up to +2.4 m/s, every sample is
-   penalised (ESS 1) and the car slides wide at the exit – the corner where phase A's MPCC with a low
+   at 3.70–3.85 km the rear axle reaches 0.96 of its ellipse (usage before saturation) with vy up to +2.43 m/s,
+   from 3 755 m to the end no sample is free of penalties (ESS 1.0) and the car slides wide at the exit – the corner where phase A's MPCC with a low
    contouring weight also left by millimetres.
 
 ## Amendments
@@ -440,12 +454,13 @@ Nominal car only; records in `results/CX/B/dev/` (git-ignored), each with its co
      is the first step's). Section 4's rule; ties in the first step by section 4's order for (λ, c_σ), in the second
      the f_c closest to 2 Hz (|log(f_c / 2)|), then the higher. 120 laps.
   3. *`mppi` (white noise)* becomes a secondary controller, **not tuned** (every development setting failed, so CXV
-     laps could only select by the closeness rule): the grid centre (λ 1, c_σ 1, K 2 048) on CBT, replicate 0 – the
+     laps could only select by the closeness rule): the grid centre (λ 1, c_σ 1, K_RT) on CBT, replicate 0 – the
      T-RO baseline next to the low-pass variant. `mppi_big`: 4 K with `mppi_lp`'s CXV setting (the primary's
      sample budget).
   4. *Secondary comparisons* (12, uncorrected): McNemar and signed-rank of `mppi_lp` – `mpcc`, `mppi` – `mppi_lp`,
      `mppi` – `nmpc`, `mppi_big` – `mppi_lp`, `mppi_big` – `nmpc`; replicates 1 and 2 of `mppi_lp` against `nmpc`.
-  5. *Unchanged:* the optimal control problem (section 3.1 with B1), K = 2 048, one iteration per step, the sets, the
+  5. *Unchanged:* the optimal control problem (section 3.1 with B1), the K rule (re-applied to `mppi_lp` by review c1:
+     K_RT = 1 024, section 9.5), one iteration per step, the sets, the
      statistics, the secondary conditions (with `mppi_lp` in `mppi`'s place for the uncorrected McNemar there).
   6. *Disclosure:* decided after development laps on the nominal car, which is in no test; no CXV or CBT lap has
      run. The gap result (9.4) and the 3.84 km failures make it likely that `mppi_lp` completes fewer test cars
