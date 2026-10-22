@@ -1,9 +1,11 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-22 (phase C: literature and protocol revision 0 in review). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-22 (phase C: protocol APPROVE; code, tests and development checks done; packet 2 in review). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
-* **Current phase:** C – robust tube MPC, branch `cx/C-tube` from `main` 2858db4: literature (§C) and protocol revision 0
-  (`docs/CX_C_protocol.md`) sent for review; no code yet.
+* **Current phase:** C – robust tube MPC, branch `cx/C-tube` from `main` 2858db4: protocol revision 0 **APPROVE** (9006b4a)
+  with clarifications m1–m3, n1–n3 (f0b25fb); `control/tube.py`, `experiments/cx_c.py`, runner / report / dev scripts and
+  tests (0689c41, db3b075); development checks of §9 done – gate passed (NOM 6 of 6 settings; CXDEV `nmpc` 2 of 5,
+  `tube` 5 of 5); packet 2 sent; no CXV lap.
 * **Phase B:** done – final review of b276f56 **APPROVE**, `cx/B-mppi` merged to `main` (--no-ff) 2026-10-22 as **2858db4**.
   Phase B result: MPPI on the NMPC's problem at the real-time CPU budget (numpy, K 1 024) completes 0 of 50 test cars
   against the NMPC's 12 – **H-B1 holds for `nmpc`** (0 : 12, p 0.0005; confirmatory, after the development gate failed
@@ -40,7 +42,7 @@ Last updated: 2026-10-22 (phase C: literature and protocol revision 0 in review)
 | A | runner and report (`experiments/cx_a.py`, `scripts/run_cx_a.py`, `scripts/report_cx_a.py`) | yes | yes – `tests/test_cx_a.py`, 7 tests (5 at 6bcc6ef) | smoke on the nominal car; the CXV / CXT / secondary runs | **APPROVE** (6bcc6ef … e2cea5d) | **yes** |
 | A | `mpcc_ca` (CiMPCC-based, amendment A1) and the secondary conditions; soft speed bound (amendment A2) | yes | yes – `tests/test_mpcc.py` 8, `tests/test_cx_a.py` 7 | smoke on cases outside every set (`results/CX/A/dev/secondary_smoke.jsonl`); A2 diagnostic on CXV cars 2 / 5 / 7; CXT | **APPROVE** (94cba68 … e2cea5d) | **yes** |
 | B | `control/mppi.py` (`MPPI`), `experiments/cx_b.py`, `scripts/run_cx_b.py`, `scripts/report_cx_b.py`, `scripts/cx_b_dev.py` | yes (57146e4 … baa69cb) | yes – `tests/test_mppi.py` 12, `tests/test_cx_b.py` 6 | development checks 9.1–9.8 on the nominal car; CXV tuning; CBT benchmark; secondary conditions | protocol rev 0, B1, B2, B3 and packets 2–6 **APPROVE**; final review b276f56 **APPROVE** | **yes – phase B completed** |
-| C | `control/tube.py` (planned; protocol `docs/CX_C_protocol.md` rev 0) | not started – protocol first | – | – | protocol rev 0 in review | – |
+| C | `control/tube.py` (`Tube`, `TubeMPCController`), `experiments/cx_c.py`, `scripts/{run,report}_cx_c.py`, `scripts/cx_c_dev.py` | yes (0689c41, db3b075) | yes – `tests/test_tube.py` 7, `tests/test_cx_c.py` 4 | development checks §9 on NOM and CXDEV; runner smoke | protocol rev 0 **APPROVE** (9006b4a); packet 2 in review | – |
 | D–G | – | not started | – | – | – | – |
 
 ## Review record
@@ -65,6 +67,7 @@ Last updated: 2026-10-22 (phase C: literature and protocol revision 0 in review)
 | 2026-10-22 | worktree d93b5e9; 82c31f9 … 78877f6 | phase B packet 5: CBT (408 laps) and its report / benchmark text | **APPROVE** | n1 mppi_big reaches the 2.7 / 3.83 km corners on 10 cars (fixed in 5fccae5) |
 | 2026-10-22 | worktree d93b5e9; d813143, fc109a0, baa69cb | phase B packet 6: secondary conditions (504 laps), reproducibility 68 of 68 (after the NaN-comparison fix) | **APPROVE** | – |
 | 2026-10-22 | b276f56 | **phase B final review** (whole branch vs main b68d0a4: 30 commits, 13 files, +2825 / −14) | **APPROVE** | the three standing checks pass (.venv 88 + 4 skips, .venv-rl 92); nit: status lines marked done before the merge |
+| 2026-10-22 | 9006b4a | **phase C packet 1**: literature C.1–C.10, CX-C protocol revision 0 (no code) | **APPROVE** (binding) | m1 K shapes the tube only (not applied), coverage compares two systems; m2 η_k also tightens the axle-force limits; m3 secondary controllers, nmpc as the reproducibility check; n1 mismatch at perturbed points not covered; n2 nmpc_reserve a variant of L2's; n3 tuning asymmetry reversed – written into the protocol in f0b25fb |
 
 ## Tests
 
@@ -93,7 +96,6 @@ the runner smoke (`smoke/`). Benchmark: worktree `F1-Race-worktrees/F1-Race-wt-C
 
 ## Next actions
 
-1. Phase C (tube MPC): review of the literature entries (§C) and protocol revision 0 (packet 1); no code before its APPROVE.
-2. Then `control/tube.py`, tests, the development checks of CX-C §9, the runner and report (packet 2); CXV tuning; CCT;
-   secondary conditions; final review, merge.
-3. Phase B follow-up candidates (CONTROL_METHOD_MATRIX.md) stay unscheduled.
+1. Phase C: review of packet 2 (code, tests, development checks, runner / report); then CXV tuning (60 laps), CCT, secondary
+   conditions, final review, merge.
+2. Phase B follow-up candidates (CONTROL_METHOD_MATRIX.md) stay unscheduled.
