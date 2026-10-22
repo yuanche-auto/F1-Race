@@ -209,11 +209,11 @@ Run 2026-10-22 02:25–02:56 at d93b5e9 in the same worktree, 504 laps, no error
 | CXL8 (nominal car, 4 new tracks) | 0 | 4 | 4 | 0 | 0 | 1 (São Paulo, 84.21 s; `nmpc` 79.38 s) |
 
 * `mppi_lp` : `nmpc` (only one completes): CBT_LAG30 0 : 0 (p = 1), CXD 1 : 4 (p = 0.375), CXL8 0 : 4 (p = 0.125).
-* **With the 30 ms lag every controller fails**: `nmpc` leaves at turn 1 on 48 of 50 cars (its model has no lag, as L6's
-  rows without a lag model); the MPPIs as without the lag, mostly at turn 1.
-* **Under the L3 disturbances the larger budget matches `nmpc`'s count** (`mppi_big` 4, `nmpc` 4 of 30; not the same seeds
-  necessarily, and `mpcc` completes 10); `mppi_lp` at K 1 024 completes 1, and its failures move from turn 1 to ~1.4 km
-  (15 of 29).
+* **With the 30 ms lag almost every lap fails** (`tracker` 3, `mpcc` 1, `mppi_big` 1 of 50): `nmpc` leaves at turn 1 on 48
+  of 50 cars (its model has no lag, as L6's rows without a lag model); the MPPIs as without the lag, mostly at turn 1.
+* **Under the L3 disturbances the larger budget matches `nmpc`'s count** (`mppi_big` 4, `nmpc` 4 of 30, on different
+  seeds – none in common – while `mpcc` completes 10); `mppi_lp` at K 1 024 completes 1, and its failures move from turn 1
+  to ~1.4 km (15 of 29).
 * **New tracks:** `nmpc` and `mpcc` complete all four (as in phase A); the MPPIs at K 1 024 none, `mppi_big` one.
 * **Reproducibility (clarification n3):** `nmpc`'s and `mpcc`'s 68 laps on CXD and CXL8 are identical to phase A's records
   (`F1-Race-wt-CXA-run/results/CX/A/secondary.jsonl`, f3a3a5399e0a…) in every field that does not measure time – 68 of 68.
