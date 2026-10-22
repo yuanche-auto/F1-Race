@@ -25,10 +25,12 @@ BANK_SIZE, BANK_SEED, GAMMA = 20_000, 336, 0.05
 class ModelBank:
     def __init__(self, nominal: DynVehicle | None = None, h: float = 0.01, window: float = 0.2,
                  n: int = BANK_SIZE, seed: int = BANK_SEED, gamma: float = GAMMA, sigma=SIGMA, lo=LO, hi=HI,
-                 v_min: float = V_MIN):
+                 v_min: float = V_MIN, thetas=None):
+        """``thetas``: the bank itself (tests); default: the nominal car and ``n`` draws in [lo, hi]."""
         lo, hi = np.asarray(lo, float), np.asarray(hi, float)
         rng = np.random.default_rng(seed)
-        self.thetas = np.vstack([X0, lo + (hi - lo) * rng.random((n, len(PARAMS)))])
+        self.thetas = (np.vstack([X0, lo + (hi - lo) * rng.random((n, len(PARAMS)))]) if thetas is None
+                       else np.asarray(thetas, float))
         self.veh = _vehicle(nominal or DynVehicle(), self.thetas.T)
         self.h, self.W = h, max(int(round(window / h)), 1)
         self.buf = np.zeros((self.W, len(self.thetas)))

@@ -391,7 +391,9 @@ def lap(case: dict, kind: str, setting: dict) -> dict:
 # ---------------------------------------------------------------- tuning rule
 def select(records: list[dict], kind: str) -> dict:
     """Section 4: the most completed CDV laps; ties by the mean lap time on the cases every tied setting completes
-    (skipped if none); then the middle setting of the grid. Different lap counts or cases stop it."""
+    (skipped if none); then the middle setting of the grid, then the smaller value (the lowest and the highest setting
+    are equally far from the middle - a tie the protocol leaves open; stated in section 9). Different lap counts or
+    cases stop it."""
     by: dict[str, dict] = {}
     for r in records:
         if r.get("kind") != kind or "error" in r:
@@ -416,7 +418,7 @@ def select(records: list[dict], kind: str) -> dict:
                 table[k]["mean_lap_common"] = mean[k]
             tied = [k for k in tied if mean[k] == min(mean.values())]
     grid = [setting_key(g) for g in GRIDS[kind]]
-    chosen = min(tied, key=lambda k: abs(grid.index(k) - (len(grid) - 1) / 2))
+    chosen = min(tied, key=lambda k: (abs(grid.index(k) - (len(grid) - 1) / 2), grid.index(k)))
     return {"setting": by[chosen]["setting"], "setting_key": chosen, "table": table}
 
 

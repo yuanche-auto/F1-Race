@@ -30,7 +30,7 @@ from dataclasses import replace
 import casadi as ca
 import numpy as np
 
-from ..dynamics import DynVehicle, body_accel, ellipse_usage, tyre_forces
+from ..dynamics import DynVehicle, body_accel, tyre_forces
 from .identify import HI, LO, PARAMS, X0
 
 SIGMA = np.array([0.1, 0.05, 0.01])        # residual scaling of (v_x, v_y, r): the L3 measurement noise
@@ -48,9 +48,12 @@ def _rates(veh: DynVehicle, z, u, lib):
     """(v_x', v_y', r', delta') of the simulator's model at z = (v_x, v_y, r, delta) with the input held."""
     vx, vy, r, d = z
     F = tyre_forces(veh, vx, vy, r, d, u[1], u[2], lib=lib)
-    uf, ur = ellipse_usage(veh, F, lib=lib)
-    mx = ca.fmax if lib is ca else np.maximum
-    sf, sr = mx(uf, 1.0), mx(ur, 1.0)            # saturate: scaled onto the ellipse when outside
+    uf2 = (F["fxf"] / (veh.mu_x * F["fzf"])) ** 2 + (F["fyf"] / (veh.mu_y * F["fzf"])) ** 2
+    ur2 = (F["fxr"] / (veh.mu_x * F["fzr"])) ** 2 + (F["fyr"] / (veh.mu_y * F["fzr"])) ** 2
+    mx, sq = (ca.fmax, ca.sqrt) if lib is ca else (np.maximum, np.sqrt)
+    # saturate: scaled onto the ellipse when outside (usage = sqrt(u2), as ellipse_usage); sqrt(max(u2, 1)) keeps the
+    # derivative finite where an axle carries no force (u2 = 0)
+    sf, sr = sq(mx(uf2, 1.0)), sq(mx(ur2, 1.0))
     Fs = dict(F, fxf=F["fxf"] / sf, fyf=F["fyf"] / sf, fxr=F["fxr"] / sr, fyr=F["fyr"] / sr)
     dvx, dvy, dr = body_accel(veh, vx, vy, r, d, Fs, lib=lib)
     return [dvx, dvy, dr, u[0] + 0.0 * vx]
