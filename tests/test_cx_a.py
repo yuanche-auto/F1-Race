@@ -167,7 +167,7 @@ def test_ca_grid_and_secondary_sets():
                for set_ in ("CXV", "CXT", "NOM") for c in cx_a.cases(set_))
 
 
-def test_a2_grid_and_selection(tmp_path):
+def test_a2_grid_and_selection(tmp_path, monkeypatch):
     """Amendment A2: the soft-bound grid, ca_grid keeping the flag, and report tune --a2 taking nmpc from
     tune.jsonl and the MPCCs from tune_a2.jsonl, with both SHA-256 in selected.json."""
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
@@ -188,8 +188,23 @@ def test_a2_grid_and_selection(tmp_path):
                 out.append(r)
     write("tune.jsonl", hard)
     write("tune_a2.jsonl", soft)
+    with pytest.raises(SystemExit):                                         # c1: --a2 needs the first selection
+        report_cx_a.tune(tmp_path, a2=True)
+    report_cx_a.tune(tmp_path)
+    first = (tmp_path / "selected.json").read_bytes()
     report_cx_a.tune(tmp_path, a2=True)
+    assert (tmp_path / "selected_first.json").read_bytes() == first                  # kept (c1)
+    assert (tmp_path / "report" / "tune_first.md").exists() and (tmp_path / "report" / "tune_a2.md").exists()
     sel = json.loads((tmp_path / "selected.json").read_text())
+    assert sel["selected_first_sha256"] == hashlib.sha256(first).hexdigest()
+    report_cx_a.tune(tmp_path, a2=True)                                     # repeatable: the first copy stays
+    assert (tmp_path / "selected_first.json").read_bytes() == first
+    import run_cx_a                                                         # c2: runner needs the A2 selection
+    monkeypatch.setattr(run_cx_a, "OUT", tmp_path)
+    assert run_cx_a._selected(require_a2=True)["tune_a2_sha256"] == sel["tune_a2_sha256"]
+    (tmp_path / "selected.json").write_bytes(first)
+    with pytest.raises(SystemExit):
+        run_cx_a._selected(require_a2=True)
     assert sel["kinds"]["mpcc"]["setting"] == {"q_c": 2.0, "q_v": 1.0, "margin": 0.3, "soft_bound": 1}
     assert sel["kinds"]["nmpc"]["setting"] == {"c": 1.0, "margin": 0.3}            # from tune.jsonl
     assert sel["tune_a2_sha256"] == hashlib.sha256((tmp_path / "tune_a2.jsonl").read_bytes()).hexdigest()

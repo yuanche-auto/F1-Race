@@ -88,7 +88,8 @@ def secondary_jobs(selected: dict) -> list[tuple]:
     return out
 
 
-def _selected(name: str = "selected.json", tune: str = "tune.jsonl") -> dict:
+def _selected(name: str = "selected.json", tune: str = "tune.jsonl", require_a2: bool = False) -> dict:
+    """``require_a2`` (review c2 of 94cba68): after amendment A2 the selection must come from the A2 re-tuning."""
     sel_path = OUT / name
     if not sel_path.exists():
         raise SystemExit(f"no results/CX/A/{name} - run report_cx_a.py (and have it reviewed) first")
@@ -97,6 +98,8 @@ def _selected(name: str = "selected.json", tune: str = "tune.jsonl") -> dict:
         raise SystemExit(f"{name} was not made from the present {tune}")
     if "tune_a2_sha256" in sel and sel["tune_a2_sha256"] != hashlib.sha256((OUT / "tune_a2.jsonl").read_bytes()).hexdigest():
         raise SystemExit(f"{name} was not made from the present tune_a2.jsonl")
+    if require_a2 and "tune_a2_sha256" not in sel:
+        raise SystemExit(f"{name} is the first (hard-bound) selection - run tune_a2 and report_cx_a.py tune --a2 first")
     return sel
 
 
@@ -144,21 +147,24 @@ def main() -> None:
         _run([("tune", k, setting_key(s_), n, json.dumps(s_)) for k in ("mpcc", "mpcc_centre")
               for s_ in MPCC_GRID_A2 for n in names], OUT / "tune_a2.jsonl", a.workers)
     elif a.what == "tune_ca":
-        base = _selected()["kinds"]["mpcc"]["setting"]
+        base = _selected(require_a2=True)["kinds"]["mpcc"]["setting"]
         names = [c["name"] for c in cases("CXV")]
         _run([("tune", "mpcc_ca", setting_key(s_), n, json.dumps(s_)) for s_ in ca_grid(base) for n in names],
              OUT / "tune_ca.jsonl", a.workers)
     elif a.what == "test":
-        sel = _selected()["kinds"]
+        sel = _selected(require_a2=True)["kinds"]
         kinds = KINDS
         if a.with_ca:
-            sel = {**sel, **_selected("selected_ca.json", "tune_ca.jsonl")["kinds"]}
+            sel_ca = _selected("selected_ca.json", "tune_ca.jsonl")
+            if sel_ca.get("selected_json_sha256") != hashlib.sha256((OUT / "selected.json").read_bytes()).hexdigest():
+                raise SystemExit("selected_ca.json was not made on the present selected.json (mpcc_ca's base)")
+            sel = {**sel, **sel_ca["kinds"]}
             kinds = KINDS + ("mpcc_ca",)
         _run(test_jobs(sel, kinds), OUT / "test.jsonl", a.workers)
     elif a.what == "secondary":
         if not (OUT / "report" / "CX_A.md").exists():
             raise SystemExit("the secondary conditions run after the primary report (protocol section 2)")
-        _run(secondary_jobs(_selected()["kinds"]), OUT / "secondary.jsonl", a.workers)
+        _run(secondary_jobs(_selected(require_a2=True)["kinds"]), OUT / "secondary.jsonl", a.workers)
     else:
         kinds = a.kinds.split(",")
         jobs = [("smoke", k, setting_key(SMOKE_SETTINGS[k]), "NOM_car0", json.dumps(SMOKE_SETTINGS[k])) for k in kinds]

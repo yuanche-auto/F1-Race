@@ -35,7 +35,8 @@ Last updated: 2026-10-22 (after the review of packet 2). Roadmap: [CONTROL_EXPAN
 `results/CX/A/dev/` – the 8 development laps at 0061e79 and the secondary-path smoke (549e4bd); `results/CX/A/smoke/` –
 the runner's smoke on the nominal car. CXV tuning (8babe7b): worktree `F1-Race-worktrees/F1-Race-wt-CXA-tune`,
 `results/CX/A/{tune.jsonl, selected.json, report/tune.md, RUN_COMMIT, SHA256_inputs*.txt, timeline.tsv}`.
-All git-ignored. No CXT result.
+The first CXV selection is kept as `selected_first.json` and `report/tune_first.md` when the A2 re-tuning
+writes `selected.json` / `report/tune_a2.md` (review c1). All git-ignored. No CXT result.
 
 ## Known blockers
 

@@ -46,9 +46,13 @@ corners from how the car turns).
 
 Scope: these two controllers with the nominal model, on Spielberg, at η = 0.95, each with its setting
 chosen by the same rule on the same tuning cars (section 4; cx-M1); the MPCC's speed bounded by the
-plan's; no claim about MPCC in general. The two grids differ in size (`mpcc` 24 settings, `nmpc` 6), so
+plan's – after amendment A2 a *soft* bound, which the predicted speed may exceed at an exact penalty; no
+claim about MPCC in general. The two grids differ in size (`mpcc` 24 settings, `nmpc` 6), so
 the best of 24 on 10 tuning cars is a stronger selection than the best of 6 – an optimistic bias on
-CXV that the disjoint test cars CXT do not carry (review nit of e8a5cd5).
+CXV that the disjoint test cars CXT do not carry (review nit of e8a5cd5). **The tuning freedom is not
+symmetric (review c3 of 94cba68):** the MPCCs were tuned on CXV twice, 48 settings in all, and their
+formulation was changed once in between on the strength of the first CXV results (A2); `nmpc` was tuned
+once over 6 settings. The CXT comparison is read with this in mind.
 
 ## 2. Sets (new draws; none used by L0–L10)
 
@@ -58,7 +62,9 @@ CXV that the disjoint test cars CXT do not carry (review nit of e8a5cd5).
   nominal car is reported separately (it was used for development, section 9) and is not part of a test.
 * Secondary conditions on CXT (after the primary report): the L6 steering lag τ = 30 ms (nominal-model
   controllers, as L6's rows without a lag model); the L3 disturbances on the nominal car (seeds
-  7400–7429; tuning-free); the four L8 test tracks with the nominal car (their L8 plans).
+  7400–7429; tuning-free); the four L8 test tracks with the nominal car (their L8 plans). Under the L3
+  disturbances the controllers see L3's measurement noise, not the true state (as in L3–L9) – unlike
+  section 3's "true state" for the other sets (review n4).
 * Start: the state of the 5 % plan at s = 0 (as L2); one lap; time limit 1.6 × the plan's lap time
   (121 s on Spielberg).
 
@@ -71,9 +77,10 @@ of 50 ms, IPOPT (tol 10⁻⁴, warm start), track margin 0.3 m unless tuned, the
 * **`tracker`** – the 5 % plan and the L1 dynamic tracker (time-optimal planning + tracking, L1).
 * **`nmpc`** – `FrenetMPC` tracking the 5 % plan (the L2 formulation, unchanged); its tracking-weight
   scale and margin from section 4 (L2's setting – scale 1, margin 0.3 m – is one point of its grid).
-* **`mpcc`** – `DynamicMPCC(reference="raceline", speed_bound="stages")`: the standard contouring
-  formulation with the plan's racing line as reference path and the plan's speed as an upper bound at
-  every stage (section 9 shows why both are needed on this car); weights from section 4.
+* **`mpcc`** – `DynamicMPCC(reference="raceline", speed_bound="stages", speed_bound_soft=True)`: the
+  standard contouring formulation with the plan's racing line as reference path and the plan's speed as an
+  upper bound at every stage (section 9 shows why both are needed on this car), the bound soft since
+  amendment A2 (it may be exceeded at an exact penalty); weights from section 4 (re-tuned under A2).
 * **`mpcc_centre`** (secondary) – the same with Liniger's reference path, the centre line.
 * **`mpcc_ca`** (secondary, curvature-aware) – defined by an amendment after the full text of Ma et al.
   (Control Engineering Practice 171, 2026; literature §A.4) has been read; if it cannot be obtained, the
@@ -218,7 +225,13 @@ What they showed, and how it shaped section 3:
   again. This is the infeasibility L2 removed from the NMPC by softening its limits (docs/L2.md §4).
   1. *Definition* (`DynamicMPCC(speed_bound_soft=True)`, default off): vx_i − v_ref(θ_i − e_l,i) ≤ σ_v,i,
      σ_v ≥ 0, penalised exactly like the track limits (quadratic + 10 × linear, weight 10⁴ per stage length);
-     stage 0 (the measurement) is not bounded. While the bound can be met the solution is the hard one (test).
+     stage 0 (the measurement) is not bounded. While the bound can be met without the other slacks, the
+     solution is the hard one (test, first solve). Where the hard bound could only be met by using the soft
+     tyre limits (weight 10⁶ against the bound's 10⁴), the soft version keeps the tyre limits and exceeds the
+     bound slightly instead: on the nominal car with the runner's smoke setting (q_c 2, q_v 1, margin 0.3) the
+     hard bound's lap used a tyre-limit slack of 0.27 in a prediction and took 75.764 s, the soft bound's lap
+     0.0003 and 75.847 s, both without a fallback (review n5; `results/CX/A/dev/soft_bound_nominal.json`,
+     94cba68).
   2. *Diagnostic before this amendment* (CXV cars 2, 5 and 7, `mpcc`'s first choice q_c 0.5, q_v 1, margin
      0.6): hard bound – off track at 1 408 / 457 / 460 m with 43 / 38 / 36 fallbacks; soft bound – off track at
      2 775 / 2 713 / 2 708 m with 0 / 1 / 19 fallbacks (the 19: IPOPT's iteration limit). The cars still fail,

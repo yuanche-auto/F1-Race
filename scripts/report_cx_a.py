@@ -60,7 +60,17 @@ def tune(d: Path, a2: bool = False) -> None:
         raise SystemExit(f"{len(errors)} error records in the tuning records: {errors[:3]}")
     out = {"tune_sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "kinds": {}}
     if a2:
+        # review c1 of 94cba68: the first tuning's selection is kept as selected_first.json / report/tune_first.md
+        first = d / "selected_first.json"
+        if not first.exists():
+            cur = d / "selected.json"
+            if not cur.exists() or "tune_a2_sha256" in json.loads(cur.read_text()):
+                raise SystemExit("tune --a2 needs the first tuning's selected.json (run report_cx_a.py tune first)")
+            first.write_bytes(cur.read_bytes())
+            if (d / "report" / "tune.md").exists():
+                (d / "report" / "tune_first.md").write_bytes((d / "report" / "tune.md").read_bytes())
         out["tune_a2_sha256"] = hashlib.sha256((d / "tune_a2.jsonl").read_bytes()).hexdigest()
+        out["selected_first_sha256"] = hashlib.sha256(first.read_bytes()).hexdigest()
     md = ["# CX-A tuning on CXV (protocol section 4" + ("; MPCCs re-tuned with the soft bound, amendment A2)" if a2 else ")"), ""]
     for kind in ("nmpc", "mpcc", "mpcc_centre"):
         sel = select(recs_a2 if (a2 and kind != "nmpc") else recs, kind)
@@ -73,7 +83,7 @@ def tune(d: Path, a2: bool = False) -> None:
         md.append("")
     (d / "selected.json").write_text(json.dumps(out, indent=1))
     (d / "report").mkdir(exist_ok=True)
-    (d / "report" / "tune.md").write_text(NL.join(md) + NL, encoding="utf-8")
+    (d / "report" / ("tune_a2.md" if a2 else "tune.md")).write_text(NL.join(md) + NL, encoding="utf-8")
     print(json.dumps(out["kinds"], indent=1))
 
 
@@ -231,6 +241,9 @@ def test(d: Path) -> None:
            "column is descriptive only. *Bound active* – stage 0 is the measured speed against v_ref(θ₀ − e_l,0) − 0.01 m/s "
            "(the constraint acts on stages 1 … N only); stages 1 … N from the predictions of the converged solves (fallback "
            "solves, whose prediction is the shifted guess, are counted in the last column and left out).", "",
+           "`mpcc_ca` (amendment A1): β is taken at θ₀ for the whole horizon, as in CiMPCC; here the horizon is 1.5 s "
+           "(~100 m at speed), much longer than CiMPCC's, so β does not anticipate a corner ahead – a limitation of the "
+           "adaptation (review n3).", "",
            "Second environment: not run – H-A1 and H-A2 are not cross-checked (protocol section 7)."]
     out = d / "report"
     out.mkdir(exist_ok=True)
