@@ -1,10 +1,13 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-21 (phase B: protocol revision 0 APPROVE; implementation started). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-22 (phase B: MPPI implemented and unit-tested; amendment B1 proposed, awaiting the reviewer). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
 * **Current phase:** B – MPPI, branch `cx/B-mppi` from `main` b68d0a4: literature (§B of the literature review) and
   protocol revision 0 (`docs/CX_B_protocol.md`) **APPROVE** (0b94d1a) with clarifications m1, m2, n1–n4 written in;
-  implementation of `control/mppi.py` next (packet 2: code, tests, the development checks of §9, runner and report). A done (final review of e2cea5d
+  `control/mppi.py`, `experiments/cx_b.py`, the runner / report and their tests written (57146e4, d80e1a6); development
+  checks 9.1 and 9.2 done – 9.2 found that the NMPC drives and brakes at once in its braking zones, so **amendment B1**
+  (MPPI samples the NMPC's three inputs) was proposed (8d86ff2); the K timing and the development laps wait for the
+  reviewer's decision. A done (final review of e2cea5d
   APPROVE; `cx/A-mpcc` merged to `main` --no-ff as **b68d0a4**, 2026-10-21).
 * **Original reviewer:** session `local_30f94a40-03cb-490d-85b4-12ad1d351d3a` ("F1 Race 阶段审查"), the
   reviewer of L7–L9 – reached by SendMessage with this id (its pipe address changes after restarts).
@@ -18,7 +21,7 @@ Last updated: 2026-10-21 (phase B: protocol revision 0 APPROVE; implementation s
 | A | `control/mpcc.py` (`DynamicMPCC`, `MPCCController`, `path_errors`) | yes (0061e79) | yes – `tests/test_mpcc.py`, 8 tests | development laps; CXV tuning; CXT benchmark; secondary conditions | **APPROVE** (f4d1ee9 … e2cea5d) | **yes – phase A completed** |
 | A | runner and report (`experiments/cx_a.py`, `scripts/run_cx_a.py`, `scripts/report_cx_a.py`) | yes | yes – `tests/test_cx_a.py`, 7 tests (5 at 6bcc6ef) | smoke on the nominal car; the CXV / CXT / secondary runs | **APPROVE** (6bcc6ef … e2cea5d) | **yes** |
 | A | `mpcc_ca` (CiMPCC-based, amendment A1) and the secondary conditions; soft speed bound (amendment A2) | yes | yes – `tests/test_mpcc.py` 8, `tests/test_cx_a.py` 7 | smoke on cases outside every set (`results/CX/A/dev/secondary_smoke.jsonl`); A2 diagnostic on CXV cars 2 / 5 / 7; CXT | **APPROVE** (94cba68 … e2cea5d) | **yes** |
-| B | `control/mppi.py` (protocol `docs/CX_B_protocol.md` rev 0, binding) | in progress | – | – | protocol rev 0 **APPROVE** (0b94d1a) | – |
+| B | `control/mppi.py` (`MPPI`), `experiments/cx_b.py`, `scripts/run_cx_b.py`, `scripts/report_cx_b.py`, `scripts/cx_b_dev.py` | yes (57146e4, d80e1a6) | yes – `tests/test_mppi.py` 11, `tests/test_cx_b.py` 5 | development checks 9.1 (model = FrenetMPC's step, 7 · 10⁻¹⁶) and 9.2 (cost = NLP objective with eliminated slacks, 1.3 · 10⁻¹⁴); no MPPI lap yet | protocol rev 0 **APPROVE** (0b94d1a); amendment B1 proposed (8d86ff2) | – |
 | C–G | – | not started | – | – | – | – |
 
 ## Review record
