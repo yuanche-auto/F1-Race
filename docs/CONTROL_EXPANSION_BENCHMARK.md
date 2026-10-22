@@ -277,9 +277,12 @@ assumes the ancillary feedback – clarification m1). The tube adds 11.5 ms per 
 
 **Where the friction tube is capped (review n2; development diagnostic `results/CX/C/dev/capmap.json`, 36d7a6a – the
 nominal car and the five development cars, `tube` c_R 1, every predicted stage attributed to its predicted position):**
-82 % of all capped stages lie at the fast sections 2.6–2.8 km (73 % of the stages there capped), 2.95–3.15 km (69 %) and
-3.7–3.85 km (67 %) – the corners where `nmpc` leaves at ~2.7 and ~3.83 km – and 2 % at turn 1 (6 % of the stages there),
-where `nmpc` loses most cars but the uncapped tightening suffices. At the fast corners the tube asks for more reserve than
+73 % of all capped stages lie in the fast sections 2.6–2.8 km (73 % of the stages there capped), 2.95–3.15 km (69 %) and
+3.7–3.85 km (67 %) – the corners where `nmpc` leaves at ~2.7 and ~3.83 km – and 82 % including their approaches
+(2.35–2.85, 2.95–3.2 and 3.7–3.9 km); another 5.5 % lie at 3.95–4.05 km (22 % of the stages there; `nmpc` leaves at
+~4.01 km on 4 cars), 3 % at 1.05–1.2 km, and 2 % at turn 1 (400–550 m; 6 % of the stages there), where `nmpc` loses
+most cars but the uncapped tightening suffices (review m1 of packet 4: an earlier version gave 82 % for the three
+sections alone). At the fast corners the tube asks for more reserve than
 the cap of 0.70 allows: there the controller is not robust in the tube's own sense, yet completes. (Development data on
 cars outside the test set; it describes the mechanism, not the test.)
 
