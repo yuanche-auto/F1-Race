@@ -235,8 +235,7 @@ def nomdiag(K: int) -> None:
             + [("mppi", {**c, "K": K // 4, "iters": 4}, r) for r in (0, 1, 2)])
     with get_context("spawn").Pool(len(jobs), maxtasksperchild=1) as pool, open(DEV / "nom_diagnostic.jsonl", "w") as fo:
         for r in pool.imap_unordered(_diag_job, jobs):
-            fo.write(json.dumps(r) + "
-")
+            fo.write(json.dumps(r) + "\n")
             fo.flush()
             print(r["kind"], r["setting_key"], "r", r["replicate"], r["completed"], r["lap_time"], r["stop_reason"],
                   round(r["distance"]), "step ms", [round(x, 1) for x in r["step_ms_mean_p50_p95_p99_max"]], "no-free",
