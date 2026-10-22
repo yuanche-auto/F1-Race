@@ -1,6 +1,6 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-22 (phase B: packet 2 APPROVE, B2 APPROVE; K_RT = 1 024 on mppi_lp; packet 3 before CXV). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-22 (phase B: B3 APPROVE – benchmark with the gate waived; CXV tuning running at d93b5e9). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
 * **Current phase:** B – MPPI, branch `cx/B-mppi` from `main` b68d0a4: literature (§B of the literature review) and
   protocol revision 0 (`docs/CX_B_protocol.md`) **APPROVE** (0b94d1a) with clarifications m1, m2, n1–n4 written in;
@@ -9,7 +9,11 @@ Last updated: 2026-10-22 (phase B: packet 2 APPROVE, B2 APPROVE; K_RT = 1 024 on
   (MPPI samples the NMPC's three inputs) was proposed (8d86ff2) and approved (c8806c1). K timing: K = 2 048. Development
   gate (9.6) **failed** for `mppi` (white noise: 0 of 17 nominal laps); `mppi_lp` 2 of 8 – **amendment B2** (the
   low-pass MPPI as the primary) proposed in eea5a49; packet 2 (c3fca85) and B2 **APPROVE**; review c1: the K rule
-  on `mppi_lp` gives K_RT = 1 024 (K 2 048: median 44.6 ms); c2 traces recorded; c3 scope – packet 3 next; no CXV lap. A done (final review of e2cea5d
+  on `mppi_lp` gives K_RT = 1 024 (K 2 048: median 44.6 ms); c2 traces recorded; c3 scope. Packet 3 (770cd7b) **APPROVE**;
+  g1: the gate at K_RT fails for `mppi_lp` too (0 of 9 nominal laps) → **amendment B3** (e9fb7e1) **APPROVE**, option 1:
+  the pre-registered tuning and benchmark run with the gate waived (d1, d4 in d93b5e9). CXV tuning step 1 started
+  2026-10-22 01:56 in `F1-Race-worktrees/F1-Race-wt-CXB-run` at d93b5e9 (inputs identical to the main checkout and to
+  phase A's run). A done (final review of e2cea5d
   APPROVE; `cx/A-mpcc` merged to `main` --no-ff as **b68d0a4**, 2026-10-21).
 * **Original reviewer:** session `local_30f94a40-03cb-490d-85b4-12ad1d351d3a` ("F1 Race 阶段审查"), the
   reviewer of L7–L9 – reached by SendMessage with this id (its pipe address changes after restarts).
@@ -42,6 +46,8 @@ Last updated: 2026-10-22 (phase B: packet 2 APPROVE, B2 APPROVE; K_RT = 1 024 on
 | 2026-10-21 | 0b94d1a | **phase B packet 1**: literature B.1–B.11, CX-B protocol revision 0 (no code) | **APPROVE** (binding) | m1 (a) no valid sample → U only shifted, counted, unit-tested; (b) K rule selects nothing → amendment, timing at the grid centre; m2 K₀ = max(1, ⌊αK⌋); n1 seed 10 (T1new) in the list; n2 mppi_lp filter transient; n3 CXD / CXL8 re-runs expected identical; n4 scope: CPU numpy implementation – all written into the protocol before any timing or development lap |
 | 2026-10-22 | 8d86ff2 | amendment B1 (MPPI samples the NMPC's three inputs) | **APPROVE** (decision) | c1 status before the K timing (c8806c1), c2 clamp tests, c3 overlap for both controllers with the left-foot-braking remark; disclose the informal timings in packet 2 |
 | 2026-10-22 | c3fca85 | **phase B packet 2**: MPPI code, runner / report, tests, development checks 9.1–9.6 and the post-gate diagnostics; amendment B2 | **APPROVE**; B2 **APPROVE** | c1 re-time K on mppi_lp (→ K_RT 1 024); c2 traces as records; c3 scope (12 vs 6 settings, primary changed after the gate); n1 median budget, n2 nominal-U limitation, n3 common random numbers |
+| 2026-10-22 | 770cd7b | phase B packet 3: the B2 roles, K_RT 1 024 (c1), traces (c2), c3 / n1 / n3 | **APPROVE**; g1 blocking | g1 the 9.6 gate at K_RT (0 of 9, 99955f4); n1 budget numbers at 1 024, n2 track fixture (99955f4) |
+| 2026-10-22 | e9fb7e1 | amendment B3 (the gate failed at K_RT) | **APPROVE**, option 1 | d1 H-B1 confirmatory, budget-limited; d2 report wording; d3 tuning by the rule even if uninformative; d4 frontier candidates (d93b5e9) |
 
 ## Tests
 
