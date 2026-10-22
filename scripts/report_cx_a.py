@@ -50,16 +50,20 @@ def fmt_ci(k: int, n: int) -> str:
     return f"{k}/{n} ({lo:.2f}–{hi:.2f})" if n else "–"
 
 
-def tune(d: Path) -> None:
+def tune(d: Path, a2: bool = False) -> None:
+    """``a2`` (amendment A2): nmpc from tune.jsonl, mpcc and mpcc_centre from tune_a2.jsonl (soft bound)."""
     path = d / "tune.jsonl"
     recs = load(path)
-    errors = [r["job"] for r in recs if "error" in r]
+    recs_a2 = load(d / "tune_a2.jsonl") if a2 else []
+    errors = [r["job"] for r in recs + recs_a2 if "error" in r]
     if errors:
-        raise SystemExit(f"{len(errors)} error records in tune.jsonl: {errors[:3]}")
+        raise SystemExit(f"{len(errors)} error records in the tuning records: {errors[:3]}")
     out = {"tune_sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "kinds": {}}
-    md = ["# CX-A tuning on CXV (protocol section 4)", ""]
+    if a2:
+        out["tune_a2_sha256"] = hashlib.sha256((d / "tune_a2.jsonl").read_bytes()).hexdigest()
+    md = ["# CX-A tuning on CXV (protocol section 4" + ("; MPCCs re-tuned with the soft bound, amendment A2)" if a2 else ")"), ""]
     for kind in ("nmpc", "mpcc", "mpcc_centre"):
-        sel = select(recs, kind)
+        sel = select(recs_a2 if (a2 and kind != "nmpc") else recs, kind)
         out["kinds"][kind] = {"setting": sel["setting"], "setting_key": sel["setting_key"]}
         md += [f"## {kind} – chosen: `{sel['setting_key']}`", "", "| setting | completed of CXV | mean lap on the laps all tied settings complete |",
                "|---|---|---|"]
@@ -81,7 +85,7 @@ def tune_ca(d: Path) -> None:
     if errors:
         raise SystemExit(f"{len(errors)} error records in tune_ca.jsonl: {errors[:3]}")
     base = json.loads((d / "selected.json").read_text())["kinds"]["mpcc"]["setting"]
-    if any({k: r["setting"][k] for k in ("q_c", "q_v", "margin")} != base for r in recs):
+    if any({k: r["setting"][k] for k in base} != base for r in recs):
         raise SystemExit("tune_ca.jsonl has records whose base is not mpcc's choice in selected.json")
     sel = select(recs, "mpcc_ca")
     out = {"tune_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
@@ -277,9 +281,13 @@ def secondary(d: Path) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("what", choices=["tune", "tune_ca", "test", "secondary"])
+    ap.add_argument("--a2", action="store_true", help="tune: the MPCCs from tune_a2.jsonl (amendment A2)")
     ap.add_argument("--dir", default=str(ROOT / "results" / "CX" / "A"))
     a = ap.parse_args()
-    {"tune": tune, "tune_ca": tune_ca, "test": test, "secondary": secondary}[a.what](Path(a.dir))
+    if a.what == "tune":
+        tune(Path(a.dir), a2=a.a2)
+    else:
+        {"tune_ca": tune_ca, "test": test, "secondary": secondary}[a.what](Path(a.dir))
 
 
 if __name__ == "__main__":

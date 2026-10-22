@@ -12,6 +12,8 @@ controllers and one lap with every metric of protocol section 5.
 * ``mpcc_ca`` (amendment A1, secondary): ``mpcc`` with the CiMPCC curvature-weighted speed cost
   (``DynamicMPCC(curvature_speed=...)``); its base (q_c, q_v, margin) is ``mpcc``'s CXV choice, and only
   ``alpha`` and ``w_ca`` are tuned on CXV (``ca_grid``), after the main tuning.
+* Amendment A2: the MPCCs' speed bound softened (``soft_bound`` = 1 in a setting; ``MPCC_GRID_A2``), re-tuned on
+  CXV after the first tuning showed infeasible solves on cars that brake worse than the model.
 * Secondary conditions (section 2, after the primary report): ``CXT_LAG30`` – the CXT cars with the L6
   steering lag tau = 30 ms (commanded angle observed, nominal-model controllers as L6's rows without a lag
   model); ``CXD`` – the nominal car under the L3 disturbances (seeds 7400–7429, with L3's measurement noise);
@@ -43,11 +45,13 @@ MPCC_GRID = [{"q_c": qc, "q_v": qv, "margin": m}
 NMPC_GRID = [{"c": c, "margin": m} for c in (0.5, 1.0, 2.0) for m in (0.3, 0.6)]
 BOUND_TOL = 0.01                                                               # m/s, protocol section 5
 CA_EXTRA = [{"alpha": a, "w_ca": w} for a in (1.0, 3.0) for w in (0.02, 0.1, 0.5)]   # amendment A1
+MPCC_GRID_A2 = [{**g, "soft_bound": 1} for g in MPCC_GRID]       # amendment A2: the soft speed bound
 
 
 def ca_grid(base: dict) -> list[dict]:
     """mpcc_ca's CXV grid: mpcc's chosen (q_c, q_v, margin) with each (alpha, w_ca) of CA_EXTRA."""
-    return [{**{k: base[k] for k in ("q_c", "q_v", "margin")}, **e} for e in CA_EXTRA]
+    keep = [k for k in ("q_c", "q_v", "margin", "soft_bound") if k in base]
+    return [{**{k: base[k] for k in keep}, **e} for e in CA_EXTRA]
 
 
 def grid(kind: str) -> list[dict]:
@@ -106,7 +110,7 @@ def build(kind: str, setting: dict, track, o):
         mpc = DynamicMPCC(track, model, ref_from_plan(o), N=N, dt=MPC_DT, eta=ETA, margin=setting["margin"],
                           weights={"q_c": setting["q_c"], "q_v": setting["q_v"]},
                           reference="centre" if kind == "mpcc_centre" else "raceline", speed_bound="stages",
-                          curvature_speed=cs)
+                          curvature_speed=cs, speed_bound_soft=bool(setting.get("soft_bound", 0)))
         return BoundRecorder(mpc, DT, o), mpc, x0
     raise ValueError(kind)
 

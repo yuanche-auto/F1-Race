@@ -165,3 +165,31 @@ def test_ca_grid_and_secondary_sets():
     assert {c["track"] for c in cx_a.cases("CXL8")} == {"Zandvoort", "SaoPaulo", "Austin", "Nuerburgring"}
     assert all(c["tau"] == 0.0 and c["dist_seed"] is None and c["track"] == "Spielberg"
                for set_ in ("CXV", "CXT", "NOM") for c in cx_a.cases(set_))
+
+
+def test_a2_grid_and_selection(tmp_path):
+    """Amendment A2: the soft-bound grid, ca_grid keeping the flag, and report tune --a2 taking nmpc from
+    tune.jsonl and the MPCCs from tune_a2.jsonl, with both SHA-256 in selected.json."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+    import hashlib
+    import report_cx_a
+
+    assert len(cx_a.MPCC_GRID_A2) == 24 and all(g["soft_bound"] == 1 for g in cx_a.MPCC_GRID_A2)
+    assert all(s["soft_bound"] == 1 for s in cx_a.ca_grid({"q_c": 0.5, "q_v": 1.0, "margin": 0.6, "soft_bound": 1}))
+    write = lambda name, rs: (tmp_path / name).write_text("\n".join(json.dumps(r) for r in rs) + "\n")
+    hard, soft = [], []
+    for kind, grid_, out in (("nmpc", cx_a.NMPC_GRID, hard), ("mpcc", cx_a.MPCC_GRID, hard), ("mpcc_centre", cx_a.MPCC_GRID, hard),
+                             ("mpcc", cx_a.MPCC_GRID_A2, soft), ("mpcc_centre", cx_a.MPCC_GRID_A2, soft)):
+        for st in grid_:
+            lt = 76.0 if (kind == "mpcc" and st.get("soft_bound") and st["q_c"] == 2.0 and st["q_v"] == 1.0
+                          and st["margin"] == 0.3) else None
+            for r in _recs(kind, [(st, [lt, None])]):
+                r["job"] = f"tune|{kind}|{r['setting_key']}|{r['case']}"
+                out.append(r)
+    write("tune.jsonl", hard)
+    write("tune_a2.jsonl", soft)
+    report_cx_a.tune(tmp_path, a2=True)
+    sel = json.loads((tmp_path / "selected.json").read_text())
+    assert sel["kinds"]["mpcc"]["setting"] == {"q_c": 2.0, "q_v": 1.0, "margin": 0.3, "soft_bound": 1}
+    assert sel["kinds"]["nmpc"]["setting"] == {"c": 1.0, "margin": 0.3}            # from tune.jsonl
+    assert sel["tune_a2_sha256"] == hashlib.sha256((tmp_path / "tune_a2.jsonl").read_bytes()).hexdigest()

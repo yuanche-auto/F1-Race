@@ -207,3 +207,27 @@ What they showed, and how it shaped section 3:
      controllers (`run_cx_a.py test --with-ca`).
   4. *Reported:* as `mpcc` (section 5), plus β; secondary comparisons `mpcc_ca` against `mpcc` and against
      `nmpc` (exact McNemar, uncorrected, next to the other secondary comparisons). Not part of H-A1 / H-A2.
+* **A2 (2026-10-21), the soft speed bound – after the first CXV tuning, before any CXT lap.**
+  *Cause:* the first CXV tuning (8babe7b; 540 laps, 2026-10-21 19:03–19:51, no error record; `tune.jsonl`
+  and `selected.json` kept) gave `mpcc` at most 2 of 10 cars (16 of 240 laps), `mpcc_centre` 0 of 240 and `nmpc`
+  at most 3 of 10 (14 of 60), and the MPCCs fell back to the shifted plan 6 442 and 4 401 times against the
+  NMPC's 13. A diagnostic on CXV car 2 with `mpcc`'s chosen setting: all 43 fallbacks were IPOPT
+  "Infeasible_Problem_Detected", each with the measured speed above the plan's bound (by 0.08–1.71 m/s, median
+  0.65) in a braking zone. A car that brakes worse than the model (μ × 0.92 there) is faster than the plan at
+  that point, the hard bound at stage 1 cannot be met, the solve fails and the shifted plan is applied again and
+  again. This is the infeasibility L2 removed from the NMPC by softening its limits (docs/L2.md §4).
+  1. *Definition* (`DynamicMPCC(speed_bound_soft=True)`, default off): vx_i − v_ref(θ_i − e_l,i) ≤ σ_v,i,
+     σ_v ≥ 0, penalised exactly like the track limits (quadratic + 10 × linear, weight 10⁴ per stage length);
+     stage 0 (the measurement) is not bounded. While the bound can be met the solution is the hard one (test).
+  2. *Diagnostic before this amendment* (CXV cars 2, 5 and 7, `mpcc`'s first choice q_c 0.5, q_v 1, margin
+     0.6): hard bound – off track at 1 408 / 457 / 460 m with 43 / 38 / 36 fallbacks; soft bound – off track at
+     2 775 / 2 713 / 2 708 m with 0 / 1 / 19 fallbacks (the 19: IPOPT's iteration limit). The cars still fail,
+     at the corner near 2.7 km where the NMPC's CXV laps fail too.
+  3. *Re-tuning:* `mpcc` and `mpcc_centre` are tuned again on CXV with the same 24-setting grid, each setting
+     with the soft bound (`soft_bound` = 1, `run_cx_a.py tune_a2` → `tune_a2.jsonl`), by the same rule (section 4
+     with its clarification). `nmpc` keeps its first choice (its formulation is unchanged). `selected.json`
+     then records the SHA-256 of both tuning files; `mpcc_ca` (A1) builds on the A2 choice. The first tuning
+     is reported as well.
+  4. *Disclosure:* decided after seeing the CXV results – the tuning set, used for what it is for; no CXT lap
+     has run; H-A1 and H-A2 are unchanged; from here on `mpcc` and `mpcc_centre` in sections 1–5 mean the
+     soft-bound formulation.

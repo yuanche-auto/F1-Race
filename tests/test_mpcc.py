@@ -162,3 +162,26 @@ def test_curvature_speed_option(track):
     MPCCController(on, 0.01)(0.0, x0_from_plan(o, path))
     assert on.stats[-1]["status"] in ("Solve_Succeeded", "Solved_To_Acceptable_Level")
     assert 0.0 < on.stats[-1]["beta"] <= 1.0
+
+
+@pytest.mark.skipif(not CACHE.exists(), reason="run scripts/run_l1.py first")
+def test_soft_speed_bound_matches_hard_when_feasible(track):
+    """Amendment A2: the soft speed bound adds N + 1 slacks (stage 0 fixed at 0) and, from the plan start where
+    the bound can be met, gives the hard version's solution (same first input, zero speed slack)."""
+    from f1race.control.mpcc import MPCCController
+    from f1race.experiments.l1 import dyn_reference
+    from f1race.experiments.l2 import x0_from_plan
+
+    o = _plan()
+    path, _ = dyn_reference(track, DynVehicle(), o)
+    x0 = x0_from_plan(o, path)
+    u = {}
+    for soft in (False, True):
+        m = _mpcc(track, reference="raceline", speed_bound="stages", speed_bound_soft=soft)
+        u[soft] = MPCCController(m, 0.01)(0.0, x0)
+        assert m.stats[-1]["status"] in ("Solve_Succeeded", "Solved_To_Acceptable_Level")
+        if soft:
+            assert m.Vi.size == m.N + 1 and m.ubz[m.Vi[0]] == 0.0 and m.stats[-1]["speed_slack"] < 1e-6
+        else:
+            assert m.Vi.size == 0
+    assert np.allclose(u[False], u[True], rtol=1e-4, atol=1e-3)

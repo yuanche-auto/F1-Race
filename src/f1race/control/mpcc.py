@@ -43,6 +43,11 @@ theta (the borders are parallel to it), whichever reference path the cost uses:
 
     -(w_left(theta) - body) <= e_c^centre(axle point) <= w_right(theta) - body,  body = half width + margin
 
+``speed_bound_soft`` (CX-A amendment A2; default off – the NLP is then unchanged): the speed bound with a
+slack, vx_i - v_ref(theta_i - e_l,i) <= sigma_v,i, sigma_v >= 0, penalised exactly like the track limits
+(``speed_slack``: quadratic + 10 x linear) – the solution is the same while the bound can be met, and a car
+already faster than the plan (a car that brakes worse than the model) no longer makes the NLP infeasible.
+
 **Deviations from Liniger et al., stated:** (1) the NLP is solved to convergence by IPOPT with the
 previous solution shifted as warm start (Liniger: one QP per sample around the shifted solution - a
 real-time iteration; that variant belongs to the real-time phase G); (2) a speed bound from a brakeable speed profile
@@ -106,7 +111,7 @@ class DynamicMPCC:
                  eta: float = 0.95, margin: float = 0.3, weights: dict | None = None,
                  v_theta_max: float = 120.0, terminal_speed: bool = True, max_iter: int = 500,
                  reference: str = "centre", speed_bound: str | None = None,
-                 curvature_speed: dict | None = None):
+                 curvature_speed: dict | None = None, speed_bound_soft: bool = False):
         """``ref``: arrays over centre-line arclength ref['s'] with keys vx (a brakeable speed
         profile, e.g. an L1 plan solved with the same ``eta``, for the speed bound) and n (the
         plan's lateral offset, for ``reference="raceline"`` only). ``weights``: q_c, q_l, q_v,
@@ -131,7 +136,7 @@ class DynamicMPCC:
         self.curvature_speed = cs
         self.terminal_speed = speed_bound != "none"
         w = {"q_c": 0.05, "q_l": 50.0, "q_v": 1.0, "drate": 1.0, "dF": 0.5, "dv": 0.01,
-             "slack": 1e4, "limit_slack": 1e6}
+             "slack": 1e4, "limit_slack": 1e6, "speed_slack": 1e4}
         w.update(weights or {})
         self.w = w
         if reference not in ("centre", "raceline"):
@@ -191,6 +196,9 @@ class DynamicMPCC:
         Xs = ca.SX.sym("X", nx, N + 1)
         U = ca.SX.sym("U", nu, N)
         S = ca.SX.sym("S", 2, N + 1)                    # track slacks (front, rear axle point)
+        soft_v = bool(speed_bound_soft) and speed_bound != "none"
+        self.speed_bound_soft = soft_v
+        V = ca.SX.sym("V", N + 1 if soft_v else 0)      # speed-bound slacks (CX-A amendment A2)
         T = ca.SX.sym("T", 4, N)                        # ellipse (front, rear) and slip slacks
         P = ca.SX.sym("P", nx + nu + (1 if cs else 0))  # initial state, previous input (, beta)
         g, lbg, ubg = [], [], []
@@ -225,12 +233,16 @@ class DynamicMPCC:
             if speed_bound == "stages" or (speed_bound == "terminal" and i == N):
                 # at the car's approximate projection theta - e_l (Liniger: e_l ~ theta_A - theta_P),
                 # so that a theta lagging behind the car cannot loosen the bound in a braking zone
-                g.append(Xs[3, i] - vref(thi - el)); lbg.append(-ca.inf); ubg.append(0.0)
+                if soft_v:                               # exact penalty, as the track limits (amendment A2)
+                    g.append(Xs[3, i] - vref(thi - el) - V[i]); lbg.append(-ca.inf); ubg.append(0.0)
+                    J += w["speed_slack"] * h * (V[i] ** 2 + 10.0 * V[i])
+                else:
+                    g.append(Xs[3, i] - vref(thi - el)); lbg.append(-ca.inf); ubg.append(0.0)
             if cs:                                       # CiMPCC eq. 10, adapted (module docstring)
                 beta, vh = P[nx + nu], vref(thi - el)
                 J += h * cs["w_ca"] * ((1 - beta) * (Xs[3, i] - cs["c_low"] * vh) ** 2 + beta * (Xs[3, i] - vh) ** 2)
 
-        z = ca.vertcat(ca.vec(Xs), ca.vec(U), ca.vec(S), ca.vec(T))
+        z = ca.vertcat(ca.vec(Xs), ca.vec(U), ca.vec(S), ca.vec(T), V)
         self.nx, self.nu = nx, nu
         lbz = np.full(z.shape[0], -np.inf)
         ubz = np.full(z.shape[0], np.inf)
@@ -247,6 +259,11 @@ class DynamicMPCC:
         lbz[Si] = 0.0
         ubz[Si[0]] = 0.0                                 # slack at the (fixed) initial state unused
         lbz[Ti] = 0.0
+        Vi = nx * (N + 1) + nu * N + 2 * (N + 1) + 4 * N + np.arange(V.numel())
+        lbz[Vi] = 0.0
+        if soft_v:
+            ubz[Vi[0]] = 0.0                             # no bound at the (measured) stage 0
+        self.Vi = Vi
         self.Xi, self.Ui, self.Si, self.Ti = Xi, Ui, Si, Ti
         self.lbz, self.ubz = lbz, ubz
         self.lbg, self.ubg = np.array(lbg, float), np.array(ubg, float)
@@ -310,6 +327,7 @@ class DynamicMPCC:
         u = z[self.Ui[0]] * np.array([1.0, FS, FS, 1.0])
         info = {"status": st["return_status"], "iter": st["iter_count"], "time": time.time() - t0,
                 "slack": float(np.max(z[self.Si])), "limit_slack": float(np.max(z[self.Ti])),
+                "speed_slack": float(np.max(z[self.Vi])) if self.Vi.size else 0.0,
                 "fallback": fallback}
         if beta is not None:
             info["beta"] = beta
