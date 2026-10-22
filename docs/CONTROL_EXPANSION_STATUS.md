@@ -1,9 +1,10 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-21 (phase A done). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-21 (phase B: protocol revision 0 in review). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
-* **Current phase:** A done (final review of e2cea5d APPROVE; `cx/A-mpcc` merged to `main` --no-ff, 2026-10-21);
-  next B – MPPI (literature and protocol first).
+* **Current phase:** B – MPPI, branch `cx/B-mppi` from `main` b68d0a4: literature (§B of the literature review) and
+  protocol revision 0 (`docs/CX_B_protocol.md`) sent for review; no MPPI code yet. A done (final review of e2cea5d
+  APPROVE; `cx/A-mpcc` merged to `main` --no-ff as **b68d0a4**, 2026-10-21).
 * **Original reviewer:** session `local_30f94a40-03cb-490d-85b4-12ad1d351d3a` ("F1 Race 阶段审查"), the
   reviewer of L7–L9 – reached by SendMessage with this id (its pipe address changes after restarts).
 * **L10:** PAUSED — Preserved for Future Development (branch `layer/L10`, protocol revision 1 binding,
@@ -16,7 +17,8 @@ Last updated: 2026-10-21 (phase A done). Roadmap: [CONTROL_EXPANSION_ROADMAP.md]
 | A | `control/mpcc.py` (`DynamicMPCC`, `MPCCController`, `path_errors`) | yes (0061e79) | yes – `tests/test_mpcc.py`, 8 tests | development laps; CXV tuning; CXT benchmark; secondary conditions | **APPROVE** (f4d1ee9 … e2cea5d) | **yes – phase A completed** |
 | A | runner and report (`experiments/cx_a.py`, `scripts/run_cx_a.py`, `scripts/report_cx_a.py`) | yes | yes – `tests/test_cx_a.py`, 5 tests | smoke on the nominal car; the CXV / CXT / secondary runs | **APPROVE** (6bcc6ef … e2cea5d) | **yes** |
 | A | `mpcc_ca` (CiMPCC-based, amendment A1) and the secondary conditions; soft speed bound (amendment A2) | yes | yes – `tests/test_mpcc.py` 8, `tests/test_cx_a.py` 7 | smoke on cases outside every set (`results/CX/A/dev/secondary_smoke.jsonl`); A2 diagnostic on CXV cars 2 / 5 / 7; CXT | **APPROVE** (94cba68 … e2cea5d) | **yes** |
-| B–G | – | not started | – | – | – | – |
+| B | `control/mppi.py` (planned; protocol `docs/CX_B_protocol.md` rev 0) | not started – protocol first | – | – | protocol rev 0 in review | – |
+| C–G | – | not started | – | – | – | – |
 
 ## Review record
 
@@ -52,6 +54,6 @@ writes `selected.json` / `report/tune_a2.md` (review c1). CXT: `test.jsonl`, `re
 
 ## Next actions
 
-1. Phase B (MPPI): literature entries (CONTROL_LITERATURE_REVIEW.md), the protocol `docs/CX_B_protocol.md` for review;
-   no run code before the protocol is approved.
-2. Then the MPPI implementation, unit tests, development laps on the nominal car, the runner, tuning, test.
+1. Phase B (MPPI): review of the literature entries (§B) and protocol revision 0 (packet 1); no MPPI code before its APPROVE.
+2. Then `control/mppi.py`, unit tests, the development checks of CX-B §9 (K fixed by §3.4), the runner and report code
+   (packet 2); CXV tuning (packet 3); CBT (packet 4); secondary conditions (packet 5); final review, merge.

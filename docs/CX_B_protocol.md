@@ -1,0 +1,259 @@
+# CX-B protocol – model predictive path integral control (control expansion, phase B)
+
+Status: **draft, revision 0 (2026-10-21), for review** – written after the literature check
+([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §B) and **before any MPPI code**: no MPPI module,
+test, runner or lap exists (section 9). Branch `cx/B-mppi` (from `main` b68d0a4, the merge of phase A).
+Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+
+## 0. What L0–L9 and phase A left
+
+Every model-based controller of the project is gradient-based: IPOPT (NMPC of L2–L9, MPCC of phase A) or
+acados SQP / RTI (L9). No sampling-based MPC exists. Two of the project's known weaknesses are properties of
+that solver: IPOPT needs ~130 ms per solve on this machine (phase A development laps; L9: IPOPT fails the
+50 ms budget), and a hard constraint that the measured state already violates makes the NLP infeasible
+(L2 §4, CX-A amendment A2). MPPI (Williams et al., literature B.1–B.3) optimises by sampling input
+sequences, rolling the model out and averaging the samples with exponential weights: its cost per step is
+fixed by the number of samples, it needs no derivatives, and it has no notion of infeasibility – limits are
+costs or clamps. Its weaknesses are as well known (B.3, B.11): a finite sample of a 60-dimensional input
+sequence, constraints only as penalties, noisy inputs.
+
+## 1. Question and hypotheses
+
+*Does MPPI – minimising **the same optimal control problem as the NMPC** (the NMPC's model, horizon,
+tracking objective and limits, its soft limits as their exact penalties), with a fixed sample budget that
+fits a 50 ms control period on one core – complete as many laps as the NMPC, which solves that problem to
+convergence with IPOPT, and at what lap time, under the model mismatch of L2?*
+
+The comparison isolates the optimiser: same information, same objective, same model; the NMPC gets IPOPT
+without a time budget (offline, as in L2–L8), MPPI gets one sampling iteration per control step at a budget
+set before any tuning lap (section 3.4). A difference in laps can come from MPPI's approximate optimum (a
+finite sample), from its different handling of limits (penalties on the samples instead of constraints;
+no infeasible solves, no fallbacks), or from its sampling noise in the applied inputs; section 5 reports
+quantities that separate these.
+
+* **H-B1 (primary):** on the 50 test cars CBT (section 2), `mppi` and `nmpc` differ in the number of
+  completed laps. Exact McNemar, two-sided; holds if significant at its Holm level; direction reported.
+* **H-B2 (primary):** on the test laps both complete, `mppi` and `nmpc` differ in lap time. Exact
+  signed-rank (mid-ranks, the exact distribution), two-sided; same rule. Conditional on both completing:
+  next to H-B1 the report lists, for every discordant car, each controller's lap time or failure position
+  and stop reason.
+
+Holm over H-B1 and H-B2 (family-wise α = 0.05), the stricter decision (each at 0.025) reported alongside.
+No direction is predicted. **Power:** with d discordant cars the smallest two-sided McNemar p is 2 · 0.5^d;
+H-B1 can hold at Holm's first level (0.025) only if at least 7 cars are discordant and all in one direction
+(2 · 0.5⁷ = 0.016). Phase A had 3 discordant cars of 25; the test set is doubled for this reason – no power
+calculation is possible without data, and a "not supported" may again be a statement about power.
+
+Scope: these two controllers, the nominal model, Spielberg, η = 0.95, `nmpc`'s objective and margin as chosen
+on CXV in phase A; MPPI with the budget of section 3.4 – no claim about MPPI with a GPU, with a learned model,
+with another cost (e.g. a progress reward), or about sampling-based MPC in general. **Tuning freedom:** `nmpc`
+was tuned on CXV over 6 objective settings (phase A); `mppi` solves the chosen objective and tunes only its
+sampling parameters on the same 10 CXV cars, 9 settings (section 4) – not a symmetric budget, stated as in
+phase A.
+
+## 2. Sets
+
+* **Tuning set CXV** (phase A's tuning set, reused): `sample_plants(nominal, 10, seed 301)[1:]` – the cars on
+  which `nmpc`'s objective was chosen; MPPI's sampling parameters are tuned on the same cars. Its phase A
+  results are known to the builder (disclosed; it is a tuning set).
+* **Test set CBT** (new draw): `sample_plants(nominal, 50, seed 312)[1:]` – 50 cars from the L2 ranges,
+  Spielberg, one lap each, no lag, no disturbances. Car seed 312 is used by no L-layer, by L10's protocol or by
+  phase A (checked: L-layers use car seeds 0, 1, 7, 8, 9, 99; phase A 301, 302).
+* **NOM:** the nominal car – development (section 9) and reported separately; not part of a test.
+* **Secondary conditions** (after the primary report; as phase A, so that rows are comparable):
+  `CBT_LAG30` – the CBT cars with the L6 steering lag τ = 30 ms (commanded angle observed; nominal-model
+  controllers, as L6's rows without a lag model); `CXD` – the nominal car under the L3 disturbances, seeds
+  7400–7429 (phase A's set; with L3's measurement noise; tuning-free); `CXL8` – the nominal car on the four
+  L8 test tracks with their L8 plans (time limit 1.6 × the plan). `CXD` and `CXL8` repeat phase A's
+  conditions; the phase-A records of `nmpc` and `mpcc` there are compared with this phase's re-runs as a
+  reproducibility check (the code of both is unchanged).
+* Start: the state of the 5 % plan at s = 0; one lap; time limit 121 s on Spielberg (1.6 × the plan).
+
+## 3. Controllers
+
+Shared (as phase A): the nominal model (`DynVehicle()`), η = 0.95, the 5 % plan, N = 30 stages of 50 ms, the
+input held for 50 ms, the L2 traction control (0.99) on the executed input at every 10 ms simulator step; all
+see the true state (no noise or delay except in `CXD` / `CBT_LAG30`); none knows the car's parameters (no
+oracle).
+
+* **`tracker`** – the 5 % plan and the L1 dynamic tracker (L1 baseline; not tuned).
+* **`nmpc`** – `FrenetMPC` tracking the 5 % plan, **phase A's CXV choice: tracking-weight scale c = 2, margin
+  0.6 m**, IPOPT to convergence, the shifted plan on a failed solve (phase A, unchanged).
+* **`mpcc`** (secondary baseline) – `DynamicMPCC`, phase A's choice after amendment A2 (racing line, soft stage
+  speed bound, q_c 8, q_v 2, margin 0.3 m), unchanged.
+* **`mppi`** (primary) – section 3.1–3.4, new module `control/mppi.py`.
+* **`mppi_lp`** (secondary) – `mppi` with low-pass-filtered sampling noise after LP-MPPI (B.5), section 3.5.
+* **`mppi_big`** (secondary) – `mppi` with 4 × its sample budget and its CXV setting, untuned: whether a lap
+  `mppi` loses is lost to the sample budget (offline; not real-time).
+
+### 3.1 The optimal control problem (`nmpc`'s, unchanged)
+
+State x = [s, n, ξ, vx, vy, r, δ] (Frenet, as `FrenetMPC`), one RK4 step per 50 ms stage of the NMPC's model
+(`dynamics.tyre_forces` / `body_accel`, no force saturation), the curvature and the reference (n_ref, ξ_ref,
+v_ref of the 5 % plan) as the NMPC's periodic linear interpolants. Cost of an input sequence from the measured
+state, with the NMPC's weights at c = 2 (w_n 2, w_ξ 20, w_v 0.4, w_δ̇ 1, w_dF 0.5 per (10⁴ N)², track 10⁴,
+limits 10⁶) and margin 0.6 m:
+
+    J = Σ_{i=1..N} h [w_n (n_i − n_ref)² + w_ξ (ξ_i − ξ_ref)² + w_v (vx_i − v_ref)²]
+      + Σ_{i=0..N−1} [h w_δ̇ δ̇_i² + w_dF (ΔF_d,i² + ΔF_b,i²)]          (ΔF from the previous stage; stage 0 from the
+                                                                      previous control step's output; forces in 10⁴ N)
+      + Σ_{i=1..N} Σ_{axle points} w_track h (σ² + 10 σ),  σ = max(0, violation of the track half-width − body − chord)
+      + Σ_{i=0..N−1} Σ_{4 limits} w_limit h (τ² + 10 τ),   τ = max(0, u_axle² − η²) for each ellipse,
+                                                          max(0, |α_axle| / α_peak − 1) for each slip angle
+
+This is `FrenetMPC(mode="track")`'s NLP with its slacks eliminated: for given inputs the optimal slacks are
+exactly these σ and τ, so J equals the NLP's objective at that point (checked numerically, section 9).
+The NMPC's **hard** limits are enforced by clamping in the rollout (the samples' g(v) of B.3): steering rate
+to ±δ̇_max and so that δ stays within ±δ_max over the stage (δ̇ is constant in a stage, so this is exact);
+drive force ≥ 0 and ≤ P_max / vx (power); each axle's longitudinal force ≤ η μ_x F_z of that axle (solved in
+closed form – the normal loads depend on the force through the load transfer, linearly). The bound vx ≥ 2 m/s
+(a state bound of the NMPC that cannot be clamped) is enforced by giving a sample that violates it, or whose
+cost is not finite, the weight 0.
+
+**Input parameterisation (deviation from `nmpc`, stated):** MPPI samples u = [δ̇, F_x] with one net
+longitudinal force, split as F_d = max(F_x, 0), F_b = min(F_x, 0) (the NMPC's two forces, so J is
+evaluated on the NMPC's three inputs). Sampling F_d and F_b separately would clip half of all noise at
+zero. The NMPC can drive and brake at once; MPPI cannot. Whether the NMPC's optimum does so, and by how
+much, is checked on `nmpc`'s nominal lap (section 9).
+
+### 3.2 The MPPI iteration (B.3, Algorithms 1–2; the update as implemented in B.9)
+
+Given the nominal sequence U = (u_0 … u_{N−1}) and the measured Frenet state x_0:
+
+1. Draw ε_k,i ~ N(0, Σ), Σ = diag(σ_δ̇², σ_F²), independent over k = 1 … K and i (white noise, B.3).
+2. v_k,i = u_i + ε_k,i for the first (1 − α) K samples, v_k,i = ε_k,i (zero mean) for the rest, α = 0.01 (B.3:
+   "less than one percent").
+3. Roll out all K samples in one batched (numpy) RK4 integration with the clamped inputs v′_k,i = g(x_k,i, v_k,i).
+4. S_k = J(v′_k) (section 3.1); ρ = min_k S_k; w_k = exp(−(S_k − ρ)/λ) / Σ_j exp(−(S_j − ρ)/λ).
+5. U ← Σ_k w_k v′_k (B.9's form; equals U + Σ w (v′ − U)); apply u_0; shift U by one stage, the last
+   entry (0, 0) (B.3, Table II).
+
+One iteration per 50 ms control step (B.3). At the first call of a lap, U = 0 and 20 iterations (the NMPC's
+first solve also starts from a crude guess and runs to convergence). Random numbers: one
+`numpy.random.default_rng` per lap, seeded with (set code, car index, replicate) – NOM 0, CXV 1, CBT 2,
+CBT_LAG30 3, CXD 4 (car index = disturbance seed), CXL8 5 (car index = track index) – fixed here, so every lap
+is reproducible.
+
+**Deviations from B.3, stated:**
+(a) **no importance-sampling control-cost term** (γ uᵀΣ⁻¹v, γ = 0): in the derivation it is the control cost
+(λ/2) uᵀΣ⁻¹u – a penalty on the input *magnitude* (here forces of up to ~3 · 10⁴ N) that the NMPC's objective
+does not contain; with it MPPI would minimise a different problem. LP-MPPI (B.5) has no such term either;
+B.3's own γ = 0.1 at λ = 12.5 was small;
+(b) **no Savitzky–Golay filter** on the update: smoothness comes from the NMPC's input-rate penalties in J,
+and a smoothing variant is tested separately (`mppi_lp`);
+(c) the model is the NMPC's analytic model with nominal parameters (B.3: learned models);
+(d) the clamping includes the state-dependent limits of the NMPC (power, axle forces) inside the rollout.
+
+### 3.3 Interface
+
+The NMPC's controller interface (`MPCController`: Frenet transform of the measured state, unwrapped s,
+re-solve every 50 ms, hold, traction control 0.99). There is no failed solve and no fallback: every step
+applies the updated u_0. Section 5 counts the steps in which no sample was free of penalties.
+
+### 3.4 Sample budget K (fixed before any CXV lap)
+
+K is the largest of {256, 512, 1 024, 2 048, 4 096} whose **median** MPPI step time on the nominal development
+lap (section 9; one process, no other job running, single-threaded BLAS) is at most **40 ms** – 80 % of the
+50 ms control period of L9's rule, on this machine's one core. K is then fixed for `mppi` and `mppi_lp`;
+`mppi_big` uses 4 K. The measured step times of every K go to the reviewer with the code (packet 2). The
+benchmark itself runs offline with 20 jobs in parallel, so its step times include that load and are reported
+as such (the real-time question belongs to phase G).
+
+### 3.5 `mppi_lp` (B.5; choices where LP-MPPI is silent, stated)
+
+`mppi` with each noise sequence ε_k,·,j (per sample k and input j, along the 30 stages) filtered by a **causal**
+digital Butterworth low-pass filter of order 2 and cut-off f_c (sampling rate 20 Hz; `scipy.signal.butter`,
+`lfilter`, zero initial state) and **rescaled** by 1 / ‖h‖₂ (h the filter's impulse response over 30 stages), so
+that the filtered noise has the stationary standard deviation σ again and only its spectrum changes (LP-MPPI
+states neither; without rescaling a 1 Hz filter would cut the exploration by ~3×, confounding the filter with
+the noise level). Everything else as `mppi`, with `mppi`'s CXV setting.
+
+## 4. Tuning (CXV only, one lap per car and setting, replicate 0)
+
+* **`mppi`:** λ ∈ {0.1, 1, 10} × noise scale c_σ ∈ {0.5, 1, 2} on the base σ_δ̇ = 0.03 rad/s, σ_F = 2 000 N
+  (9 settings). Basis of the values (no lap has run): the NMPC's cost of a good horizon is of order 1 – lateral
+  errors of ~0.5 m cost h · 2 · 0.25 per stage – so λ = 0.1 / 1 / 10 make cost differences of 1 decisive /
+  moderate / weak; σ_δ̇ = 0.03 rad/s moves δ by ~0.008 rad over the horizon (σ h √N), which is a lateral
+  acceleration of ~15 m/s² at 80 m/s and ~1.4 m/s² at 25 m/s; σ_F = 2 kN is ~7–15 % of the braking force range.
+  Whether these scales are sensible is the purpose of the development check of section 9.
+* **`mppi_lp`:** f_c ∈ {1, 2, 4} Hz (Nyquist 10 Hz) on `mppi`'s CXV choice (3 settings, after `mppi`'s
+  selection).
+* **Rule (phase A's, with its clarification):** the most completed CXV laps; ties by the mean lap time on the
+  CXV cars **every** tied setting completes (skipped if none); then the setting closest to the grid's centre –
+  for `mppi` the smaller |log λ|, then the smaller |log c_σ|, then the smaller λ, then the smaller c_σ; for
+  `mppi_lp` the higher f_c (closest to `mppi`); settings with different numbers of CXV laps stop the
+  selection with an error.
+* `nmpc`, `mpcc`, `tracker` keep their phase-A settings (not re-tuned); `mppi_big` is not tuned.
+* The chosen settings and all CXV records go to the reviewer before any CBT lap.
+
+## 5. Always reported
+
+Per controller and set, as phase A §5: completed laps (exact 95 % intervals), lap time, distance to failure
+and stop reason; contouring error to the racing line and to the centre line; tracking error to the plan;
+constraint use (minimum edge margin, track and limit penalties of the executed prediction); tyre utilisation
+(max and mean ellipse usage per axle); control effort (steering-rate RMS, force-increment RMS per step and over
+50 ms); step / solve time (mean, P95, P99, max) and the share above 50 ms; for `nmpc` / `mpcc`
+non-converged solves and fallbacks; the speed / plan-speed ratio (P5, median, P95) and the lateral distance to
+the plan's line. **For the MPPIs in addition**, per lap: the effective sample size 1 / Σ w_k² (P5, median, P95
+over the steps), the share of steps in which **no sample is free of penalties** (ρ contains a track or limit
+penalty – the case B.11 describes), the share of samples with a penalty, the number of samples given weight 0
+(vx < 2 m/s or a non-finite cost), and the cost of the nominal sequence before and after each update.
+**Repeatability:** `mppi` runs CBT with replicates 0, 1, 2 (only replicate 0 enters H-B1 / H-B2); reported:
+completions per replicate, the cars whose outcome changes between replicates, the lap-time spread of the cars
+all three complete.
+
+## 6. Statistics
+
+Exact McNemar on paired laps, exact intervals, exact signed-rank on paired lap times (mid-ranks, the exact
+distribution); the two primary tests with Holm. Secondary, uncorrected, with the number of comparisons
+stated (12): McNemar and, on the common completions, signed-rank of `mppi` – `mpcc`, `mppi_lp` – `mppi`,
+`mppi_lp` – `nmpc`, `mppi_big` – `mppi`, `mppi_big` – `nmpc`; replicates 1 and 2 of `mppi` against `nmpc`
+(McNemar only, descriptive of H-B1's sensitivity to the random stream). No claim across them.
+
+## 7. Second environment
+
+As L7–L9 and phase A (deferred by the user): H-B1 and H-B2 are marked as not cross-checked until the
+Python 3.11 environment exists.
+
+## 8. Compute and order
+
+1. Review of this protocol and the literature entries (packet 1). No MPPI code before its APPROVE.
+2. `control/mppi.py` (formulation in the module docstring), unit tests, the development checks of section 9,
+   the runner and report code (`experiments/cx_b.py`, `scripts/run_cx_b.py`, `scripts/report_cx_b.py`,
+   phase A's structure and checks); review (packet 2) before any CXV lap; K fixed there (section 3.4).
+3. CXV tuning: 9 `mppi` settings × 10 cars, then 3 `mppi_lp` settings × 10 cars (120 laps, ~1–2 min each at
+   K's budget); results to the reviewer (packet 3).
+4. CBT and NOM from a pinned worktree (`C:\Users\yuanche\F1-Race-worktrees\`, input SHA-256 list,
+   single-threaded BLAS, one process per job, `results/CX/B/`): `tracker`, `nmpc`, `mpcc`, `mppi` × 3
+   replicates, `mppi_lp`, `mppi_big` – 51 cases × 8 runs ≈ 408 laps, ~16 CPU-h (the IPOPT controllers ~4 min
+   per lap, `mppi_big` ~4–5 min); report in CONTROL_EXPANSION_BENCHMARK.md, review (packet 4).
+5. Secondary conditions (`CBT_LAG30`, `CXD`, `CXL8`; all controllers, replicate 0), review (packet 5), final
+   review, merge of `cx/B-mppi`.
+
+Deviations from the roadmap's phase-B row, stated: its "validation conditions" (nominal; L3 disturbances; L6
+lag; L9 budget) become NOM (development), L2 mismatch (primary – so that the NMPC baseline is the one of
+phase A), L6 lag, L3 disturbances and L8 tracks (secondary), and the 50 ms budget through K (section 3.4); the
+full L9 real-time rule (deadline misses on a pinned core in WSL) is phase G. The roadmap's "then
+risk-sensitive / robust / adaptive covariance" variants are not in this protocol: RA-MPPI's 3 · 10⁵ rollouts
+per step do not fit a CPU budget (B.6), Tube-MPPI / RMPPI need the ancillary controller of phase C (B.7), the
+adaptive covariance (B.10) is a candidate for a later amendment or the frontier list.
+
+## 9. Development checks (planned; none has run)
+
+No MPPI code exists at revision 0. After the protocol's APPROVE and before any CXV lap, on the nominal car
+only (records in `results/CX/B/dev/` with the commit and a dirty flag), reported in packet 2:
+
+1. **Model:** the batched Frenet RK4 step equals `FrenetMPC`'s CasADi step to 10⁻⁹ on random states and inputs.
+2. **Cost:** J of section 3.1 at an IPOPT solution of `nmpc` (states from its nominal lap) equals the NLP's
+   objective there (relative 10⁻⁶) – the slack elimination of section 3.1; the clamps keep every input inside
+   the NMPC's hard limits; the split F_x → (F_d, F_b): whether `nmpc`'s nominal lap ever drives and brakes at
+   once (and by how much).
+3. **Iteration:** weights sum to 1; λ → 0 picks the best sample; a single zero-noise sample leaves U unchanged;
+   the shift; the seeding (identical laps for the same seed).
+4. **Optimality gap (diagnostic, no threshold):** at 20 states of `nmpc`'s nominal lap, J of MPPI's sequence
+   after 1, 5 and 50 iterations from the shifted IPOPT solution, and from U = 0, against IPOPT's optimum.
+5. **K timing** (section 3.4).
+6. **Development laps:** NOM with each of the 9 settings of section 4 at the chosen K (and `mppi_lp` at the
+   grid centre). **Gate:** if no setting completes the nominal lap, the grid or the formulation is revised by
+   an amendment reviewed before any CXV lap (as CX-A amendment A2) – not tuned on CXV until something works.
+   These laps choose nothing: the selection is section 4's, on CXV.
