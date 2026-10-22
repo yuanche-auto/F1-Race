@@ -189,7 +189,7 @@ car. Step times under the benchmark's load: `mppi_lp` mean 41.9 ms, P95 52.3 ms,
   version, 12 of 50 for the NMPC that solves the same problem with IPOPT – the registered test confirms on new cars
   what the nominal car showed in development. H-B2 cannot be tested.
 * **The failures are not the NMPC's:** the MPPIs leave mostly at turn 1, where the NMPC loses 20 cars but passes the
-  rest; the corners that decide the NMPC's other laps (2.7 and 3.83 km) the MPPI at K 1 024 reaches on 3 of 50 cars
+  rest; the corners that decide the NMPC's other laps (2.7 and 3.83 km) the MPPI at K 1 024 reaches on 2 of 50 cars
   (replicate 0), the larger budget on 8.
 * **Limits:** one CPU implementation and budget; an uninformative tuning whose better direction lies outside the grid;
   the T-RO form keeps the nominal sequence out of the samples (one iteration can make a near-optimal sequence worse,
