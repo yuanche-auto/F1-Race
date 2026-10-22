@@ -177,8 +177,8 @@ replicate 2, 84.45 s) shows that a lap can depend on the random stream. `nmpc` a
 **Mechanism, as in development (protocol §9.4, §9.7):** in one sampling iteration per 50 ms the MPPI does not follow
 the large, fast input changes of turn 1 (braking from ~86 to ~28 m/s and turning in); once the car is near a limit,
 every sample carries a penalty (no penalty-free sample in ~20 % of all steps on CBT, ESS median 4.4) and the update
-follows a single sample. The drive-and-brake overlap of the MPPIs' applied inputs (median 300 N for `mppi_lp`, 865 N
-for the white noise, against `nmpc`'s 28 N) is the one-sided noise clipping of amendment B1.2; driving and braking at
+follows a single sample. The drive-and-brake overlap of the MPPIs' applied inputs (per-lap median, mean over the laps: 300 N for
+`mppi_lp`, 865 N for the white noise, against `nmpc`'s 28 N) is the one-sided noise clipping of amendment B1.2; driving and braking at
 once is a freedom of this model (fixed 60 / 40 brake split) that both controllers have, not a statement about a real
 car. Step times under the benchmark's load: `mppi_lp` mean 41.9 ms, P95 52.3 ms, 8 % of steps above 50 ms; IPOPT
 (`nmpc`) 179 ms mean.
@@ -188,8 +188,9 @@ car. Step times under the benchmark's load: `mppi_lp` mean 41.9 ms, P95 52.3 ms,
 * **At this budget, MPPI on the NMPC's problem does not drive these cars**: 0 of 50 for the primary and the white-noise
   version, 12 of 50 for the NMPC that solves the same problem with IPOPT – the registered test confirms on new cars
   what the nominal car showed in development. H-B2 cannot be tested.
-* **The failures are not the NMPC's:** the MPPIs leave mostly at turn 1, where the NMPC loses 20 cars but completes
-  or passes the rest; the corners that decide the NMPC's laps (2.7 and 3.83 km) are reached only by the larger budget.
+* **The failures are not the NMPC's:** the MPPIs leave mostly at turn 1, where the NMPC loses 20 cars but passes the
+  rest; the corners that decide the NMPC's other laps (2.7 and 3.83 km) the MPPI at K 1 024 reaches on 3 of 50 cars
+  (replicate 0), the larger budget on 8.
 * **Limits:** one CPU implementation and budget; an uninformative tuning whose better direction lies outside the grid;
   the T-RO form keeps the nominal sequence out of the samples (one iteration can make a near-optimal sequence worse,
   §9.4); the primary was changed after the gate failed (B2) and the gate itself was waived (B3). The follow-up
