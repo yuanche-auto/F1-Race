@@ -44,11 +44,19 @@ of the state by RK4 with the exact steering angle at the RK4 nodes.
 the model, z = (v_x, v_y, r, delta, delta_rate, F_drive, F_brake) – learned residual
 dynamics. ``param_tightening``: the per-stage friction factors and track back-offs
 become parameters of the NLP, set at every solve (``solve(..., eta=, backoff=)``).
-The formulation without these options is unchanged.
+``param_model`` (control expansion phase D): the seven factors of ``identify.PARAMS``
+(friction, mass, downforce and drag areas, yaw inertia, tyre stiffness multiplicative,
+the front share of the downforce additive) become parameters of the NLP
+(``solve(..., theta=)``); the slip-angle limit tan(pi/2C)/B then moves from the bounds
+into the constraint function. A list of references (a plan library) instead of one
+gives the reference a plan coordinate j, a parameter of the NLP (``solve(..., plan=)``):
+the reference at s is the linear interpolation between plans floor(j) and ceil(j) on the
+s grid of plan ``ref_grid``. The formulation without these options is unchanged.
 """
 from __future__ import annotations
 
 import time
+from dataclasses import replace
 
 import casadi as ca
 import numpy as np
@@ -60,6 +68,13 @@ from .dyn_tracking import traction_limit
 FS = 1e4
 BRAKE_REQUEST = 1e5        # [N] fallback "brake": more than any axle can take; the
                            # controller's traction control limits it to the friction left
+THETA_NOMINAL = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0])   # identify.X0: the nominal car's factors
+
+
+def param_vehicle(veh: DynVehicle, th) -> DynVehicle:
+    """``identify.vehicle_from`` for symbolic (or numeric) factors th = (mu, m, ClA, CdA, Iz, B, aero_front)."""
+    return replace(veh, mu_x=veh.mu_x * th[0], mu_y=veh.mu_y * th[0], m=veh.m * th[1], ClA=veh.ClA * th[2],
+                   CdA=veh.CdA * th[3], Iz=veh.Iz * th[4], B=veh.B * th[5], aero_front=veh.aero_front + th[6])
 
 
 def _periodic_interpolant(name: str, s: np.ndarray, f: np.ndarray, length: float, laps: int = 3):
@@ -69,15 +84,26 @@ def _periodic_interpolant(name: str, s: np.ndarray, f: np.ndarray, length: float
     return ca.interpolant(name, "linear", [grid], vals)
 
 
+def _periodic_library_interpolant(name: str, s: np.ndarray, F: np.ndarray, length: float, laps: int = 3):
+    """Linear interpolant of periodic fields F (len(s), n_plans) in (s, j) over [-length, laps*length] x [0, n - 1]."""
+    grid = np.concatenate([s + k * length for k in range(-1, laps)])
+    vals = np.tile(F, (laps + 1, 1))
+    return ca.interpolant(name, "linear", [grid, np.arange(F.shape[1], dtype=float)], vals.ravel(order="F"))
+
+
 class FrenetMPC:
     def __init__(self, track: Track, veh: DynVehicle, ref: dict, mode: str = "track",
                  N: int = 30, dt: float = 0.05, eta=0.97, margin: float = 0.3,
                  weights: dict | None = None, max_iter: int = 500, soft_limits: bool | int = True,
                  backoff=None, steer_lag: float | None = None, residual=None,
-                 param_tightening: bool = False, retry: bool = False, fallback: str = "shift"):
+                 param_tightening: bool = False, retry: bool = False, fallback: str = "shift",
+                 param_model: bool = False, ref_grid: int = 0):
         """``ref``: arrays over centre-line arclength ref['s'] with keys n, xi, vx (the
         reference trajectory, e.g. an L1 plan; in MPCC mode only vx is used, as a
-        terminal speed bound). ``eta``: friction factor, a number or one value per
+        terminal speed bound), or a list of such references (a plan library with the plan
+        coordinate as a parameter; all on the s grid of ``ref[ref_grid]``, the default
+        coordinate). ``param_model``: the model's seven factors as parameters (module doc).
+        ``eta``: friction factor, a number or one value per
         stage (N). ``soft_limits``: friction ellipses and slip angles as exactly
         penalised soft constraints at every stage (True), at the first k stages only (an
         integer k), or hard everywhere (False, which makes the NLP infeasible whenever
@@ -105,26 +131,45 @@ class FrenetMPC:
         kap = _periodic_interpolant("kap", track.s, track.kappa, L)
         wl = _periodic_interpolant("wl", track.s, track.w_left, L)
         wr = _periodic_interpolant("wr", track.s, track.w_right, L)
-        nref = _periodic_interpolant("nref", ref["s"], ref["n"], L)
-        xiref = _periodic_interpolant("xiref", ref["s"], ref["xi"], L)
-        vref = _periodic_interpolant("vref", ref["s"], ref["vx"], L)
+        self.param_model = bool(param_model)
+        self.library = isinstance(ref, (list, tuple))
+        if self.param_tightening and self.param_model:
+            raise ValueError("param_model with param_tightening is not implemented")
+        if self.library:
+            sg = np.asarray(ref[ref_grid]["s"], float)
+            lib = {key: np.column_stack([np.interp(sg, np.asarray(o["s"], float), np.asarray(o[key], float), period=L)
+                                         for o in ref]) for key in ("n", "xi", "vx")}
+            for key in lib:                                 # the grid plan itself, not a re-interpolation of it
+                lib[key][:, ref_grid] = np.asarray(ref[ref_grid][key], float)
+            self.n_plans, self.plan_default = len(ref), float(ref_grid)
+            nref = _periodic_library_interpolant("nref", sg, lib["n"], L)
+            xiref = _periodic_library_interpolant("xiref", sg, lib["xi"], L)
+            vref = _periodic_library_interpolant("vref", sg, lib["vx"], L)
+        else:
+            nref = _periodic_interpolant("nref", ref["s"], ref["n"], L)
+            xiref = _periodic_interpolant("xiref", ref["s"], ref["xi"], L)
+            vref = _periodic_interpolant("vref", ref["s"], ref["vx"], L)
 
         x = ca.SX.sym("x", 7)
         u = ca.SX.sym("u", 3)
+        th = ca.SX.sym("th", 7)
+        fargs = [th] if self.param_model else []        # the model's factors (param_model)
+        vm = param_vehicle(veh, th) if self.param_model else veh
         s, n, xi, vx, vy, r, d = (x[i] for i in range(7))
         k = kap(s)
-        F = tyre_forces(veh, vx, vy, r, d, u[1] * FS, u[2] * FS, lib=ca)
-        dvx, dvy, dr = body_accel(veh, vx, vy, r, d, F, lib=ca)
+        F = tyre_forces(vm, vx, vy, r, d, u[1] * FS, u[2] * FS, lib=ca)
+        dvx, dvy, dr = body_accel(vm, vx, vy, r, d, F, lib=ca)
         if residual is not None:
             rz = residual(ca.vertcat(vx, vy, r, d, u[0], u[1] * FS, u[2] * FS))
             dvx, dvy, dr = dvx + rz[0], dvy + rz[1], dr + rz[2]
         sdot = (vx * ca.cos(xi) - vy * ca.sin(xi)) / (1 - n * k)
-        f = ca.Function("f", [x, u], [ca.vertcat(sdot, vx * ca.sin(xi) + vy * ca.cos(xi),
-                                                 r - k * sdot, dvx, dvy, dr, u[0])])
+        f = ca.Function("f", [x, u, *fargs], [ca.vertcat(sdot, vx * ca.sin(xi) + vy * ca.cos(xi),
+                                                         r - k * sdot, dvx, dvy, dr, u[0])])
         h = dt
         if steer_lag is None:
-            k1 = f(x, u); k2 = f(x + h / 2 * k1, u); k3 = f(x + h / 2 * k2, u); k4 = f(x + h * k3, u)
-            step = ca.Function("step", [x, u], [x + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)])
+            k1 = f(x, u, *fargs); k2 = f(x + h / 2 * k1, u, *fargs)
+            k3 = f(x + h / 2 * k2, u, *fargs); k4 = f(x + h * k3, u, *fargs)
+            step = ca.Function("step", [x, u, *fargs], [x + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)])
         else:
             xl = ca.SX.sym("xl", 8)
             tau, a0, c0, rho = float(steer_lag), xl[6], xl[7], u[0]
@@ -133,49 +178,70 @@ class FrenetMPC:
                 return c0 + rho * (t - tau) + (a0 - c0 + rho * tau) * ca.exp(-t / tau)
 
             def f6(z, dd):                              # first six rates at steering angle dd
-                return f(ca.vertcat(z, dd), u)[:6]
+                return f(ca.vertcat(z, dd), u, *fargs)[:6]
 
             z0 = xl[:6]
             k1 = f6(z0, a0); k2 = f6(z0 + h / 2 * k1, d_at(h / 2))
             k3 = f6(z0 + h / 2 * k2, d_at(h / 2)); k4 = f6(z0 + h * k3, d_at(h))
-            step = ca.Function("step", [xl, u], [ca.vertcat(z0 + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4),
-                                                            d_at(h), c0 + rho * h)])
+            step = ca.Function("step", [xl, u, *fargs], [ca.vertcat(z0 + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4),
+                                                                    d_at(h), c0 + rho * h)])
 
         X = ca.SX.sym("X", nx, N + 1)
         U = ca.SX.sym("U", 3, N)
         S = ca.SX.sym("S", 2, N + 1)                  # track-limit slacks (front, rear points)
         n_soft = N if soft_limits is True else int(soft_limits)
         T = ca.SX.sym("T", 4, n_soft)                   # ellipse (front, rear) and slip slacks
-        npar = nx + 3 + (2 * N + 1 if self.param_tightening else 0) + (3 if mode == "filter" else 0)
-        P = ca.SX.sym("P", npar)                      # initial state, previous input (, eta_k, b_k)
+        pm, i_th = self.param_model, nx + 3 + (2 * N + 1 if self.param_tightening else 0)
+        i_j = i_th + (7 if pm else 0)
+        npar = i_j + (1 if self.library else 0) + (3 if mode == "filter" else 0)
+        P = ca.SX.sym("P", npar)                      # initial state, previous input (, eta_k, b_k)(, theta)(, j)
         pt = self.param_tightening
+        Pargs = [P[i_th:i_th + 7]] if pm else []
+        vP = param_vehicle(veh, P[i_th:i_th + 7]) if pm else veh
+        if self.library:
+            Pj = P[i_j]
+            nref_, xiref_, vref_ = nref, xiref, vref
+            nref, xiref, vref = (lambda q: nref_(ca.vertcat(q, Pj))), (lambda q: xiref_(ca.vertcat(q, Pj))),                 (lambda q: vref_(ca.vertcat(q, Pj)))
         g, lbg, ubg = [], [], []
         J = 0
         g.append(X[:, 0] - P[:nx]); lbg += [0] * nx; ubg += [0] * nx
         body = veh.half_width + margin
         for i in range(N):
-            g.append(X[:, i + 1] - step(X[:, i], U[:, i])); lbg += [0] * nx; ubg += [0] * nx
-            Fi = tyre_forces(veh, X[3, i], X[4, i], X[5, i], X[6, i], U[1, i] * FS, U[2, i] * FS, lib=ca)
-            uf2 = (Fi["fxf"] / (veh.mu_x * Fi["fzf"])) ** 2 + (Fi["fyf"] / (veh.mu_y * Fi["fzf"])) ** 2
-            ur2 = (Fi["fxr"] / (veh.mu_x * Fi["fzr"])) ** 2 + (Fi["fyr"] / (veh.mu_y * Fi["fzr"])) ** 2
+            g.append(X[:, i + 1] - step(X[:, i], U[:, i], *Pargs)); lbg += [0] * nx; ubg += [0] * nx
+            Fi = tyre_forces(vP, X[3, i], X[4, i], X[5, i], X[6, i], U[1, i] * FS, U[2, i] * FS, lib=ca)
+            uf2 = (Fi["fxf"] / (vP.mu_x * Fi["fzf"])) ** 2 + (Fi["fyf"] / (vP.mu_y * Fi["fzf"])) ** 2
+            ur2 = (Fi["fxr"] / (vP.mu_x * Fi["fzr"])) ** 2 + (Fi["fyr"] / (vP.mu_y * Fi["fzr"])) ** 2
             if i < n_soft:
-                ap = veh.alpha_peak                     # slip slacks in units of the peak angle
                 ek = eta_k[i]
                 # the longitudinal force of each axle stays hard-limited (always satisfiable):
                 # otherwise the optimiser buys impossible braking with ellipse slack
-                g += [uf2 - T[0, i], ur2 - T[1, i], Fi["af"] - ap * T[2, i], Fi["af"] + ap * T[2, i],
-                      Fi["ar"] - ap * T[3, i], Fi["ar"] + ap * T[3, i], U[1, i] * FS * X[3, i],
-                      Fi["fxf"] / (veh.mu_x * Fi["fzf"]), Fi["fxr"] / (veh.mu_x * Fi["fzr"])]
+                if pm:                                  # slip limit with the parameter B: in the constraint function
+                    ap = np.tan(np.pi / (2.0 * veh.C)) / vP.B
+                    slip = [Fi["af"] - ap * (T[2, i] + 1.0), Fi["af"] + ap * (T[2, i] + 1.0),
+                            Fi["ar"] - ap * (T[3, i] + 1.0), Fi["ar"] + ap * (T[3, i] + 1.0)]
+                    sl_lb, sl_ub = [-ca.inf, 0.0, -ca.inf, 0.0], [0.0, ca.inf, 0.0, ca.inf]
+                else:
+                    ap = veh.alpha_peak                 # slip slacks in units of the peak angle
+                    slip = [Fi["af"] - ap * T[2, i], Fi["af"] + ap * T[2, i],
+                            Fi["ar"] - ap * T[3, i], Fi["ar"] + ap * T[3, i]]
+                    sl_lb, sl_ub = [-ca.inf, -ap, -ca.inf, -ap], [ap, ca.inf, ap, ca.inf]
+                g += [uf2 - T[0, i], ur2 - T[1, i], *slip, U[1, i] * FS * X[3, i],
+                      Fi["fxf"] / (vP.mu_x * Fi["fzf"]), Fi["fxr"] / (vP.mu_x * Fi["fzr"])]
                 if pt:                                  # the same rows with eta_k a parameter
                     ek = P[nx + 3 + i]
                     g[-9:] = [g[-9] - ek**2, g[-8] - ek**2] + g[-7:-2] + [g[-2] - ek, g[-2] + ek,
                                                                          g[-1] - ek, g[-1] + ek]
-                    lbg += [-ca.inf, -ca.inf, -ca.inf, -ap, -ca.inf, -ap, -ca.inf, -ca.inf, 0.0, -ca.inf, 0.0]
-                    ubg += [0.0, 0.0, ap, ca.inf, ap, ca.inf, veh.P_max, 0.0, ca.inf, 0.0, ca.inf]
+                    lbg += [-ca.inf, -ca.inf, *sl_lb, -ca.inf, -ca.inf, 0.0, -ca.inf, 0.0]
+                    ubg += [0.0, 0.0, *sl_ub, veh.P_max, 0.0, ca.inf, 0.0, ca.inf]
                 else:
-                    lbg += [-ca.inf, -ca.inf, -ca.inf, -ap, -ca.inf, -ap, -ca.inf, -ek, -ek]
-                    ubg += [ek**2, ek**2, ap, ca.inf, ap, ca.inf, veh.P_max, ek, ek]
+                    lbg += [-ca.inf, -ca.inf, *sl_lb, -ca.inf, -ek, -ek]
+                    ubg += [ek**2, ek**2, *sl_ub, veh.P_max, ek, ek]
                 J += w["limit_slack"] * h * (ca.sumsqr(T[:, i]) + 10.0 * ca.sum1(T[:, i]))
+            elif pm:                                    # hard limits, the slip angles in units of the peak angle
+                ap = np.tan(np.pi / (2.0 * veh.C)) / vP.B
+                g += [uf2, ur2, Fi["af"] / ap, Fi["ar"] / ap, U[1, i] * FS * X[3, i]]
+                lbg += [-ca.inf, -ca.inf, -1.0, -1.0, -ca.inf]
+                ubg += [eta_k[i]**2, eta_k[i]**2, 1.0, 1.0, veh.P_max]
             else:
                 if pt:
                     ek = P[nx + 3 + i]
@@ -249,6 +315,7 @@ class FrenetMPC:
         self._nlp, self._step, self._max_iter = nlp, step, max_iter
         self._solver2 = None
         self.z = None
+        self._theta = THETA_NOMINAL.copy()
         self.lam_g = None
         self.lam_x = None
         self.stats: list[dict] = []
@@ -266,10 +333,12 @@ class FrenetMPC:
         return z
 
     def solve(self, x0: np.ndarray, u_prev: np.ndarray, eta=None, backoff=None,
-              u_des=None) -> tuple[np.ndarray, dict]:
+              u_des=None, theta=None, plan=None) -> tuple[np.ndarray, dict]:
         """``eta`` (N) and ``backoff`` (N + 1): per-solve tightening (``param_tightening``
         only; default: the values given at construction). ``u_des``: the proposed input
-        (``mode="filter"`` only; rate in rad/s, forces in N).
+        (``mode="filter"`` only; rate in rad/s, forces in N). ``theta``: the model's seven
+        factors (``param_model`` only; default: the nominal car). ``plan``: the plan
+        coordinate (a library reference only; default: ``ref_grid``).
 
         A failed solve (no ``Solve_Succeeded`` / ``Solved_To_Acceptable_Level``) applies
         the shifted previous plan. With ``retry`` it is first retried with a second IPOPT
@@ -286,6 +355,15 @@ class FrenetMPC:
             p = np.concatenate([p, e, b])
         elif eta is not None or backoff is not None:
             raise ValueError("per-solve tightening needs param_tightening=True")
+        if self.param_model:
+            self._theta = THETA_NOMINAL.copy() if theta is None else np.asarray(theta, float)
+            p = np.concatenate([p, self._theta])
+        elif theta is not None:
+            raise ValueError("theta needs param_model=True")
+        if self.library:
+            p = np.concatenate([p, [self.plan_default if plan is None else float(plan)]])
+        elif plan is not None:
+            raise ValueError("plan needs a reference library")
         if self.mode == "filter":
             if u_des is None:
                 raise ValueError("the filter needs u_des")
@@ -353,7 +431,7 @@ class FrenetMPC:
         xs = np.asarray(x0, float)
         z[self.Xi[0]] = xs
         for i in range(self.N):
-            xs = np.asarray(self._step(xs, z[self.Ui[i]])).ravel()
+            xs = np.asarray(self._step(xs, z[self.Ui[i]], *([self._theta] if self.param_model else []))).ravel()
             z[self.Xi[i + 1]] = xs
         return z
 
