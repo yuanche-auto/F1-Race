@@ -354,3 +354,16 @@ NOM and the development cars only; records in `results/CX/D/dev/` (git-ignored),
 **Tuning tie (code, for the reviewer):** section 4 breaks a remaining tie by "the middle setting of the grid"; when the
 lowest and the highest setting are tied without the middle one, both are equally far from it – `cx_d.select` then takes
 the smaller value (λ_μ 0.99, W 0.1). Stated here before any CDV lap.
+
+**The drift's start (found after the CDT / CDD report; packet 4).** The lap's start state projects to s = L − 1.4 · 10⁻¹¹,
+just before the line, so the drift field (a function of s mod L) gave f_end for the first 10 ms simulator step of every
+drift lap (DEV_D above, CDV_D, CDD) – the same for every controller – instead of f = 1 up to s_on as section 2 defines
+it; and the lap's onset diagnostics (`cx_d.adaptation_metrics`) detected the onset at the lap's first solve. The
+diagnostics now use the lap position (`cx_d.lap_position`, c8035cb; the CDT / CDD report's drift-delay columns and the
+CDV report's are therefore not used – `dev/cdd_rerun.json` has the corrected ones). Checked at c8035cb
+(`dev/cdd_rerun.json`; the decision rule set by the review before the check): `adaptive` on CDD again with the field as
+run – all 50 laps identical to `test.jsonl`; with the start fixed (`cx_d_dev._StartFixDrift`) – `nmpc` 0 → 0, `adaptive`
+34 → 34, `adaptive_oracle` 44 → 44, `tube` 2 → 2 completed, no car's outcome changed (completed laps up to 0.79 s apart).
+The replays of item 4 were not affected (they read the onset from the recorded states after the first one); redone at
+c8035cb they are identical in every field (`dev/replay.json`; the first record kept as
+`dev/replay_v1_onset_at_lap_start.json`).

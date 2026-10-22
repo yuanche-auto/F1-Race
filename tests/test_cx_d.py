@@ -155,3 +155,42 @@ def test_report_tune_and_test(tmp_path):
     assert len(res["secondary"]) == 16                                           # 7 pairs + adaptive-nmpc, x 2 sets
     md = (tmp_path / "report" / "CX_D.md").read_text(encoding="utf-8")
     assert "| CDT_car5 |" in md and "not independent" in md and "Noise floor on CDT" in md
+
+
+def test_lap_position_and_the_drift_start():
+    """Packet 4: the start state projects to s = L - 1e-11. The drift field (s mod L) gives f_end there - the first
+    step's artefact; the start-fixed field of the check gives 1; the onset diagnostics use the lap position."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import cx_d_dev
+
+    L = 4315.74
+    q = cx_d.lap_position([L - 1e-11, L + 0.76, L + 2000.0, 2 * L - 1.0], L)
+    assert q[0] == pytest.approx(0.0, abs=1e-9) and np.allclose(np.diff(q), [0.76, 1999.24, L - 2001.0])
+    assert np.allclose(cx_d.lap_position([0.5, 1.5], L), [0.5, 1.5])
+    f, g = cx_d.DriftField(L, 1000.0, 500.0, 0.8), cx_d_dev._StartFixDrift(L, 1000.0, 500.0, 0.8)
+    assert f(L - 1e-11) == pytest.approx(0.8) and g(L - 1e-11) == 1.0          # the artefact and its fix
+    for s in (0.0, 999.0, 1250.0, 1500.0, L - 10.0):
+        assert g(s) == f(s)
+
+
+def test_drift_onset_diagnostics_from_the_onset_not_the_lap_start():
+    from types import SimpleNamespace
+
+    from f1race.track import Track
+
+    track = Track.load("Spielberg")
+    L = track.length
+    case = {"info": {"mu": 1.0}, "wet": None, "noise_seed": None,
+            "drift": {"s_on": 1000.0, "ell": 500.0, "f_end": 0.8}}
+    field = cx_d.DriftField(L, 1000.0, 500.0, 0.8)
+    t = np.arange(0.0, 40.0, 0.05)
+    s = (L - 1e-11) + 60.0 * t                                     # unwrapped, as the controller's trace
+    mu_hat = np.array([float(field(q)) for q in s]) + np.where(t > 30.0, 0.0, 0.03)   # the estimate settles at 30 s
+    th = np.tile([1.0, 1, 1, 1, 1, 1, 0.0], (len(t), 1))
+    th[:, 0] = mu_hat
+    ctl = SimpleNamespace(trace=[(ti, si, 2.0, mi, *row) for ti, si, mi, row in zip(t, s, mu_hat, th)], est=None)
+    sim = SimpleNamespace(dist=SimpleNamespace(friction=field))
+    m = cx_d.adaptation_metrics(case, ctl, sim, np.array([0.88, 0.93, 0.95]), track)
+    t_on = t[np.flatnonzero(s - (L - 1e-11) >= 1000.0)[0]]
+    assert m["drift_onset_t"] == pytest.approx(t_on) and t_on > 16.0                     # not the lap start
+    assert m["drift_settle_delay_s"] == pytest.approx(t[np.flatnonzero(t > 30.0)[0]] - t_on)

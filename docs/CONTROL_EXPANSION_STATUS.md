@@ -1,6 +1,6 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-22 (phase C merged as 4b4e091; phase D: packet 2 APPROVE; CDV tuning done, selections sent for review). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-22 (phase C merged as 4b4e091; phase D: CDT / CDD done – H-D1 and H-D2 hold; packet 4 in review). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
 * **Current phase:** D – adaptive MPC / online identification, branch `cx/D-adaptive` from `main` 4b4e091: literature
   §D.1–D.14 and the protocol [CX_D_protocol.md](CX_D_protocol.md) revision 0 **APPROVE** (314129d) with clarifications
@@ -16,7 +16,12 @@ Last updated: 2026-10-22 (phase C merged as 4b4e091; phase D: packet 2 APPROVE; 
   `adaptive_bank` kept as registered. CDV tuning 11:05–11:28 in `F1-Race-worktrees/F1-Race-wt-CXD-run` at cd484bd (120 laps,
   no error; `tune.jsonl` f59485d0fb5c…, `selected.json` b7e631a95b6f…): `adaptive` λ_μ 0.995 – 19 of 20 (0.99: 17, 0.999: 14);
   `adaptive_bank` W 0.2 – 1 of 20 (0.1 and 0.5: 0; most laps end at turn 1, ~463 m). Selections sent for review; CDT /
-  CDD (707 laps) wait for it.
+  CDD (707 laps) wait for it. Packet 3 **APPROVE**. CDT + NOM and CDD 11:30–14:45 at cd484bd (707 laps, no error;
+  `test.jsonl` d7f85902eb45…): **H-D1 holds** (27 : 0, `adaptive` 42 / `nmpc` 15 of 50, p 1.5 · 10⁻⁸), **H-D2 holds**
+  (34 : 0, 34 / 0, p 1.2 · 10⁻¹⁰); `nmpc_param` 0 : 0 on both; `adaptive_oracle` 42 (CDT) and 44 (CDD), `identified` 50
+  and 0, `tube` 46 and 2, `adaptive_bank` 1 and 0. The drift's start (the start state projects to s = L − 1e-11: the first
+  10 ms at f_end, the onset diagnostics from the lap start) – found after the report, diagnostics fixed (c8035cb),
+  re-run check: no car's outcome changes; packet 4 (report, re-run check, benchmark text) in review.
 * **Phase C:** done – final review of 3dec001 **APPROVE**, `cx/C-tube` merged to `main` (--no-ff) 2026-10-22 as
   **4b4e091**. Phase C result: `nmpc`'s constraints tightened by an error tube from the L2 parameter box complete 49 of 50 new
   test cars against `nmpc`'s 16 – **H-C1 holds** (33 : 0, p 2.3 · 10⁻¹⁰; numerical-path control 2 : 0), **H-C2 holds**
@@ -71,7 +76,7 @@ Last updated: 2026-10-22 (phase C merged as 4b4e091; phase D: packet 2 APPROVE; 
 | A | `mpcc_ca` (CiMPCC-based, amendment A1) and the secondary conditions; soft speed bound (amendment A2) | yes | yes – `tests/test_mpcc.py` 8, `tests/test_cx_a.py` 7 | smoke on cases outside every set (`results/CX/A/dev/secondary_smoke.jsonl`); A2 diagnostic on CXV cars 2 / 5 / 7; CXT | **APPROVE** (94cba68 … e2cea5d) | **yes** |
 | B | `control/mppi.py` (`MPPI`), `experiments/cx_b.py`, `scripts/run_cx_b.py`, `scripts/report_cx_b.py`, `scripts/cx_b_dev.py` | yes (57146e4 … baa69cb) | yes – `tests/test_mppi.py` 12, `tests/test_cx_b.py` 6 | development checks 9.1–9.8 on the nominal car; CXV tuning; CBT benchmark; secondary conditions | protocol rev 0, B1, B2, B3 and packets 2–6 **APPROVE**; final review b276f56 **APPROVE** | **yes – phase B completed** |
 | C | `control/tube.py` (`Tube`, `TubeMPCController`), `experiments/cx_c.py`, `scripts/{run,report}_cx_c.py`, `scripts/cx_c_dev.py` | yes (0689c41 … eab7c63) | yes – `tests/test_tube.py` 8, `tests/test_cx_c.py` 5 | development checks §9 on NOM and CXDEV; CXV tuning; CCT; secondary conditions | protocol rev 0, C1 and packets 2–5 **APPROVE**; final review 3dec001 **APPROVE** | **yes – phase C completed** |
-| D | `estimation/{rls,bank}.py`, `control/adaptive_mpc.py`, `FrenetMPC(param_model=True)`, `experiments/cx_d.py`, `scripts/{run,report}_cx_d.py`, `scripts/cx_d_{dev,plans}.py` | yes (6f54f30 … ea4ac82) | yes – `tests/test_adaptive.py` 8, `tests/test_cx_d.py` 5 | development checks §9 on NOM and DEV (gate passed) | protocol rev 0 and literature §D **APPROVE** (packet 1, m1–m3 / n1–n3); packet 2 **APPROVE**; CDV selections in review | – |
+| D | `estimation/{rls,bank}.py`, `control/adaptive_mpc.py`, `FrenetMPC(param_model=True)`, `experiments/cx_d.py`, `scripts/{run,report}_cx_d.py`, `scripts/cx_d_{dev,plans}.py` | yes (6f54f30 … ea4ac82) | yes – `tests/test_adaptive.py` 8, `tests/test_cx_d.py` 5 | development checks §9 on NOM and DEV (gate passed) | protocol rev 0 and literature §D **APPROVE** (packet 1, m1–m3 / n1–n3); packets 2, 3 **APPROVE**; packet 4 (CDT / CDD) in review | – |
 | E–G | – | not started | – | – | – | – |
 
 ## Review record
@@ -104,6 +109,7 @@ Last updated: 2026-10-22 (phase C merged as 4b4e091; phase D: packet 2 APPROVE; 
 | 2026-10-22 | 3dec001 | **phase C final review** (whole branch vs main 2858db4: 19 commits, 12 files, +1913 / −13) | **APPROVE** | the three standing checks pass; status lines marked done before the merge |
 | 2026-10-22 | 314129d | phase D packet 1: literature D.1–D.14, protocol revision 0 | **APPROVE** | m1 the ceiling reading (gap to the oracle) and CDT_NOISE; m2 the drawn drifts before CDV, H-D1 / H-D2 dependent; m3 the MHE removed; n1–n3 |
 | 2026-10-22 | cd484bd (6f54f30 …) | phase D packet 2: code, tests, development checks (gate passed) | **APPROVE** | (a) tie-break to the smaller setting accepted; (b) `adaptive_bank` kept as registered; n1 read too-fast with completion; n2 RUN_COMMIT + timeline for the runs |
+| 2026-10-22 | cd484bd (run) | phase D packet 3: CDV tuning (120 laps; `adaptive` λ_μ 0.995, `adaptive_bank` W 0.2) | **APPROVE** | report notes: the CDD failures against the drift's progress, the bank as not applicable, CDV background only |
 
 ## Tests
 
@@ -132,8 +138,11 @@ All git-ignored.
 
 Phase D: `results/CX/D/plans/` (main checkout) – the new plans of the library (`plans_cxd.pkl`, `plans_cxd_log.json`);
 `results/CX/D/dev/` – the development checks of CX-D §9 (`unchanged.json`, `step.json`, `nlp.json`, `plans.json`,
-`replay.json` with `replay_laps/`, `laps.jsonl`, `gate.json`, `drifts.json`) and the runner smoke (`smoke/`). All
-git-ignored.
+`replay.json` with `replay_laps/`, `laps.jsonl`, `gate.json`, `drifts.json`; after the CDT / CDD report
+`cdd_failures.json`, `cdd_rerun.jsonl`, `cdd_rerun.json`, `replay_v1_onset_at_lap_start.json`) and the runner smoke
+(`smoke/`). Benchmark: worktree `F1-Race-worktrees/F1-Race-wt-CXD-run` at cd484bd, `results/CX/D/` (`tune.jsonl`,
+`selected.json`, `test.jsonl`, `report/`, `RUN_COMMIT_tune`, `RUN_COMMIT_test`, `SHA256_inputs*.txt`, `timeline.tsv`,
+`identified_cache/`). All git-ignored.
 
 ## Known blockers
 
@@ -143,6 +152,7 @@ git-ignored.
 
 ## Next actions
 
-1. Phase D: review of the CDV selections (packet 3); then CDT + NOM and CDD (707 laps) in the same worktree at cd484bd.
+1. Phase D: review of packet 4 (CDT / CDD report, the drift-start check, the benchmark text); then the secondary
+   conditions (840 laps) after it.
 2. Phase B follow-up candidates (CONTROL_METHOD_MATRIX.md) stay unscheduled; phase C's tube around phase D's adaptive
    model (robust adaptive MPC, literature D.13) is a candidate after phase D.

@@ -331,3 +331,105 @@ Run 2026-10-22 07:27–08:23 at eab7c63 in the same worktree, 420 laps, no error
 * Reading: the tube's tightening, sized from the L2 parameter box, also covers conditions it was not built for (a
   steering lag, stochastic disturbances) on these cars and this track – a large margin effect; its price on the nominal
   car and the new tracks is 2–5 s per lap. These are secondary, uncorrected comparisons.
+
+## Phase D – adaptive MPC and online identification
+
+Protocol [CX_D_protocol.md](CX_D_protocol.md) (revision 0 with the clarifications m1–m3, n1–n3 of its review). Runs from
+the pinned worktree `F1-Race-worktrees/F1-Race-wt-CXD-run` at cd484bd (inputs identical to the main checkout; track and
+L1 / L2 plans identical to phase C's run): CDV tuning 2026-10-22 11:05–11:28 (120 laps), CDT + NOM and CDD 11:30–14:45
+(707 laps); no error record. Records (git-ignored) in that worktree's `results/CX/D/`: `tune.jsonl` (f59485d0fb5c…),
+`selected.json` (b7e631a95b6f…), `test.jsonl` (d7f85902eb45…), `report/CX_D.md`, `timeline.tsv`.
+
+**Settings chosen on CDV** (the 10 CXV cars, constant and with a drift): `adaptive` λ_μ 0.995 (19 of 20; 0.99: 17, 0.999:
+14), `adaptive_bank` W 0.2 (1 of 20; 0.1 and 0.5: 0). Background only (selection bias): on the same cars with constant
+parameters phase A's `nmpc` completed 3 of 10, `adaptive` 10 of 10.
+
+**The drift's start (found after the report, packet 4):** the lap's start state projects to s = L − 1.4 · 10⁻¹¹, so
+the drift field (a function of s mod L) gave the final grip f_end for the **first 10 ms step** of every drift lap (CDD,
+CDV_D, DEV_D), for every controller alike, and the onset diagnostics counted from the lap start. Checked at c8035cb
+(`results/CX/D/dev/cdd_rerun.json`): `adaptive` on CDD again with the field as run reproduces all 50 laps of
+`test.jsonl`; with the start fixed (f = 1 up to s_on, as protocol §2 defines it) `nmpc` 0 → 0, `adaptive` 34 → 34,
+`adaptive_oracle` 44 → 44, `tube` 2 → 2 completed, **no car's outcome changes** (completed laps differ by up to 0.79 s –
+one different step at the start is amplified over the lap, like phase C's numerical path). By the decision rule fixed
+before that check, H-D2 stands as run and the fixed version is its sensitivity check. The drift diagnostics below are
+the corrected ones (lap position instead of s mod L). The CDV tuning ran with the same first step; it selected by
+completions only and is not re-run.
+
+### Primary tests: both hold
+
+| test | set | only `adaptive` : only `nmpc` | completed `adaptive` / `nmpc` | exact McNemar p | Holm | each at 0.025 |
+|---|---|---|---|---|---|---|
+| **H-D1** | CDT – 50 new L2 cars, constant | **27 : 0** | 42 / 15 | 1.5 · 10⁻⁸ | holds | holds |
+| **H-D2** | CDD – the same cars, grip falling during the lap | **34 : 0** | 34 / 0 | 1.2 · 10⁻¹⁰ | holds | holds |
+
+CDT and CDD are the same 50 cars: the two tests are not independent pieces of evidence (review m2). The numerical-path
+control `nmpc_param` (the adaptive NLP with the nominal car and the 5 % plan) is 0 : 0 against `nmpc` on both sets.
+Not cross-checked in a second environment.
+
+### The gap to the oracle (review m1: the main quantity for H-D1) and the other comparisons (uncorrected)
+
+| set | controller | completed | mean lap s (completed) | against `adaptive`: only it : only `adaptive`; lap time where both complete |
+|---|---|---|---|---|
+| CDT | `adaptive` | 42 | 77.81 | – |
+| CDT | `adaptive_oracle` | 42 | 77.89 | 3 : 3; `adaptive` − oracle −0.04 s on 39 (p 0.62) |
+| CDT | `identified` (one exploration lap, full re-plan) | **50** | 78.01 | 8 : 0 (p 0.008); `adaptive` − `identified` +0.13 s on 42 (p 0.03) |
+| CDT | `tube` (phase C) | 46 | 79.17 | 5 : 1 (p 0.22); `adaptive` − `tube` −1.25 s on 41 (p 10⁻⁸) |
+| CDT | `nmpc` | 15 | 76.83 | 0 : 27 |
+| CDT | `adaptive_bank` | 1 | 75.68 | 0 : 41 |
+| CDD | `adaptive` | 34 | 82.83 | – |
+| CDD | `adaptive_oracle` | 44 | 82.29 | 13 : 3 (p 0.02); `adaptive` − oracle −0.01 s on 31 |
+| CDD | `tube` | 2 | 81.82 | 0 : 32 |
+| CDD | `identified` | 0 | – | 0 : 34 |
+| CDD | `nmpc`, `nmpc_param`, `adaptive_bank` | 0 | – | 0 : 34 each |
+
+Failure positions. CDT: `nmpc` – turn 1 (459–472 m) 16, ~2.2 km 2, ~2.75 km 6, ~3.83 km 11; `adaptive` – 466 m 1,
+~2.75 km 2, ~3.83 km 5; `adaptive_oracle` – 3 823–3 840 m 8; `tube` – ~3.82 km 2, ~1.40 km 2. CDD (`cdd_failures.json`):
+`adaptive`'s 16 – before the onset 1 (466 m), during the decline 7, after its end 8; at the corners ~2.75 km 9, ~3.82 km
+6; `adaptive_oracle`'s 6 – during 2, after 4. Every CDD drift has ended before 3.83 km (§9 item 7), so a split by "drift
+still under way at that corner" is empty.
+
+Adaptation (corrected drift diagnostics): on CDT `adaptive`'s |μ̂ − μ| P50 0.010, P95 0.035, the seven factors' error at
+the lap end 0.005 on average, settled (error < 0.02 from then on) on 48 of 50 laps, median 12.5 s after the start; the
+plan asked for more grip than the car had ("too fast", η_p > 0.95 μ + 0.01) on a third of the solves on average. On CDD
+the friction estimate settles 0–60 s after the onset (median 18.4 s; 4 laps never) – 18.4 s on the completed laps,
+16.4 s on the failed ones; per-lap P95 of |μ̂ − μf|, medians: 0.034 before the onset (the identification at the start),
+0.037 during the decline, 0.014 after it. The failed CDD laps had a higher too-fast share (median 0.51 against 0.13) and
+a somewhat lower final grip (μ·f_end median 0.786 against 0.813).
+
+### Reading
+
+* **H-D1: online identification makes the NMPC complete 27 more of the 50 new cars than the nominal NMPC – and costs
+  almost nothing against knowing the car.** `adaptive` and `adaptive_oracle` complete the same number (42), discordant
+  3 : 3, with −0.04 s where both complete: the estimation error has no measurable cost here (exact states and the
+  simulator's own step as the estimator's model – an upper bound, protocol §1).
+* **But the architecture's ceiling is below a full re-plan:** the oracle, handed the true car, still leaves 8 cars at
+  the corner at 3.83 km – where L2's failures concentrate – while `identified`, with one exploration lap and a full
+  re-plan of the minimum-time OCP for the identified car, completes all 50. The plan library adapts the plan to friction
+  only; tyre stiffness, aero balance and downforce are updated in the NMPC's model but not in the plan, and that is not
+  enough at that corner.
+* **"Without the exploration lap" has a price (review of packet 4):** against `identified` the online controller is
+  0 : 8. H-D1's scope – that online identification reaches what identification gives, without the extra lap – is not
+  borne out on these cars: it reaches the oracle of its own architecture, not the re-plan. Against `tube`, which knows
+  the L2 ranges, `adaptive` loses 5 : 1 (not significant) and is 1.25 s faster.
+* **H-D2: when the grip falls during the lap, only the adaptive controllers complete laps:** `adaptive` 34, the oracle
+  44; none for `nmpc`, `nmpc_param`, the model bank and `identified` (its identification, made before the grip fell, is
+  stale – the case protocol §3.7 foresaw); `tube` 2 (its tightening is sized for μ ≥ 0.92, which the drift leaves). The
+  gap to the oracle, 13 : 3 (p 0.02, uncorrected), is the cost of tracking the falling grip with a ~2 s memory (λ_μ
+  0.995); slow settling alone does not separate the failed laps from the completed ones (16 against 18 s), a plan that
+  was too fast more often does.
+* **The model bank (D.9) does not work here:** 1 of 50 and 0 of 50, mostly off at turn 1 before any drift – the bank's
+  selected friction is far from the car's (|μ̂ − μ| P50 0.10, P95 0.28; hundreds of switches per lap), so the plan is too
+  fast (two-thirds of the solves). Two reasons (§9 item 4): friction is unobservable on the straights, so many members
+  tie and the argmin switches among them; and 20 001 random vectors in the seven-dimensional box of L4's bounds are about
+  a quarter of each range apart, so no member is close to a car. D.9 builds its bank the same way (uniform random draws,
+  not a grid), but over 8 tyre and drag parameters of a scale car, with bounds set relative to the true values (±150 %)
+  and the unweighted full state as its score. This is D.9's method under this problem's parameters and bounds, not a
+  refutation of D.9.
+* **Excitation:** one CDT car (38), which `nmpc` takes past turn 1, leaves there with `adaptive` but not with the oracle –
+  its estimate overshot before the first corner had excited the tyres (too-fast share 0.88). The 16 cars `nmpc` loses at
+  turn 1 all pass it with `adaptive` (10 of them complete; 6 leave later, at ~2.75 or ~3.83 km). CDT_WET85 (secondary)
+  tests the case where the grip is wrong from the start.
+* **Limits:** exact states and the exact model structure in the primary sets (the ceiling of online identification;
+  noise and an unmodelled lag are secondary conditions); certainty equivalence; a plan library over friction only; one
+  track; offline (IPOPT without a time budget; the RLS adds ~0.3 ms per 10 ms step, the bank ~14 ms); not cross-checked
+  in a second environment.
