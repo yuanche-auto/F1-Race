@@ -1,6 +1,6 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-22 (phase C: packet 3 APPROVE, amendment C1; CCT running). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-22 (phase C: CCT done – H-C1 and H-C2 hold; packet 4 in review). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
 * **Current phase:** C – robust tube MPC, branch `cx/C-tube` from `main` 2858db4: protocol revision 0 **APPROVE** (9006b4a)
   with clarifications m1–m3, n1–n3 (f0b25fb); `control/tube.py`, `experiments/cx_c.py`, runner / report / dev scripts and
@@ -9,7 +9,9 @@ Last updated: 2026-10-22 (phase C: packet 3 APPROVE, amendment C1; CCT running).
   NLP's numerical path; 8b6b40d). CXV tuning 05:57–06:13 in `F1-Race-worktrees/F1-Race-wt-CXC-run` at 8b6b40d (60 laps,
   no error): `tube` 10 of 10 with every c_R → c_R 1; `tube_track` 3 of 10 → c_R 0.1; packet 3 **APPROVE** with
   **amendment C1** (`nmpc_param`, the numerical-path control; eab7c63). CCT (306 laps) started 06:17 in the same worktree
-  at eab7c63 (RUN_COMMIT_tune 8b6b40d kept).
+  at eab7c63 (RUN_COMMIT_tune 8b6b40d kept); done 07:06 (306 laps, `test.jsonl` bcf5e9f743d8…): **H-C1 holds for `tube`**
+  (49 vs 16 of 50, 33 : 0, p 2.3 · 10⁻¹⁰), **H-C2 holds** (`tube` +1.61 s, p 3 · 10⁻⁵); noise floor `nmpc_param` 2 : 0;
+  packet 4 sent.
 * **Phase B:** done – final review of b276f56 **APPROVE**, `cx/B-mppi` merged to `main` (--no-ff) 2026-10-22 as **2858db4**.
   Phase B result: MPPI on the NMPC's problem at the real-time CPU budget (numpy, K 1 024) completes 0 of 50 test cars
   against the NMPC's 12 – **H-B1 holds for `nmpc`** (0 : 12, p 0.0005; confirmatory, after the development gate failed
