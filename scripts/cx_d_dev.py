@@ -1,6 +1,7 @@
 """Development checks of CX-D (docs/CX_D_protocol.md section 9) on NOM and the development cars DEV only; records in
 results/CX/D/dev/ with the commit and the dirty flag.
 
+    python scripts/cx_d_dev.py unchanged [--base 55c5925]   # the existing FrenetMPC NLPs against nmpc.py of a commit
     python scripts/cx_d_dev.py step       # 1: the step model against the simulator; the Jacobian against differences
     python scripts/cx_d_dev.py nlp        # 2: the parameterised NLP against FrenetMPC (nominal, vertex car, library plan)
     python scripts/cx_d_dev.py plans      # 3: the plan library; the interpolant at integer j
@@ -45,6 +46,53 @@ def _write(name: str, obj) -> None:
     DEV.mkdir(parents=True, exist_ok=True)
     (DEV / name).write_text(json.dumps({**_meta(), **obj}, indent=1, default=float))
     print(json.dumps(obj, indent=1, default=float)[:3000])
+
+
+def unchanged(base: str) -> None:
+    """The NLP (objective, constraint function, bounds) of the existing FrenetMPC options, built by this commit's nmpc.py
+    and by ``base``'s (``git show``), evaluated at random points: identical to the bit?"""
+    import importlib.util
+    import tempfile
+
+    import casadi as ca
+
+    import f1race.control.nmpc as new
+    from f1race.dynamics import DynVehicle
+    from f1race.experiments.l2 import ref_from_plan
+    from f1race.experiments.l8 import plans_for
+    from f1race.track import Track
+
+    src = subprocess.run(["git", "show", f"{base}:src/f1race/control/nmpc.py"], cwd=ROOT, capture_output=True,
+                         text=True, check=True).stdout
+    with tempfile.TemporaryDirectory() as td:
+        f = Path(td) / "nmpc_base.py"
+        f.write_text(src, encoding="utf-8")
+        spec = importlib.util.spec_from_file_location("f1race.control.nmpc_base", f)
+        old = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(old)
+    tr, pl, veh = Track.load("Spielberg"), plans_for("Spielberg"), DynVehicle()
+    ref = ref_from_plan(pl[0.95])
+    w = {"n": 2.0, "xi": 20.0, "v": 0.4}
+    rng = np.random.default_rng(0)
+    rows = []
+    for c in (dict(), dict(param_tightening=True), dict(steer_lag=0.03), dict(mode="filter"), dict(mode="mpcc"),
+              dict(soft_limits=5)):
+        a = old.FrenetMPC(tr, veh, ref, N=30, dt=0.05, eta=0.95, margin=0.6, weights=w, **c)
+        b = new.FrenetMPC(tr, veh, ref, N=30, dt=0.05, eta=0.95, margin=0.6, weights=w, **c)
+        fa = ca.Function("fa", [a._nlp["x"], a._nlp["p"]], [a._nlp["f"], a._nlp["g"]])
+        fb = ca.Function("fb", [b._nlp["x"], b._nlp["p"]], [b._nlp["f"], b._nlp["g"]])
+        same = True
+        for _ in range(5):
+            z = rng.normal(size=a._nlp["x"].shape[0])
+            z[a.Xi[:, 3]] = 50 + np.abs(z[a.Xi[:, 3]])
+            p = rng.normal(size=a._nlp["p"].shape[0])
+            p[3] = 50.0
+            A, B = fa(z, p), fb(z, p)
+            same &= bool(np.array_equal(np.asarray(A[0]), np.asarray(B[0])) and np.array_equal(np.asarray(A[1]), np.asarray(B[1])))
+        bounds = bool(np.array_equal(a.lbg, b.lbg) and np.array_equal(a.ubg, b.ubg) and np.array_equal(a.lbz, b.lbz)
+                      and np.array_equal(a.ubz, b.ubz))
+        rows.append({"options": c or "default", "f_g_identical_5_random_points": same, "bounds_identical": bounds})
+    _write("unchanged.json", {"base": base, "rows": rows})
 
 
 def step_check() -> None:
@@ -307,10 +355,13 @@ def replay(workers: int) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=["step", "nlp", "plans", "laps", "replay", "drifts", "gate"])
+    ap.add_argument("what", choices=["unchanged", "step", "nlp", "plans", "laps", "replay", "drifts", "gate"])
     ap.add_argument("--workers", type=int, default=20)
+    ap.add_argument("--base", default="55c5925")
     a = ap.parse_args()
-    if a.what == "step":
+    if a.what == "unchanged":
+        unchanged(a.base)
+    elif a.what == "step":
         step_check()
     elif a.what == "nlp":
         nlp_check()
