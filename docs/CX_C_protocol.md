@@ -204,8 +204,10 @@ Nominal car and CXDEV only; records in `results/CX/C/dev/` (git-ignored), each w
    at 3 828–3 829 m); `tube` (c_R 1) completes 5 of 5 (77.76–79.11 s); its η is capped on ~16 % of the stages, the track
    back-off almost never; the realised lateral error exceeds the back-off on 5.6–10.4 % of the covered stages.
    Development data – no test, no selection.
-5. **Timing** (the NOM laps of 6, six in parallel): the tube computation 6.2–8.7 ms per solve (mean; P99 11–16 ms,
-   max 14–19 ms), on top of IPOPT's ~136 ms mean.
+5. **Timing:** the tube computation per solve – on the NOM laps of 6 (six jobs in parallel) 6.2–8.7 ms mean, P99
+   11–16 ms, max 14–19 ms; on the CXDEV laps of 4 (ten jobs in parallel, `tube` at c_R 1) 9.6–10.1 ms mean, P99
+   16.6–17.3 ms, max 17.8–22.8 ms – the difference is most likely the heavier parallel load (and `tube_track` skips the
+   friction part); IPOPT ~136 ms mean (review n1 of packet 2).
 6. **Development laps on NOM** (`laps.jsonl`, db3b075):
 
    | setting | `tube` lap | `tube_track` lap | `tube`: capped η share, track | coverage exceed share `tube` / `tube_track` |
@@ -220,3 +222,13 @@ Nominal car and CXDEV only; records in `results/CX/C/dev/` (git-ignored), each w
    feedback's input deviations K e enter the usage), so `tube`'s laps are slower at c_R 0.1.
    Runner smoke (`results/CX/C/smoke/`): `tracker` 75.574 s, `nmpc` 76.400 s (as phase B), `nmpc_reserve` 79.048 s,
    `tube_track` 77.036 s, `tube` 78.279 s (as the development lap – deterministic).
+7. **Zero-tightening control (review c1 of packet 2; `null.jsonl`, `null_cause.json`, 7f3b154 / 0f533e5):** the tube's
+   path (`mpc_lap`, `FrenetMPC(param_tightening=True)`, the tube computed at every solve) with no tightening handed to the
+   NLP (development option `null`) completes NOM in **76.454 s** against `nmpc`'s 76.400 s (difference 0.054 s, same
+   outcome). Cause: the parameterised NLP itself – `nmpc`'s own controller on `FrenetMPC(param_tightening=True)` with η 0.95
+   and back-off 0 gives the same 76.454 s to every digit, so the tube code adds nothing; one cold solve of each NLP from
+   the same four states agrees to 10⁻¹² in the applied input and the prediction, with the same IPOPT status and iteration
+   count. The two NLPs are the same problem written differently (the constants of the tightened rows sit in the
+   constraint function instead of its bounds); differences at the 10⁻¹² level grow over 1 528 warm-started solves in
+   closed loop into 0.054 s on this lap. This is the size of the "numerical path" part of any `tube` – `nmpc` lap-time
+   difference; `nmpc` stays the registered baseline.
