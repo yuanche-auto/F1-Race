@@ -86,7 +86,7 @@ def nlp_check() -> None:
     k_line = int(np.flatnonzero(X[:, 0] > L - 60.0)[0])
     for k in (100, 400, 800, 1200, k_line):
         lmpc.reset()
-        D, c, _ = store.select(X[k + cx_e.N, 0], K, 1)          # one stored lap (repeated twice in the P = 2 slots)
+        D, c, _ = store.select(X[k + cx_e.N, 0], K, 2)          # one stored lap, repeated in the P = 2 slots
         u, info = lmpc.solve(X[k], U[k - 1] if k else np.zeros(3), D, c)
         Xp, Up, lam = lmpc.prediction()
         rows.append({"k": k, "s": float(X[k, 0]), "s_N": float(Xp[-1, 0]), "status": info["status"],
