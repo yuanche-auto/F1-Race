@@ -40,7 +40,7 @@ LP_FC, LP_ORDER = (1.0, 2.0, 4.0), 2
 K_CANDIDATES, K_BUDGET_MS = (256, 512, 1024, 2048, 4096), 40.0              # section 3.4
 K_RT: int | None = None                         # fixed by the timing of section 9.5 (packet 2), then a constant
 GRID_CENTRE = {"lam": 1.0, "c_sigma": 1.0}
-INPUTS = "net"                                  # MPPI's sampled inputs: "net" (revision 0) or "three" (amendment B1)
+INPUTS = "three"                                # MPPI's sampled inputs: the NMPC's three (amendment B1, approved)
 
 
 def baseline_setting(kind: str) -> dict:

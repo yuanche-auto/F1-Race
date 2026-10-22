@@ -141,6 +141,43 @@ def test_clamp_keeps_the_hard_limits(track):
 
 
 @needs_plan
+def test_three_input_clamp(track):
+    """Amendment B1, review c2: the clamp of the three inputs meets the NMPC's hard limits (steering rate and
+    angle, signs, power, both axles' longitudinal forces); a feasible input is a fixed point; with one force
+    non-zero it is the clipping of revision 0 (the net-force clamp); the force pair keeps its direction."""
+    from f1race.dynamics import tyre_forces
+
+    mp, veh = _mppi(track, K=8, inputs="three"), DynVehicle()
+    rng = np.random.default_rng(12)
+    M = 4000
+    X = _states(track, rng, M)
+    X[:, 3] = rng.uniform(10, 90, M)
+    X[: M // 10, 6] = rng.choice([-1, 1], M // 10) * rng.uniform(0.38, 0.4, M // 10)
+    V = np.column_stack([rng.normal(0, 2, M), rng.normal(0, 3e4, M), rng.normal(-1e4, 4e4, M)])
+    C = mp.clamp(X, V)
+    assert np.all(np.abs(C[:, 0]) <= veh.delta_rate_max + 1e-12)
+    assert np.all(np.abs(X[:, 6] + mp.dt * C[:, 0]) <= veh.delta_max + 1e-12)
+    assert np.all(C[:, 1] >= 0) and np.all(C[:, 2] <= 0) and np.all(C[:, 1] * X[:, 3] <= veh.P_max * (1 + 1e-12))
+    F = tyre_forces(veh, X[:, 3], X[:, 4], X[:, 5], X[:, 6], C[:, 1], C[:, 2])
+    for ax in ("f", "r"):
+        assert np.all(np.abs(F[f"fx{ax}"] / (veh.mu_x * F[f"fz{ax}"])) <= 0.95 + 1e-9)
+    assert np.mean(np.any(np.abs(C - np.column_stack([V[:, 0], np.maximum(V[:, 1], 0), np.minimum(V[:, 2], 0)])) > 1e-6,
+                          axis=1)) > 0.3                            # the limits were active for many samples
+    X2 = X.copy()                                                   # a feasible input is a fixed point
+    assert np.allclose(mp.clamp(X2, C), C, rtol=1e-12, atol=1e-9)
+    for col in (1, 2):                                             # one force non-zero: revision 0's clipping
+        W = np.column_stack([V[:, 0], np.abs(V[:, 1]), -np.abs(V[:, 2])])
+        W[:, 3 - col] = 0.0
+        net = mp.clamp(X, np.column_stack([W[:, 0], W[:, 1] + W[:, 2]]))
+        assert np.allclose(mp.clamp(X, W), net, rtol=1e-12, atol=1e-6)
+    Vs = np.column_stack([V[:, 0], np.abs(V[:, 1]), -np.abs(V[:, 2])])
+    Cs = mp.clamp(X, Vs)
+    pw = Vs[:, 1] * X[:, 3] <= veh.P_max                            # not clipped by the power: scaled pair
+    assert np.allclose(Cs[pw, 1] * Vs[pw, 2], Cs[pw, 2] * Vs[pw, 1], rtol=1e-9, atol=1e-3)
+    assert np.all(Cs[pw, 1] <= Vs[pw, 1] + 1e-9) and np.all(Cs[pw, 1] >= 0)
+
+
+@needs_plan
 @pytest.mark.parametrize("inputs", ["net", "three"])
 def test_iteration_rules(track, inputs):
     """Section 3.2 / 9.3: K0 = max(1, floor(alpha K)); lambda -> 0 picks the best sample; samples that all equal

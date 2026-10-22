@@ -165,13 +165,15 @@ def gap(K: int) -> None:
     rows = []
     for i in np.linspace(1, len(d["x0"]) - 1, 20).astype(int):
         x0, up, Ui, Uprev = d["x0"][i], d["u_prev"][i], d["U"][i], d["U"][i - 1]
-        to2 = lambda U3: np.stack([U3[:, 0], U3[:, 1] + U3[:, 2]], axis=1)
         mp = MPPI(track, DynVehicle(), ref_from_plan(o), N=cx_b.N, dt=cx_b.MPC_DT, eta=cx_b.ETA,
                   margin=cx_b.NMPC_SETTING["margin"], weights=w, K=K, lam=cx_b.GRID_CENTRE["lam"], sigma=sig,
-                  seed=(9, int(i), 0), diagnostics=False)
-        cost = lambda U2: float(mp.rollout(x0, U2[None], up)["cost"][0])
-        row = {"solve": int(i), "s": float(x0[0]), "ipopt_cost": cost(to2(Ui))}
-        for name, U0 in (("warm", np.vstack([to2(Uprev)[1:], np.zeros((1, 2))])), ("zero", np.zeros((cx_b.N, 2)))):
+                  seed=(9, int(i), 0), diagnostics=False, inputs=cx_b.INPUTS)
+        to_in = (lambda U3: U3) if mp.nu == 3 else (lambda U3: np.stack([U3[:, 0], U3[:, 1] + U3[:, 2]], axis=1))
+        cost = lambda Uin: float(mp.rollout(x0, Uin[None], up)["cost"][0])
+        # J*: the cost of IPOPT's inputs on the rollout (amendment B1.4); with three inputs they are not changed
+        row = {"solve": int(i), "s": float(x0[0]), "ipopt_cost": cost(to_in(Ui)),
+               "ipopt_inputs_changed_by_clamp": float(np.max(np.abs(mp.rollout(x0, to_in(Ui)[None], up)["V3"][0] - Ui)))}
+        for name, U0 in (("warm", np.vstack([to_in(Uprev)[1:], np.zeros((1, mp.nu))])), ("zero", np.zeros((cx_b.N, mp.nu)))):
             mp.U = U0.copy()
             row[f"{name}_cost_0"] = cost(mp.U)
             done = 0
@@ -183,7 +185,8 @@ def gap(K: int) -> None:
         rows.append(row)
         print(row, flush=True)
     DEV.mkdir(parents=True, exist_ok=True)
-    (DEV / "gap.json").write_text(json.dumps({"K": K, "setting": cx_b.GRID_CENTRE, "rows": rows, **_git()}, indent=1))
+    (DEV / "gap.json").write_text(json.dumps({"K": K, "setting": cx_b.GRID_CENTRE, "inputs": cx_b.INPUTS, "rows": rows,
+                                              **_git()}, indent=1))
 
 
 def _lap_job(args):
