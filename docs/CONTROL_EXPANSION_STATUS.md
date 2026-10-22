@@ -1,10 +1,15 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-22 (phase D done: final review APPROVE; merged to main; phase E next). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-22 (phase D merged as ae87f41; phase E: literature and protocol revision 0 in review). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
-* **Current phase:** D done – final review of 2dd4405 **APPROVE**, `cx/D-adaptive` merged to `main` (--no-ff)
-  2026-10-22 (merge hash recorded in phase E's first commit); next E – learning MPC (LMPC; literature and protocol
-  first). Phase D result: `nmpc` with its model and plan updated online (RLS with forgetting on the friction, a
+* **Current phase:** E – learning MPC (lap to lap), branch `cx/E-lmpc` from `main` ae87f41: literature §E.1–E.9 and the
+  protocol [CX_E_protocol.md](CX_E_protocol.md) revision 0 sent for review (packet 1). No phase-E code or lap exists.
+  Design: `lmpc` = the NMPC's model and constraints with a local safe set and cost-to-go from the car's own laps (E.2) and
+  a local regression of the model error (E.4); two initialisation laps (plans 0.73, 0.79), ten learning laps per car from
+  the same initial state; H-E1 lap time and H-E2 completions of the tenth learning lap against `identified` on 50 new L2
+  cars (CET, seed 342); `lmpc_nominal` (no regression) and `nmpc` as comparisons.
+* **Phase D:** done – final review of 2dd4405 **APPROVE**, `cx/D-adaptive` merged to `main` (--no-ff) 2026-10-22 as
+  **ae87f41**. Phase D result: `nmpc` with its model and plan updated online (RLS with forgetting on the friction, a
   friction-indexed plan library) completes 42 of 50 new L2 cars against `nmpc`'s 15 – **H-D1 holds** (27 : 0, p 1.5 · 10⁻⁸)
   – and 34 of the same 50 with the grip falling during the lap against 0 – **H-D2 holds** (34 : 0, p 1.2 · 10⁻¹⁰); the
   two are not independent (the same cars); the numerical-path control 0 : 0. The oracle of the same architecture
@@ -94,7 +99,8 @@ Last updated: 2026-10-22 (phase D done: final review APPROVE; merged to main; ph
 | B | `control/mppi.py` (`MPPI`), `experiments/cx_b.py`, `scripts/run_cx_b.py`, `scripts/report_cx_b.py`, `scripts/cx_b_dev.py` | yes (57146e4 … baa69cb) | yes – `tests/test_mppi.py` 12, `tests/test_cx_b.py` 6 | development checks 9.1–9.8 on the nominal car; CXV tuning; CBT benchmark; secondary conditions | protocol rev 0, B1, B2, B3 and packets 2–6 **APPROVE**; final review b276f56 **APPROVE** | **yes – phase B completed** |
 | C | `control/tube.py` (`Tube`, `TubeMPCController`), `experiments/cx_c.py`, `scripts/{run,report}_cx_c.py`, `scripts/cx_c_dev.py` | yes (0689c41 … eab7c63) | yes – `tests/test_tube.py` 8, `tests/test_cx_c.py` 5 | development checks §9 on NOM and CXDEV; CXV tuning; CCT; secondary conditions | protocol rev 0, C1 and packets 2–5 **APPROVE**; final review 3dec001 **APPROVE** | **yes – phase C completed** |
 | D | `estimation/{rls,bank}.py`, `control/adaptive_mpc.py`, `FrenetMPC(param_model=True)`, `experiments/cx_d.py`, `scripts/{run,report}_cx_d.py`, `scripts/cx_d_{dev,plans}.py` | yes (6f54f30 … ea4ac82) | yes – `tests/test_adaptive.py` 8, `tests/test_cx_d.py` 5 | development checks §9 on NOM and DEV (gate passed) | protocol rev 0 and literature §D **APPROVE** (packet 1, m1–m3 / n1–n3); packets 2–5 **APPROVE**; final review 2dd4405 **APPROVE** | **yes – phase D completed** |
-| E–G | – | not started | – | – | – | – |
+| E | `control/lmpc.py`, `experiments/cx_e.py`, scripts (planned) | no | – | – | protocol rev 0 and literature §E in review (packet 1) | – |
+| F–G | – | not started | – | – | – | – |
 
 ## Review record
 
@@ -172,7 +178,6 @@ Phase D: `results/CX/D/plans/` (main checkout) – the new plans of the library 
 
 ## Next actions
 
-1. Phase E (learning MPC, LMPC): branch `cx/E-lmpc` from the new `main`; record the phase-D merge hash in its first commit;
-   literature entries (§E) and the protocol `docs/CX_E_protocol.md` for review; no code before its APPROVE.
-2. Follow-up candidates (CONTROL_METHOD_MATRIX.md) stay unscheduled – among them from phase D a full MHE for the noisy
-   conditions, a tube around the adaptive model, a plan library beyond friction, and the drift field's start fix.
+1. Phase E: review of packet 1 (literature §E, CX_E_protocol.md revision 0). No code before its APPROVE; then the code and
+   the development checks of protocol section 9 (packet 2).
+2. Follow-up candidates (CONTROL_METHOD_MATRIX.md) stay unscheduled.
