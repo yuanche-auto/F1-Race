@@ -35,7 +35,9 @@ used in a reviewed layer; the file is given. Nothing listed as existing is re-im
 Frontier methods after the seven phases (roadmap section 5): chance-constrained / CVaR / distributionally
 robust / scenario MPC and conformal calibration (L3); recurrent and context-conditioned residual RL,
 model-based RL, MPC imitation (L5); GP residuals, deep ensembles, local error-dynamics regression,
-physics-informed models (L6); online / meta adaptation, universal dynamics models (L8).
+physics-informed models (L6); online / meta adaptation, universal dynamics models (L8). From phase D (CX-D review m3): a full
+moving-horizon estimator of states and parameters (literature D.5–D.7) for the noisy conditions, where it can differ from
+the RLS; a tube around the adaptive model (robust adaptive MPC, D.13).
 
 ### Follow-up candidates from phase B (MPPI; CX-B amendment B3, review d4)
 
