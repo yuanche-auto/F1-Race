@@ -323,8 +323,9 @@ Run 2026-10-22 07:27–08:23 at eab7c63 in the same worktree, 420 laps, no error
   completes 45 (failures: ~3.82 km 4, ~1.4 km 1); the uniform reserve completes 3.
 * **Under the L3 disturbances** (measurement noise, gusts, friction varying along the track – none of them in the tube's
   disturbance set, which is the L2 parameter box) `tube` completes 28 of 30 (failures at ~1.4 km and turn 1), `nmpc` 4.
-* **New tracks:** every MPC completes all four; `tube` is slower than `nmpc` (mean 96.71 against 93.16 s; per track +2.8 to
-  +4.9 s), about as slow as the uniform reserve (97.18 s); `tube_track` leaves at Austin (1 383 m).
+* **New tracks:** `nmpc`, `nmpc_reserve` and `tube` complete all four, `tube_track` three (it leaves at Austin, 1 383 m);
+  `tube` is slower than `nmpc` (mean 96.71 against 93.16 s; per track +2.8 to +4.9 s), about as slow as the uniform
+  reserve (97.18 s).
 * **Reproducibility (clarification m3):** `nmpc`'s 34 laps on CXD and CXL8 are identical to phase B's records
   (`F1-Race-wt-CXB-run/results/CX/B/secondary.jsonl`, 2219e5634a68…) in every field that does not measure time – 34 of 34.
 * Reading: the tube's tightening, sized from the L2 parameter box, also covers conditions it was not built for (a

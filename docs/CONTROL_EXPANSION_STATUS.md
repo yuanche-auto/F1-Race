@@ -1,19 +1,25 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-22 (phase C: CCT and secondary conditions done; final review requested). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-22 (phase C done: final review APPROVE; merged to main; phase D next). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
-* **Current phase:** C – robust tube MPC, branch `cx/C-tube` from `main` 2858db4: protocol revision 0 **APPROVE** (9006b4a)
-  with clarifications m1–m3, n1–n3 (f0b25fb); `control/tube.py`, `experiments/cx_c.py`, runner / report / dev scripts and
-  tests (0689c41, db3b075); development checks of §9 done – gate passed (NOM 6 of 6 settings; CXDEV `nmpc` 2 of 5,
-  `tube` 5 of 5); packet 2 (635c61f) **APPROVE**; c1 zero-tightening control (76.454 vs 76.400 s, the parameterised
-  NLP's numerical path; 8b6b40d). CXV tuning 05:57–06:13 in `F1-Race-worktrees/F1-Race-wt-CXC-run` at 8b6b40d (60 laps,
-  no error): `tube` 10 of 10 with every c_R → c_R 1; `tube_track` 3 of 10 → c_R 0.1; packet 3 **APPROVE** with
-  **amendment C1** (`nmpc_param`, the numerical-path control; eab7c63). CCT (306 laps) started 06:17 in the same worktree
-  at eab7c63 (RUN_COMMIT_tune 8b6b40d kept); done 07:06 (306 laps, `test.jsonl` bcf5e9f743d8…): **H-C1 holds for `tube`**
-  (49 vs 16 of 50, 33 : 0, p 2.3 · 10⁻¹⁰), **H-C2 holds** (`tube` +1.61 s, p 3 · 10⁻⁵); noise floor `nmpc_param` 2 : 0;
-  packet 4 **APPROVE** (m1 text fixed in 810e69f). Secondary conditions 07:27–08:23 (420 laps, `secondary.jsonl`
-  16d58eb9e999…): LAG30 `tube` 45 vs `nmpc` 4 of 50, CXD 28 vs 4 of 30, CXL8 4 vs 4; `nmpc` reproduces phase B 34 of 34.
-  Packet 5 and the final review of `cx/C-tube` requested.
+* **Current phase:** C done – final review of 3dec001 **APPROVE**, `cx/C-tube` merged to `main` (--no-ff) 2026-10-22
+  (merge hash recorded in phase D's first commit); next D – adaptive MPC / online identification (literature and protocol
+  first). Phase C result: `nmpc`'s constraints tightened by an error tube from the L2 parameter box complete 49 of 50 new
+  test cars against `nmpc`'s 16 – **H-C1 holds** (33 : 0, p 2.3 · 10⁻¹⁰; numerical-path control 2 : 0), **H-C2 holds**
+  (+1.61 s, p 3 · 10⁻⁵); the tube knows the test cars' parameter ranges (favourable prior); not cross-checked.
+  History of phase C:
+  C – robust tube MPC, branch `cx/C-tube` from `main` 2858db4: protocol revision 0 **APPROVE** (9006b4a)
+    with clarifications m1–m3, n1–n3 (f0b25fb); `control/tube.py`, `experiments/cx_c.py`, runner / report / dev scripts and
+    tests (0689c41, db3b075); development checks of §9 done – gate passed (NOM 6 of 6 settings; CXDEV `nmpc` 2 of 5,
+    `tube` 5 of 5); packet 2 (635c61f) **APPROVE**; c1 zero-tightening control (76.454 vs 76.400 s, the parameterised
+    NLP's numerical path; 8b6b40d). CXV tuning 05:57–06:13 in `F1-Race-worktrees/F1-Race-wt-CXC-run` at 8b6b40d (60 laps,
+    no error): `tube` 10 of 10 with every c_R → c_R 1; `tube_track` 3 of 10 → c_R 0.1; packet 3 **APPROVE** with
+    **amendment C1** (`nmpc_param`, the numerical-path control; eab7c63). CCT (306 laps) started 06:17 in the same worktree
+    at eab7c63 (RUN_COMMIT_tune 8b6b40d kept); done 07:06 (306 laps, `test.jsonl` bcf5e9f743d8…): **H-C1 holds for `tube`**
+    (49 vs 16 of 50, 33 : 0, p 2.3 · 10⁻¹⁰), **H-C2 holds** (`tube` +1.61 s, p 3 · 10⁻⁵); noise floor `nmpc_param` 2 : 0;
+    packet 4 **APPROVE** (m1 text fixed in 810e69f). Secondary conditions 07:27–08:23 (420 laps, `secondary.jsonl`
+    16d58eb9e999…): LAG30 `tube` 45 vs `nmpc` 4 of 50, CXD 28 vs 4 of 30, CXL8 4 vs 4; `nmpc` reproduces phase B 34 of 34.
+    Packet 5 and the final review of `cx/C-tube` requested.
 * **Phase B:** done – final review of b276f56 **APPROVE**, `cx/B-mppi` merged to `main` (--no-ff) 2026-10-22 as **2858db4**.
   Phase B result: MPPI on the NMPC's problem at the real-time CPU budget (numpy, K 1 024) completes 0 of 50 test cars
   against the NMPC's 12 – **H-B1 holds for `nmpc`** (0 : 12, p 0.0005; confirmatory, after the development gate failed
@@ -50,7 +56,7 @@ Last updated: 2026-10-22 (phase C: CCT and secondary conditions done; final revi
 | A | runner and report (`experiments/cx_a.py`, `scripts/run_cx_a.py`, `scripts/report_cx_a.py`) | yes | yes – `tests/test_cx_a.py`, 7 tests (5 at 6bcc6ef) | smoke on the nominal car; the CXV / CXT / secondary runs | **APPROVE** (6bcc6ef … e2cea5d) | **yes** |
 | A | `mpcc_ca` (CiMPCC-based, amendment A1) and the secondary conditions; soft speed bound (amendment A2) | yes | yes – `tests/test_mpcc.py` 8, `tests/test_cx_a.py` 7 | smoke on cases outside every set (`results/CX/A/dev/secondary_smoke.jsonl`); A2 diagnostic on CXV cars 2 / 5 / 7; CXT | **APPROVE** (94cba68 … e2cea5d) | **yes** |
 | B | `control/mppi.py` (`MPPI`), `experiments/cx_b.py`, `scripts/run_cx_b.py`, `scripts/report_cx_b.py`, `scripts/cx_b_dev.py` | yes (57146e4 … baa69cb) | yes – `tests/test_mppi.py` 12, `tests/test_cx_b.py` 6 | development checks 9.1–9.8 on the nominal car; CXV tuning; CBT benchmark; secondary conditions | protocol rev 0, B1, B2, B3 and packets 2–6 **APPROVE**; final review b276f56 **APPROVE** | **yes – phase B completed** |
-| C | `control/tube.py` (`Tube`, `TubeMPCController`), `experiments/cx_c.py`, `scripts/{run,report}_cx_c.py`, `scripts/cx_c_dev.py` | yes (0689c41 … eab7c63) | yes – `tests/test_tube.py` 8, `tests/test_cx_c.py` 5 | development checks §9 on NOM and CXDEV; CXV tuning; CCT; secondary conditions | protocol rev 0, C1 and packets 2–4 **APPROVE**; packet 5 and the final review requested | – |
+| C | `control/tube.py` (`Tube`, `TubeMPCController`), `experiments/cx_c.py`, `scripts/{run,report}_cx_c.py`, `scripts/cx_c_dev.py` | yes (0689c41 … eab7c63) | yes – `tests/test_tube.py` 8, `tests/test_cx_c.py` 5 | development checks §9 on NOM and CXDEV; CXV tuning; CCT; secondary conditions | protocol rev 0, C1 and packets 2–5 **APPROVE**; final review 3dec001 **APPROVE** | **yes – phase C completed** |
 | D–G | – | not started | – | – | – | – |
 
 ## Review record
@@ -79,6 +85,8 @@ Last updated: 2026-10-22 (phase C: CCT and secondary conditions done; final revi
 | 2026-10-22 | 635c61f | phase C packet 2: tube code, tests, development checks (gate passed), runner / report | **APPROVE** | c1 zero-tightening control (done: 0.054 s, the parameterised NLP; 8b6b40d); n1 timing sources, n2 η capping in the Reading, n3 CXDEV as background |
 | 2026-10-22 | 8b6b40d (run) | phase C packet 3: c1 and the CXV tuning (tube c_R 1, tube_track c_R 0.1) | **APPROVE** | amendment C1: `nmpc_param` as the numerical-path noise floor (eab7c63) |
 | 2026-10-22 | eab7c63 (run); c52897c, 02bc302 | phase C packet 4: CCT (306 laps) and its report / benchmark text | **APPROVE** | m1 the capped-stage shares of the fast sections (fixed in 810e69f) |
+| 2026-10-22 | eab7c63 (run); 306d39f | phase C packet 5: secondary conditions (420 laps), nmpc reproduces phase B 34 of 34 | **APPROVE** | n1 the new-tracks sentence (tube_track 3 of 4) – fixed before the merge |
+| 2026-10-22 | 3dec001 | **phase C final review** (whole branch vs main 2858db4: 19 commits, 12 files, +1913 / −13) | **APPROVE** | the three standing checks pass; status lines marked done before the merge |
 
 ## Tests
 
@@ -99,6 +107,12 @@ the runner smoke (`smoke/`). Benchmark: worktree `F1-Race-worktrees/F1-Race-wt-C
 (`tune.jsonl`, `tune_lp.jsonl`, `selected*.json`, `test.jsonl`, `secondary.jsonl`, `report/`, `RUN_COMMIT`,
 `SHA256_inputs*.txt`, `timeline.tsv`). All git-ignored.
 
+Phase C: `results/CX/C/dev/` (main checkout) – the development checks of CX-C §9 (`wcheck.json`, `laps.jsonl`, `cxdev.jsonl`,
+`null.jsonl`, `null_cause.json`, `capmap.json`) and the runner smoke (`smoke/`). Benchmark: worktree
+`F1-Race-worktrees/F1-Race-wt-CXC-run` (tuning at 8b6b40d, CCT and secondary at eab7c63), `results/CX/C/` (`tune.jsonl`,
+`selected.json`, `test.jsonl`, `secondary.jsonl`, `report/`, `RUN_COMMIT*`, `SHA256_inputs*.txt`, `timeline.tsv`).
+All git-ignored.
+
 ## Known blockers
 
 * The curvature-aware MPCC needs the full text of Ma et al. (Control Engineering Practice 171, 2026),
@@ -107,6 +121,7 @@ the runner smoke (`smoke/`). Benchmark: worktree `F1-Race-worktrees/F1-Race-wt-C
 
 ## Next actions
 
-1. Phase C: review of packet 5 (secondary conditions, reproducibility) and the final review of `cx/C-tube`; merge.
-2. Then phase D (adaptive MPC / online identification): literature and protocol first.
-3. Phase B follow-up candidates (CONTROL_METHOD_MATRIX.md) stay unscheduled.
+1. Phase D (adaptive MPC / online identification): branch `cx/D-adaptive` from the new `main`; record the phase-C merge hash
+   in its first commit; literature entries (§D) and the protocol `docs/CX_D_protocol.md` for review; no code before its
+   APPROVE.
+2. Phase B follow-up candidates (CONTROL_METHOD_MATRIX.md) stay unscheduled.
