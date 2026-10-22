@@ -184,3 +184,14 @@ def test_closed_loop_smoke(track):
     res = DynamicSim(track, veh, 0.01).run(ctl, x0_from_plan(o, path), t_max=1.0)
     assert res.stop_reason == "time limit" and len(ctl.tube_log) == 20
     assert all(r["X_pred"].shape == (11, 7) and np.isfinite(r["tube_time"]) for r in ctl.tube_log)
+
+
+@needs_plan
+def test_null_option_hands_no_tightening(track):
+    """Review c1 of packet 2: with ``null`` the tube is computed as usual but eta_k = eta and the back-off is zero."""
+    mpc = _mpc(track)
+    mpc.solve(_x0(380.0), np.array([0.0, 2000.0, 0.0]), eta=np.full(30, 0.95), backoff=np.zeros(31))
+    X, U = mpc.prediction()
+    a, b = _tube(mpc).compute(X, U), _tube(mpc, null=True).compute(X, U)
+    assert np.all(b["eta"] == 0.95) and np.all(b["backoff"] == 0.0)
+    assert np.allclose(a["b_raw"], b["b_raw"]) and np.any(a["eta"] < 0.95)

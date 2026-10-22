@@ -105,15 +105,17 @@ class Tube:
     """Per-solve tightening for a ``FrenetMPC`` built with ``param_tightening=True``."""
 
     def __init__(self, mpc: FrenetMPC, box: dict, margin: float, eta: float = 0.95, c_R: float = 1.0,
-                 eta_min: float = 0.70, b_max: float | None = None, track_only: bool = False):
+                 eta_min: float = 0.70, b_max: float | None = None, track_only: bool = False, null: bool = False):
         """``box``: the parameter ranges (``l2.PERTURBATION``); ``margin``: the NMPC's track margin (``b_max`` = half the
-        narrowest track width minus half the car and the margin, unless given)."""
+        narrowest track width minus half the car and the margin, unless given). ``null`` (development only, review c1 of
+        packet 2): the tube is computed as usual but the tightening handed to the NLP is none (eta_k = eta, back-off 0)."""
         if not mpc.param_tightening:
             raise ValueError("the MPC needs param_tightening=True")
         if mpc.steer_lag is not None:
             raise ValueError("the tube is defined for the 7-state model")
         self.mpc, self.veh, self.N, self.h = mpc, mpc.veh, mpc.N, mpc.dt
         self.eta, self.c_R, self.eta_min, self.track_only = float(eta), float(c_R), float(eta_min), bool(track_only)
+        self.null = bool(null)
         tr = mpc.track
         self.kap = _periodic(tr.s, tr.kappa, tr.length)
         body = mpc.veh.half_width + float(margin)
@@ -182,6 +184,8 @@ class Tube:
             eta_k = np.sqrt(np.maximum(self.eta ** 2 - D[:N], self.eta_min ** 2))
         capped_track = b_raw[1:] > self.b_max
         capped_eta = (self.eta ** 2 - D[:N]) < self.eta_min ** 2 if not self.track_only else np.zeros(N, bool)
+        if self.null:                                     # review c1: the same path without tightening
+            eta_k, b_track = np.full(N, self.eta), np.zeros(N + 1)
         return {"eta": eta_k, "backoff": b_track, "b_raw": b_raw, "D": D, "W": W, "K": K,
                 "capped_track_share": float(np.mean(capped_track)), "capped_eta_share": float(np.mean(capped_eta[1:])),
                 "time": time.perf_counter() - t0}

@@ -5,6 +5,7 @@ the commit and a dirty flag; not results of the protocol).
     python scripts/cx_c_dev.py wcheck      # 9.3 the vertex disturbance bound against 1 000 random L2 cars -> dev/wcheck.json
     python scripts/cx_c_dev.py laps        # 9.6 (+ 9.5 timing) NOM with the 6 settings -> dev/laps.jsonl, the gate
     python scripts/cx_c_dev.py cxdev       # 9.4 nmpc and tube (c_R 1) on the 5 development cars -> dev/cxdev.jsonl
+    python scripts/cx_c_dev.py null        # review c1 of packet 2: the tube path without tightening against nmpc -> dev/null.jsonl
 """
 from __future__ import annotations
 
@@ -116,8 +117,20 @@ def cxdev() -> None:
     _pool(jobs, DEV / "cxdev.jsonl")
 
 
+def null() -> None:
+    """Review c1 of packet 2: the tube's code path (mpc_lap, FrenetMPC(param_tightening=True), the tube computed at every
+    solve) with no tightening handed to the NLP, on NOM, against nmpc's lap through cx_b.lap -> dev/null.jsonl."""
+    from f1race.experiments import cx_c
+
+    jobs = [("tube", {"c_R": 1.0, "null": 1}, "NOM_car0"), ("nmpc", cx_c.fixed_setting("nmpc"), "NOM_car0")]
+    recs = {r["kind"]: r for r in _pool(jobs, DEV / "null.jsonl")}
+    a, b = recs["tube"], recs["nmpc"]
+    print("tube path without tightening:", a["completed"], a["lap_time"], round(a["distance"], 3), "| nmpc:", b["completed"],
+          b["lap_time"], round(b["distance"], 3), "| difference", a["lap_time"] - b["lap_time"])
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=("wcheck", "laps", "cxdev"))
+    ap.add_argument("what", choices=("wcheck", "laps", "cxdev", "null"))
     a = ap.parse_args()
-    {"wcheck": wcheck, "laps": laps, "cxdev": cxdev}[a.what]()
+    {"wcheck": wcheck, "laps": laps, "cxdev": cxdev, "null": null}[a.what]()

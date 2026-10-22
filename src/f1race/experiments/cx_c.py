@@ -73,7 +73,7 @@ def build(kind: str, setting: dict, track, plans: dict):
         mpc = FrenetMPC(track, model, ref_from_plan(o), mode="track", N=N, dt=MPC_DT, eta=ETA, margin=margin, weights=w,
                         param_tightening=True)
         tube = Tube(mpc, PERTURBATION, margin=margin, eta=ETA, c_R=float(setting["c_R"]), eta_min=ETA_MIN,
-                    track_only=kind == "tube_track")
+                    track_only=kind == "tube_track", null=bool(setting.get("null", 0)))
         return TubeMPCController(mpc, tube, DT, keep=COVER_STAGES), mpc, tube, x0
     raise ValueError(kind)
 
