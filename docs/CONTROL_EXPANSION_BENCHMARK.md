@@ -433,3 +433,38 @@ a somewhat lower final grip (μ·f_end median 0.786 against 0.813).
   noise and an unmodelled lag are secondary conditions); certainty equivalence; a plan library over friction only; one
   track; offline (IPOPT without a time budget; the RLS adds ~0.3 ms per 10 ms step, the bank ~14 ms); not cross-checked
   in a second environment.
+
+### Secondary conditions (protocol §2; after the primary report; uncorrected, 10 McNemar)
+
+Run 2026-10-22 16:05–17:52 at cd484bd in the same worktree, 840 laps, no error record (`secondary.jsonl`
+a4a39006e632…, `report/CX_D_secondary.md`). None of these conditions uses the drift field.
+
+| condition (laps) | `nmpc` | `tube` | `adaptive` | `adaptive_oracle` | `adaptive` : `nmpc` (p) | `adaptive` : `tube` (p) |
+|---|---|---|---|---|---|---|
+| CDT_NOISE – the L3 measurement noise only (50) | 3 | **33** | 0 | 1 | 0 : 3 (0.25) | 0 : 33 (2 · 10⁻¹⁰) |
+| CDT_LAG30 – unmodelled 30 ms steering lag (50) | 1 | **44** | 6 | 4 | 6 : 1 (0.13) | 0 : 38 (7 · 10⁻¹²) |
+| CDT_WET85 – μ × 0.85 from the start (50) | 0 | 1 | 3 | **44** | 3 : 0 (0.25) | 2 : 0 (0.5) |
+| CDP – nominal car, L8's wet patches (30) | 1 | 7 | 1 | **10** | 0 : 0 (1) | 0 : 6 (0.03) |
+| CXD – nominal car, the L3 disturbances (30) | 4 | **28** | 2 | 7 | 2 : 4 (0.69) | 0 : 26 (3 · 10⁻⁸) |
+
+* **Reproducibility:** `nmpc`'s 30 CXD laps are identical to phase C's records (`F1-Race-wt-CXC-run/results/CX/C/
+  secondary.jsonl`, 16d58eb9e999…) in every field both records have that does not measure time – 30 of 30.
+* **Measurement noise (CDT_NOISE, CXD) breaks every NMPC here, the oracle included:** with the true car, `adaptive_oracle`
+  completes 1 of 50 (42 without the noise), `nmpc` 3 (15); many laps end at turn 1 (`nmpc` 35 of its 47 failures, the
+  oracle 23 of 49). Only `tube` holds (33 of 50, 28 of 30) –
+  its tightening also covers what the noise does to the measured state. The RLS on the noisy states is biased as L6 found
+  for L4's least squares (errors in variables): μ̂ − μ over the last half of each lap +0.082 on average (+0.005 … +0.153),
+  so its plan is too fast on 95 % of the solves – but with the oracle failing too, the noise's effect on the state
+  feedback, not the estimate alone, decides these laps.
+* **An unmodelled steering lag (CDT_LAG30):** `adaptive` 6, the oracle 4, `nmpc` 1, `tube` 44. The estimator's model has
+  no lag, so the parameters absorb it (the factors end 0.19 off on average, μ̂ 0.17 low) – a structure error that online
+  identification cannot remove (L6's lesson); the tube's margin covers it.
+* **Grip wrong from the start (CDT_WET85):** the oracle 44 of 50 – the architecture copes when the grip is known – but
+  `adaptive` 3: 46 of its 47 failures are at turn 1, before any corner has excited the tyres (|μ̂ − μ| P50 0.13: the estimate is still
+  near the nominal grip). This is the excitation limit of protocol §3.8 (no dual control).
+* **Short wet patches (CDP, 100 m at μ × 0.75):** `adaptive` 1 of 30, as `nmpc`; the oracle 10 and `tube` 7. A 2 s memory
+  cannot follow a 1.5 s patch; even knowing the grip, the friction-only plan switch completes a third.
+* Reading: online identification helps where the parameters are constant or change slowly and the tyres are excited –
+  the primary sets; it does not help against noise, an unmodelled structure, a grip that is wrong before the first corner,
+  or short patches, where the robust tube (sized for the L2 box) is the only controller that completes laps (noise, lag)
+  or none does well (wet start, patches). Secondary, uncorrected comparisons.
