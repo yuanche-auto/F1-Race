@@ -107,7 +107,7 @@ def _run(case: dict, track, ctl, x0) -> object:
 
 def learn(case: dict, kind: str, setting: dict) -> dict:
     """Section 3: the initialisation laps and the ten learning laps of one car."""
-    from ..control.lmpc import LapStore, LearningMPC, LMPCController, Recorder
+    from ..control.lmpc import TERM, TERM7, LapStore, LearningMPC, LMPCController, Recorder
     from ..control.nmpc import FrenetMPC, MPCController
     from ..track import Track
     from .l1 import dyn_reference
@@ -125,7 +125,11 @@ def learn(case: dict, kind: str, setting: dict) -> dict:
     x0 = x0_from_plan(o95, path)
     w = {k: v * NMPC_SETTING["c"] for k, v in cx_a.NMPC_TRACK_W.items()}
     K = int(setting["K"])
-    lmpc = LearningMPC(track, model, n_pts=P_LAPS * K, N=N, dt=MPC_DT, eta=ETA, margin=NMPC_SETTING["margin"], w_T=W_T)
+    P = int(setting.get("P", P_LAPS))                 # development options (protocol section 9): P, delta in the terminal
+    term = TERM7 if setting.get("term7") else TERM    # condition, fewer learning laps; the registered settings use none
+    n_learn = int(setting.get("n_learn", N_LEARN))
+    lmpc = LearningMPC(track, model, n_pts=P * K, N=N, dt=MPC_DT, eta=ETA, margin=NMPC_SETTING["margin"], w_T=W_T,
+                       term=term)
     store = LapStore(lmpc._step)
     laps: list[dict] = []
     for e in INIT_ETAS:
@@ -141,14 +145,14 @@ def learn(case: dict, kind: str, setting: dict) -> dict:
             store.add(np.array(rec.rec_t), np.array(rec.rec_x), np.array(rec.rec_u), m["lap_time"])
     started = len(store) > 0
     alive = started
-    for j in range(1, N_LEARN + 1):
+    for j in range(1, n_learn + 1):
         if not alive:
             laps.append({"lap": f"learn_{j}", "kind": "learn", "completed": False, "lap_time": math.nan,
                          "stop_reason": "not started (initialisation failed)" if not started else "sequence ended",
                          "distance": 0.0, "failure_s": None})
             continue
         lmpc.reset()
-        ctl = LMPCController(lmpc, store, K, P_LAPS, regression=kind == "lmpc", sim_dt=DT)
+        ctl = LMPCController(lmpc, store, K, P, regression=kind == "lmpc", sim_dt=DT)
         res = _run(case, track, ctl, x0)
         m = _lap_metrics(res, track, ctl)
         m.update(lap=f"learn_{j}", kind="learn", stored_laps=len(store),
