@@ -48,7 +48,10 @@ with 0.8 % above 50 ms (review n1 of packet 3); for comparison, at K = 2 048 `mp
   and stop reason.
 
 Holm over H-B1 and H-B2 (family-wise α = 0.05), the stricter decision (each at 0.025) reported alongside.
-No direction is predicted. **Power:** with d discordant cars the smallest two-sided McNemar p is 2 · 0.5^d;
+No direction is predicted. *Since amendment B3 (review d1):* H-B1 is still tested two-sided as registered, but the
+development results (section 9: the primary completes none of nine nominal laps at K_RT) make its direction
+expected – in favour of `nmpc`; H-B1 is therefore a confirmatory test of the development finding on 50 new cars,
+not an independent discovery. **Power:** with d discordant cars the smallest two-sided McNemar p is 2 · 0.5^d;
 H-B1 can hold at Holm's first level (0.025) only if at least 7 cars are discordant and all in one direction
 (2 · 0.5⁷ = 0.016). Phase A had 3 discordant cars of 25; the test set is doubled for this reason – no power
 calculation is possible without data, and a "not supported" may again be a statement about power.
@@ -63,7 +66,9 @@ sampling parameters on the same 10 CXV cars, 9 settings (section 4) – not a sy
 phase A. *Since amendment B2 (review c3 of packet 2):* the primary `mppi_lp` is tuned on CXV over 9 + 3 = 12
 settings (λ × c_σ at 2 Hz, then f_c) against `nmpc`'s 6, and the primary controller itself was changed after
 the development gate on the nominal car failed for the white-noise `mppi` (section 9, B2) – a second asymmetry,
-stated.
+stated. *Since amendment B3 (review d1):* the gate failed for the primary at K_RT as well, and the benchmark runs
+with the gate waived by B3; every conclusion is limited to this CPU, numpy, K = 1 024 budget, and H-B1 confirms (or
+not) on new cars a direction the development laps already suggest.
 
 ## 2. Sets
 
@@ -482,8 +487,13 @@ Nominal car only; records in `results/CX/B/dev/` (git-ignored), each with its co
      than `nmpc`; the benchmark measures by how much, at this budget.
   7. *Alternative, not proposed:* close phase B without a benchmark and report the development result (T-RO MPPI
      does not complete the nominal lap at the real-time CPU budget; LP-MPPI 2 of 8) – H-B1 / H-B2 untested.
-* **B3 (proposed 2026-10-22, for review) – after the gate failed at the K in force (section 9, result 8): how phase B
-  ends.** *Cause:* at K_RT = 1 024 none of `mppi_lp`'s nine first-step settings completes the nominal lap; with
+* **B3 (2026-10-22; proposed in e9fb7e1, APPROVED by the reviewer 2026-10-22: option 1) – after the gate failed at the
+  K in force (section 9, result 8): how phase B ends.** Conditions: d1 (this text, section 1, the scope), d2 (the
+  report: the gate's failure first, the conclusion limited to this CPU / numpy / K 1 024 budget, `mppi_big` as a
+  separate budget-sensitivity paragraph), d3 (the CXV tuning by the rule as it stands – no step skipped, no grid
+  changed, an uninformative tuning reported as such), d4 (the frontier candidates, CONTROL_METHOD_MATRIX.md). The
+  gate results of section 9 (K 2 048: 2 of 8 low-pass laps; K 1 024: 0 of 9; white noise 0 of 17) stand as
+  recorded. *Cause:* at K_RT = 1 024 none of `mppi_lp`'s nine first-step settings completes the nominal lap; with
   B2's own evidence (K 2 048: 1 of 3; K 8 192 offline: 1 of 3) and the white-noise results (0 of 17), MPPI on the
   NMPC's problem does not reliably drive the nominal car at any budget tried, and not once at the real-time
   budget. The gate's question – is the problem solvable at this budget? – is answered: no, on the nominal car.

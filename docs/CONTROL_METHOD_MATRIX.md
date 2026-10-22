@@ -36,3 +36,21 @@ Frontier methods after the seven phases (roadmap section 5): chance-constrained 
 robust / scenario MPC and conformal calibration (L3); recurrent and context-conditioned residual RL,
 model-based RL, MPC imitation (L5); GP residuals, deep ensembles, local error-dynamics regression,
 physics-informed models (L6); online / meta adaptation, universal dynamics models (L8).
+
+### Follow-up candidates from phase B (MPPI; CX-B amendment B3, review d4)
+
+Phase B found that MPPI on the NMPC's problem does not reliably complete the nominal lap at the real-time CPU
+budget (docs/CX_B_protocol.md section 9). Candidates, not scheduled, each with its source:
+
+* **The unperturbed sequence U as one of the samples** – keeps the update from making a near-optimal U worse
+  (section 9.4: one iteration made it worse in 16 of 20 solves); used by some MPPI implementations (review n2 of
+  packet 2; not read for this list).
+* **Adaptive temperature** – λ set per step from the cost spread / an effective-sample-size target instead of a
+  fixed grid value (the ESS of the development laps ranged from 1 to ~1 000 across the grid).
+* **Adaptive / optimal sampling covariance** – CoVO-MPC (literature B.10, abstract read).
+* **Input lifting for smoothness** – SMPPI (literature B.4, full text read).
+* **A GPU implementation** – K of 10⁴–10⁵ within 50 ms (literature B.3, B.6, B.9); the RTX PRO 3000 of this machine is
+  unused so far.
+* **The failure mechanism at the 3.84 km corner** – the rear axle near saturation (usage 0.96, vy +2.4 m/s), every
+  sample penalised (ESS 1), the car sliding wide at the exit (section 9.7, `traces.json`); the same corner where
+  phase A's low-contouring-weight MPCC left by millimetres.
