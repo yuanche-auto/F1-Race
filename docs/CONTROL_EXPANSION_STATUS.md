@@ -1,6 +1,6 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-22 (phase B: packet 2 – code, development checks, gate failed for mppi, amendment B2 proposed). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-22 (phase B: packet 2 APPROVE, B2 APPROVE; K_RT = 1 024 on mppi_lp; packet 3 before CXV). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
 * **Current phase:** B – MPPI, branch `cx/B-mppi` from `main` b68d0a4: literature (§B of the literature review) and
   protocol revision 0 (`docs/CX_B_protocol.md`) **APPROVE** (0b94d1a) with clarifications m1, m2, n1–n4 written in;
@@ -8,7 +8,8 @@ Last updated: 2026-10-22 (phase B: packet 2 – code, development checks, gate f
   checks 9.1 and 9.2 done – 9.2 found that the NMPC drives and brakes at once in its braking zones, so **amendment B1**
   (MPPI samples the NMPC's three inputs) was proposed (8d86ff2) and approved (c8806c1). K timing: K = 2 048. Development
   gate (9.6) **failed** for `mppi` (white noise: 0 of 17 nominal laps); `mppi_lp` 2 of 8 – **amendment B2** (the
-  low-pass MPPI as the primary) proposed in eea5a49; packet 2 sent; no CXV lap. A done (final review of e2cea5d
+  low-pass MPPI as the primary) proposed in eea5a49; packet 2 (c3fca85) and B2 **APPROVE**; review c1: the K rule
+  on `mppi_lp` gives K_RT = 1 024 (K 2 048: median 44.6 ms); c2 traces recorded; c3 scope – packet 3 next; no CXV lap. A done (final review of e2cea5d
   APPROVE; `cx/A-mpcc` merged to `main` --no-ff as **b68d0a4**, 2026-10-21).
 * **Original reviewer:** session `local_30f94a40-03cb-490d-85b4-12ad1d351d3a` ("F1 Race 阶段审查"), the
   reviewer of L7–L9 – reached by SendMessage with this id (its pipe address changes after restarts).
@@ -22,7 +23,7 @@ Last updated: 2026-10-22 (phase B: packet 2 – code, development checks, gate f
 | A | `control/mpcc.py` (`DynamicMPCC`, `MPCCController`, `path_errors`) | yes (0061e79) | yes – `tests/test_mpcc.py`, 8 tests | development laps; CXV tuning; CXT benchmark; secondary conditions | **APPROVE** (f4d1ee9 … e2cea5d) | **yes – phase A completed** |
 | A | runner and report (`experiments/cx_a.py`, `scripts/run_cx_a.py`, `scripts/report_cx_a.py`) | yes | yes – `tests/test_cx_a.py`, 7 tests (5 at 6bcc6ef) | smoke on the nominal car; the CXV / CXT / secondary runs | **APPROVE** (6bcc6ef … e2cea5d) | **yes** |
 | A | `mpcc_ca` (CiMPCC-based, amendment A1) and the secondary conditions; soft speed bound (amendment A2) | yes | yes – `tests/test_mpcc.py` 8, `tests/test_cx_a.py` 7 | smoke on cases outside every set (`results/CX/A/dev/secondary_smoke.jsonl`); A2 diagnostic on CXV cars 2 / 5 / 7; CXT | **APPROVE** (94cba68 … e2cea5d) | **yes** |
-| B | `control/mppi.py` (`MPPI`), `experiments/cx_b.py`, `scripts/run_cx_b.py`, `scripts/report_cx_b.py`, `scripts/cx_b_dev.py` | yes (57146e4 … 8d2051b) | yes – `tests/test_mppi.py` 12, `tests/test_cx_b.py` 5 | development checks 9.1–9.6 and post-gate diagnostics on the nominal car (protocol §9 results); runner smoke on NOM | protocol rev 0 **APPROVE** (0b94d1a); B1 **APPROVE** (c8806c1); packet 2 (eea5a49) with B2 proposed – in review | – |
+| B | `control/mppi.py` (`MPPI`), `experiments/cx_b.py`, `scripts/run_cx_b.py`, `scripts/report_cx_b.py`, `scripts/cx_b_dev.py` | yes (57146e4 … 8d2051b) | yes – `tests/test_mppi.py` 12, `tests/test_cx_b.py` 5 | development checks 9.1–9.6 and post-gate diagnostics on the nominal car (protocol §9 results); runner smoke on NOM | protocol rev 0 **APPROVE** (0b94d1a); B1 **APPROVE** (c8806c1); packet 2 and B2 **APPROVE** (c3fca85); packet 3 (B2 roles, K_RT) in review | – |
 | C–G | – | not started | – | – | – | – |
 
 ## Review record
@@ -40,6 +41,7 @@ Last updated: 2026-10-22 (phase B: packet 2 – code, development checks, gate f
 | 2026-10-21 | b68d0a4 | merge check of phase A (main) | correct | nit: the runner row's test count (5 vs 7) – fixed in d75f037 |
 | 2026-10-21 | 0b94d1a | **phase B packet 1**: literature B.1–B.11, CX-B protocol revision 0 (no code) | **APPROVE** (binding) | m1 (a) no valid sample → U only shifted, counted, unit-tested; (b) K rule selects nothing → amendment, timing at the grid centre; m2 K₀ = max(1, ⌊αK⌋); n1 seed 10 (T1new) in the list; n2 mppi_lp filter transient; n3 CXD / CXL8 re-runs expected identical; n4 scope: CPU numpy implementation – all written into the protocol before any timing or development lap |
 | 2026-10-22 | 8d86ff2 | amendment B1 (MPPI samples the NMPC's three inputs) | **APPROVE** (decision) | c1 status before the K timing (c8806c1), c2 clamp tests, c3 overlap for both controllers with the left-foot-braking remark; disclose the informal timings in packet 2 |
+| 2026-10-22 | c3fca85 | **phase B packet 2**: MPPI code, runner / report, tests, development checks 9.1–9.6 and the post-gate diagnostics; amendment B2 | **APPROVE**; B2 **APPROVE** | c1 re-time K on mppi_lp (→ K_RT 1 024); c2 traces as records; c3 scope (12 vs 6 settings, primary changed after the gate); n1 median budget, n2 nominal-U limitation, n3 common random numbers |
 
 ## Tests
 
