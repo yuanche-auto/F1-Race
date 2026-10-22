@@ -323,6 +323,139 @@ Checked 2026-10-22. Full texts as arXiv HTML; the journal classics of linear tub
 **Tools note:** the offline designs of C.4 / C.5 / C.8 need an SDP or SOS solver (LMIs, CCM); none is installed here
 (no cvxpy, MOSEK, SCS). The CX-C protocol states how its offline constants are obtained instead.
 
+## Phase D – adaptive MPC and online identification
+
+Checked 2026-10-22. Full texts as arXiv HTML / ar5iv or as the authors' PDFs (converted to text); the classics of
+recursive identification and MHE were not obtained in full and are cited for what the full texts read restate.
+What L4 / L6 / L8 already have (offline least squares and an EKF from one exploration lap, `estimation/identify.py`,
+`estimation/ekf.py`) is not re-reviewed here.
+
+### D.1 Ljung, Söderström – *Theory and Practice of Recursive Identification*, MIT Press, 1983 (bibliographic)
+
+* The recursive prediction-error method (RPEM): a recursive Gauss–Newton step on the prediction-error criterion with
+  the regressor replaced by the gradient of the prediction with respect to the parameters; for a model linear in the
+  parameters it is RLS. Not read; cited as the standard form of "RLS" for a model that is nonlinear in its parameters,
+  as phase D needs (the tyre model is nonlinear in B and, through saturation, in μ).
+
+### D.2 Vahidi, Stefanopoulou, Peng – *Recursive least squares with forgetting for online estimation of vehicle mass and road grade: theory and experiments*, Vehicle System Dynamics 43(1), 2005, 31–55 (full text read, authors' PDF: sections 1 and 4.1–4.2)
+
+* **RLS with exponential forgetting** (eq. 9–11): loss Σ λ^{k−i} (y(i) − φᵀ(i)θ̂)², gain L = Pφ(λ + φᵀPφ)⁻¹,
+  P(k) = (I − Lφᵀ)P(k − 1)/λ. Without forgetting P → 0 and the estimator cannot follow a change.
+* **Covariance wind-up:** under poor excitation old information is forgotten while little new arrives and P grows
+  exponentially; the remedies listed (Fortescue's variable forgetting, resetting, an upper bound on P, directional
+  forgetting) are called ad hoc; no tracking proofs exist for most of them.
+* **Vector-type forgetting** (eq. 12): P scaled by a diagonal matrix of per-parameter forgetting factors, for parameters
+  that change at different rates (a constant mass with a varying grade); the authors' own "multiple forgetting" splits
+  the error by parameter (eq. 13–17). Mass within 5 % on truck data when the input is persistently exciting; lack of
+  excitation in parts of the run limits accuracy (abstract, section 1).
+* **Used in phase D:** RLS with forgetting only on the parameter that is expected to change (friction), the others with
+  λ = 1, and P bounded above by the prior (protocol section 3.2).
+
+### D.3 Ljung – *Asymptotic behavior of the extended Kalman filter as a parameter estimator for linear systems*, IEEE TAC 24(1), 1979, 36–50 (bibliographic)
+
+* The EKF on the state augmented by the parameters as a recursive parameter estimator, its convergence and the
+  modifications that make it consistent (as described by secondary sources). Not read; the L6 EKF (`estimation/ekf.py`)
+  is this kind of estimator, used offline there.
+
+### D.4 Rao, Rawlings, Mayne – *Constrained state estimation for nonlinear discrete-time systems: stability and moving horizon approximations*, IEEE TAC 48(2), 2003, 246–258 (bibliographic)
+
+* Moving horizon estimation (MHE): a least-squares problem over the last N measurements with an arrival cost summarising
+  the data before the window; stability conditions on the arrival cost. Not read; cited for the structure that D.5 and
+  D.6 restate (window, arrival cost, constraints).
+
+### D.5 Kühl, Diehl, Kraus, Schlöder, Bock – *A real-time algorithm for moving horizon state and parameter estimation*, Computers & Chemical Engineering 35(1), 2011, 71–83 (abstract)
+
+* MHE for states and parameters together, with measurement noise only or measurement and state noise; the real-time
+  iteration scheme (one Gauss–Newton iteration per measurement, preparation and estimation phases); an arrival-cost
+  update by one QR factorisation; chemical-process examples (abstract). Not read in full.
+
+### D.6 Zanon, Frasch, Diehl – *Nonlinear moving horizon estimation for combined state and friction coefficient estimation in autonomous driving*, ECC 2013, 4130–4135 (full text read, PDF)
+
+* MHE over a 10 m horizon (10 shooting intervals) with a multi-body car model and a Pacejka tyre model; the friction
+  coefficient is a parameter of the MHE; least-squares measurement residuals weighted by the inverse noise variances,
+  an arrival cost on the initial state; RTI with direct multiple shooting, ACADO code generation; MHE and NMPC each
+  below 50 ms per step in Matlab.
+* Simulation: obstacle avoidance at 10 m/s, friction jumping from 0.3 to 0.5 after 80 m, initial guess 0.5. **The
+  friction estimate is good while the car steers and degrades on straight stretches – with no torque and no steering,
+  no slip occurs and friction is not observable**; a rigorous observability analysis is left open.
+* **For phase D:** the excitation problem is real for every estimator here – friction is learned only where the tyres
+  work, i.e. in the corners that need it (protocol section 3.8).
+
+### D.7 Malvezzi, Musiu, Mascaro, Iacovacci, Bertogna – *RAGE: Radar-Aided Grip Estimator for Autonomous Race Cars*, arXiv:2604.02892 (v1 3 Apr 2026; full text read, HTML)
+
+* MHE over a 150 ms window (a state every 10 ms), estimating body velocities, IMU biases and the Pacejka coefficients
+  (B, C, D, E, S_h, S_v per axle) together; priors on the first state and the parameters act as the arrival cost; box
+  bounds on the parameters; Ceres solver, at most 3 iterations, 2.3 ms mean on one core.
+* Simulation hot lap with randomised initial Pacejka parameters: the parameters converge in about 20 s, lateral-force
+  RMSE below 500 N; on the real EAV-24 car (Yas Marina, up to 70 m/s) cornering stiffness varies with tyre temperature
+  and pressure. No comparison with other estimators; observability of the friction peak not analysed.
+
+### D.8 Multiple-model adaptive estimation – Magill, *Optimal adaptive estimation of sampled stochastic processes*, IEEE TAC 10, 1965, 434–439; Lainiotis, *Optimal adaptive estimation: structure and parameter adaption*, IEEE TAC 16, 1971, 160–170 (bibliographic)
+
+* A bank of filters, one per candidate parameter value, run in parallel; their residuals give posterior probabilities
+  that weight the estimates; if a candidate equals the true parameter, the scheme identifies it (as described by Athans
+  and Chang's 1976 Lincoln Laboratory note and Aguiar, Athans, Pascoal, found by search). Not read; the racing variant
+  used in phase D is D.9's.
+
+### D.9 AL-Sunni, Almubarak, Horng, Dolan – *LLA-MPC: Fast Adaptive Control for Autonomous Racing*, arXiv:2505.19512 (v1 May 2025; full text read, HTML v1 – upgrades entry A.6)
+
+* **Model bank:** N = 20 000 (also 10 000) dynamic bicycle models, the 8 parameters (Pacejka B, C, D per axle, rolling
+  and drag coefficients) drawn uniformly within assumed bounds; mass, inertia and geometry known.
+* **Look-back selection:** at every step each model predicts the current state from the previous state and input; the
+  squared Euclidean errors are summed over a window W = 0.2 s (10 steps of 20 ms); the model with the smallest sum is
+  used (hard switching; nominal model until the window is full).
+* **Friction and plan:** μ̄ = (D_f + D_r)/(2mg) from the selected model, exponentially smoothed (γ not reported), selects
+  or interpolates a precomputed library of velocity profiles (one per friction value) on a minimum-curvature line.
+  NMPC horizon 0.4 s at 20 ms; cost, constraints and solver not given.
+* 1:43 simulator: friction decaying 2 %/s, dropping 40 % after lap 1 or within lap 1; against APACRace (D.10): shorter
+  track-violation times (e.g. 0.44 vs 3.10 s) and ~0.03 vs ~0.06 s per iteration; 10 runs; simulation only.
+* **Used in phase D** as `adaptive_bank` (protocol section 3.5), with this paper's window, bank size and hard switching.
+
+### D.10 Kalaria, Lin, Dolan – *Adaptive Planning and Control with Time-Varying Tire Models for Autonomous Racing Using Extreme Learning Machine* (APACRace), arXiv:2303.08235 (Mar 2023), ICRA 2024, 10443–10449 per the search result (full text read, ar5iv HTML)
+
+* Nominal kinematic model plus a learned residual: one extreme learning machine per axle maps slip angle to lateral
+  force (40 random hidden units, output weights trained), with rolling and drag terms; SGD with momentum on the
+  residuals of (v_x, v_y, ω) over the most recent K samples (300 / 2 000) – the sliding window is the forgetting; the
+  nominal model alone for the first 6.2 s (44 s in CARLA).
+* **Friction from the learned tyre curves selects / interpolates precomputed velocity profiles** (a library over
+  friction on a fixed minimum-curvature line); NMPC with horizon 50, the corrected model inside; ~0.05 s per step.
+* 1:43 simulator with tyre wear (peak-friction parameters changed) and a sudden "rain" drop: adaptation with variable
+  speeds 0.46 s of track violations against 4.32 s without adaptation and 2.84 s with adaptation but constant speeds;
+  the oracle 0. **The speed adaptation matters as much as the model adaptation.** Stated limits: no uncertainty
+  model, no deliberate excitation, simulation only.
+
+### D.11 Dikici, Ghignone, Hu, Baumann, Xie, Carron, Magno, Corno – *Learning-Based On-Track System Identification for Scaled Autonomous Racing in Under a Minute*, arXiv:2411.17508 (Nov 2024; IEEE, vol. 10, no. 2, Feb 2025, 1984–1991 per the ETH Research Collection – most likely RA-L, not confirmed; full text read, HTML v1)
+
+* ~30 s of on-track data (pure-pursuit driving), a small network correcting a nominal model, then Pacejka parameters
+  fitted to virtual steady-state data generated with the corrected model, iterated (~6 iterations of 0.5 s); against
+  nonlinear least squares on the one-step errors: 3.3× lower RMSE under noise in simulation; on a 1:10 car the NLS
+  model did not complete a lap. Batch, not streaming; reliable only within the slip range the data cover.
+* **For phase D:** a reminder that plain one-step least squares can underestimate tyre forces under noise (as L6
+  found for L4's least squares); the primary sets of phase D are noise-free, the noisy condition is secondary.
+
+### D.12 Adetola, DeHaan, Guay – *Adaptive model predictive control for constrained nonlinear systems*, Systems & Control Letters 58(5), 2009, 320–326 (abstract)
+
+* Parameter adaptation combined with robust MPC (min-max or Lipschitz-based) so that the parameter-estimation error
+  during the transient is accounted for, rather than relying on the inherent robustness of a certainty-equivalence
+  NMPC; CSTR simulation (abstract). Not read in full. Phase D's controllers are certainty-equivalence (no such
+  accounting) – stated in the protocol.
+
+### D.13 Köhler, Kötting, Soloperto, Allgöwer, Müller – *A robust adaptive model predictive control framework for nonlinear uncertain systems*, Int. J. Robust Nonlinear Control (journal version 2020/21, volume not checked; arXiv:1911.02899; full text read in part, ar5iv: sections I–III; the numerical example not read)
+
+* Parameters entering affinely, f(x, u) + G(x, u)θ, plus a bounded additive disturbance; set-membership estimation over
+  a moving window of M measurements (2p linear programs per step) keeps a non-increasing hypercube containing the true
+  parameter; an LMS point estimate in the cost; the tube of C.4 (incremental Lyapunov function, s⁺ = ρs + w̄) shrinks as
+  the parameter set shrinks; recursive feasibility and constraint satisfaction under the model updates.
+* Offline: an incremental Lyapunov function from LMIs (quasi-LPV) and Lipschitz-type constants. **Not used in phase D**
+  (the parameters do not enter affinely – B inside the tyre curve – and no SDP solver is installed, "Tools note"
+  above); the combination of phase C's tube with phase D's estimator is a follow-up candidate.
+
+### D.14 Gustafsson – *Slip-based tire-road friction estimation*, Automatica 33(6), 1997, 1087–1099 (bibliographic + search-result summary)
+
+* Friction from wheel slip with an adaptive estimator for a model linear in its parameters, designed for periods of
+  poor excitation (per the search results). Not read; listed with D.6 for the excitation issue. Phase D's car model has
+  no wheel-slip states, so slip-based estimation does not apply.
+
 ## Phases D–G and the frontier methods
 
 Entries are written at the start of each phase, before its code (roadmap section 3). Classic sources
