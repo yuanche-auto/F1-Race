@@ -283,6 +283,85 @@ only (records in `results/CX/B/dev/` with the commit and a dirty flag), reported
    an amendment reviewed before any CXV lap (as CX-A amendment A2) – not tuned on CXV until something works.
    These laps choose nothing: the selection is section 4's, on CXV.
 
+### 9. Results of the development checks (2026-10-22; packet 2)
+
+Nominal car only; records in `results/CX/B/dev/` (git-ignored), each with its commit and `dirty = false`.
+
+1. **Model** (`checks.json`, 57146e4): 2 000 random states and inputs, largest relative difference to
+   `FrenetMPC`'s CasADi step 6.7 · 10⁻¹⁶ (absolute 1.4 · 10⁻¹⁴).
+2. **Cost** (`checks.json`, `nmpc_nom.npz`, 57146e4): at 20 solves of `nmpc`'s nominal lap (c 2, margin 0.6: 76.40 s,
+   1 528 solves) the NLP's objective with the slacks eliminated equals MPPI's cost on the rollout of IPOPT's
+   inputs to 1.3 · 10⁻¹⁴ (relative; constraint violation < 10⁻¹⁵); at IPOPT's own iterate it does not (B1.4).
+   The drive-and-brake question led to amendment B1. The clamps: unit tests (below).
+3. **Iteration** – unit tests at 2695112: `tests/test_mppi.py` 12 (model; cost = NLP objective for both
+   parameterisations; the clamp of revision 0; the clamp of B1 – review c2: hard limits, fixed point,
+   single-force clipping, direction; K₀; λ → 0 picks the best sample; samples equal to U leave it unchanged;
+   U a convex combination; shift; seeding; no valid sample (m1a); the low-pass noise and its transient; a
+   closed-loop smoke for both parameterisations) and `tests/test_cx_b.py` 5. Determinism in closed loop: the
+   development laps repeated with the same seed (below, `nom_diagnostic.jsonl` replicate 0) give the same
+   distance / lap time.
+4. **Optimality gap** (`gap.json`, 8d2051b; three inputs, λ 1, c_σ 1, K 2 048; J* = the cost of IPOPT's inputs on
+   the rollout, B1.4), 20 solves of `nmpc`'s nominal lap:
+
+   | sequence | median cost | median / J* | worse than the warm start |
+   |---|---|---|---|
+   | IPOPT's solution (J*) | 0.158 | 1 | – |
+   | warm start: IPOPT's previous solution shifted | 0.99 | 3.7 | – |
+   | after 1 MPPI iteration from it | 27.7 | 63 | 16 of 20 |
+   | after 5 / 50 iterations | 14.6 / 10.2 | 53 / 51 | 16 / 16 of 20 |
+   | from U = 0 after 50 iterations | 9.95 | 48 | – |
+
+   One MPPI iteration from a near-optimal sequence makes it worse in 16 of 20 cases (the samples are drawn
+   around U, none is U itself, and their weighted mean carries their noise); the iteration settles at about
+   50 × J* whether it starts warm or from zero.
+5. **K timing** (`timing.json`, 2695112; three inputs; the grid centre; one closed-loop NOM lap per K, one after
+   the other, each in a fresh process, nothing else running): median step 10.1 / 14.9 / 22.0 / **38.4** /
+   103.9 ms for K = 256 / 512 / 1 024 / **2 048** / 4 096 → **K = 2 048** (section 3.4). Every one of these laps
+   left the track at turn 1 (463–473 m, ~150 steps each), so the medians come from the straight and the
+   braking zone of turn 1 only. *Informal timings before this one (review request, disclosed):* (i) the first
+   version of `control/mppi.py` (two inputs, `np.interp(…, period=L)`), not yet committed, one static state
+   (s = 100 m), 15 calls, first iterations 1, diagnostics off: 19.3 / 23.7 / 31.9 / 45.6 / 116.2 ms for K = 256
+   … 4 096; (ii) a profile (K 1 024) showed `np.interp` with `period` taking ~38 % (it re-sorts the grid at every
+   call) – `_periodic` was changed to a pre-tiled grid over [−L, 3L] with the breakpoints and values of
+   `nmpc._periodic_interpolant`, already in 57146e4; re-timed (two inputs): 9.1 / 13.6 / 19.7 / 33.8 / 84.9 ms;
+   (iii) after the three-input option (working tree before d80e1a6, which also moved the net-force bounds into
+   their branch): two inputs 9.8 / 13.4 / 20.0 / 35.2 / 85.6 ms, three inputs 10.0 / 14.5 / 21.4 / 36.6 /
+   91.8 ms. No other change was made for speed.
+6. **Development laps** (`laps.jsonl`, 2695112; K 2 048; 10 jobs in parallel, so the step times carry that load):
+
+   | controller, setting | result | ESS median | no penalty-free sample | overlap N P50 / P90 |
+   |---|---|---|---|---|
+   | `mppi` λ 0.1, c_σ 0.5 | off track at 1 398 m | 1.0 | 0.18 | 243 / 1 680 |
+   | `mppi` λ 0.1, c_σ 1 / 2 | off at 465 / 440 m | 1.0 / 1.0 | 0.23 / 0.19 | 441 / 3 367; 882 / 5 398 |
+   | `mppi` λ 1, c_σ 0.5 / 1 / 2 | off at 467 / 471 / 458 m | 12 / 10 / 1.1 | 0.25 / 0.23 / 0.26 | 574–898 / 1 167–4 492 |
+   | `mppi` λ 10, c_σ 0.5 / 1 / 2 | off at 437 / 462 / 459 m | 1 028 / 416 / 80 | 0.17 / 0.24 / 0.24 | 1 108–2 281 / 1 395–3 388 |
+   | `mppi_lp` λ 1, c_σ 1, f_c 2 Hz | **82.21 s** | 6.6 | 0.07 | 235 / 837 |
+
+   **Gate (6): no `mppi` setting completes the nominal lap** – 8 of 9 leave at turn 1. `mppi_lp` at the grid
+   centre does. `nmpc` on the same car: 76.40 s, overlap median 35 N.
+7. **After the gate – diagnostics on the nominal car** (to find the cause before proposing an amendment;
+   `nom_diagnostic.jsonl` at 0495c4b and `nom_diagnostic_big.jsonl` at 8d2051b; λ 1, c_σ 1; replicates 0–2):
+
+   | variant | laps completed | where the others leave |
+   |---|---|---|
+   | `mppi`, K 2 048 (replicates 0–2; 0 repeats 9.6 exactly) | 0 of 3 | 471, 472, 1 396 m |
+   | `mppi`, K 512 with 4 iterations per step (~ the same time) | 0 of 3 | 462–465 m |
+   | `mppi`, K 8 192 (offline, 4 K) | 0 of 3 | 472–474 m |
+   | `mppi_lp` f_c 2 Hz, K 2 048 (0 repeats 9.6 exactly: 82.21 s) | 1 of 3 | 3 836, 3 836 m |
+   | `mppi_lp` f_c 1 / 4 Hz, K 2 048 (replicate 0) | 0 of 2 | 3 838 / 1 398 m |
+   | `mppi_lp` f_c 2 Hz, K 8 192 (offline) | 1 of 3 (80.70 s) | 3 839, 3 846 m |
+
+   Reading (traces of replicate 0 of `mppi` and replicate 1 of `mppi_lp` from scratchpad scripts, not kept as
+   records): with white noise the car is up to ~6 m/s below the plan on the main straight (applied overlap ~1 kN),
+   brakes for turn 1 in time, but turns in too slowly; from ~427 m every sample carries a penalty (ESS 1) and
+   it leaves at the exit. More samples or more iterations per step do not change this; low-pass noise does –
+   every low-pass lap at 2 Hz passes turn 1. A white-noise perturbation spread over 30 stages moves a smooth
+   input change (a steering or braking ramp) by only ~σ / √30 per iteration; the low-pass noise puts its
+   variance there (LP-MPPI's argument, B.5). The low-pass laps then leave at ~3.84 km in 5 of 8: in the corner
+   at 3.70–3.84 km the rear axle runs at 0.93–0.95 of its ellipse with vy up to +2.4 m/s, every sample is
+   penalised (ESS 1) and the car slides wide at the exit – the corner where phase A's MPCC with a low
+   contouring weight also left by millimetres.
+
 ## Amendments
 
 * **B1 (2026-10-22; proposed in 8d86ff2, APPROVED by the reviewer 2026-10-22), MPPI samples the NMPC's three
@@ -330,3 +409,31 @@ only (records in `results/CX/B/dev/` with the commit and a dirty flag), reported
      NMPC's hard limits met within tolerance, feasible inputs a fixed point, with one force non-zero the
      clipping of revision 0, the direction of the force pair kept (packet 2); c3 the overlap for MPPI and the
      NMPC with the remark of B1.2 (report).
+* **B2 (proposed 2026-10-22, for review) – after the development gate (9.6) failed for `mppi`: the low-pass-noise
+  MPPI becomes the primary controller.** *Cause:* section 9, results 4, 6 and 7: no setting of `mppi` (white noise,
+  T-RO's sampling) completes the nominal lap – 9 of 9 grid settings, and the grid centre with two more random
+  streams, with 4 iterations per step and with 4 K samples, 17 laps, all off track, 15 of them at turn 1; one
+  MPPI iteration from a near-optimal sequence makes it worse in 16 of 20 checked solves. `mppi_lp` (LP-MPPI, B.5)
+  passes turn 1 in every lap at 2 Hz and completes 2 of 8 low-pass laps (82.21 s at K 2 048, 80.70 s at K 8 192;
+  `nmpc` 76.40 s); the others leave at ~3.84 km (5) or 1.4 km (1, f_c 4 Hz). The gate's condition ("a setting
+  completes the nominal lap") is met only by the low-pass variant.
+  1. *Primary:* H-B1 and H-B2 compare **`mppi_lp`** (section 3.5) with `nmpc`; their wording, test, Holm and the
+     power statement of section 1 otherwise unchanged; `mppi_lp` runs CBT with replicates 0, 1, 2 (replicate 0 in
+     the tests).
+  2. *Tuning (CXV):* `mppi_lp` over λ ∈ {0.1, 1, 10} × c_σ ∈ {0.5, 1, 2} at f_c = 2 Hz (9 settings; 2 Hz is the
+     cut-off of the development laps), then f_c ∈ {1, 2, 4} Hz on the chosen (λ, c_σ) (3 settings; the 2 Hz lap
+     is the first step's). Section 4's rule; ties in the first step by section 4's order for (λ, c_σ), in the second
+     the f_c closest to 2 Hz (|log(f_c / 2)|), then the higher. 120 laps.
+  3. *`mppi` (white noise)* becomes a secondary controller, **not tuned** (every development setting failed, so CXV
+     laps could only select by the closeness rule): the grid centre (λ 1, c_σ 1, K 2 048) on CBT, replicate 0 – the
+     T-RO baseline next to the low-pass variant. `mppi_big`: 4 K with `mppi_lp`'s CXV setting (the primary's
+     sample budget).
+  4. *Secondary comparisons* (12, uncorrected): McNemar and signed-rank of `mppi_lp` – `mpcc`, `mppi` – `mppi_lp`,
+     `mppi` – `nmpc`, `mppi_big` – `mppi_lp`, `mppi_big` – `nmpc`; replicates 1 and 2 of `mppi_lp` against `nmpc`.
+  5. *Unchanged:* the optimal control problem (section 3.1 with B1), K = 2 048, one iteration per step, the sets, the
+     statistics, the secondary conditions (with `mppi_lp` in `mppi`'s place for the uncorrected McNemar there).
+  6. *Disclosure:* decided after development laps on the nominal car, which is in no test; no CXV or CBT lap has
+     run. The gap result (9.4) and the 3.84 km failures make it likely that `mppi_lp` completes fewer test cars
+     than `nmpc`; the benchmark measures by how much, at this budget.
+  7. *Alternative, not proposed:* close phase B without a benchmark and report the development result (T-RO MPPI
+     does not complete the nominal lap at the real-time CPU budget; LP-MPPI 2 of 8) – H-B1 / H-B2 untested.
