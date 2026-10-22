@@ -55,6 +55,9 @@ Discordant cars: car 12 only `mpcc` (78.069 s; `nmpc` off at 3 830 m); cars 2 an
 | `mpcc_ca` | 9 / 25 (the same cars as `mpcc`) | 76.75 s | as `mpcc` (one car fails at 2.71 km instead of 477 m) |
 | `mpcc_centre` | 3 / 25 (0.03–0.31) | 77.62 s | turn 1 (20 of 22) |
 
+The mean laps above come from different cars (the tracker's from one car) and are not comparable across the
+rows; the only like-for-like lap-time comparison is H-A2's, on the 8 cars both `mpcc` and `nmpc` complete.
+
 `mpcc_centre` against `nmpc` 0 : 7 (p 0.016) and against `mpcc` 0 : 6 (p 0.031); `tracker` against `nmpc` 0 : 9
 (p 0.004); `mpcc_ca` against `mpcc` 0 : 0 and against `nmpc` 1 : 2 (p 1). Solver: `nmpc` 5 fallbacks over the 25
 laps, `mpcc` 16, `mpcc_ca` 13, `mpcc_centre` 35; mean solve 174–197 ms, every solve above 50 ms (offline IPOPT);
@@ -71,10 +74,14 @@ in 43 % of the predicted stages. On the nominal car (development car, not a test
   n = 8. On the tuning cars the same order appeared (76.78 against 77.42 s on cars 1, 3, 9), but those numbers are
   after the selection and biased.
 * **The failures sit at the same few corners for every controller** (turn 1, ~2.2 / 2.7 km, ~3.83 km), and the same
-  cars fail – the cars of the L2 ranges are hard for any controller that plans at η = 0.95 with the nominal model.
-  The difference between the methods is small compared with that.
-* **The reference path matters more than the weights:** with the centre line as reference (Liniger's choice) the
-  MPCC fails at turn 1 on almost every car, as it did on the nominal car in development.
+  cars fail – the cars of the L2 ranges are hard for all five controllers here (each plans or tracks at η = 0.95
+  with the nominal model; no other controller was tested). The difference between the methods is small compared
+  with that.
+* **On this grid and these cars, changing the reference path to the centre line made a larger difference than any
+  change of the weights within the grid** (secondary, uncorrected): with the centre line (Liniger's choice) 20 of
+  the MPCC's 22 failures on CXT are at turn 1; on the nominal car the same formulation (stage bound) leaves the
+  track at ~3.82 km, as in the development check (protocol §9: 3 821 m) – the turn-1 failure there was the
+  terminal-bound version's.
 * **The curvature-aware term adds nothing measurable here:** `mpcc_ca` completes the same cars as `mpcc`; its tuning
   ties were within 0.08 s. Its β is taken at the car's position for a 1.5 s horizon and cannot anticipate a corner
   (adaptation of CiMPCC, amendment A1).
