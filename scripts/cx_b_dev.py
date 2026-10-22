@@ -12,6 +12,7 @@ only (records in results/CX/B/dev/, each with the commit and a dirty flag; not r
     python scripts/cx_b_dev.py nomdiag-big --K K   # the same with 4 K samples -> dev/nom_diagnostic_big.jsonl
     python scripts/cx_b_dev.py timing-lp       # review c1 of packet 2: the K rule on mppi_lp, K 1024 / 2048 -> dev/timing_lp.json
     python scripts/cx_b_dev.py trace --K K     # review c2: the traces quoted in 9.7 -> dev/traces.npz, dev/traces.json
+    python scripts/cx_b_dev.py gate-lp         # review g1 of packet 3: the 9.6 gate at K_RT -> dev/gate_k1024.jsonl
 """
 from __future__ import annotations
 
@@ -298,6 +299,24 @@ def _diag_job(args):
     return rec
 
 
+def gate_lp() -> None:
+    """Review g1 of packet 3: section 9.6's gate at the K in force - the 9 first-step settings of mppi_lp
+    (lp_stage1(K_RT), 2 Hz) on the nominal car, replicate 0; development laps, no selection -> dev/gate_k1024.jsonl."""
+    from f1race.experiments import cx_b
+
+    jobs = [("mppi_lp", s_, 0) for s_ in cx_b.lp_stage1(cx_b.K_RT)]
+    path = DEV / f"gate_k{cx_b.K_RT}.jsonl"
+    with get_context("spawn").Pool(len(jobs), maxtasksperchild=1) as pool, open(path, "w") as fo:
+        for r in pool.imap_unordered(_diag_job, jobs):
+            fo.write(json.dumps(r) + "\n")
+            fo.flush()
+            print(r["kind"], r["setting_key"], r["completed"], r["lap_time"], r["stop_reason"], round(r["distance"]),
+                  "no-free", round(r["no_penalty_free_sample_share"], 3), "ess", [round(x, 1) for x in r["ess_p5_p50_p95"]],
+                  flush=True)
+    done = sum(json.loads(l)["completed"] for l in open(path))
+    print(f"gate at K {cx_b.K_RT}: {done} of {len(jobs)} settings complete the nominal lap")
+
+
 def nomdiag_big(K: int) -> None:
     """The nominal car: the grid centre with 4 K samples (offline, mppi_big's budget), white and low-pass (2 Hz)
     noise, replicates 0-2 - whether the failures of 9.6 / nomdiag are a matter of the sample budget."""
@@ -336,7 +355,7 @@ def nomdiag(K: int) -> None:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("what", choices=("checks", "timing", "timing-one", "timing-lp", "gap", "laps", "nomdiag",
-                                     "nomdiag-big", "trace"))
+                                     "nomdiag-big", "trace", "gate-lp"))
     ap.add_argument("--K", type=int)
     ap.add_argument("--kind", default="mppi")
     a = ap.parse_args()
@@ -351,6 +370,8 @@ if __name__ == "__main__":
         timing_lp()
     elif a.what == "trace":
         trace(a.K)
+    elif a.what == "gate-lp":
+        gate_lp()
     elif a.what == "gap":
         gap(a.K)
     elif a.what == "nomdiag":

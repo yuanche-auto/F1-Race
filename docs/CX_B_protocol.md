@@ -35,9 +35,10 @@ quantities that separate these.
 
 *Since amendment B2 (approved 2026-10-22) the primary MPPI is `mppi_lp` (section 3.5): read `mppi_lp` for `mppi` in
 H-B1 and H-B2; the white-noise `mppi` is a secondary, untuned controller.* *Clarification (review n1 of packet 2):*
-"fits a 50 ms control period" is meant by the median step time (section 3.4); at K = 2 048 the P95 of the
-development laps was ~54 ms, above 50 ms – the report lists the step-time percentiles and the share of steps
-above 50 ms.
+"fits a 50 ms control period" is meant by the median step time (section 3.4). At the K in force, K_RT = 1 024
+(`mppi_lp`, section 9.5, `timing_lp.json`), the nominal lap's steps took median 25.0 ms, P95 41.0 ms, P99 48.3 ms,
+with 0.8 % above 50 ms (review n1 of packet 3); for comparison, at K = 2 048 `mppi_lp`'s median was 44.6 ms, P95
+61.1 ms, 27 % above 50 ms. The report lists the step-time percentiles and the share of steps above 50 ms.
 
 * **H-B1 (primary):** on the 50 test cars CBT (section 2), `mppi` and `nmpc` differ in the number of
   completed laps. Exact McNemar, two-sided; holds if significant at its Holm level; direction reported.

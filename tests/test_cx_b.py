@@ -176,7 +176,7 @@ def test_report_tune_and_test(tmp_path, monkeypatch):
 
 
 @pytest.mark.skipif(not CACHE.exists(), reason="run scripts/run_l1.py first")
-def test_baseline_records_come_from_phase_a_code():
+def test_baseline_records_come_from_phase_a_code(track):                    # the fixture provides the track data
     """cx_b.lap runs a baseline through cx_a.lap: the record equals cx_a.lap's in every field that does not
     measure time, plus the drive-and-brake overlap of the applied inputs (the tracker on the nominal car)."""
     case = cx_b.cases("NOM")[0]
