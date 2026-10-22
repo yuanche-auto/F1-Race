@@ -350,7 +350,8 @@ def secondary(d: Path, phase_a: Path | None) -> None:
                 if b_ is not None:
                     b_.pop("replicate", None)
                     keys = sorted((set(a_) & set(b_)) - {"replicate"})
-                    bad = [k for k in keys if a_[k] != b_[k]]
+                    # compared as JSON text: a not-completed lap's lap time is NaN, and NaN != NaN as numbers
+                    bad = [k for k in keys if json.dumps(a_[k], sort_keys=True) != json.dumps(b_[k], sort_keys=True)]
                 else:
                     bad = ["missing in phase A"]
                 if bad:

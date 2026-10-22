@@ -188,3 +188,26 @@ def test_baseline_records_come_from_phase_a_code(track):                    # th
     from f1race import experiments
 
     assert experiments.l7.make_sim_for.__name__ == "make_sim_for" and experiments.l7.make_sim_for.__qualname__ == "make_sim_for"
+
+
+def test_reproducibility_check_treats_nan_lap_times_as_equal(tmp_path, monkeypatch):
+    """report_cx_b.secondary compares nmpc / mpcc laps with phase A's records field by field: a not-completed lap's
+    lap time is NaN in both and must count as identical; a real difference must be listed (review n3 of packet 1)."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import report_cx_b
+
+    rec = lambda kind, case, lt, d: {"kind": kind, "case": case, "set": case.split("_")[0], "completed": lt == lt,
+                                     "lap_time": lt, "distance": d, "stop_reason": "x", "wall_s": 1.0}
+    old = [dict(rec("nmpc", "CXD_dist7400", float("nan"), 3809.0), job="a"), dict(rec("mpcc", "CXL8_Austin", 90.0, 5.0), job="b")]
+    new = [rec("nmpc", "CXD_dist7400", float("nan"), 3809.0), rec("mpcc", "CXL8_Austin", 90.5, 5.0)]
+    pa = tmp_path / "phase_a.jsonl"
+    pa.write_text("\n".join(json.dumps(r) for r in old) + "\n")
+    monkeypatch.setattr(report_cx_b, "load", lambda p: [json.loads(l) for l in open(p)] if p == pa else
+                        [dict(r, job=str(i), replicate=None, setting={}) for i, r in enumerate(new)])
+    monkeypatch.setattr(report_cx_b, "_settings", lambda d: {})
+    monkeypatch.setattr(report_cx_b, "_check", lambda recs, st, sets: None)
+    monkeypatch.setattr(cx_b, "SECONDARY", ())
+    report_cx_b.secondary(tmp_path, pa)
+    md = (tmp_path / "report" / "CX_B_secondary.md").read_text(encoding="utf-8")
+    assert "Identical in every field that does not measure time: 1 of 2 laps" in md
+    assert "* mpcc CXL8_Austin: lap_time" in md and "CXD_dist7400" not in md.split("Differences")[1]
