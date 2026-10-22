@@ -1,6 +1,6 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-21 (after the A2 / mpcc_ca tunings). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-21 (after the CXT run). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
 * **Current phase:** A – dynamic MPCC (`cx/A-mpcc`, from `main` c010887).
 * **Original reviewer:** session `local_30f94a40-03cb-490d-85b4-12ad1d351d3a` ("F1 Race 阶段审查"), the
@@ -25,7 +25,8 @@ Last updated: 2026-10-21 (after the A2 / mpcc_ca tunings). Roadmap: [CONTROL_EXP
 | 2026-10-21 | e8a5cd5 | CX-A protocol revision 1 | **APPROVE** (binding) | nit: state the grid sizes (24 / 6) and the selection bias in the scope – done; stage-0 bound activity is a measured quantity (the bound acts on stages 1 … N) |
 | 2026-10-21 | 6bcc6ef | phase A packet 2: runner and report code, tests, nominal-car smoke | **APPROVE** | m1 the full tie-break order and the skip rule written into protocol §4 before CXV (done, protocol clarification); before the CXT report: m2 the report refuses missing cars / error records and checks the settings against selected.json, m3 the missing §5 columns, m4 the force-increment definition and a 50 ms difference column, n1 fallback solves out of the stage statistics, n2 the same cars for every setting asserted; secondary conditions and the mpcc_ca amendment reviewed before they run |
 | 2026-10-21 | 94cba68 | phase A packet 3: CXV tuning results (8babe7b), review fixes m2–m4 / n1 / n2 (a1f0a73), amendment A1 (mpcc_ca after CiMPCC) and the secondary-condition code (549e4bd), amendment A2 (soft speed bound, re-tuning of the MPCCs on CXV) | **APPROVE** (conditions c1–c3, done in c7c802f; nits n3–n5 done) | the first CXV tuning accepted as the basis of A2; A2 and A1 agreed |
-| 2026-10-21 | c7c802f (run) | phase A packet 4: A2 re-tuning of the MPCCs (480 laps) and the mpcc_ca tuning (60 laps) on CXV | requested | – |
+| 2026-10-21 | c7c802f (run) | phase A packet 4: A2 re-tuning of the MPCCs (480 laps) and the mpcc_ca tuning (60 laps) on CXV | **APPROVE** | report to state: choices on grid edges, mpcc_ca ties at noise level, hard cars / low power of H-A1, CXV lap times selection-biased; nit: timeline lacks 'start tune_ca' – hand note added |
+| 2026-10-21 | c7c802f (run) | phase A packet 5: CXT (130 laps, test.jsonl 2e560c407137…) and its report; the secondary conditions running | requested | – |
 
 ## Tests
 
@@ -37,7 +38,7 @@ Last updated: 2026-10-21 (after the A2 / mpcc_ca tunings). Roadmap: [CONTROL_EXP
 the runner's smoke on the nominal car. CXV tuning (8babe7b): worktree `F1-Race-worktrees/F1-Race-wt-CXA-tune`,
 `results/CX/A/{tune.jsonl, selected.json, report/tune.md, RUN_COMMIT, SHA256_inputs*.txt, timeline.tsv}`.
 The first CXV selection is kept as `selected_first.json` and `report/tune_first.md` when the A2 re-tuning
-writes `selected.json` / `report/tune_a2.md` (review c1). All git-ignored. No CXT result.
+writes `selected.json` / `report/tune_a2.md` (review c1). CXT: `test.jsonl`, `report/CX_A.md` (2026-10-21 21:33–21:50). All git-ignored.
 
 ## Known blockers
 
@@ -48,6 +49,6 @@ writes `selected.json` / `report/tune_a2.md` (review c1). All git-ignored. No CX
 ## Next actions
 
 1. Protocol revision 1 binding (e8a5cd5).
-2. The reviewer's verdict on packet 4 (the A2 and mpcc_ca tunings, worktree `F1-Race-wt-CXA-run` @ c7c802f); then CXT
-   there (`run_cx_a.py test --with-ca`); the report; then the secondary conditions.
+2. The reviewer's verdict on packet 5 (CXT and its report); the secondary conditions (running at c7c802f) and their
+   report; then the final phase-A review and the merge of `cx/A-mpcc`.
 3. Then phase B (MPPI): literature entries, formulation, tests, development laps, protocol.
