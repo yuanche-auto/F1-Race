@@ -119,7 +119,8 @@ closed form – the normal loads depend on the force through the load transfer, 
 (a state bound of the NMPC that cannot be clamped) is enforced by giving a sample that violates it, or whose
 cost is not finite, the weight 0.
 
-**Input parameterisation (deviation from `nmpc`, stated):** MPPI samples u = [δ̇, F_x] with one net
+**Input parameterisation (deviation from `nmpc`, stated) – superseded by amendment B1 (approved 2026-10-22: MPPI
+samples the NMPC's three inputs; the paragraph is kept as the record of revision 0):** MPPI samples u = [δ̇, F_x] with one net
 longitudinal force, split as F_d = max(F_x, 0), F_b = min(F_x, 0) (the NMPC's two forces, so J is
 evaluated on the NMPC's three inputs). Sampling F_d and F_b separately would clip half of all noise at
 zero. The NMPC can drive and brake at once; MPPI cannot. Whether the NMPC's optimum does so, and by how
@@ -284,8 +285,11 @@ only (records in `results/CX/B/dev/` with the commit and a dirty flag), reported
 
 ## Amendments
 
-* **B1 (proposed 2026-10-22, for review), MPPI samples the NMPC's three inputs – after development check 9.2,
-  before the K timing and any development lap.**
+* **B1 (2026-10-22; proposed in 8d86ff2, APPROVED by the reviewer 2026-10-22), MPPI samples the NMPC's three
+  inputs – after development check 9.2, before the K timing and any development lap.** From here on it
+  supersedes section 3.1's paragraph "Input parameterisation (deviation from `nmpc`, stated)": MPPI's input is
+  [δ̇, F_d, F_b] and section 3.1 is the NMPC's problem without a restriction. The alternative B1.3 is not
+  adopted (review).
   *Cause:* section 3.1 replaced the NMPC's two longitudinal inputs by one net force F_x and left open whether
   the NMPC's optimum drives and brakes at once (checked in 9.2). It does. On `nmpc`'s nominal lap (c 2, margin
   0.6: 76.40 s, 1 528 solves; `results/CX/B/dev/checks.json`, code 57146e4) the overlap min(F_d, −F_b) of the
@@ -307,8 +311,10 @@ only (records in `results/CX/B/dev/` with the commit and a dirty flag), reported
   2. *Known consequence, reported:* clipping at F_d = 0 and F_b = 0 makes the perturbations one-sided there
      (mean +0.4 σ_F before weighting), so where the cost is indifferent – the overlap direction, e.g. on a
      straight below the power limit – the update can drift towards overlap until the rate and tracking costs
-     stop it. Section 5 adds per lap the overlap min(F_d, −F_b) of MPPI's applied inputs (median, P90, max),
-     next to the NMPC's.
+     stop it. Section 5 adds per lap the overlap min(F_d, −F_b) of the applied inputs (median, P90, max) for
+     MPPI **and** the NMPC (review c3), with the remark that driving and braking at once is a freedom of this
+     model (fixed 60 / 40 brake split, rear-wheel drive) – in effect left-foot braking or a brake-balance
+     adjustment – which both controllers have and which says nothing about what a real car would do.
   3. *Alternative, not proposed:* keep the net force of revision 0 and state that MPPI solves the NMPC's problem
      restricted to F_d · F_b = 0 – the comparison of optimisers would then include that restriction exactly in
      the braking zones where the laps are decided.
@@ -319,4 +325,8 @@ only (records in `results/CX/B/dev/` with the commit and a dirty flag), reported
      −0.35 instead of ~0.1, and its dynamics defects reach 4.5 · 10⁻⁴. The optimality-gap check (9.4) therefore
      uses as IPOPT's optimum J* the cost of IPOPT's three inputs on the rollout.
   5. The K timing (section 3.4) and every development lap run after the reviewer's decision, with the decided
-     parameterisation.
+     parameterisation (three inputs: 90 sampled values per sequence instead of 60; the K rule is unchanged).
+  6. *Review conditions (2026-10-22):* c1 this status note before the K timing; c2 unit tests of the clamp – the
+     NMPC's hard limits met within tolerance, feasible inputs a fixed point, with one force non-zero the
+     clipping of revision 0, the direction of the force pair kept (packet 2); c3 the overlap for MPPI and the
+     NMPC with the remark of B1.2 (report).
