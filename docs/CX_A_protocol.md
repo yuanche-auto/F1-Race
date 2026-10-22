@@ -222,7 +222,12 @@ What they showed, and how it shaped section 3:
   2. *Diagnostic before this amendment* (CXV cars 2, 5 and 7, `mpcc`'s first choice q_c 0.5, q_v 1, margin
      0.6): hard bound – off track at 1 408 / 457 / 460 m with 43 / 38 / 36 fallbacks; soft bound – off track at
      2 775 / 2 713 / 2 708 m with 0 / 1 / 19 fallbacks (the 19: IPOPT's iteration limit). The cars still fail,
-     at the corner near 2.7 km where the NMPC's CXV laps fail too.
+     at the corner near 2.7 km where the NMPC's CXV laps fail too. At the hard-bound fallbacks the measured
+     speed was above the bound on car 2 every time (median +0.65 m/s), on cars 5 and 7 at the median (+1.74,
+     +0.79 m/s) but not every time (some fallbacks came after the car was already leaving the track, down to
+     −10.8 m/s below the bound); car 7's 19 soft-bound fallbacks came with the speed below the bound (median
+     −6.4 m/s) – iteration limits, not the bound. Records: `results/CX/A/dev/bound_diagnostic.jsonl`
+     (`scripts/cx_a_bound_diagnostic.py`, deed5f3).
   3. *Re-tuning:* `mpcc` and `mpcc_centre` are tuned again on CXV with the same 24-setting grid, each setting
      with the soft bound (`soft_bound` = 1, `run_cx_a.py tune_a2` → `tune_a2.jsonl`), by the same rule (section 4
      with its clarification). `nmpc` keeps its first choice (its formulation is unchanged). `selected.json`
