@@ -1,8 +1,9 @@
 """Control expansion phase C report (docs/CX_C_protocol.md, revision 0 with its clarifications).
 
     python scripts/report_cx_c.py tune        # CXV: the rule of section 4 -> results/CX/C/selected.json + report/tune.md
-    python scripts/report_cx_c.py test        # CCT: H-C1, H-C2 (Holm and the stricter decision), discordant cars, the 8
-                                              # secondary comparisons, the metrics and tube diagnostics; NOM apart
+    python scripts/report_cx_c.py test        # CCT: H-C1, H-C2 (Holm and the stricter decision), discordant cars, the 10
+                                              # secondary comparisons (amendment C1), tube vs nmpc_param (descriptive),
+                                              # the metrics and tube diagnostics; NOM apart
                                               # -> report/CX_C.md, report/CX_C.json
     python scripts/report_cx_c.py secondary [--phase-b PATH]   # CCT_LAG30, CXD, CXL8 (uncorrected) and nmpc's
                                               # reproducibility against phase B's secondary.jsonl -> report/CX_C_secondary.md
@@ -79,14 +80,14 @@ def _settings(d: Path) -> dict:
     sel = json.loads((d / "selected.json").read_text())
     if sel.get("tune_sha256") != _sha(d / "tune.jsonl"):
         raise SystemExit("selected.json was not made from the present tune.jsonl")
-    return {**{k: cx_c.fixed_setting(k) for k in ("tracker", "nmpc", "nmpc_reserve")},
+    return {**{k: cx_c.fixed_setting(k) for k in ("tracker", "nmpc", "nmpc_param", "nmpc_reserve")},
             **{k: sel["kinds"][k]["setting"] for k in cx_c.TUBE_KINDS}}
 
 
-def _check(recs: list[dict], st: dict, sets: tuple[str, ...]) -> None:
+def _check(recs: list[dict], st: dict, sets: tuple[str, ...], kinds=cx_c.KINDS) -> None:
     _errors(recs, "the records")
     need = {c["name"] for s_ in sets for c in cx_c.cases(s_)}
-    for k in cx_c.KINDS:
+    for k in kinds:
         have = {r["case"] for r in recs if r["kind"] == k}
         if have != need:
             raise SystemExit(f"{k}: {len(need - have)} laps missing, {len(have - need)} unexpected")
@@ -111,8 +112,9 @@ def _trow(rs: list[dict], kind: str) -> str:
 def test(d: Path) -> None:
     recs = load(d / "test.jsonl")
     st = _settings(d)
-    _check(recs, st, ("CCT", "NOM"))
-    cct = {k: {r["case"]: r for r in recs if r["kind"] == k and r["set"] == "CCT"} for k in cx_c.KINDS}
+    K = cx_c.TEST_KINDS
+    _check(recs, st, ("CCT", "NOM"), K)
+    cct = {k: {r["case"]: r for r in recs if r["kind"] == k and r["set"] == "CCT"} for k in K}
     comp = {k: {c: bool(r["completed"]) for c, r in v.items()} for k, v in cct.items()}
     n = len(comp["tube"])
     md = ["# CX-C – tube MPC against the NMPC (docs/CX_C_protocol.md)", "",
@@ -136,8 +138,10 @@ def test(d: Path) -> None:
     for c in sorted(set(comp["tube"]) & set(comp["nmpc"])):
         if comp["tube"][c] != comp["nmpc"][c]:
             md.append(f"| {c} | {_cell(cct['tube'][c])} | {_cell(cct['nmpc'][c])} |")
-    pairs = [("tube", "nmpc_reserve"), ("tube_track", "nmpc"), ("tube_track", "tube"), ("nmpc_reserve", "nmpc")]
-    md += ["", "## Secondary comparisons on CCT (uncorrected; 8 comparisons: 4 pairs × McNemar and signed-rank)", "",
+    pairs = [("tube", "nmpc_reserve"), ("tube_track", "nmpc"), ("tube_track", "tube"), ("nmpc_reserve", "nmpc"),
+             ("nmpc_param", "nmpc")]                                                  # the last: amendment C1
+    md += ["", "## Secondary comparisons on CCT (uncorrected; 10 comparisons: 5 pairs × McNemar and signed-rank; "
+           "`nmpc_param` vs `nmpc` is the numerical-path noise floor of amendment C1)", "",
            "| comparison | only first : only second | McNemar p | both complete | lap time first − second mean / median s | signed-rank p |",
            "|---|---|---|---|---|---|"]
     out_sec = {}
@@ -149,9 +153,18 @@ def test(d: Path) -> None:
         out_sec[f"{a_}-{b_}"] = {"mcnemar": [xx, yy, pp], "signed_rank": s2}
         md.append(f"| {a_} vs {b_} | {xx} : {yy} | {pp:.4g} | {len(cc)} | "
                   f"{(np.mean(dd) if dd else math.nan):+.3f} / {(np.median(dd) if dd else math.nan):+.3f} | {s2['p']:.4g} |")
+    xx, yy, pp = mcnemar(comp["tube"], comp["nmpc_param"])
+    cc = sorted(c for c in comp["tube"] if comp["tube"][c] and comp["nmpc_param"].get(c))
+    dd = [cct["tube"][c]["lap_time"] - cct["nmpc_param"][c]["lap_time"] for c in cc]
+    out_sec["tube-nmpc_param (descriptive)"] = {"mcnemar": [xx, yy, pp], "signed_rank": exact_signed_rank(dd)}
+    floor = out_sec["nmpc_param-nmpc"]["mcnemar"]
+    md += ["", f"Descriptive (amendment C1): `tube` vs `nmpc_param` – the same code path, only the tightening differs: only one "
+           f"completes {xx} : {yy}; on the {len(cc)} cars both complete `tube` − `nmpc_param` mean "
+           f"{(np.mean(dd) if dd else math.nan):+.3f} s. Discordant cars of `nmpc_param` vs `nmpc` (the noise floor): "
+           f"{floor[0] + floor[1]}, against {x + y} for H-C1."]
     md += ["", "## Stop reasons and failure positions on CCT", "",
            "| controller | stop reasons | not completed: car, s at failure (distance) |", "|---|---|---|"]
-    for k in cx_c.KINDS:
+    for k in K:
         rs = sorted(cct[k].values(), key=lambda r: r["case"])
         counts = {}
         for r in rs:
@@ -159,13 +172,14 @@ def test(d: Path) -> None:
         fails = ", ".join(f"{r['case']} {r['failure_s']:.0f} m ({r['distance']:.0f} m)" for r in rs if not r["completed"]) or "–"
         md.append(f"| {k} | " + ", ".join(f"{v} {c}" for c, v in sorted(counts.items())) + f" | {fails} |")
     md += ["", "## Metrics of section 5 – CCT (means over the laps; P99, max and maxima: the largest)", "", HEAD, SEP]
-    md += [_row(list(cct[k].values()), k) for k in cx_c.KINDS]
+    md += [_row(list(cct[k].values()), k) for k in K]
     md += ["", "### Tube diagnostics – CCT", "", THEAD, TSEP] + [_trow(list(cct[k].values()), k) for k in cx_c.TUBE_KINDS]
-    nom = {k: [r for r in recs if r["kind"] == k and r["set"] == "NOM"] for k in cx_c.KINDS}
-    md += ["", "## The nominal car (development car; not part of a test)", "", HEAD, SEP] + [_row(nom[k], k) for k in cx_c.KINDS]
+    nom = {k: [r for r in recs if r["kind"] == k and r["set"] == "NOM"] for k in K}
+    md += ["", "## The nominal car (development car; not part of a test)", "", HEAD, SEP] + [_row(nom[k], k) for k in K]
     md += ["", THEAD, TSEP] + [_trow(nom[k], k) for k in cx_c.TUBE_KINDS]
     md += ["", "Definitions: *plan-line offset* and *speed / plan speed* against the 5 % plan for every controller (`nmpc_reserve` "
-           "tracks the 12 % plan). *Track back-off* – the tube's lateral bound added to the margin, over the stages 1 … N of "
+           "tracks the 12 % plan). *`nmpc_param`* (amendment C1) – `nmpc`'s problem in the tube's parameterised NLP and code path "
+           "with no tightening; its differences from `nmpc` are numerical-path noise (protocol section 9, item 7). *Track back-off* – the tube's lateral bound added to the margin, over the stages 1 … N of "
            "every solve; *η_k* the tightened friction factor (it also bounds the axles' longitudinal forces, clarification m2); "
            "*capped* – the share of stages at b_max or η_min (not robust in the tube's sense). *Coverage* – the realised lateral "
            "error of the axle points 1 … 10 stages after a solve against that stage's back-off: the realised error is the "

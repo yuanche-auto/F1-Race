@@ -232,3 +232,21 @@ Nominal car and CXDEV only; records in `results/CX/C/dev/` (git-ignored), each w
    constraint function instead of its bounds); differences at the 10⁻¹² level grow over 1 528 warm-started solves in
    closed loop into 0.054 s on this lap. This is the size of the "numerical path" part of any `tube` – `nmpc` lap-time
    difference; `nmpc` stays the registered baseline.
+
+## Amendments
+
+* **C1 (2026-10-22; required by the review of packet 3, before any CCT lap) – `nmpc_param`, the numerical-path control.**
+  *Cause:* section 9 item 7 – the same problem in the parameterised NLP gives 76.454 s against `nmpc`'s 76.400 s on the
+  nominal car; such numerical-path differences, amplified in closed loop, can also flip the outcome of a car at the edge,
+  so some discordant cars of H-C1 might owe nothing to the tightening.
+  1. *Definition:* `nmpc_param` = the tube's code path with no tightening (`null` = 1, c_R 1, untuned): `FrenetMPC(param_
+     tightening=True)` with η ≡ 0.95 and back-off ≡ 0, the tube computed but not handed to the NLP. Run on CCT and NOM
+     (51 laps; not in the secondary conditions). The runner runs it as `cx_c.lap(case, "tube", {"c_R": 1, "null": 1})`
+     and relabels the record (`cx_c.PATH_KIND`); `tube.py`, `mpc_lap`, `lap` and `build` are unchanged.
+  2. *Secondary comparisons:* `nmpc_param` – `nmpc` added (McNemar and signed-rank; 10 in all, uncorrected), read as the
+     **noise floor of the numerical path**: if its discordant cars are about as many as H-C1's, H-C1's conclusion is
+     weakened accordingly. `tube` – `nmpc_param` (the same code path, only the tightening differs) is reported as a
+     description.
+  3. *Unchanged:* H-C1 and H-C2 (`tube` against `nmpc`), the tuning and its selection, the sets, the other controllers.
+  4. CCT runs at a new pinned commit (the tuning's records and selection, made at 8b6b40d, are unchanged; the run
+     worktree records both commits).

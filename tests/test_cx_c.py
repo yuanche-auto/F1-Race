@@ -61,8 +61,23 @@ def test_runner_jobs_and_guards(tmp_path, monkeypatch):
         run_cx_c._selected()
     st = run_cx_c.settings({"kinds": {"tube": {"setting": {"c_R": 1.0}}, "tube_track": {"setting": {"c_R": 0.1}}}})
     jobs = run_cx_c.test_jobs(st)
-    assert len(jobs) == 51 * 5 and {j[3] for j in jobs} == {c["name"] for c in cx_c.cases("CCT")} | {"NOM_car0"}
+    assert len(jobs) == 51 * 6 and {j[3] for j in jobs} == {c["name"] for c in cx_c.cases("CCT")} | {"NOM_car0"}
     assert st["nmpc_reserve"]["eta"] == 0.88 and st["tube_track"] == {"c_R": 0.1}
+    assert st["nmpc_param"] == {"c_R": 1.0, "null": 1} and sum(j[1] == "nmpc_param" for j in jobs) == 51   # amendment C1
+    assert len(run_cx_c.secondary_jobs(st)) == 5 * (50 + 30 + 4)                 # the secondary conditions: five kinds
+
+
+def test_runner_runs_nmpc_param_on_the_tube_path(monkeypatch):
+    """Amendment C1: the runner runs nmpc_param as cx_c.lap(case, "tube", {"c_R": 1, "null": 1}) and relabels the record."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import run_cx_c
+
+    seen = []
+    monkeypatch.setattr(cx_c, "lap", lambda case, kind, setting: seen.append((kind, setting)) or {"kind": kind, "x": 1})
+    rec = run_cx_c.job(("test", "nmpc_param", "c_R=1,null=1", "NOM_car0", json.dumps(cx_c.NMPC_PARAM_SETTING)))
+    assert seen == [("tube", {"c_R": 1.0, "null": 1})] and rec["kind"] == "nmpc_param"
+    rec = run_cx_c.job(("test", "tube", "c_R=1", "NOM_car0", json.dumps({"c_R": 1.0})))
+    assert seen[-1] == ("tube", {"c_R": 1.0}) and rec["kind"] == "tube"
 
 
 def test_report_tune_and_test(tmp_path):
@@ -87,7 +102,7 @@ def test_report_tune_and_test(tmp_path):
     st = run_cx_c.settings(sel)
     rng = np.random.default_rng(1)
     test = []
-    for kind in cx_c.KINDS:
+    for kind in cx_c.TEST_KINDS:
         for i in list(range(1, 51)) + [0]:
             name, set_ = (f"CCT_car{i}", "CCT") if i else ("NOM_car0", "NOM")
             done = not (kind == "nmpc" and 1 <= i <= 8) and not (kind == "tube" and i == 9)
@@ -115,4 +130,5 @@ def test_report_tune_and_test(tmp_path):
     assert res["H-C1"][:2] == [8, 1]                        # cars 1-8 only tube, car 9 only nmpc
     assert res["H-C2"]["n"] == 41 and res["holm"]["H-C2"]["rejected"]      # tube 0.5 s slower on 41 cars
     md = (tmp_path / "report" / "CX_C.md").read_text(encoding="utf-8")
-    assert "| CCT_car9 |" in md and "8 comparisons" in md and "| tube vs nmpc_reserve |" in md
+    assert "| CCT_car9 |" in md and "10 comparisons" in md and "| tube vs nmpc_reserve |" in md
+    assert "| nmpc_param vs nmpc |" in md and "the same code path, only the tightening differs" in md

@@ -5,7 +5,8 @@ worktree (roadmap section 1); records in results/CX/C/ (key ``job`` = stage|kind
     python scripts/run_cx_c.py jobs                       # the job lists (counts)
     python scripts/run_cx_c.py tune [--workers 20]        # CXV: tube and tube_track, c_R in {0.1, 1, 10}
     python scripts/report_cx_c.py tune                    # the rule of section 4 -> results/CX/C/selected.json (to the reviewer)
-    python scripts/run_cx_c.py test [--workers 20]        # CCT + NOM: tracker, nmpc, nmpc_reserve, tube, tube_track
+    python scripts/run_cx_c.py test [--workers 20]        # CCT + NOM: tracker, nmpc, nmpc_param (amendment C1),
+                                                          # nmpc_reserve, tube, tube_track
     python scripts/run_cx_c.py secondary [--workers 20]   # CCT_LAG30, CXD, CXL8, after report/CX_C.md
     python scripts/run_cx_c.py smoke [--kinds ...]        # code check on the nominal car only (results/CX/C/smoke/)
 
@@ -44,8 +45,8 @@ def job(args):
     """One lap: (stage, kind, setting key, case name, setting json)."""
     stage, kind, key, case_name, setting_json = args
     t0 = time.time()
-    out = cx_c.lap(_case(case_name), kind, json.loads(setting_json))
-    out.update({"job": _key(args), "stage": stage, "wall_job_s": time.time() - t0})
+    out = cx_c.lap(_case(case_name), cx_c.PATH_KIND.get(kind, kind), json.loads(setting_json))   # C1: nmpc_param
+    out.update({"kind": kind, "job": _key(args), "stage": stage, "wall_job_s": time.time() - t0})
     return out
 
 
@@ -76,13 +77,13 @@ def _selected() -> dict:
 
 
 def settings(sel: dict) -> dict:
-    return {**{k: cx_c.fixed_setting(k) for k in ("tracker", "nmpc", "nmpc_reserve")},
+    return {**{k: cx_c.fixed_setting(k) for k in ("tracker", "nmpc", "nmpc_param", "nmpc_reserve")},
             **{k: sel["kinds"][k]["setting"] for k in cx_c.TUBE_KINDS}}
 
 
 def test_jobs(st: dict) -> list[tuple]:
     names = [c["name"] for c in cx_c.cases("CCT")] + [c["name"] for c in cx_c.cases("NOM")]
-    return [j for k in cx_c.KINDS for j in _jobs("test", k, st[k], names)]
+    return [j for k in cx_c.TEST_KINDS for j in _jobs("test", k, st[k], names)]
 
 
 def secondary_jobs(st: dict) -> list[tuple]:
@@ -123,7 +124,7 @@ def main() -> None:
         n_cct = len(cx_c.cases("CCT")) + 1
         n2 = sum(len(cx_c.cases(s_)) for s_ in cx_c.SECONDARY)
         print(f"tune: {len(tune_jobs())} laps (CXV 10 cars x 3 c_R x tube, tube_track)")
-        print(f"test: {n_cct} cases x {len(cx_c.KINDS)} controllers = {n_cct * len(cx_c.KINDS)} laps")
+        print(f"test: {n_cct} cases x {len(cx_c.TEST_KINDS)} controllers = {n_cct * len(cx_c.TEST_KINDS)} laps")
         print(f"secondary: {len(cx_c.KINDS)} controllers x {n2} laps (CCT_LAG30 50, CXD 30, CXL8 4) = {len(cx_c.KINDS) * n2}")
         return
     if a.what == "tune":

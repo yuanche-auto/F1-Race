@@ -30,7 +30,12 @@ ETA_MIN = 0.70
 TUBE_GRID = [{"c_R": c} for c in (0.1, 1.0, 10.0)]
 BASELINES = ("tracker", "nmpc")
 TUBE_KINDS = ("tube", "tube_track")
-KINDS = ("tracker", "nmpc", "nmpc_reserve", "tube", "tube_track")
+KINDS = ("tracker", "nmpc", "nmpc_reserve", "tube", "tube_track")      # the secondary conditions run these five
+# amendment C1 (review of packet 3): nmpc_param - the tube's code path with no tightening (null), c_R 1, untuned; on CCT
+# and NOM only; run as the kind "tube" with this setting and relabelled by the runner (``PATH_KIND``)
+NMPC_PARAM_SETTING = {"c_R": 1.0, "null": 1}
+PATH_KIND = {"nmpc_param": "tube"}
+TEST_KINDS = ("tracker", "nmpc", "nmpc_param", "nmpc_reserve", "tube", "tube_track")
 COVER_STAGES = 10                                        # coverage over stages 1 ... 10 (section 5)
 
 
@@ -39,7 +44,8 @@ def setting_key(setting: dict) -> str:
 
 
 def fixed_setting(kind: str) -> dict:
-    return {"tracker": {}, "nmpc": NMPC_SETTING, "nmpc_reserve": {**NMPC_SETTING, "eta": ETA_RESERVE}}[kind]
+    return {"tracker": {}, "nmpc": NMPC_SETTING, "nmpc_reserve": {**NMPC_SETTING, "eta": ETA_RESERVE},
+            "nmpc_param": NMPC_PARAM_SETTING}[kind]
 
 
 def cases(name: str) -> list[dict]:
