@@ -1,10 +1,15 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-22 (phase C done: final review APPROVE; merged to main; phase D next). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-22 (phase C merged as 4b4e091; phase D: literature and protocol revision 0 in review). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
-* **Current phase:** C done – final review of 3dec001 **APPROVE**, `cx/C-tube` merged to `main` (--no-ff) 2026-10-22
-  (merge hash recorded in phase D's first commit); next D – adaptive MPC / online identification (literature and protocol
-  first). Phase C result: `nmpc`'s constraints tightened by an error tube from the L2 parameter box complete 49 of 50 new
+* **Current phase:** D – adaptive MPC / online identification, branch `cx/D-adaptive` from `main` 4b4e091: literature
+  §D.1–D.14 and the protocol [CX_D_protocol.md](CX_D_protocol.md) revision 0 sent for review (packet 1). No phase-D code,
+  plan or lap exists. Design: `adaptive` = `nmpc` with its model and plan updated online (RLS with vector-type
+  forgetting on the simulator's step model; a friction-indexed plan library); `adaptive_mhe`, `adaptive_bank` (after
+  LLA-MPC), `adaptive_oracle`, `nmpc_param` (numerical path), `tube`, `identified` (L8's pipeline) as comparisons;
+  H-D1 on 50 new constant L2 cars (CDT, seed 332), H-D2 on the same cars with a friction drift (CDD, seed 333).
+* **Phase C:** done – final review of 3dec001 **APPROVE**, `cx/C-tube` merged to `main` (--no-ff) 2026-10-22 as
+  **4b4e091**. Phase C result: `nmpc`'s constraints tightened by an error tube from the L2 parameter box complete 49 of 50 new
   test cars against `nmpc`'s 16 – **H-C1 holds** (33 : 0, p 2.3 · 10⁻¹⁰; numerical-path control 2 : 0), **H-C2 holds**
   (+1.61 s, p 3 · 10⁻⁵); the tube knows the test cars' parameter ranges (favourable prior); not cross-checked.
   History of phase C:
@@ -57,7 +62,8 @@ Last updated: 2026-10-22 (phase C done: final review APPROVE; merged to main; ph
 | A | `mpcc_ca` (CiMPCC-based, amendment A1) and the secondary conditions; soft speed bound (amendment A2) | yes | yes – `tests/test_mpcc.py` 8, `tests/test_cx_a.py` 7 | smoke on cases outside every set (`results/CX/A/dev/secondary_smoke.jsonl`); A2 diagnostic on CXV cars 2 / 5 / 7; CXT | **APPROVE** (94cba68 … e2cea5d) | **yes** |
 | B | `control/mppi.py` (`MPPI`), `experiments/cx_b.py`, `scripts/run_cx_b.py`, `scripts/report_cx_b.py`, `scripts/cx_b_dev.py` | yes (57146e4 … baa69cb) | yes – `tests/test_mppi.py` 12, `tests/test_cx_b.py` 6 | development checks 9.1–9.8 on the nominal car; CXV tuning; CBT benchmark; secondary conditions | protocol rev 0, B1, B2, B3 and packets 2–6 **APPROVE**; final review b276f56 **APPROVE** | **yes – phase B completed** |
 | C | `control/tube.py` (`Tube`, `TubeMPCController`), `experiments/cx_c.py`, `scripts/{run,report}_cx_c.py`, `scripts/cx_c_dev.py` | yes (0689c41 … eab7c63) | yes – `tests/test_tube.py` 8, `tests/test_cx_c.py` 5 | development checks §9 on NOM and CXDEV; CXV tuning; CCT; secondary conditions | protocol rev 0, C1 and packets 2–5 **APPROVE**; final review 3dec001 **APPROVE** | **yes – phase C completed** |
-| D–G | – | not started | – | – | – | – |
+| D | `estimation/{rls,mhe,bank}.py`, `control/adaptive_mpc.py`, `FrenetMPC(param_model=True)`, `experiments/cx_d.py`, scripts (planned) | no | – | – | protocol rev 0 and literature §D in review (packet 1) | – |
+| E–G | – | not started | – | – | – | – |
 
 ## Review record
 
@@ -121,7 +127,7 @@ All git-ignored.
 
 ## Next actions
 
-1. Phase D (adaptive MPC / online identification): branch `cx/D-adaptive` from the new `main`; record the phase-C merge hash
-   in its first commit; literature entries (§D) and the protocol `docs/CX_D_protocol.md` for review; no code before its
-   APPROVE.
-2. Phase B follow-up candidates (CONTROL_METHOD_MATRIX.md) stay unscheduled.
+1. Phase D: review of packet 1 (literature §D, CX_D_protocol.md revision 0). No code before its APPROVE; then the code,
+   the plan library and the development checks of protocol section 9 (packet 2).
+2. Phase B follow-up candidates (CONTROL_METHOD_MATRIX.md) stay unscheduled; phase C's tube around phase D's adaptive
+   model (robust adaptive MPC, literature D.13) is a candidate after phase D.
