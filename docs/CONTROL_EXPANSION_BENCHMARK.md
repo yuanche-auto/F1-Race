@@ -65,6 +65,31 @@ the MPCCs' P99 reaches ~4 s. The speed bound of `mpcc` is active in 46 % of the 
 in 43 % of the predicted stages. On the nominal car (development car, not a test): `mpcc` 75.85 s, `mpcc_ca`
 75.94 s, `nmpc` with its CXV setting 76.40 s, `tracker` 75.57 s, `mpcc_centre` off track.
 
+### Secondary conditions (protocol §2; after the primary report; uncorrected, 3 comparisons)
+
+Run at c7c802f in the same worktree, 2026-10-21 21:51–22:16 (`secondary.jsonl` f3a3a5399e0a…, `report/CX_A_secondary.md`);
+`mpcc_ca` is not part of them (amendment A1: CXT and the nominal car only). **An input was missing at first:** the
+worktree had no L8 track files and plans, so the tracker's four CXL8 jobs (the first in the queue) failed with
+`FileNotFoundError` before any lap; the files were copied during the stage (SHA-256 identical to the main checkout and
+to the L8 run, `SHA256_inputs_L8tracks.txt`), the later CXL8 jobs ran normally, and the four failed jobs were re-run
+by resuming the stage (22:16:24–22:16:31); their error records stay in the file, the report uses the re-runs.
+
+| condition | `tracker` | `nmpc` | `mpcc` | `mpcc_centre` | `mpcc` : `nmpc` (only one completes), p |
+|---|---|---|---|---|---|
+| CXT cars with the 30 ms steering lag (25) | 1 | 4 | 1 | 0 | 0 : 3, 0.25 |
+| nominal car, L3 disturbances with measurement noise (30) | 0 | 4 | 10 | 1 | 7 : 1, 0.070 |
+| nominal car on the four L8 test tracks (4) | 0 | 4 (mean 93.16 s) | 4 (mean 92.47 s) | 0 | 0 : 0, 1 |
+
+* **Lag (30 ms, no lag model in any controller):** every controller loses most laps, as in L6's rows without a lag
+  model; `nmpc`'s 21 failures are all at turn 1 (~460 m), `mpcc`'s 24 at turn 1 (15), ~2.7 km (7), 2.2 and
+  3.8 km (one each).
+* **L3 disturbances:** `mpcc` completes more laps than `nmpc` (10 against 4; 7 : 1, p = 0.070 uncorrected – not
+  significant); `nmpc`'s 26 failures are spread over the lap (turn 1, 1.4, 2.2, 2.7, 3.8 km), 14 of `mpcc`'s 20
+  are at 3.81–3.84 km (one more at 4.01 km). Mean laps 77.76 against 78.69 s, on different seeds (not comparable).
+* **New tracks:** both MPC-based controllers complete all four with the nominal car; the plan-plus-tracker and the
+  centre-line MPCC none.
+* These are secondary and uncorrected; with 4–30 laps per condition none of the differences is significant.
+
 ### Reading
 
 * **No difference in completion is shown, and this test had little power.** Both controllers complete about 40 %
