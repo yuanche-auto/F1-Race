@@ -1,25 +1,31 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-22 (phase B: CBT and secondary conditions done; final review requested). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-22 (phase B done: final review APPROVE; merged to main; phase C next). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
-* **Current phase:** B – MPPI, branch `cx/B-mppi` from `main` b68d0a4: literature (§B of the literature review) and
-  protocol revision 0 (`docs/CX_B_protocol.md`) **APPROVE** (0b94d1a) with clarifications m1, m2, n1–n4 written in;
-  `control/mppi.py`, `experiments/cx_b.py`, the runner / report and their tests written (57146e4, d80e1a6); development
-  checks 9.1 and 9.2 done – 9.2 found that the NMPC drives and brakes at once in its braking zones, so **amendment B1**
-  (MPPI samples the NMPC's three inputs) was proposed (8d86ff2) and approved (c8806c1). K timing: K = 2 048. Development
-  gate (9.6) **failed** for `mppi` (white noise: 0 of 17 nominal laps); `mppi_lp` 2 of 8 – **amendment B2** (the
-  low-pass MPPI as the primary) proposed in eea5a49; packet 2 (c3fca85) and B2 **APPROVE**; review c1: the K rule
-  on `mppi_lp` gives K_RT = 1 024 (K 2 048: median 44.6 ms); c2 traces recorded; c3 scope. Packet 3 (770cd7b) **APPROVE**;
-  g1: the gate at K_RT fails for `mppi_lp` too (0 of 9 nominal laps) → **amendment B3** (e9fb7e1) **APPROVE**, option 1:
-  the pre-registered tuning and benchmark run with the gate waived (d1, d4 in d93b5e9). CXV tuning step 1 started
-  2026-10-22 01:56 in `F1-Race-worktrees/F1-Race-wt-CXB-run` at d93b5e9 (inputs identical to the main checkout and to
-  phase A's run). CXV tuning done (01:56–01:59; 120 laps, no error record): every setting 0 of 10 in both steps – the
-  rule falls to the grid centre, `mppi_lp` λ 1, c_σ 1, f_c 2 Hz, K 1 024 (an uninformative tuning, review d3);
-  packet 4 (the selections) **APPROVE**. CBT 02:00–02:22 (408 laps, `test.jsonl` f869d47d3632…): **H-B1 holds for `nmpc`**
-  (0 : 12, p 0.0005), H-B2 not testable; packet 5 **APPROVE**. Secondary conditions 02:25–02:56 (504 laps,
-  `secondary.jsonl` 2219e5634a68…); phase-A reproducibility 68 of 68 (after the NaN-comparison fix baa69cb). Final review
-  of `cx/B-mppi` requested. A done (final review of e2cea5d
-  APPROVE; `cx/A-mpcc` merged to `main` --no-ff as **b68d0a4**, 2026-10-21).
+* **Current phase:** B done – final review of b276f56 **APPROVE**, `cx/B-mppi` merged to `main` (--no-ff) 2026-10-22
+  (merge hash recorded in phase C's first commit); next C – tube MPC (literature and protocol first).
+  Phase B result: MPPI on the NMPC's problem at the real-time CPU budget (numpy, K 1 024) completes 0 of 50 test cars
+  against the NMPC's 12 – **H-B1 holds for `nmpc`** (0 : 12, p 0.0005; confirmatory, after the development gate failed
+  and was waived by amendment B3); H-B2 not testable; 4 K samples offline 2 of 50; not cross-checked.
+  History of phase B:
+  B – MPPI, branch `cx/B-mppi` from `main` b68d0a4: literature (§B of the literature review) and
+    protocol revision 0 (`docs/CX_B_protocol.md`) **APPROVE** (0b94d1a) with clarifications m1, m2, n1–n4 written in;
+    `control/mppi.py`, `experiments/cx_b.py`, the runner / report and their tests written (57146e4, d80e1a6); development
+    checks 9.1 and 9.2 done – 9.2 found that the NMPC drives and brakes at once in its braking zones, so **amendment B1**
+    (MPPI samples the NMPC's three inputs) was proposed (8d86ff2) and approved (c8806c1). K timing: K = 2 048. Development
+    gate (9.6) **failed** for `mppi` (white noise: 0 of 17 nominal laps); `mppi_lp` 2 of 8 – **amendment B2** (the
+    low-pass MPPI as the primary) proposed in eea5a49; packet 2 (c3fca85) and B2 **APPROVE**; review c1: the K rule
+    on `mppi_lp` gives K_RT = 1 024 (K 2 048: median 44.6 ms); c2 traces recorded; c3 scope. Packet 3 (770cd7b) **APPROVE**;
+    g1: the gate at K_RT fails for `mppi_lp` too (0 of 9 nominal laps) → **amendment B3** (e9fb7e1) **APPROVE**, option 1:
+    the pre-registered tuning and benchmark run with the gate waived (d1, d4 in d93b5e9). CXV tuning step 1 started
+    2026-10-22 01:56 in `F1-Race-worktrees/F1-Race-wt-CXB-run` at d93b5e9 (inputs identical to the main checkout and to
+    phase A's run). CXV tuning done (01:56–01:59; 120 laps, no error record): every setting 0 of 10 in both steps – the
+    rule falls to the grid centre, `mppi_lp` λ 1, c_σ 1, f_c 2 Hz, K 1 024 (an uninformative tuning, review d3);
+    packet 4 (the selections) **APPROVE**. CBT 02:00–02:22 (408 laps, `test.jsonl` f869d47d3632…): **H-B1 holds for `nmpc`**
+    (0 : 12, p 0.0005), H-B2 not testable; packet 5 **APPROVE**. Secondary conditions 02:25–02:56 (504 laps,
+    `secondary.jsonl` 2219e5634a68…); phase-A reproducibility 68 of 68 (after the NaN-comparison fix baa69cb). Final review
+    of `cx/B-mppi` requested. A done (final review of e2cea5d
+    APPROVE; `cx/A-mpcc` merged to `main` --no-ff as **b68d0a4**, 2026-10-21).
 * **Original reviewer:** session `local_30f94a40-03cb-490d-85b4-12ad1d351d3a` ("F1 Race 阶段审查"), the
   reviewer of L7–L9 – reached by SendMessage with this id (its pipe address changes after restarts).
 * **L10:** PAUSED — Preserved for Future Development (branch `layer/L10`, protocol revision 1 binding,
@@ -32,7 +38,7 @@ Last updated: 2026-10-22 (phase B: CBT and secondary conditions done; final revi
 | A | `control/mpcc.py` (`DynamicMPCC`, `MPCCController`, `path_errors`) | yes (0061e79) | yes – `tests/test_mpcc.py`, 8 tests | development laps; CXV tuning; CXT benchmark; secondary conditions | **APPROVE** (f4d1ee9 … e2cea5d) | **yes – phase A completed** |
 | A | runner and report (`experiments/cx_a.py`, `scripts/run_cx_a.py`, `scripts/report_cx_a.py`) | yes | yes – `tests/test_cx_a.py`, 7 tests (5 at 6bcc6ef) | smoke on the nominal car; the CXV / CXT / secondary runs | **APPROVE** (6bcc6ef … e2cea5d) | **yes** |
 | A | `mpcc_ca` (CiMPCC-based, amendment A1) and the secondary conditions; soft speed bound (amendment A2) | yes | yes – `tests/test_mpcc.py` 8, `tests/test_cx_a.py` 7 | smoke on cases outside every set (`results/CX/A/dev/secondary_smoke.jsonl`); A2 diagnostic on CXV cars 2 / 5 / 7; CXT | **APPROVE** (94cba68 … e2cea5d) | **yes** |
-| B | `control/mppi.py` (`MPPI`), `experiments/cx_b.py`, `scripts/run_cx_b.py`, `scripts/report_cx_b.py`, `scripts/cx_b_dev.py` | yes (57146e4 … baa69cb) | yes – `tests/test_mppi.py` 12, `tests/test_cx_b.py` 6 | development checks 9.1–9.8 on the nominal car; CXV tuning; CBT benchmark; secondary conditions | protocol rev 0, B1, B2, B3 and packets 2–5 **APPROVE**; final review requested | – |
+| B | `control/mppi.py` (`MPPI`), `experiments/cx_b.py`, `scripts/run_cx_b.py`, `scripts/report_cx_b.py`, `scripts/cx_b_dev.py` | yes (57146e4 … baa69cb) | yes – `tests/test_mppi.py` 12, `tests/test_cx_b.py` 6 | development checks 9.1–9.8 on the nominal car; CXV tuning; CBT benchmark; secondary conditions | protocol rev 0, B1, B2, B3 and packets 2–6 **APPROVE**; final review b276f56 **APPROVE** | **yes – phase B completed** |
 | C–G | – | not started | – | – | – | – |
 
 ## Review record
@@ -55,6 +61,8 @@ Last updated: 2026-10-22 (phase B: CBT and secondary conditions done; final revi
 | 2026-10-22 | e9fb7e1 | amendment B3 (the gate failed at K_RT) | **APPROVE**, option 1 | d1 H-B1 confirmatory, budget-limited; d2 report wording; d3 tuning by the rule even if uninformative; d4 frontier candidates (d93b5e9) |
 | 2026-10-22 | worktree d93b5e9 | phase B packet 4: CXV tuning (120 laps; 0 of 10 everywhere, the grid centre) | **APPROVE** | report: the choice is the closeness rule, the better direction (c_σ < 0.5) lies outside the grid; CXV step times carry the load |
 | 2026-10-22 | worktree d93b5e9; 82c31f9 … 78877f6 | phase B packet 5: CBT (408 laps) and its report / benchmark text | **APPROVE** | n1 mppi_big reaches the 2.7 / 3.83 km corners on 10 cars (fixed in 5fccae5) |
+| 2026-10-22 | worktree d93b5e9; d813143, fc109a0, baa69cb | phase B packet 6: secondary conditions (504 laps), reproducibility 68 of 68 (after the NaN-comparison fix) | **APPROVE** | – |
+| 2026-10-22 | b276f56 | **phase B final review** (whole branch vs main b68d0a4: 30 commits, 13 files, +2825 / −14) | **APPROVE** | the three standing checks pass (.venv 88 + 4 skips, .venv-rl 92); nit: status lines marked done before the merge |
 
 ## Tests
 
@@ -69,14 +77,21 @@ The first CXV selection is kept as `selected_first.json` and `report/tune_first.
 writes `selected.json` / `report/tune_a2.md` (review c1). CXT: `test.jsonl`, `report/CX_A.md` (2026-10-21 21:33–21:50); secondary conditions: `secondary.jsonl`,
 `report/CX_A_secondary.md` (21:51–22:16). All git-ignored.
 
+Phase B: `results/CX/B/dev/` (main checkout) – the development checks of CX-B §9 (`checks.json`, `nmpc_nom.npz`,
+`timing.json`, `timing_lp.json`, `gap.json`, `laps.jsonl`, `nom_diagnostic*.jsonl`, `traces.*`, `gate_k1024.jsonl`) and
+the runner smoke (`smoke/`). Benchmark: worktree `F1-Race-worktrees/F1-Race-wt-CXB-run` at d93b5e9, `results/CX/B/`
+(`tune.jsonl`, `tune_lp.jsonl`, `selected*.json`, `test.jsonl`, `secondary.jsonl`, `report/`, `RUN_COMMIT`,
+`SHA256_inputs*.txt`, `timeline.tsv`). All git-ignored.
+
 ## Known blockers
 
 * The curvature-aware MPCC needs the full text of Ma et al. (Control Engineering Practice 171, 2026),
-  which may be behind a paywall.
+  which may be behind a paywall (phase A used CiMPCC instead).
 * The second Python environment (deferred by the user) – primary results stay "not cross-checked".
 
 ## Next actions
 
-1. Phase B (MPPI): protocol revision 0 APPROVE (0b94d1a; clarifications written in) – now `control/mppi.py`.
-2. Then `control/mppi.py`, unit tests, the development checks of CX-B §9 (K fixed by §3.4), the runner and report code
-   (packet 2); CXV tuning (packet 3); CBT (packet 4); secondary conditions (packet 5); final review, merge.
+1. Phase C (tube MPC): branch `cx/C-tube` from the new `main`; record the phase-B merge hash in its first commit;
+   literature entries (CONTROL_LITERATURE_REVIEW.md §C) and the protocol `docs/CX_C_protocol.md` for review; no code
+   before the protocol is approved.
+2. Phase B follow-up candidates (CONTROL_METHOD_MATRIX.md) stay unscheduled.
