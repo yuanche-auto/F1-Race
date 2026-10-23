@@ -582,6 +582,9 @@ The filter with retries still costs completed laps for eight of the nine finals,
   * its failures are now mostly after interventions, 469 of 524 – mechanism (ii);
   * about nine in ten of the sampled interventions are still not needed by the 3 s criterion (an upper bound, as in
     L7).
+* A description, not a test (review of packet 3): the bare tracker completes 6 / 14 / 22 laps with `none` / `main` /
+  `retry` – the filter helps the weak proposer and costs the L5 policies, the direction L7's hypothesis below would
+  predict.
 * What remains is the filter's caution against what the policies can do, not its solver. The interpretation that the
   policies are more robust than the filter's model certifies stays L7's hypothesis; it is not tested here.
 * **Time, an idealisation of both filters (review of packet 2):**
