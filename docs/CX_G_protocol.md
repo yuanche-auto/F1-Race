@@ -1,7 +1,8 @@
 # CX-G protocol – real-time control: delay-compensated RTI under L9's rule (control expansion, phase G)
 
 Status: **binding, revision 0 (2026-10-23; 277e122, APPROVE)** with the clarifications of its review (m1–m3, n1, n2;
-marked *"clarification of revision 0"*), written down before any phase-G code. Written after the literature check
+marked *"clarification of revision 0"*), written down before any phase-G code. **Development checks done – the gate
+passed (section 9); packet 2 requested; no GT lap before its APPROVE.** Written after the literature check
 ([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §G) and before any phase-G code: no module, test, runner
 or lap of phase G exists. Before this draft: a check that L9's WSL environment still imports (Python 3.12.3, casadi
 3.8.1, acados_template; 24 vCPUs) – no lap, no solve. Branch `cx/G-realtime` from `main` 1922066 (the merge of phase
@@ -205,3 +206,54 @@ On NOM and GD only (records in `results/CX/G/dev/` with commit and dirty flag):
    `rti_dc` with d = 0 and L̂ = 0 reproduces `rti` lap by lap: the same outcome, and states equal to 1e-9 (the same
    arithmetic is expected, so bit-equality is likely; the tolerance only allows for the order of a few floating-point
    operations). Otherwise an amendment before any GT lap.
+
+### 9. Results of the development checks (2026-10-23; packet 2) – **the gate passed**
+
+Records (git-ignored) in `results/CX/G/dev/` (WSL, L9's environment), with `meta_*.json` / `RUN_COMMIT_*` (all clean):
+* `regress.json` (2833681);
+* `explore.jsonl`, `plans.jsonl`, `eval.jsonl`, `load.jsonl`, `log_dev.txt` – exploration, plans and the `rti` laps at
+  35ea848, the `rti_dc` laps at 05e908f;
+* `equivalence.json` (05e908f), `predictor.json` (bdfa2a7), `gate.json`;
+* the development report `report/CX_G.{md,json}` (`report_cx_g.py --tag dev`, which also validated the report code).
+
+**Incidents, as they happened:**
+* **First attempt (at 2833681): every job failed** before driving. acados' generated CasADi
+  function names may not contain consecutive underscores, and the build name had an empty part. The records are kept in
+  `dev/attempt1_failed/`. Fixed in 35ea848.
+* **The 26 `rti_dc` laps of the second attempt drove, then failed** in `l9.timing_summary`, which expected L9 A2's
+  fields whenever a call has `late`. Fixed in 05e908f (the A2 fields only when present; A2's records are unchanged).
+  The error records stay in `eval.jsonl`. The 26 laps were re-run with the resumable runner – without their `rti`
+  partners in the same batches, since those had already completed. The report uses the last record per job and lists
+  the 26 error records.
+
+1. **Regression of the default path** (offline RTI `nmpc`, T1new_car0_tau0 and T2new_dist6000, against L9's
+   `results/L9/offline/model.jsonl`): the outcome, distance and lap time are equal to the last digit (75.854672 s,
+   77.217159 s).
+2. **Offline equivalence (9.1 / gate iii):** `rti_dc` (d = 0; L̂ forced to 0 offline) against `rti` in offline mode is
+   **bit-identical** – the same number of steps and a maximum state difference of 0.0 – for `nmpc` on NOM and for
+   `lag_identified` on NOM and GD_car1_tau30.
+3. **Predictor (9.2):** on NOM with `nmpc` (the nominal model is the plant), in real time with d = 20 ms:
+   * compensated, the prediction error at t_k + L̂ is **0.0** in every state over 1 517 solves (the same RK4 step and
+     the same commands; traction control did not change the committed commands there), and the lap completed;
+   * uncompensated, the state each solve assumed was the 20 ms old measurement: position error median 1.22 m (P95
+     1.71 m), v_x 0.13 m/s; the lap left the track at 2 710 m.
+4. **Laps (9.3, NOM + GD, 13 cases; development data, not a test):**
+
+   | arm | completed | τ 0 / 30 / 60 ms | disturbances | feedback latency ms (mean / largest P99) | prediction error, position (median of the lap medians) |
+   |---|---|---|---|---|---|
+   | `rti`, d = 0 | 8 / 13 | 3 / 4, 2 / 3, 3 / 3 | 0 / 3 | 2.93 / 8.8 | 0 m (no noise; noise on the 3 disturbance cases) |
+   | `rti_dc`, d = 0 | 9 / 13 | 4 / 4, 2 / 3, 3 / 3 | 0 / 3 | 3.00 / 7.2 (prediction 0.39 ms) | 2.5 · 10⁻⁷ m |
+   | `rti`, d = 20 ms | **1 / 13** | 1 / 4, 0 / 3, 0 / 3 | 0 / 3 | 3.05 / 16.3 | 1.23 m |
+   | `rti_dc`, d = 20 ms | **8 / 13** | 3 / 4, 2 / 3, 3 / 3 | 0 / 3 | 3.15 / 10.6 (prediction 0.51 ms) | 2.2 · 10⁻⁶ m |
+
+   * `rti` at d = 20 ms fails where L9's did: 8 of its 12 failures between 2.68 and 2.73 km; the
+     others at turn 1 (0.46 km) and three spins at 0.32–0.38 km on the disturbance cases.
+   * The compensated arm at d = 20 ms completes exactly the 8 cases that `rti` completes without a delay.
+   * On the development cars the identified model is nearly exact, so the prediction is too (micrometres). On the test
+     cars the identification may be worse.
+   * **Application delay (review m1):** 10 ms for practically every solve in all four arms (20 ms or more for 0.02–0.44 %
+     of the solves). At d = 0 both arms act at the same time, and they differ only in the state the solve starts from.
+   * All arms fail the three disturbance cases, two of them at turn 1 (~0.46 km) without a delay. L9's T2new had
+     disturbance laps of its own; nothing here is tuned for them.
+5. **Gate:** (i) `rti_dc` at d = 20 ms completes NOM (75.77 s); (ii) its mean feedback latency with the prediction is
+   3.17 ms, below 10 ms; (iii) the offline equivalence is bit-identical. **Passed.** No GT lap has been run.
