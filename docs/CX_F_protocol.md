@@ -1,6 +1,7 @@
 # CX-F protocol – safety filters around the L5 policies: L7's filter audited, retried, and a backup shield (control expansion, phase F)
 
-Status: **revision 0, proposed for review (packet 1, 2026-10-22)**. Written after the literature check
+Status: **binding, revision 0 (2026-10-22; e2bacfd, APPROVE)** with the clarifications of its review (m1–m3, n1, n2;
+marked *"clarification of revision 0"*), written down before any phase-F code. Written after the literature check
 ([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §F) and before any phase-F code: no module, test, runner or
 lap of phase F exists; the only measurement so far is a timing of the shield's rollout (no lap, section 9). Branch
 `cx/F-safety` from `main` 490d33e (the merge of phase E). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md)
@@ -116,6 +117,17 @@ an oracle. **Granularity:** the shield replaces the policy's action for one deci
 10 ms); L7's filters replaced the first 10 ms command of a decision and held it for the decision – both count as "the
 decision changed".
 
+*Clarification of revision 0 (review m1) – the action in the policy's observation:* at an intervention the environment
+advances with the **applied** action a_b, and a_b is what the policy's observation records as the last action (the
+`RacingEnv` history with `history` > 1 includes the last action) – the closest to a deployment, where the car's own record
+holds what was applied. This differs from L7's filters: they replaced the tracker's command below the environment, so the
+environment – and the policy's observation – kept the policy's own action.
+
+*Clarification of revision 0 (review m2) – lag:* the proposal step and the backup rollout run on the nominal model
+**without the steering lag**, while two thirds of T1 (τ = 30 and 60 ms) and of FV have it. On those cars the shield is
+expected to be **optimistic**: a state it judges recoverable may not be recoverable for the real car. Section 5 reports,
+by τ, how often an intervention is still followed by a failure within 3 s.
+
 ### 3.2 Not in phase F (and why)
 
 * **High-order CBF on the single-track model, robust CBF variants:** L7's CBF-QP already is a second-order (exponential,
@@ -131,7 +143,8 @@ These go to CONTROL_METHOD_MATRIX.md as follow-ups; the phase reports them as no
 
 `shield` with m ∈ {0.25, 0.5, 1.0}: nine finals × 40 laps × 3 = 1 080 laps; for reference also `none` (9 × 40) and
 `backup` (40) on FV. **Rule:** the m with the most completed laps summed over the nine finals; ties → the fewer
-interventions per decision (mean over the nine finals' laps); then the larger m. The choice and all records go to the
+interventions per decision (mean over the nine finals' laps); then the larger m (*clarification of revision 0, review n1:* at equal completions and intervention rate, the larger safety
+margin is kept – the more cautious choice when the data cannot tell them apart). The choice and all records go to the
 reviewer before any T1 / T2 lap of `shield`. `retry`, `none` and the reproduction check of `main` have no parameter; they
 may run on T1 + T2 after packet 2's APPROVE, before or alongside the tuning.
 
@@ -141,10 +154,15 @@ Per proposer and condition, on T1 + T2 (and by τ and T2): completed laps; mean 
 lap-time cost on the laps both conditions complete; interventions per decision; **intervention runs** (on-switches per
 lap – chattering); the **false-intervention rate** as L7's A8 (at the first intervention at or after each j·L/8 the
 episode state is kept and the policy is rolled out without the filter for 3 s; no crash = not needed; 200 per proposer
-drawn with seed 0 – an upper bound, as in L7); solver fallbacks and runs of ≥ 3 (`main`, `retry`); the attribution of
+drawn with seed 0 – an upper bound, as in L7; *clarification of revision 0, review n2:* the **same procedure and code**
+for `shield`, `retry` and L7's `main` records – `experiments/l7.rollout_unfiltered` from the episode state kept before the
+first intervention at or after each j·L/8, and the sampling of L7's report – so that the rates compare directly); solver fallbacks and runs of ≥ 3 (`main`, `retry`); the attribution of
 failures as L7's pb-m2 (after a fallback run / after interventions / neither); the filter's time per decision (mean, P95,
 P99, max, the share above 50 ms; with the machine load stated). For `retry`: the attempts per failed solve and the share
-each retry recovers. For `shield`: the share of decisions with no recoverable option, the check time.
+each retry recovers. For `shield`: the share of decisions with no recoverable option, the check time, and (*clarification of revision 0,
+review m2*) **by τ (0, 30, 60 ms) and for T2, the share of interventions followed by a failure within 3 s** (the car still
+left the track or spun within 60 decisions after the intervention – where the nominal check was too optimistic or acted
+too late).
 **Commands** (proposed and applied first 10 ms command of each decision) are logged for `retry`, `shield`, `backup` and the
 reproduction subset of `main`: the jump of the applied command at the onset and end of an intervention.
 
@@ -194,6 +212,12 @@ On NOM and FD only (records in `results/CX/F/dev/` with commit and dirty flag):
 5. **Gate:** (i) `backup` completes NOM; (ii) `shield` with `B_s1_500k` completes NOM with interventions in fewer than
    half of its decisions; (iii) the shield's mean check time in one process below 50 ms. Otherwise an amendment before
    any FV lap.
+6. *Clarification of revision 0 (review m3) – the backup's own reliability:* `backup`'s completions on FD (9 + 3 laps)
+   are reported as background, not as a pass condition. If it completes **fewer than half (< 6 of 12)**, packet 2
+   discusses a more conservative a_b (e.g. a lower speed factor – below 0.85 it leaves the policy's action space; the
+   tracker's speed factor allows it), decided **before any FV result** is seen. The bare tracker at the plan's full speed
+   completes few laps on L2 cars (phase A's CXT 1 / 25, phase C's CCT 2 / 50, L7's T1 + T2 6 / 105) – the shield cannot
+   protect better than its backup drives.
 
 **Measured before this protocol** (disclosed, no lap): the rollout of step 3 on the nominal car, one process, `.venv-rl`:
 11.6 ms per 1 s (100 steps), 33.6 ms per 3 s (300 steps) – about 1 600 checks per lap, ~1 min per lap.
