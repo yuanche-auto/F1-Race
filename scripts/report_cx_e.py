@@ -1,4 +1,7 @@
-"""Control expansion phase E report (docs/CX_E_protocol.md, revision 0 with its clarifications).
+"""**Phase E was closed without the benchmark (amendment E1); the tune / test / secondary stages and this report have never
+been run end to end – validate them before use.**
+
+Control expansion phase E report (docs/CX_E_protocol.md, revision 0 with its clarifications).
 
     python scripts/report_cx_e.py tune        # CEV: the rule of section 4 -> results/CX/E/selected.json + report/tune.md
     python scripts/report_cx_e.py test        # CET: H-E1 (lap time, tenth learning lap vs identified, both complete) and

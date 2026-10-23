@@ -1,4 +1,9 @@
-"""Control expansion phase E runs (docs/CX_E_protocol.md, revision 0 with its clarifications). Windows `.venv`; one fresh
+"""**Phase E was closed without the benchmark (amendment E1); the tune / test / secondary stages of this runner have never
+been run end to end – validate them before use.**
+Exception: the `dev` stage (and `_jobs` / `_run`, which `scripts/cx_e_dev.py diag` uses) was run – it produced
+results/CX/E/dev/laps.jsonl and diag.jsonl of protocol section 9.
+
+Control expansion phase E runs (docs/CX_E_protocol.md, revision 0 with its clarifications). Windows `.venv`; one fresh
 process per job (spawn pool, maxtasksperchild=1), single-threaded BLAS. A job of `lmpc` / `lmpc_nominal` is one car's whole
 sequence (two initialisation laps and ten learning laps); `nmpc` / `identified` one lap. Benchmark stages run from a
 pinned worktree; records in results/CX/E/ (key ``job`` = stage|kind|setting|case).
