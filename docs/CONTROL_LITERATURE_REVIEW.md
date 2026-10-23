@@ -772,6 +772,62 @@ versions not obtained (their venues are noted as found, not checked). L9's liter
   the open question L9 left is the delay, not the solver: a 20 ms sensor delay took the RTI `lag_identified` from 79 to
   0 of 105 (docs/L9.md).
 
+## Phase H (frontier 1) – the ATV-QP learning MPC (E.2 / E.4's convex formulation)
+
+Checked 2026-10-23. Phase E's entries (E.1–E.9) are the basis and are not repeated. Here: how the published racing
+LMPCs are actually implemented – the two open-source codes were read, not copied (one carries an education / research
+licence with attribution, the other LGPL-2.1) – and one recent item.
+
+### H.1 Rosolia – *RacingLMPC* (github.com/urosolia/RacingLMPC, master; Python, OSQP / cvxopt; the code read: `initControllerParameters.py`, `main.py`, `PredictiveControllers.py`, `PredictiveModel.py` – its header permits education and research use with attribution to UC Berkeley and the papers E.1 / E.2)
+
+* **The LMPC is a QP** solved each step (OSQP), on an affine time-varying model linearised along a candidate.
+  * The candidate is the previous predicted trajectory shifted by one step. Its terminal point is
+    **z_t = Σ λ_i succ(x_i)**, the successors (the next stored states) of the selected points weighted with the previous
+    solution's λ, and its last input is formed the same way. At the first step of a lap, the candidate is the first
+    N + 1 states of the stored lap.
+* **The velocity states come from local linear regression.** v_x, v_y, ω are regressed on the stored data (7 points
+  per lap, bandwidth 5); the kinematic Frenet states are linearised analytically. There is no physics nominal model –
+  E.2's form.
+* **The local safe set:**
+  * from each of the 4 fastest stored laps, a contiguous window of 12 + 1 points around the point nearest to z_t (L1
+    norm on the full state), 48 points in all;
+  * terminal state = SS λ + slack, **soft**, with 500 per unit and per state;
+  * λ ≥ 0, Σ λ = 1;
+  * terminal cost = the stored costs-to-go weighted with λ, plus the time already spent in the current lap once the
+    prediction crosses the line.
+* **Other weights:** lane slack linear 25 and quadratic 5; input-rate weights 5 × (1, 10); no state cost; N = 14 at
+  dt = 0.1 s. Before the LMPC laps: one PID lap, then MPC laps with an LTI and an LTV model regressed from it.
+
+### H.2 Xue, Zhu et al. – *Racing-LMPC-ROS2* (github.com/MPC-Berkeley/Racing-LMPC-ROS2, branch humble-release; C++ / CasADi Opti; LGPL-2.1; E.4's code per the paper; the code read: `racing_mpc.cpp` and the parameter files)
+
+* **Two modes in one code.**
+  * `full_dynamics`: the nonlinear discrete dynamics as constraints, solved with **IPOPT** (`max_iter` 200, `tol`
+    1e-3, `max_cpu_time` 0.085 s).
+  * Otherwise: the dynamics **linearised** about a reference trajectory (the discrete dynamics' Jacobian), solved with
+    **OSQP** (polish on).
+  * The parameter files hold IPOPT settings, but **which mode the paper's experiments used is not stated**.
+* **The convex hull is soft:** x_N = SS λ + slack, with a quadratic slack penalty per state (BARC: 40, 40, 4, 40, 40,
+  4; IAC car: 200, 20, 2, 200, 2, 20). There are 96 points – 32 per lap from up to 3 stored laps. The terminal cost
+  is the stored costs-to-go, offset by the first selected point's.
+* **Phase E's `lmpc`** – an IPOPT-solved NLP with a soft convex hull – **corresponds to this code's full-dynamics
+  mode.** The ATV-QP of H.1 / E.2 corresponds to its linearised mode.
+
+### H.3 Zeng, Li, He, Sreenath, Zeng – *IteraOptiRacing*, arXiv:2507.09714 (Jul 2025; abstract)
+
+* An iterative-task racing planner and controller built on i2LQR: it reuses the car's past laps, handles moving
+  opponents, and has a constant computational load. Simulation only; no numbers are given in the abstract. Not an LMPC
+  in E.2's sense; listed as the most recent iterative-task racing item found.
+
+**For phase H:**
+* (a) Both published codes keep the terminal convex hull **soft** and solve the racing LMPC as a **QP on a model
+  linearised along the shifted candidate** (H.1), or in a mode that does so (H.2). H.1 builds its candidate's terminal
+  point from the previous λ's successors (E.2).
+* (b) Phase E solved the NLP (H.2's full-dynamics mode) with a candidate terminal arclength from the predicted end
+  state, and failed its gate.
+* (c) Phase E's hypothesis (e1) – that the convex hull is a feasible terminal set for the linearised model but need not
+  be for the nonlinear one – is tested by changing exactly those two things (the linearisation, solved as one QP per
+  step, and E.2's candidate) and keeping the rest of E's design.
+
 ## Phases F–G and the frontier methods
 
 Entries are written at the start of each phase, before its code (roadmap section 3). Classic sources
