@@ -595,3 +595,96 @@ The filter with retries still costs completed laps for eight of the nine finals,
 * §9.4's development lap of `retry` (82.27 s on the nominal car) was development data only.
 * Follow-ups (CONTROL_METHOD_MATRIX.md): a backup that drives the lagged cars, a backup CBF on it, policies trained with
   their filter.
+
+## Phase G – real-time control: the delay-compensated RTI under L9's rule
+
+Protocol [CX_G_protocol.md](CX_G_protocol.md) (revision 0 with clarifications m1–m3, n1, n2).
+
+**Run:**
+* WSL (L9's acados environment: Ubuntu 24.04, Python 3.12.3, casadi 3.8.1, acados v0.6.0). Pinned worktree
+  `F1-Race-worktrees/F1-Race-wt-CXG-run` at **5e11634**. Driver `results/CX/G/test/cxg_run.sh`, SHA-256 835abaee….
+* Started 2026-10-23 04:00, done 05:39. One step at a time (explore 105, plan 105, the primary arms 420, S1 315,
+  S2 210, S3 105, S4 80).
+* Real-time jobs ran in batches of 8 on vCPUs 0–7, with the arms of a case side by side; the composition of every
+  batch is in `batches.tsv` and in the records.
+* **0 error records in every file.** Inputs are identical to the main checkout's (`SHA256_inputs_*.txt`).
+* Records (git-ignored, `results/CX/G/test/`), SHA-256:
+
+  | file | SHA-256 |
+  |---|---|
+  | `eval.jsonl` | 1c5f7884… |
+  | `explore.jsonl` | 5a2e6298… |
+  | `plans.jsonl` | 2cac8b33… |
+  | `repeat_eval.jsonl` | a6a40a44… |
+  | `rl.jsonl` | 49b746d6… |
+  | `load.jsonl` | 5d74d487… |
+
+* Report `report/CX_G.{md,json}` (`scripts/report_cx_g.py --tag test` at 5e11634), written before anything was read.
+* **Not cross-checked:** the WSL environment is L9's, not the deferred second environment.
+
+All 105 identifications and re-plans succeeded. The exploration laps (`nmpc_reserve`, RTI, real time, no delay) completed
+16 of 105, median distance 472 m – as in L9, the identification rests on short logs.
+
+**H-G1 (primary; exact McNemar, Holm): holds.** At a 20 ms sensor delay, the compensated RTI `lag_identified` completes
+**73 of 105** and L9's uncompensated RTI **5 of 105** (68 : 0, p = 6.8 · 10⁻²¹; significant at its Holm level 0.025).
+This reproduces L9's finding (79 → 0) and removes it.
+
+**H-G2 (primary): not shown.** Without a sensor delay, 72 against 72 (7 : 7, p = 1). The noise floor of S4 is 0, 0, 1
+and 1 flips in 20 repeated laps per arm (`rti` d 0, `rti_dc` d 0, `rti` d 20, `rti_dc` d 20; review m3). The 14
+discordant cases of H-G2 are consistent with that run-to-run noise (about 5 in 105). The lap times on the 65 laps both
+complete differ by +0.002 s (signed-rank p 0.92).
+
+| arm | completed (95 %) | τ 0 / 30 / 60 ms (of 25) | disturbances (of 30) | mean lap | feedback latency ms (mean / largest P99) | position error of the state the solve assumed (median of the lap medians) |
+|---|---|---|---|---|---|---|
+| `rti`, d = 0 (L9's RTI) | 72 (0.59–0.77) | 23 / 23 / 24 | 2 | 77.26 s | 2.91 / 13.3 | 0 m |
+| `rti_dc`, d = 0 | 72 (0.59–0.77) | 22 / 23 / 23 | 4 | 77.35 s | 3.37 / 15.0 | 4 · 10⁻⁷ m |
+| `rti`, d = 20 ms | **5** (0.02–0.11) | 1 / 0 / 4 | 0 | 78.91 s | 3.02 / 22.7 | 1.21 m |
+| `rti_dc`, d = 20 ms | **73** (0.60–0.78) | 23 / 24 / 24 | 2 | 77.23 s | 3.49 / 16.2 | 3 · 10⁻⁶ m |
+| S1: `rti`, d = 40 ms | 0 | 0 / 0 / 0 | 0 | – | 3.67 / 22.0 | 3.23 m |
+| S1: `rti_dc`, d = 40 ms | 74 (0.61–0.79) | 23 / 24 / 25 | 2 | 77.20 s | 3.26 / 14.1 | 9 · 10⁻⁶ m |
+| S1: `rti_dc` assuming 20 ms, d = 40 ms | 3 (0.01–0.08) | 1 / 0 / 2 | 0 | 77.42 s | 3.23 / 16.2 | 1.21 m |
+| S2: `nmpc` RTI, d = 20 ms | 0 | 0 / 0 / 0 | 0 | – | 2.90 / 15.5 | 1.55 m |
+| S2: `nmpc` RTI compensated, d = 20 ms | 8 (0.03–0.14) | 8 / 0 / 0 | 0 | 76.06 s | 3.25 / 14.0 | 2.5 · 10⁻⁴ m |
+| S3: `B_s1_500k`, d = 20 ms (context) | 89 | | | | | |
+
+**Secondary (uncorrected, descriptive):**
+* S1, compensated (true d) against uncompensated at 40 ms: 74 : 0. With a wrong delay (20 ms assumed, 40 ms real),
+  the compensation keeps only 3 laps (71 : 0 against the true d). Its assumed state is then as far off as the
+  uncompensated one at 20 ms (1.21 m).
+* S2, `nmpc` (the nominal model, no identification): 8 : 0 for the compensation at 20 ms (p = 0.008). Its 8 laps are
+  all on τ = 0 cars, and it is no better than L9's `nmpc` RTI without a delay (10 / 105).
+* `rti_dc` at 20 ms against `rti` without a delay: 6 : 5 (p = 1) – the compensation takes the lap count back to the
+  no-delay level.
+* S3: the RL policy, which has no compensation, completes 89 of 105 at 20 ms (L9: 88 of 105).
+
+**Timing (section 5; review m1):**
+* **Application delay** – the time from a solve's start to its command taking effect: 10 ms for at least 99.5 % of the
+  solves in every primary arm and 95–99.8 % in the secondary arms (20 ms for most of the rest; a handful of 30–120
+  ms).
+* **End-to-end delay** (d + application delay): 10, 30 and 50 ms for d = 0, 20, 40 ms.
+* **Feedback latency** with the prediction: 3.2–3.5 ms on average (without: 2.9–3.7 ms). The prediction itself costs
+  0.44–0.63 ms on average, its largest single value 29 ms. 0.3–0.6 % of the compensated solves were late (above L̂ =
+  10 ms); 2.4 % with the wrong d.
+* No deadline problem: busy (feedback + preparation) is 3.1–3.9 ms on average against the 50 ms period.
+* **Actuation delay** is the cars' steering lag, τ ∈ {0, 30, 60 ms}, identified in the plans (`plans.jsonl`).
+
+**Reading:**
+* **A known sensor delay is the RTI's weakness, and a model-based prediction over it removes that weakness on these
+  laps.** At 20 and 40 ms the compensated RTI completes as many laps as the uncompensated one without any delay (73 /
+  74 against 72), while the uncompensated one collapses (5, 0). This is the step that L9's reading left open.
+* **H-G2: what it compares (correcting clarification m1).** Under L9's rule with amendment A1, the plan is already
+  aligned to the time the command takes effect, so both arms act after 10 ms (≥ 99.7 % of the solves at d = 0). H-G2 therefore
+  compares not the application time but **whether the state is predicted to t_k + L̂ with the plan's command before the
+  solve**. Without a sensor delay this changes nothing measurable: 72 against 72, within the noise floor.
+* **Why it works this well here – and its limit.** The state each compensated solve assumed was within micrometres of
+  the true state: on these simulated cars the identified model is nearly exact, because the cars differ from the
+  nominal one only in the parameters the identification estimates, including a first-order lag. Under that condition
+  the prediction carries no model error over 30–50 ms. A real car's unmodelled dynamics would add error over the same
+  window; this test does not measure that.
+* **The delay must be known.** With a wrong delay the compensation loses almost everything (S1: 3 of 105), as wrong as
+  no compensation at half the delay. G.7's online estimate of the delay is the matching follow-up.
+* **Scope (review m2):** the identification came from exploration laps without the delay, shared by the arms, as in
+  L9's delay condition. The effect measured is that on the evaluated lap. The L3 disturbance laps fail in every arm (0–4
+  of 30); the compensation does not change that. Within GT, the no-delay RTI is close to L9's (72 against 79 on other
+  laps; 70 of 75 against L9's 73 of 75 on the car laps, 2 against 6 of 30 on the disturbance laps).
+* **Development data** (§9) on the development cars had shown the same picture (8 of 13 against 1 of 13).
