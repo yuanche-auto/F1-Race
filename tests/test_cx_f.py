@@ -97,3 +97,27 @@ def test_retry_option_default_off():
     tr = Track.load("Spielberg")
     assert l7.NMPCFilter(tr, DynVehicle(), l7.plan(0.95), record=False, horizon=5).mpc.retry is False
     assert l7.NMPCFilter(tr, DynVehicle(), l7.plan(0.95), record=False, horizon=5, retry=True).mpc.retry is True
+
+
+@pytest.mark.skipif(not CACHE.exists(), reason="run scripts/run_l1.py first")
+def test_plan_backup_mode_drives_with_the_backup_tracker():
+    pytest.importorskip("gymnasium")
+    from f1race.experiments import cx_f, l7
+
+    env = l7.make_env()
+
+    class Forced(cx_f.Shield):
+        def check(self, ctl, y, steer_bound):
+            return False, {"reason": "forced"}
+
+    sh = Forced(env, cx_f.ShieldConfig(margin=0.0, backup_eta=0.85))
+    assert sh.mode == "plan" and sh.ctl_b is not None
+    seen = []
+    r = cx_f.run_lap_shield(lambda o: (seen.append(np.array(o[-2:])), np.array([0.0, 1.0]))[1], env,
+                            cx_f.cases("NOM")[0], sh, t_max=4.0)
+    d = r["decisions"]
+    assert d["changed"].all() and not np.allclose(d["u_prop"], d["u_appl"])
+    assert np.allclose(seen[1], [0.0, 1.0])                 # plan mode: the env keeps the policy's action
+    assert not r["completed"] and r["stop_reason"] == "time limit"
+    with pytest.raises(ValueError):
+        cx_f.backup_plan(0.84)

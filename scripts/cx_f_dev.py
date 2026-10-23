@@ -6,6 +6,8 @@
     python scripts/cx_f_dev.py gate             # 9.5 and 9.6 (review m3) from laps.jsonl
     python scripts/cx_f_dev.py backup-plans [--workers 20]   # diagnostic after gate (i) failed: the bare tracker
                                                 # at speed factors on the 0.95 plan, and on slower plans, NOM + FD
+    python scripts/cx_f_dev.py variants [--workers 20]   # development variant for amendment F1: the backup = the
+                                                # bare tracker on a slower plan (eta_b) - monitor on NOM, laps on NOM + FD
 """
 from __future__ import annotations
 
@@ -181,9 +183,61 @@ def backup_plans(workers: int) -> None:
                   f"mean lap {np.mean(laps):.2f}" if laps else "")
 
 
+VAR_ETAS = (0.85, 0.79, 0.73)
+VAR_MS = (0.0, 0.1, 0.2)
+
+
+def variants(workers: int) -> None:
+    """Amendment F1's development variant: monitor (as 9.1) and laps (B_s1_500k, tracker; NOM + FD) for the
+    backup on the plan eta_b in VAR_ETAS with the margin m in VAR_MS (the plans' own axle margins are
+    0.27-0.29 m at the least, so m stays below them)."""
+    import run_cx_f
+    from f1race.experiments import cx_f, l7
+
+    meta("variants")
+    env = l7.make_env()
+    n = len(env.path.s)
+    mon = {}
+    for eta in VAR_ETAS:
+        for m in VAR_MS:
+            sh = cx_f.Shield(env, cx_f.ShieldConfig(margin=m, backup_eta=eta))
+            acc, pushed, tm = 0, 0, []
+            for i in np.linspace(0, n, 60, endpoint=False).astype(int):
+                env.reset(options={"plant": cx_f.cases("NOM")[0]["plant"], "start_index": int(i)})
+                y = np.array(env._meas, float)
+                t0 = time.perf_counter()
+                acc += sh.check(copy.copy(env.ctl), y, env.steer_max)[0]
+                tm.append(time.perf_counter() - t0)
+                yb = y.copy()
+                c, s = np.cos(y[2]), np.sin(y[2])
+                yb[0] -= 3.0 * s
+                yb[1] += 3.0 * c
+                yb[2] += 0.15
+                pushed += not sh.check(copy.copy(env.ctl), yb, env.steer_max)[0]
+            mon[f"eta_b{eta}_m{m}"] = {"plan_accepted": acc, "pushed_rejected": pushed, "n": 60,
+                                       "check_ms_mean": float(np.mean(tm) * 1e3)}
+            print(f"monitor eta_b {eta} m {m}: plan accepted {acc}/60, pushed rejected {pushed}/60, "
+                  f"{np.mean(tm) * 1e3:.1f} ms", flush=True)
+    (DEV / "monitor_variants.json").write_text(json.dumps(mon, indent=1))
+    names = [c["name"] for c in cx_f.cases("NOM") + cx_f.cases("FD")]
+    jobs = [("devvar", "shield", p, nm, json.dumps({"eta_b": eta, "m": m}, sort_keys=True))
+            for eta in VAR_ETAS for m in VAR_MS for p in ("B_s1_500k", "tracker") for nm in names]
+    run_cx_f._run(jobs, DEV / "variants.jsonl", workers)
+    recs = [json.loads(l) for l in (DEV / "variants.jsonl").read_text().splitlines() if l.strip()]
+    for eta in VAR_ETAS:
+        for m in VAR_MS:
+            for p in ("B_s1_500k", "tracker"):
+                rs = [r for r in recs if "error" not in r and r["policy"] == p and r["setting"] == {"eta_b": eta, "m": m}]
+                fd = [r for r in rs if r["case"] != "NOM"]
+                nom = [r for r in rs if r["case"] == "NOM"]
+                ipd = sum(r["interventions"] for r in rs) / max(sum(r["decisions"] for r in rs), 1)
+                print(f"eta_b {eta} m {m} {p}: NOM {nom[0]['completed'] if nom else '-'}, FD {sum(r['completed'] for r in fd)}"
+                      f"/{len(fd)}, interventions/decision {ipd:.3f}, no-option {sum(r.get('no_option', 0) for r in rs)}")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=["monitor", "laps", "gate", "backup-plans"])
+    ap.add_argument("what", choices=["monitor", "laps", "gate", "backup-plans", "variants"])
     ap.add_argument("--workers", type=int, default=20)
     a = ap.parse_args()
     if a.what == "monitor":
@@ -192,6 +246,8 @@ def main() -> None:
         laps(a.workers)
     elif a.what == "backup-plans":
         backup_plans(a.workers)
+    elif a.what == "variants":
+        variants(a.workers)
     else:
         gate()
 

@@ -107,14 +107,33 @@ class ShieldConfig:
     e_max: float = 1.0
     dpsi_max: float = 0.1
     dv: float = 2.0
+    backup_eta: float | None = None       # None: a_b in the policy's action space (revision 0); a plan's
+    #                                       eta: the bare tracker on that plan (development variant)
+
+
+def backup_plan(eta: float):
+    """A plan of phase D's library (L1 / L2's and ``plans_cxd.pkl``), by its eta (exact)."""
+    from .cx_d import plan_library
+
+    etas, plans = plan_library()
+    i = int(np.argmin(np.abs(etas - eta)))
+    if abs(etas[i] - eta) > 1e-9:
+        raise ValueError(f"no plan at eta {eta}")
+    return plans[i]
 
 
 class Shield:
-    """The monitor of section 3.1 on the nominal model; ``check`` returns (recoverable, info)."""
+    """The monitor of section 3.1 on the nominal model; ``check`` returns (recoverable, info).
+    ``mode`` "action": the backup is a_b, an action of the policy's tracker (revision 0); "plan"
+    (``cfg.backup_eta``): the backup is a second tracker - the L1 tracker with zero action on the
+    plan at ``backup_eta`` with its own feed-forward - whose command replaces the policy's tracker's
+    at every 10 ms step of an intervened decision (the environment keeps the policy's action, as
+    with L7's filters)."""
 
     def __init__(self, env, cfg: ShieldConfig | None = None):
-        from ..rl.env import FastMargins
+        from ..rl.env import FastMargins, ResidualTracker
         from ..sim.dynamic import DynamicSim
+        from .l1 import dyn_reference
 
         self.cfg = cfg or ShieldConfig()
         nom = DynVehicle()
@@ -123,20 +142,29 @@ class Shield:
         self.dt, self.ctrl_every = env.dt, env.ctrl_every
         self.speed_down, self.speed_up = env.speed_down, env.speed_up
         self.n_b = int(round(self.cfg.t_b / env.dt))
+        self.mode, self.ctl_b = "action", None
+        if self.cfg.backup_eta is not None:
+            self.mode = "plan"
+            path_b, ff_b = dyn_reference(env.track, nom, backup_plan(self.cfg.backup_eta))
+            self.ctl_b = ResidualTracker(path_b, ff_b, nom, env.dt, **env.tracker_gains)
 
     def backup_params(self, steer_bound: float) -> tuple[float, float]:
         """(steering offset, speed factor) of a_b, as ``RacingEnv.step`` maps an action."""
         a = self.cfg.a_b
         return steer_bound * a[0], 1.0 + (self.speed_up if a[1] > 0 else self.speed_down) * a[1]
 
-    def rollout(self, ctl, y, phases) -> tuple[bool, str, np.ndarray]:
-        """From y with the tracker ``ctl`` (copied): ``phases`` = [(d_offset, v_scale, steps), ...];
-        True if every state keeps the margins and the last one is settled; (ok, reason, last state)."""
+    def rollout(self, y, phases) -> tuple[bool, str, np.ndarray]:
+        """From y: ``phases`` = [(tracker, d_offset, v_scale, steps, fresh), ...], each tracker copied
+        (``fresh``: its projection searched anew); True if every state keeps the margins and the last
+        one is settled for the last tracker; (ok, reason, last state)."""
         cfg, sim, fm = self.cfg, self.sim, self.fm
-        c = copy.copy(ctl)                                 # its state: idx, d_offset, v_scale, last
         fm.reset()
         x = np.array(y[:7], float)
-        for d_off, v_sc, n in phases:
+        c, v_sc = None, 1.0
+        for ctl, d_off, v_sc, n, fresh in phases:
+            c = copy.copy(ctl)                             # its state: idx, d_offset, v_scale, last
+            if fresh:
+                c.idx = None
             c.d_offset, c.v_scale = d_off, v_sc
             for _ in range(n):
                 x = sim.step(x, sim.apply_limits(x, c(0.0, x)))
@@ -147,27 +175,32 @@ class Shield:
                     return False, "spin", x
         c(0.0, x)                                          # the tracker's errors at the last state
         _, e, dpsi, ff = c.last
-        v_last = phases[-1][1]
-        if abs(e) > cfg.e_max or abs(dpsi) > cfg.dpsi_max or x[3] > v_last * ff["vx"] + cfg.dv:
+        if abs(e) > cfg.e_max or abs(dpsi) > cfg.dpsi_max or x[3] > v_sc * ff["vx"] + cfg.dv:
             return False, "not settled", x
         return True, "", x
 
+    def _backup_phase(self, ctl, steer_bound: float, n: int) -> tuple:
+        if self.mode == "plan":
+            return (self.ctl_b, 0.0, 1.0, n, True)
+        d_b, v_b = self.backup_params(steer_bound)
+        return (ctl, d_b, v_b, n, False)
+
     def check(self, ctl, y, steer_bound: float) -> tuple[bool, dict]:
         """The proposal (the tracker's current action) for one decision, then the backup."""
-        d_b, v_b = self.backup_params(steer_bound)
-        ok, why, _ = self.rollout(ctl, y, [(ctl.d_offset, ctl.v_scale, self.ctrl_every), (d_b, v_b, self.n_b)])
+        ok, why, _ = self.rollout(y, [(ctl, ctl.d_offset, ctl.v_scale, self.ctrl_every, False),
+                                      self._backup_phase(ctl, steer_bound, self.n_b)])
         return ok, {"reason": why}
 
     def backup_ok(self, ctl, y, steer_bound: float) -> bool:
         """The backup from y itself (one decision plus T_b): False = no recoverable option."""
-        d_b, v_b = self.backup_params(steer_bound)
-        return self.rollout(ctl, y, [(d_b, v_b, self.ctrl_every + self.n_b)])[0]
+        return self.rollout(y, [self._backup_phase(ctl, steer_bound, self.ctrl_every + self.n_b)])[0]
 
 
 class PassShield:
     """Never intervenes (tests: ``run_lap_shield`` then reproduces ``l7.run_lap``)."""
 
     cfg = ShieldConfig()
+    mode = "action"
 
     def check(self, ctl, y, steer_bound):
         return True, {"reason": ""}
@@ -211,7 +244,7 @@ def run_lap_shield(policy, env, case: dict, shield, t_max: float = 120.0, snap_a
     obs, _ = env.reset(options=opts)
     sim = env.sim
     orig = sim.apply_limits
-    st = {"first": False, "idx": env.ctl.idx, "bound": 0.0}
+    st = {"first": False, "idx": env.ctl.idx, "bound": 0.0, "active": False}
     T, X, U, US = [], [], [], []
     dec = {"t": [], "changed": [], "time": [], "s": [], "no_option": [], "reason": []}
     if log_commands:
@@ -229,12 +262,20 @@ def run_lap_shield(policy, env, case: dict, shield, t_max: float = 120.0, snap_a
             ok, info = shield.check(pre, y, st["bound"])
             u_prop = out
             no_option = False
-            if not ok:
+            if not ok and shield.mode == "plan":            # the backup tracker drives this decision
+                if not st["active"]:
+                    shield.ctl_b.idx = None                 # its projection searched anew
+                st["active"] = True
+                out = orig(x, shield.ctl_b(env.t, y))
+                no_option = not shield.backup_ok(pre, y, st["bound"])
+            elif not ok:
                 ctl.idx = st["idx"]
                 ctl.d_offset, ctl.v_scale = shield.backup_params(st["bound"])
                 out = orig(x, ctl(env.t, y))
                 pre.d_offset, pre.v_scale = ctl.d_offset, ctl.v_scale
                 no_option = not shield.backup_ok(pre, y, st["bound"])
+            else:
+                st["active"] = False
             dec["t"].append(env.t)
             dec["changed"].append(not ok)
             dec["time"].append(time.perf_counter() - t0)
@@ -244,6 +285,8 @@ def run_lap_shield(policy, env, case: dict, shield, t_max: float = 120.0, snap_a
             if log_commands:
                 dec["u_prop"].append(np.array(u_prop, float))
                 dec["u_appl"].append(np.array(out, float))
+        elif st["active"]:
+            out = orig(x, shield.ctl_b(env.t, y))
         st["idx"] = env.ctl.idx
         T.append(env.t)
         X.append(np.array(x[:7], float))
@@ -263,7 +306,7 @@ def run_lap_shield(policy, env, case: dict, shield, t_max: float = 120.0, snap_a
         st["first"], st["bound"] = True, _steer_bound(env)
         obs, _, term, trunc, info = env.step(a)
         intervened = len(dec["changed"]) > n_dec and dec["changed"][-1]
-        if intervened and not term:                     # review m1: the policy observes the applied a_b
+        if intervened and not term and shield.mode == "action":    # review m1: the policy observes a_b
             env._last_a = np.asarray(shield.cfg.a_b, np.float32)
             obs = env._stacked()
         if snap is not None and intervened:
@@ -373,4 +416,4 @@ def attribute(dec: dict) -> str:
 
 
 __all__ = ["cases", "case_by_name", "Shield", "ShieldConfig", "PassShield", "AlwaysShield", "run_lap_shield",
-           "exact_signed_rank", "lap_audit", "runs", "false_interventions", "attribute", "load_policy", "steer_mode", "PROPOSERS", "FINALS"]
+           "backup_plan", "exact_signed_rank", "lap_audit", "runs", "false_interventions", "attribute", "load_policy", "steer_mode", "PROPOSERS", "FINALS"]

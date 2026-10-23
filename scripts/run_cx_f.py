@@ -102,7 +102,7 @@ def job(args):
         filt = _filter(condition, track)
         r = l7.run_lap(pol, env, case, filt, snap_at=snap_at, log_commands=True)
     elif condition == "shield":
-        sh = cx_f.Shield(env, cx_f.ShieldConfig(margin=float(setting["m"])))
+        sh = cx_f.Shield(env, cx_f.ShieldConfig(margin=float(setting["m"]), backup_eta=setting.get("eta_b")))
         r = cx_f.run_lap_shield(pol, env, case, sh, snap_at=snap_at)
     elif condition == "backup":
         r = l7.run_lap(pol, env, case, None, log_commands=True)
