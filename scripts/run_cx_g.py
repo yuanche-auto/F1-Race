@@ -77,7 +77,7 @@ def run_job(j: dict, d: Path) -> dict:
         kind = cx_g.ARMS[j["arm"]][0]
         planned = (pickle.load(open(d / "plans" / f"{j['case']}.pkl", "rb")) if kind == "lag_identified" else None)
         out = cx_g.drive_arm(case, j["arm"], planned, name)
-    out.update({"job": key(j), **{k: j.get(k) for k in ("stage", "arm", "rep")}, "case": j["case"],
+    out.update({"job": key(j), **{k: j.get(k) for k in ("stage", "arm", "rep", "batch")}, "case": j["case"],
                 "set": case["set"], "car": case["car"], "tau": case["tau"], "dist_seed": case["dist_seed"],
                 "cpu": cpu, "calibration_s": cal, "wall_s": time.time() - t0})
     for b in Path(os.path.expanduser("~/l9_acados_build")).glob(f"{name}*"):      # generated code not kept
@@ -149,6 +149,10 @@ def run(a) -> None:
     for s in a.stages.split(","):
         stage["now"] = s
         jobs = stage_jobs(a, s)
+        with open(d / "batches.tsv", "a") as fo:          # the composition of every batch, before it runs
+            fo.write(f"# {time.strftime('%Y-%m-%dT%H:%M:%S')} stage={s} sets={a.sets} arms={a.arms} repeat={a.repeat} "
+                     f"jobs={len(jobs)}" + chr(10))
+            fo.writelines(chr(9).join((str(j.get("batch", -1)), j.get("arm", ""), j["case"])) + chr(10) for j in jobs)
         if jobs:
             execute(jobs, d / (FILES[s] if not a.repeat else f"repeat_{FILES[s]}"),
                     a.plan_slots if s == "plan" else a.slots, a.cpu0, batches=s != "plan")
