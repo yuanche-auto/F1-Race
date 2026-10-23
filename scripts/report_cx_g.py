@@ -21,7 +21,14 @@ NL = chr(10)
 
 
 def load(p: Path) -> list[dict]:
-    return [json.loads(l) for l in p.read_text().splitlines() if l.strip()] if p.exists() else []
+    """The last record of every job (a job re-run after an error appends a new record; the error record stays in
+    the file, as in L9)."""
+    last: dict = {}
+    for l in (p.read_text().splitlines() if p.exists() else []):
+        if l.strip():
+            r = json.loads(l)
+            last[r["job"]] = r
+    return list(last.values())
 
 
 def mcnemar(a: dict, b: dict) -> tuple[int, int, float]:
@@ -43,7 +50,7 @@ def ci(k: int, n: int) -> tuple[float, float]:
 
 
 def group(r: dict) -> str:
-    return "GT2" if r["set"] == "GT2" else f"tau{int(round(r['tau'] * 1000))}"
+    return "dist" if r["dist_seed"] is not None else f"tau{int(round(r['tau'] * 1000))}"
 
 
 def main() -> None:
@@ -60,15 +67,18 @@ def main() -> None:
     rl = load(d / "rl.jsonl")
     errors = {"eval": sum("error" in r for r in raw), "repeat": sum("error" in r for r in rep),
               "rl": sum("error" in r for r in rl)}
+    for f, k in (("eval.jsonl", "eval"), ("repeat_eval.jsonl", "repeat"), ("rl.jsonl", "rl")):  # incl. re-run ones
+        fp = d / f
+        errors[f"{k}_error_records_in_file"] = sum('"error"' in l for l in fp.read_text().splitlines()) if fp.exists() else 0
     ev = [r for r in raw if "error" not in r]
     by = {}
     for r in ev:
         by.setdefault(r["arm"], {})[r["case"]] = r
     comp = {arm: {c: bool(r["completed"]) for c, r in v.items()} for arm, v in by.items()}
     res = {"errors": errors}
-    md = [f"# CX-G – delay-compensated RTI under L9's rule ({a.tag})", "", f"Error records: {errors}.", "",
+    md = [f"# CX-G – delay-compensated RTI under L9's rule ({a.tag})", "", f"Jobs whose last record is an error, and error records in the files (re-run jobs included): {errors}.", "",
           "## Completion per arm (of the laps run; GT1 by tau, GT2)", "",
-          "| arm | completed (95 %) | tau 0 | tau 30 | tau 60 | GT2 | mean lap | failures: distance P10 / P50 / P90 m |",
+          "| arm | completed (95 %) | tau 0 | tau 30 | tau 60 | disturbances (GT2) | mean lap | failures: distance P10 / P50 / P90 m |",
           "|---|---|---|---|---|---|---|---|"]
     for arm in list(cx_g.PRIMARY) + list(cx_g.S1) + list(cx_g.S2):
         if arm not in by:
@@ -76,7 +86,7 @@ def main() -> None:
         rs = list(by[arm].values())
         k, n = sum(r["completed"] for r in rs), len(rs)
         lo, hi = ci(k, n)
-        g = {x: sum(r["completed"] for r in rs if group(r) == x) for x in ("tau0", "tau30", "tau60", "GT2")}
+        g = {x: sum(r["completed"] for r in rs if group(r) == x) for x in ("tau0", "tau30", "tau60", "dist")}
         gn = {x: sum(group(r) == x for r in rs) for x in g}
         laps = [r["lap_time"] for r in rs if r["completed"]]
         fd = [r["distance"] for r in rs if not r["completed"]]
