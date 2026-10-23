@@ -468,3 +468,39 @@ a4a39006e632…, `report/CX_D_secondary.md`). None of these conditions uses the 
   the primary sets; it does not help against noise, an unmodelled structure, a grip that is wrong before the first corner,
   or short patches, where the robust tube (sized for the L2 box) is the only controller that completes laps (noise, lag)
   or none does well (wet start, patches). Secondary, uncorrected comparisons.
+
+## Phase E – learning MPC, lap to lap: closed without the benchmark (a negative development result)
+
+Protocol [CX_E_protocol.md](CX_E_protocol.md) (revision 0 with clarifications m1–m4, n1, n2; **amendment E1, option 1**).
+The development gate of protocol §9 failed, and phase E was closed by the review without the benchmark: **H-E1 and H-E2
+are not tested**; no tuning, test or secondary lap was run. Development records (git-ignored) in the main checkout's
+`results/CX/E/dev/`: `laps.jsonl` (24 sequences at d64eb47), `diag.jsonl` (12 diagnostic sequences at 7507114),
+`nlp.json` (5068328), `regression.json` (7507114), `summary.json`.
+
+**What was built:** `lmpc` – the NMPC's model and constraints (η 0.95, margin 0.6) without a reference, with the terminal
+state a convex combination of K stored states per stored lap (the last P = 2 laps, nearest in s; soft), the cost-to-go
+of those states as terminal cost (E.2), and an affine correction of the velocity states regressed from the stored laps
+(E.4); two initialisation laps (`nmpc`'s NMPC on the plans at η_p 0.73 and 0.79), then up to ten learning laps from the
+same initial state, each driven 250 m past the line.
+
+**What happened** (the nominal car NOM and the five development cars):
+
+| variant | NOM | development cars |
+|---|---|---|
+| `lmpc`, K = 20 (the registered development setting) | off on learning lap 1 (442 m) | all five off on lap 1 (turn 1) |
+| `lmpc`, K = 10 / 5 | lap 1 77.0 s, off on lap 2 | all five off on lap 1 |
+| `lmpc_nominal` (no regression), K = 10 | lap 1 76.6 s, off on lap 2 | 2 complete lap 1, then off; 3 off on lap 1 |
+| best diagnostic variant (`lmpc_nominal`, K 5, P 2, the steering angle in the terminal condition) | laps 1–3: 76.5, 76.4, 76.4 s, off on lap 4 | – |
+
+The initialisation laps complete on every car (86.9–87.0 s, 83.1–83.5 s). The first learning lap jumps to 76.4–77.0 s –
+about the lap time of `nmpc` on the 5 % plan (76.40 s); in the diagnostics one learning lap took **75.9 s, faster than
+`nmpc`** – yet no sequence keeps it up: near the limit (braking into turn 1) the terminal condition becomes unreachable
+(the share of solves with terminal slack above 10⁻³ rising 0.03 → 0.17 → 0.33 over the laps) and the car leaves. On the
+development cars the first learning lap plans with the nominal model at η 0.95 and leaves where `nmpc` leaves; the
+regression has data only at the initialisation laps' speeds and falls back to the nominal model on 38–62 % of the stages.
+
+**Reading (review e1):** the negative result is about **this implementation** – a nonlinear NLP (IPOPT) with the nominal
+nonlinear model, a convex hull of stored states as the terminal set, the terminal condition soft – not about the racing
+LMPC of E.2 / E.4 as such. The suspected cause, that a convex combination of stored states is a feasible state for E.2's
+linearised (ATV) model but need not be for a nonlinear one, is a hypothesis that was not tested. Follow-ups (review e3):
+E.2's ATV-QP implementation; a bound on the progress per lap; consecutive laps instead of a common initial state.

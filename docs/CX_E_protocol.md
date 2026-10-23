@@ -1,7 +1,9 @@
 # CX-E protocol – learning MPC, lap to lap (control expansion, phase E)
 
 Status: **binding, revision 0 (2026-10-22; d1c2043, APPROVE)** with the clarifications of its review (m1–m4, n1, n2;
-marked *"clarification of revision 0"*), written down before any phase-E code. Revision 0 was written after the literature
+marked *"clarification of revision 0"*), written down before any phase-E code. **Closed by amendment E1 (option 1):** the
+development gate failed (section 9); phase E ends without the benchmark – **H-E1 and H-E2 are not tested**; no CEV, CET or
+secondary lap was run. Revision 0 was written after the literature
 check ([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §E) and before any phase-E code: no module, test,
 runner or lap of phase E existed (section 9). Branch `cx/E-lmpc` (from `main` ae87f41, the merge of phase D).
 Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
@@ -235,7 +237,7 @@ NOM and the DEV cars only; records in `results/CX/E/dev/` (git-ignored): `laps.j
   with the regression); the regression has data only
   at the initialisation laps' speeds and falls back on 38–62 % of the stages, and with it the cars leave on lap 1 as well.
 
-## Amendment E1 (proposed 2026-10-22, packet 2; for the review – no CEV lap before it is decided)
+## Amendment E1 (proposed 2026-10-22, packet 2; **decided: option 1** – see the decision below)
 
 *Cause:* the gate of section 9 failed (no sequence beyond the second learning lap; the registered development setting
 K = 20 fails the first on every car). The method as adapted (E.2's local convex hull with the nominal nonlinear model in
@@ -255,3 +257,29 @@ Options (the reviewer decides; nothing is run before):
 3. **Re-design and re-register** (a new protocol revision before any lap): E.2's ATV-QP formulation (linearised along the
    candidate, so that the convex hull is a feasible set of the model it uses), or a bound on the progress per lap; both
    are larger changes than an amendment and would be reviewed as revision 1.
+
+### Decision on amendment E1 (the review of packet 2, 2026-10-23): option 1, with e1–e4
+
+**Phase E is closed without the benchmark; H-E1 and H-E2 are recorded as *not tested*.** The development records and the
+gate's result of section 9 are accepted. Option 2 would spend ~1 300 laps to measure at which learning lap the method fails
+– information the development laps already give (not even the nominal car completes ten); option 3 is a new design and a
+new protocol, listed as the first follow-up (e3).
+
+* **e1 – the scope of the negative result:** it concerns **this project's implementation** – an NLP solved by IPOPT, the
+  nominal nonlinear model, the convex hull of stored states as the terminal set, the terminal condition soft – which does
+  not complete ten learning laps on the nominal car or the development cars. It is **not** a result about the racing LMPC
+  of E.2 or E.4 as such. The most likely cause – that a convex combination of stored states need not be feasible for a
+  nonlinear model, while it is for E.2's ATV linearisation – is a **hypothesis, not verified** here.
+* **e2 – what was observed (section 9):** both initialisation laps complete on every car; the first learning lap jumps
+  from 83 s to 76.4–77.0 s (about the 5 % plan's lap time); the share of solves with terminal slack above 10⁻³ rises from
+  lap to lap (0.03 → 0.17 → 0.33); the regression falls back to the nominal model on 38–62 % of the stages of the learning
+  laps; the development cars leave where `nmpc` leaves. In the diagnostics `lmpc_nominal` (K 5, P 1) drove its second
+  learning lap on the nominal car in **75.9 s, faster than `nmpc`'s 76.40 s** – development data, a description only:
+  the mechanism can beat the tracked plan, but not lap after lap.
+* **e3 – follow-up candidates** (CONTROL_METHOD_MATRIX.md): (1) E.2's ATV-QP implementation (the model linearised along
+  the candidate trajectory, so that the convex hull is feasible for the model the problem uses); (2) a bound on the progress
+  per lap (e.g. the terminal time-to-go not below the previous lap's at the corresponding point minus a limit); (3)
+  consecutive laps instead of every lap from the same initial state.
+* **e4 – the code:** `control/lmpc.py`, `experiments/cx_e.py`, the scripts and the tests are merged as usual, with the
+  registered settings and the development options (off by default), so that section 9 can be reproduced; the records
+  of section 9 map to the commits named there.

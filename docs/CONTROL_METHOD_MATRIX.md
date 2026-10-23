@@ -41,6 +41,11 @@ the RLS; a tube around the adaptive model (robust adaptive MPC, D.13); a plan li
 online re-plan), since the friction-only library left the oracle below the full re-plan (CX-D: 42 against 50 of 50).
 For any later phase that uses `cx_d.DriftField`: count a start state projected to s = L − ε as s = 0 (CX-D packet 4 – the
 first 10 ms step of every drift lap ran at f_end; no outcome changed there, the definition was kept for CX-D's records).
+From phase E (CX-E amendment E1, review e3; the phase was closed after its development gate failed): **the racing LMPC
+as E.2 implements it – an ATV QP, linearised along the candidate trajectory, so that the convex hull of stored states is
+feasible for the model the problem uses** (the first candidate); a bound on the progress per lap (e.g. the terminal
+time-to-go not below the previous lap's at the corresponding point minus a limit); consecutive laps instead of every lap
+from the same initial state.
 
 ### Follow-up candidates from phase B (MPPI; CX-B amendment B3, review d4)
 
