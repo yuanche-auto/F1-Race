@@ -1,7 +1,9 @@
 # CX-F protocol – safety filters around the L5 policies: L7's filter audited, retried, and a backup shield (control expansion, phase F)
 
 Status: **binding, revision 0 (2026-10-22; e2bacfd, APPROVE)** with the clarifications of its review (m1–m3, n1, n2;
-marked *"clarification of revision 0"*), written down before any phase-F code. Written after the literature check
+marked *"clarification of revision 0"*), written down before any phase-F code. **Development gate failed (section 9):
+the shield's backup does not drive the cars; amendment F1 proposed (packet 2) – no FV, T1 or T2 lap before it is
+decided.** Written after the literature check
 ([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §F) and before any phase-F code: no module, test, runner or
 lap of phase F exists; the only measurement so far is a timing of the shield's rollout (no lap, section 9). Branch
 `cx/F-safety` from `main` 490d33e (the merge of phase E). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md)
@@ -221,3 +223,119 @@ On NOM and FD only (records in `results/CX/F/dev/` with commit and dirty flag):
 
 **Measured before this protocol** (disclosed, no lap): the rollout of step 3 on the nominal car, one process, `.venv-rl`:
 11.6 ms per 1 s (100 steps), 33.6 ms per 3 s (300 steps) – about 1 600 checks per lap, ~1 min per lap.
+
+### 9. Results of the development checks (2026-10-22; packet 2) – **the gate failed**
+
+Records (git-ignored) in `results/CX/F/dev/`: `monitor.json` (7634e2d), `laps.jsonl` and `gate.json` (0570b1c),
+`backup_plans.jsonl` (0570b1c), `monitor_variants.json` and `variants.jsonl` (4d356df); decision records in
+`results/CX/F/dev_dec/` and `devvar_dec/`; each run's commit and dirty flag in `meta_<what>.json` (all clean). Two
+diagnostics on NOM were first run as scratch scripts: the axle margins along the plans (reported below), and the
+tracker at held speed factors, which `cx_f_dev.py backup-plans` later reproduced with the same outcomes. Numbers of
+`B_s1_500k` and `tracker` without a filter on NOM and FD were run alongside as context (`laps.jsonl`, condition `none`).
+
+1. **Monitor (9.1; m = 0.5, NOM):**
+   * Pushed states: rejected 60 of 60.
+   * The plan's own states: **accepted only 8 of 60** (51 rejected by the margin, 1 by the side-slip).
+   * Why: the 0.95 plan itself keeps both axles less than 0.5 m from the edge on 23 % of the lap (its minimum is
+     0.27 m). Every plan of the library has its minimum at 0.27–0.29 m. So with m = 0.5 or 1.0 the monitor rejects
+     the plan itself, and of the registered grid only m = 0.25 lies below the plans' minimum.
+   * Check time: 13.2 ms mean, 37.6 ms max, one process.
+2. **Backup alone (9.2): `backup` does not complete NOM** (off track at 3 786 m); FD 5 of 12 (car 2 at every τ,
+   disturbance seeds 7590 and 7591).
+   * Diagnostic (`backup-plans`): the bare tracker with a held speed factor on the 0.95 plan completes NOM only at
+     factor 1.0 (75.57 s). At 0.97 and 0.95 it spins at ~2.77 km; at 0.92, 0.90, 0.87 and 0.85 it leaves the track
+     at 2.74–3.79 km.
+   * Reading (not tested further): the tracker scales the reference speed and the longitudinal feed-forward by the
+     factor but keeps the plan's steering feed-forward, which includes the slip at the plan's lateral acceleration.
+     At a lower speed it therefore steers for the wrong lateral acceleration, and its feedback (k_p = 0.06) does not
+     make up the difference. The policies vary the factor only locally.
+3. **Shield (9.3; m = 0.5):**
+   * With `B_s1_500k` and with `tracker` the shield intervenes in 87 % of the decisions, all by the margin, and in
+     99 % of these there is no recoverable option. Both laps are therefore the backup's lap: off at 3 786 m on NOM,
+     FD 5 of 12 each (the backup's cars).
+   * Without the shield, `B_s1_500k` completes NOM (80.82 s) and 12 of 12 FD laps; `tracker` completes NOM only.
+4. **Retry (9.4; NOM, `B_s1_500k`):** completed in 82.27 s (`none`: 80.82 s).
+   * 0.286 interventions per decision.
+   * 2 first attempts failed; one was recovered by each retry; no fallback.
+   * Time per decision (20 processes): mean 127 ms, P99 336 ms, max 8.3 s.
+   * The 8 false-intervention snapshots: none crashed.
+5. **Gate:** (i) **failed**; (ii) **failed**; (iii) passed (13.2 ms). Review m3: `backup` completes 5 of 12 FD laps,
+   fewer than 6, so a more conservative backup has to be discussed (below). **No FV, T1 or T2 lap has been run.**
+
+**Development variant for the amendment** (`Shield(backup_eta)`, 4d356df):
+* What it is: the backup is the bare tracker on a slower plan of phase D's library (η_b) with that plan's own
+  feed-forward. Its command replaces the policy's tracker's at every 10 ms step of an intervened decision; the
+  environment keeps the policy's action, as with L7's filters, so review m1's rule would change.
+* Grid: η_b ∈ {0.85, 0.79, 0.73} × m ∈ {0.0, 0.1, 0.2}; the plans' axle margins are 0.27–0.29 m at the least.
+
+* **The backup alone** (`backup-plans`, the bare tracker on a plan with zero action), NOM and FD:
+
+  | η of the plan | 0.95 | 0.93 | 0.91 | 0.88 | 0.85 | 0.82 | 0.79 | 0.76 | 0.73 |
+  |---|---|---|---|---|---|---|---|---|---|
+  | NOM | yes | no (spin 2 747 m) | yes | yes | yes | yes | yes | yes | yes |
+  | FD (of 12) | 0 | 1 | 1 | 4 | 6 | 8 | 7 | 8 | 9 |
+  | of them τ = 60 ms (of 3) | 0 | 0 | 0 | 1 | 1 | 1 | 0 | 0 | 1 |
+
+  Even the slowest plan leaves 3 of the 12 FD laps uncompleted, and on the 60 ms cars no plan completes more than one
+  of three.
+* **Monitor:** from the 0.95 plan's own states, the nominal-model rollout into the slower plan is recoverable at only
+  **33–41 of 60** points (m 0–0.2). Even on the nominal model, the change of line and speed within 3 s fails at
+  about a third of the lap. Pushed states: rejected 60 of 60 in every setting. Check time 28–33 ms in one process.
+* **Laps with `B_s1_500k`** (FD of 12; without a filter it completes all 12 and NOM):
+
+  | η_b \ m | 0.0 | 0.1 | 0.2 |
+  |---|---|---|---|
+  | 0.85 | 5 (NOM 81.25 s) | 4 (NOM 81.40 s) | 3 (NOM 81.38 s) |
+  | 0.79 | 7 (NOM 81.91 s) | 7 (NOM 82.05 s) | 4 (NOM off track) |
+  | 0.73 | 6 (NOM 82.26 s) | 5 (NOM 82.50 s) | 4 (NOM 83.15 s) |
+
+  * Interventions per decision: 0.04–0.14 (median 85 per lap, range 9–254; 1–133 on-switches per lap).
+  * Time per decision under 20 processes: 63–70 ms.
+  * The failures (64 laps over the nine settings): in every setting the τ = 60 ms cars fail (0 of 3), and the
+    τ = 30 ms cars complete at most 2 of 3.
+    * 13 failures come at 33–42 m, all in the m = 0.2 settings of η_b 0.79 and 0.73 (NOM included): the monitor
+      rejects the start state at once, and the backup's change from the 0.95 plan's line and speed to its own
+      leaves the track within half a second, as the monitor's nominal rollout predicted (no recoverable option).
+    * Most of the rest come at 2.5–2.7 km on the lag cars, where the bare tracker fails as well; a few come at turn 1
+      (0.33–0.47 km), 1.56 km and 3.3–4.2 km.
+    * Of a failed lap's interventions, 5–60 (median 32) fall in its last 3 s.
+  * Mechanism (reading): the shield hands the car to a backup that cannot drive these cars exactly where the policy
+    can. Review m2's optimism is visible: the nominal check accepts states that the lagged car cannot recover. The
+    hand-over itself – a change of line and speed within one decision, with no blending – is part of the problem.
+* **Laps with `tracker`:** NOM completed in eight of the nine settings (not with η_b 0.79, m 0.2); FD 0 of 12 in
+  every setting (alone: 0 of 12).
+
+**Reading.** With the trackers available here, no cheap backup is reliable on these cars:
+* the backup of revision 0 fails even on the nominal car;
+* a slower plan with its own feed-forward completes at most 9 of 12 FD laps and almost none of the 60 ms ones;
+* from the policy's states it recovers on the nominal model at only about two thirds of the points.
+
+A shield cannot protect better than its backup drives (review m3). Here the shield turned 12 of 12 FD laps of the
+selected policy into 3–7.
+
+## Amendment F1 (proposed 2026-10-22, packet 2; for the review – no FV, T1 or T2 lap before it is decided)
+
+The development gate of section 9 failed for the shield, and review m3's condition holds (`backup` 5 of 12 on FD).
+H-F2 (`retry` against `main`) does not depend on the shield, the gate or FV. Options:
+
+1. **(proposed) Close the shield part without the benchmark.**
+   * **H-F1 is recorded as *not tested***. The development records and the reading above are the result: a negative
+     development result about a tracker-based backup on this car family, not about shields in general.
+   * Phase F continues with **H-F2 as its only primary test** (α 0.05, Holm over one), the `none` regression, the
+     reproduction check of `main` and the audit of section 5.1. The audit has already run on L7's records at b94e775:
+     `results/CX/F/report/audit_l7.*`; it reproduces L7's false-intervention counts and failure attribution.
+   * No FV laps; no `shield` or `backup` laps on T1 + T2.
+   * The section-5 tables for `retry` stay as registered.
+   * Follow-ups (CONTROL_METHOD_MATRIX.md):
+     * a backup that drives the lag cars – e.g. L6's lag-aware identified NMPC, which completes 73 of 75 on T1 but
+       is too expensive to roll out at every decision, so it would need a cheap surrogate;
+     * a backup CBF (F.6), which needs such a backup as well;
+     * a filter-aware or filter-trained policy (Oh et al.).
+2. **H-F1 with the gate waived:**
+   * FV tuning over η_b ∈ {0.85, 0.79, 0.73} × m ∈ {0.0, 0.1, 0.2} (9 × 360 shield laps + `none` and `backup`,
+     ~5 h), then `shield` on T1 + T2 (1 155 laps, ~3 h).
+   * The development laps predict the direction (fewer completions than `none` for the selected policy). It would
+     measure that across the nine finals, as L7's H-B did for its filter.
+   * Review m1's rule would be replaced: in the plan mode the environment keeps the policy's action.
+3. **Revision 1, a re-design:** a backup reliable on lagged cars (an identified, lag-aware controller with a cheap
+   rollout) – a new design and protocol, beyond phase F's scope as registered.

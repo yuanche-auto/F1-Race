@@ -1,12 +1,19 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-22 (phase F: protocol revision 0 APPROVE with clarifications m1–m3, n1, n2; code next). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-22 (phase F: code and development checks done – the shield's gate failed; amendment F1 proposed, packet 2). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
 * **Current phase:** F – safety-critical control, branch `cx/F-safety` from `main` 490d33e (the merge of phase E):
   literature §F.1–F.12 and the protocol [CX_F_protocol.md](CX_F_protocol.md) revision 0 **APPROVE** (e2bacfd) with the
   clarifications m1–m3, n1, n2 (the applied action in the observation; lag makes the shield optimistic – failures after
   interventions by τ; the backup's completions on FD as background; the tie rule's reason; one false-intervention procedure).
-  Next: code and the development checks of section 9 (packet 2); no FV / T1 / T2 lap before its APPROVE. Design: on L7's test sets T1 + T2 with the nine final L5 checkpoints as proposers – `retry`
+  Code 7634e2d … b94e775 (`experiments/cx_f.py`, l7 options `retry` / `log_commands`, `scripts/{run,report}_cx_f.py`,
+  `scripts/cx_f_dev.py`, `tests/test_cx_f.py`). **Development gate failed:** the backup a_b (the tracker at 0.85 of the
+  plan speed) leaves the track on the nominal car (the tracker completes NOM only at factor 1.0), the shield intervenes
+  in 87 % of the decisions; a development variant (the tracker on a slower plan as backup) completes at most 9 of 12 FD
+  laps alone and turns `B_s1_500k`'s 12 of 12 FD laps into 3–7; `retry` completes NOM. The audit of L7's records ran
+  (reproduces L7's false-intervention counts and failure attribution). **Amendment F1** proposed: close the shield part
+  without the benchmark (H-F1 not tested) and continue with H-F2 – or H-F1 with the gate waived – or a re-design;
+  packet 2 requested; no FV / T1 / T2 lap. Design: on L7's test sets T1 + T2 with the nine final L5 checkpoints as proposers – `retry`
   (L7's main filter with retried solves) against L7's `main` records (H-F2, L7's open question), and `shield` (model
   predictive shielding: the policy's action passes while a nominal-model rollout of the tracker at 0.85 of the plan
   speed still recovers the car; margin m tuned on the new set FV) against `none` (H-F1); `backup` alone; an audit of
@@ -126,7 +133,7 @@ Last updated: 2026-10-22 (phase F: protocol revision 0 APPROVE with clarificatio
 | C | `control/tube.py` (`Tube`, `TubeMPCController`), `experiments/cx_c.py`, `scripts/{run,report}_cx_c.py`, `scripts/cx_c_dev.py` | yes (0689c41 … eab7c63) | yes – `tests/test_tube.py` 8, `tests/test_cx_c.py` 5 | development checks §9 on NOM and CXDEV; CXV tuning; CCT; secondary conditions | protocol rev 0, C1 and packets 2–5 **APPROVE**; final review 3dec001 **APPROVE** | **yes – phase C completed** |
 | D | `estimation/{rls,bank}.py`, `control/adaptive_mpc.py`, `FrenetMPC(param_model=True)`, `experiments/cx_d.py`, `scripts/{run,report}_cx_d.py`, `scripts/cx_d_{dev,plans}.py` | yes (6f54f30 … ea4ac82) | yes – `tests/test_adaptive.py` 8, `tests/test_cx_d.py` 5 | development checks §9 on NOM and DEV (gate passed) | protocol rev 0 and literature §D **APPROVE** (packet 1, m1–m3 / n1–n3); packets 2–5 **APPROVE**; final review 2dd4405 **APPROVE** | **yes – phase D completed** |
 | E | `control/lmpc.py`, `experiments/cx_e.py`, `scripts/cx_e_dev.py`; `scripts/run_cx_e.py` (only its `dev` stage run) and `scripts/report_cx_e.py` – **not validated: never run end to end** (review f1) | yes (d64eb47 … 5068328) | yes – `tests/test_lmpc.py` 5 | development checks §9: NLP, regression, 36 sequences – **gate failed** | protocol rev 0 **APPROVE** (packet 1); packet 2 **APPROVE**, amendment E1 option 1 (closed, no benchmark); final review 6ebaed0 **APPROVE** (f1) | **yes – phase E completed (closed without the benchmark)** |
-| F | – (code next) | – | – | – | literature §F and protocol rev 0 **APPROVE** (packet 1, m1–m3 / n1, n2) | – |
+| F | `experiments/cx_f.py`, l7 options `retry` / `log_commands`, `scripts/{run,report}_cx_f.py`, `scripts/cx_f_dev.py` | yes (7634e2d … b94e775) | yes – `tests/test_cx_f.py` 5 | development checks §9 on NOM and FD – **gate failed**; audit of L7's records | literature §F and protocol rev 0 **APPROVE** (packet 1, m1–m3 / n1, n2); packet 2 with amendment F1 requested | – |
 | F–G | – | not started | – | – | – | – |
 
 ## Review record
@@ -167,6 +174,7 @@ Last updated: 2026-10-22 (phase F: protocol revision 0 APPROVE with clarificatio
 | 2026-10-22 | 727297f (d64eb47 …) | phase E packet 2: code, tests, development checks – the gate failed; amendment E1 | **APPROVE**; **E1 option 1** (close without the benchmark) | e1 the result about this implementation, the cause a hypothesis; e2 the observations incl. the 75.9 s lap; e3 follow-ups; e4 the code merged |
 | 2026-10-22 | 6ebaed0 | **phase E final review** (whole branch vs main ae87f41: 7 commits, 12 files, +1751 / −13) | **APPROVE** | f1 the never-run scripts marked (cd71350); the three standing checks pass (.venv and .venv-rl) |
 | 2026-10-22 | (this commit) | phase F packet 1: literature §F.1–F.12, protocol CX_F revision 0; the phase-E merge hash 490d33e recorded; the phase-E closing dates corrected (2026-10-23 → 2026-10-22, the commits' date) | **APPROVE** | m1 the applied a_b in the policy's observation (unlike L7's filters); m2 the nominal rollout ignores lag – failures within 3 s after interventions by τ; m3 `backup` on FD as background, < 6 of 12 → a more conservative a_b discussed before FV; n1 the tie rule's reason; n2 one false-intervention procedure for all; the skip count on 490d33e is 4 (my count of 3 from the progress dots was wrong) |
+| 2026-10-22 | (this commit; code 7634e2d … b94e775) | phase F packet 2: code, tests, development checks – the shield's gate failed; amendment F1; the audit of L7's records | requested | – |
 
 ## Tests
 
@@ -212,6 +220,6 @@ Phase D: `results/CX/D/plans/` (main checkout) – the new plans of the library 
 
 ## Next actions
 
-1. Phase F: the code of protocol section 8.2 and the development checks of section 9 (packet 2); no FV, T1 or T2 lap
-   before its APPROVE.
+1. Phase F: the reviewer's decision on amendment F1 (packet 2: code, development checks, the failed gate); no FV, T1 or
+   T2 lap before it.
 2. Follow-up candidates (CONTROL_METHOD_MATRIX.md) stay unscheduled – among them E.2's ATV-QP learning MPC.
