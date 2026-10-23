@@ -456,7 +456,87 @@ What L4 / L6 / L8 already have (offline least squares and an EKF from one explor
   poor excitation (per the search results). Not read; listed with D.6 for the excitation issue. Phase D's car model has
   no wheel-slip states, so slip-based estimation does not apply.
 
-## Phases D–G and the frontier methods
+## Phase E – learning MPC (LMPC, lap-to-lap)
+
+Checked 2026-10-22. Full texts as ar5iv / arXiv HTML; journal versions not obtained (their venues are noted as found, not
+checked).
+
+### E.1 Rosolia, Borrelli – *Learning Model Predictive Control for Iterative Tasks. A Data-Driven Control Framework*, arXiv:1609.01387 (v1 Sep 2016 … v7 Dec 2017; journal version IEEE TAC 2018 per secondary sources; full text read in part, ar5iv: the formulation, the theorems and the examples)
+
+* An iterative task: every iteration starts at the same x_S and must reach the equilibrium x_F; the **sampled safe set**
+  SS^j is the union of the stored closed-loop trajectories that reached x_F, the **Q-function** Q^j(x) the lowest stored
+  cost-to-go at x (∞ outside SS^j).
+* LMPC: the finite-horizon cost plus Q^{j−1}(x_N) as terminal cost, with x_N ∈ SS^{j−1} as terminal constraint.
+  **Recursive feasibility, asymptotic stability of x_F and a non-increasing iteration cost** (given a feasible first
+  trajectory); at a steady state, optimality for the finite-horizon problem with the learned terminal cost (local only
+  for non-convex problems). **Assumption: the model equals the plant** (deterministic, exact).
+* The discrete safe set makes the problem mixed-integer; examples: constrained LQR (cost 57.2 → 49.9), a minimum-time
+  Dubins car (39 → 16 steps).
+
+### E.2 Rosolia, Borrelli – *Learning How to Autonomously Race a Car: a Predictive Control Approach*, arXiv:1901.08184 (v4 Oct 2019; journal version in IEEE TCST per secondary sources, not checked; full text read, ar5iv)
+
+* Racing as a minimum-time iterative task, one lap per iteration; stage cost 1 per step until s ≥ L; the cost-to-go of a
+  stored state is the steps to that lap's finish.
+* **Local safe set:** at a query state, the K = 20 nearest stored states by the arclength s (weight on s only) from the
+  last two laps; the terminal state is a **convex combination** of them (λ ≥ 0, 1ᵀλ = 1 – the convex-hull relaxation of
+  the mixed-integer set) and the terminal cost the same combination of their costs-to-go (an approximation, not a bound).
+  The candidate terminal state is propagated from the previous solution's λ.
+* **Model:** affine time-varying, linearised along the shifted candidate trajectory; the kinematic Frenet equations known,
+  the velocity states (v_x, v_y, ω) from **local linear regression** (Epanechnikov kernel, bandwidth 10, 80 nearest
+  neighbours). A QP (OSQP), N = 12, 10 Hz, ~10 ms.
+* BARC 1:10 car: two path-following laps at ~1.2 m/s to start; the lap time converges after ~29 laps, lateral acceleration
+  near 1 g. **Lost guarantees** stated: feasibility only if the system is linear or the linearisation accurate over the
+  local set; no convergence proof for the relaxed, learned scheme.
+
+### E.3 Rosolia, Borrelli – *Minimum Time Learning Model Predictive Control*, arXiv:1911.09239 (v4 Oct 2020; abstract)
+
+* A time-varying safe set and terminal cost from closed-loop data for minimum-time problems, convexified; recursive
+  constraint satisfaction, non-decreasing performance and finite-time convergence for a class of nonlinear systems with
+  convex constraints; obstacle-avoidance and racing examples (abstract). Not read in full.
+
+### E.4 Xue, Zhu, Dolan, Borrelli – *Learning Model Predictive Control with Error Dynamics Regression for Autonomous Racing*, ICRA 2024 (arXiv:2309.10716, v2 Mar 2024; full text read, HTML v2)
+
+* The model is a **nominal physics model plus a local, linear regression of its error** in the velocity states:
+  x⁺ = f(x, u) + e(x, u), the residual linearised about the candidate (A^e, B^e, C^e per velocity channel, one input
+  each), from the M nearest samples of the previous laps, Epanechnikov kernel of bandwidth h, ridge-regularised weighted
+  least squares; A = A^f + A^e etc. **Without nearby data the correction shrinks to zero and the nominal model remains**
+  (the authors' argument against regressing the full dynamics, E.2).
+* The LMPC of E.2 otherwise: K nearest states from each of the previous P laps, convex hull, convex combination of the
+  costs-to-go; lap-time, input and input-rate costs; a convex program re-solved each step.
+* Simulation with a kinematic nominal and a Pacejka plant (friction 1.2 vs 0.9): stable for small bandwidths and small
+  rate costs where E.2's regression fails; BARC: 10 trials, failures 1 of 10 against 5 of 10 at h = 3; a full-scale IAC
+  car (10 iterations, qualitative). **Limits:** no stability guarantee for an arbitrary nominal mismatch, the convex hull
+  gives up persistent feasibility, hyperparameters partly unreported.
+
+### E.5 Rosolia, Carvalho, Borrelli – *Autonomous Racing using Learning Model Predictive Control*, ACC 2017 (arXiv:1610.06534; bibliographic)
+
+* The first racing LMPC (CarSim simulation), before the local safe set of E.2. Not read.
+
+### E.6 Brunner, Rosolia, Gonzales, Borrelli – *Repetitive learning model predictive control: An autonomous racing example*, IEEE CDC 2017 (bibliographic)
+
+* LMPC for repetitive (periodic) tasks such as consecutive laps. Not read.
+
+### E.7 Rosolia, Zhang, Borrelli – *Robust Learning Model-Predictive Control for Linear Systems Performing Iterative Tasks*, IEEE TAC 2022 (bibliographic)
+
+* LMPC for uncertain linear systems. Not read; phase C's tube around the LMPC would be its nonlinear counterpart.
+
+### E.8 Kapania, Gerdes – *Path tracking of highly dynamic autonomous vehicle trajectories via iterative learning control*, ACC 2015 (arXiv:1902.00611; abstract)
+
+* Iterative learning control (PD and quadratically optimal) of the steering feedforward from lap to lap on an Audi TTS at
+  up to 8 m/s²; corrects repeatable tracking errors when the tyre limits are not exceeded. A lap-to-lap learning method
+  that keeps the plan fixed – the counterpart of LMPC, which changes the trajectory. Not read in full.
+
+### E.9 Zhao, Schlüter, Brunke, Schoellig – *Improving Drone Racing Performance Through Iterative Learning MPC*, IROS 2025 (arXiv:2508.01103; abstract)
+
+* LMPC for drone racing with an adaptive cost (time-optimal vs centre line), a shifted local safe set against excessive
+  shortcutting and Cartesian safety constraints; lap time improved by up to 60.85 % from weakly tuned starting
+  controllers, 6.05 % on a real drone from MPCC++ (abstract). The most recent LMPC racing result found.
+
+**For phase E:** the racing LMPC needs (a) a first, completed lap of the car (E.1's feasible first trajectory; E.2: slow
+path following), (b) data beyond the finish line (E.2: consecutive laps), (c) a model whose error the local regression or
+the nominal model keeps small (E.2, E.4) – the guarantees of E.1 do not survive the relaxations (E.2, E.4 state this).
+
+## Phases F–G and the frontier methods
 
 Entries are written at the start of each phase, before its code (roadmap section 3). Classic sources
 to start from (not yet read; listed so that the check is planned, not as claims): RLS / MHE – Rawlings, Mayne, Diehl (*Model Predictive Control: Theory,
