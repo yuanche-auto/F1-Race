@@ -14,6 +14,15 @@
 * ``drive(case, kind, impl, mode, ...)``: one lap of a model-based controller of section 4, with
   its exploration lap (``nmpc_reserve``, same implementation and mode unless ``explore_mode`` is
   given – the secondary condition of l9-m2) and the l8-M1 failure handling.
+* ``comp`` (control expansion phase G, docs/CX_G_protocol.md section 3.1; default ``None`` – L9's
+  behaviour): delay compensation. From the delayed measurement (time t_k - d) the controller's own
+  model (its vehicle, with its tau if lag-aware) is integrated with the simulator's 10 ms RK4 step over
+  the assumed delay ``comp["d"]``, applying the commands the controller itself output in those steps,
+  and over ``comp["lhat"]`` (real-time mode only) with the active plan's command; the solve starts
+  from the predicted state, its plan is aligned to t_k + lhat and applied at max(ready, t_k + lhat).
+  The prediction's time is added to the latency (and the busy time). ``log_assumed``: each call
+  records the Cartesian state its solve assumed and the time it assumed it for (``x_assumed``,
+  ``t_plan``), for the prediction error against the true state.
 """
 from __future__ import annotations
 
@@ -101,9 +110,16 @@ class _RealTime:
     plan is computed before the lap starts, untimed (A1.4). ``hold="last"`` (the rule of revision 1,
     a secondary condition): the first command of a solution is applied when ready and held."""
 
-    def _rt_init(self, mode: str, delay: float, hold: str = "plan", dc_lhat: float | None = None):
+    def _rt_init(self, mode: str, delay: float, hold: str = "plan", dc_lhat: float | None = None,
+                 comp: dict | None = None, log_assumed: bool = False):
         if mode not in MODES or hold not in ("plan", "last"):
             raise ValueError((mode, hold))
+        if comp is not None and (dc_lhat or hold != "plan"):
+            raise ValueError("comp needs hold='plan' and no A2 compensation")
+        self.comp, self.log_assumed = comp, bool(log_assumed)
+        self._ctx = None                         # (measurement, actual angle estimate, Frenet state) of the call
+        self._out: deque = deque(maxlen=64)      # comp: the controller's own outputs, one per 10 ms step
+        self._model_sim = None
         self.rt_mode, self.delay, self.hold = mode, float(delay), hold
         self.dc_lhat = dc_lhat if mode == "realtime" else None   # A2: delay compensation (real-time only)
         self.pending = None                      # (t_ready, t_start, first command, plan inputs)
@@ -133,6 +149,44 @@ class _RealTime:
         j = int(math.floor((t - t0) / PERIOD + 1e-9))
         return np.array(U[j], float) if j < len(U) else np.array([0.0, U[-1][1], U[-1][2]], float)
 
+    def _cartesian_assumed(self) -> np.ndarray:
+        """The Cartesian state behind the call's Frenet state (8-dim with the actual angle estimate and the
+        commanded angle for a lag-aware controller, else 7-dim)."""
+        xm, d_act, _ = self._ctx
+        if d_act is None:
+            return np.array(xm[:7], float)
+        return np.concatenate([np.asarray(xm[:6], float), [d_act, float(xm[6])]])
+
+    def _predict(self, t: float, lhat: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """CX-G section 3.1: (Frenet state for the solve, Cartesian predicted state, u_prev)."""
+        from ..sim.dynamic import DynamicSim
+        from ..sim.lagged import LaggedSim
+
+        _, d_act, xf = self._ctx
+        n_d = min(int(round(self.comp["d"] / self.sim_dt)), len(self._buf) - 1, len(self._out))
+        n_l = int(round(lhat / self.sim_dt))
+        x = self._cartesian_assumed()
+        if n_d + n_l == 0:
+            return xf, x, self.u
+        if self._model_sim is None:
+            tr = self.comp["track"]
+            self._model_sim = (LaggedSim(tr, self.mpc.veh, self.tau, self.sim_dt) if d_act is not None
+                               else DynamicSim(tr, self.mpc.veh, self.sim_dt))
+        sim = self._model_sim
+        hist = list(self._out)[len(self._out) - n_d:] if n_d else []
+        cmds = hist + [self._committed(t + i * self.sim_dt) for i in range(n_l)]
+        for u in cmds:
+            x = sim.step(x, sim.apply_limits(x, np.asarray(u, float)))
+        prev = self.s_unwrapped                  # the unwrapping follows the measurements, not the predictions
+        if d_act is None:
+            xfp = self.frenet(x[:7])
+        else:
+            xa = np.array(x[:7], float)
+            xfp = np.concatenate([self.frenet(xa), [float(x[7])]])
+        self.s_unwrapped = prev
+        u_prev = self._committed(t + (n_l - 1) * self.sim_dt) if n_l else self.u
+        return xfp, x, u_prev
+
     def _schedule(self, t: float, xf: np.ndarray) -> None:
         """Pre-start plan (real-time, once); switch to a solution whose time has come; start a
         computation at a control instant when the controller is free; set the current command."""
@@ -149,6 +203,14 @@ class _RealTime:
         if not (t + 1e-9 < self.t_next or (rt and t + 1e-9 < self.busy_until)):
             t0 = time.perf_counter()
             x_solve, u_prev, t_plan = xf, self.u, t
+            t_pred, x_assumed = 0.0, None
+            if self.comp is not None and self.active is not None:   # CX-G: predict over the delay
+                lhat = float(self.comp["lhat"]) if rt else 0.0
+                x_solve, x_assumed, u_prev = self._predict(t, lhat)
+                t_plan = t + lhat
+                t_pred = time.perf_counter() - t0
+            elif self.log_assumed:
+                x_assumed = self._cartesian_assumed()
             if self.dc_lhat and self.active is not None:  # A2: predict over the committed segments
                 n = int(round(self.dc_lhat / PERIOD))
                 Uc = [self._committed(t + i * PERIOD) for i in range(n)]
@@ -161,11 +223,15 @@ class _RealTime:
             wall = time.perf_counter() - t0
             U = self.mpc.prediction()[1]
             if "time_feedback" in info:          # RTI: latency = feedback, busy = feedback + preparation
-                lat, busy = info["time_feedback"], info["time_feedback"] + info["time_preparation"]
+                lat, busy = info["time_feedback"] + t_pred, info["time_feedback"] + info["time_preparation"] + t_pred
             else:
                 lat, busy = wall, wall
             rec = {"t": t, "latency": lat, "busy": busy, "wall": wall, "status": info["status"], "shift": shift,
                    "fallback": bool(info.get("fallback", False))}
+            if self.comp is not None:
+                rec["time_pred"] = t_pred
+            if self.log_assumed and x_assumed is not None:
+                rec.update({"x_assumed": [float(v) for v in x_assumed], "t_plan": t_plan})
             if not rt:
                 self.u = u
                 self.active = (t, U)
@@ -173,6 +239,9 @@ class _RealTime:
             else:
                 t_ready = t + math.ceil(lat / self.sim_dt - 1e-9) * self.sim_dt
                 busy_until = t + busy
+                if self.comp is not None:                # CX-G: not before the predicted time
+                    t_ready = max(t_ready, t_plan)
+                    rec["late"] = lat > float(self.comp["lhat"])
                 if self.dc_lhat:                         # A2.2: not before t_k + L_hat
                     t_ready = max(t_ready, t_plan)
                     rec["late"] = lat > self.dc_lhat
@@ -195,21 +264,25 @@ class _RealTime:
 
 class RealTimeMPCController(_RealTime, MPCController):
     def __init__(self, mpc, sim_dt: float = DT, mode: str = "offline", delay: float = 0.0, tc_eta=0.99,
-                 hold: str = "plan", dc_lhat: float | None = None):
+                 hold: str = "plan", dc_lhat: float | None = None, comp: dict | None = None,
+                 log_assumed: bool = False):
         MPCController.__init__(self, mpc, sim_dt, tc_eta)
-        self._rt_init(mode, delay, hold, dc_lhat)
+        self._rt_init(mode, delay, hold, dc_lhat, comp, log_assumed)
 
     def __call__(self, t: float, x: np.ndarray):
         from ..control.dyn_tracking import traction_limit
 
         xm = self._measure(x)
         xf = self.frenet(xm)
+        self._ctx = (xm, None, xf)
         self._schedule(t, xf)
         drate, fd, fb = float(self.u[0]), float(self.u[1]), float(self.u[2])
         if self.tc_eta is not None:              # traction control on the true state, every step
             veh = self.mpc.veh
             d_next = x[6] + np.clip(drate, -veh.delta_rate_max, veh.delta_rate_max) * self.sim_dt
             fd, fb = traction_limit(veh, x, d_next, fd, fb, self.tc_eta)
+        if self.comp is not None:
+            self._out.append((drate, fd, fb))
         return drate, fd, fb
 
 
@@ -217,9 +290,10 @@ class RealTimeLagMPCController(_RealTime, LagAwareMPCController):
     """``LagAwareMPCController`` (observe="command") under the real-time rule."""
 
     def __init__(self, mpc, sim_dt: float = DT, mode: str = "offline", delay: float = 0.0, tc_eta=0.99,
-                 hold: str = "plan", dc_lhat: float | None = None):
+                 hold: str = "plan", dc_lhat: float | None = None, comp: dict | None = None,
+                 log_assumed: bool = False):
         LagAwareMPCController.__init__(self, mpc, sim_dt, tc_eta, observe="command")
-        self._rt_init(mode, delay, hold, dc_lhat)
+        self._rt_init(mode, delay, hold, dc_lhat, comp, log_assumed)
 
     def __call__(self, t: float, x: np.ndarray):
         from ..control.dyn_tracking import traction_limit
@@ -229,12 +303,15 @@ class RealTimeLagMPCController(_RealTime, LagAwareMPCController):
         xa = np.array(xm, float)
         xa[6] = d_act
         xf = np.concatenate([self.frenet(xa), [d_cmd]])
+        self._ctx = (xm, d_act, xf)
         self._schedule(t, xf)
         drate, fd, fb = float(self.u[0]), float(self.u[1]), float(self.u[2])
         if self.tc_eta is not None:
             veh = self.mpc.veh
             d_next = d_act + (d_cmd - d_act) * (1.0 - np.exp(-self.sim_dt / self.tau))
             fd, fb = traction_limit(veh, xa, d_next, fd, fb, self.tc_eta)
+        if self.comp is not None:
+            self._out.append((drate, fd, fb))
         return drate, fd, fb
 
 
@@ -324,7 +401,8 @@ def identify_and_plan(ex, kind: str) -> dict:
 
 
 def drive(case: dict, kind: str, impl: str, mode: str, delay: float = 0.0, explore_mode: str | None = None,
-          name: str = "l9", planned: dict | None = None, hold: str = "plan") -> dict:
+          name: str = "l9", planned: dict | None = None, hold: str = "plan", comp: dict | None = None,
+          log_assumed: bool = False, keep: dict | None = None) -> dict:
     """One lap of a model-based controller (protocol section 4) in an implementation and mode. For
     ``identified`` / ``lag_identified``: ``planned`` is the result of ``identify_and_plan`` (the
     staged runs of scripts/run_l9.py); without it the exploration lap, identification and re-plan
@@ -363,10 +441,15 @@ def drive(case: dict, kind: str, impl: str, mode: str, delay: float = 0.0, explo
     path, _ = dyn_reference(track, model, o)
     mpc = make_mpc(impl, track, model, o, eta, backoff, lag, name=name)
     dc = DC_LHAT if impl == "ipopt_dc" else None
-    ctl = (RealTimeLagMPCController(mpc, DT, mode, delay, hold=hold, dc_lhat=dc) if lag is not None
-           else RealTimeMPCController(mpc, DT, mode, delay, hold=hold, dc_lhat=dc))
+    if comp is not None:
+        comp = {**comp, "track": track}
+    ctl = (RealTimeLagMPCController(mpc, DT, mode, delay, hold=hold, dc_lhat=dc, comp=comp, log_assumed=log_assumed)
+           if lag is not None else
+           RealTimeMPCController(mpc, DT, mode, delay, hold=hold, dc_lhat=dc, comp=comp, log_assumed=log_assumed))
     sim = make_sim(case, track)
     r = sim.run(ctl, x0_from_plan(o, path), t_max=T_MAX)
+    if keep is not None:                         # CX-G: the run and the controller's calls for the caller
+        keep.update({"run": r, "calls": ctl.calls})
     out.update({"completed": bool(r.completed), "lap_time": float(r.lap_time), "stop_reason": r.stop_reason,
                 "distance": float(r.progress[-1]), "hold": hold, "plan_exhausted_steps": int(ctl.exhausted),
                 **timing_summary(ctl.calls)})
