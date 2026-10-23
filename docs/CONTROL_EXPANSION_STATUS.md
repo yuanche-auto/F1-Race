@@ -1,10 +1,17 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-23 (phase F done – packet 3 and the final review of 85be4ad APPROVE; merged to main; phase G next). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-23 (phase G: literature §G and protocol revision 0 in review, packet 1). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
-* **Current phase:** F done – packet 3 and the final review of 85be4ad **APPROVE**; `cx/F-safety` merged to `main`
-  (--no-ff) 2026-10-23 (merge hash recorded in phase G's first commit); next G – real-time (literature and protocol
-  first). Phase F result: **H-F2 holds** – L7's main filter with retried solves completes more T1 + T2 laps than L7's
+* **Current phase:** G – real-time control, branch `cx/G-realtime` from `main` 1922066 (the merge of phase F):
+  literature §G.1–G.9 and the protocol [CX_G_protocol.md](CX_G_protocol.md) revision 0 **in review (packet 1)**; no
+  code before its APPROVE. Design: L9's real-time rule (WSL, acados SQP-RTI, one vCPU, 50 ms); `lag_identified` RTI
+  with a model-based prediction over the known delay (`rti_dc`: from the delayed measurement over the sensor delay with
+  its own applied commands, and over a fixed 10 ms command latency) against L9's uncompensated RTI, with the
+  exploration, identification and plan shared per case; H-G1 at a 20 ms sensor delay (L9: 79 → 0 of 105), H-G2 without
+  one; new test set GT (seeds 371, 7700–7729); secondary: 40 ms and a mis-specified delay, `nmpc`, the RL policy, a
+  repeat. Advanced-step MPC, learned warm starts, anytime IPOPT, deadline-aware fallback: not in phase G (protocol 3.2).
+* **Phase F:** done – packet 3 and the final review of 85be4ad **APPROVE**; `cx/F-safety` merged to `main` (--no-ff)
+  2026-10-23 as **1922066**. Phase F result: **H-F2 holds** – L7's main filter with retried solves completes more T1 + T2 laps than L7's
   filter for eight of the nine L5 finals (median +14, exact p = 0.0078; not cross-checked), its solver fallbacks fall from
   0.5–6.8 % to 0.05–0.3 % of the decisions – yet it still completes fewer laps than no filter for eight of the nine (534
   against 702 over the nine; L7's filter 423): L7's negative result stands, its remaining failures follow interventions;
@@ -149,6 +156,7 @@ Last updated: 2026-10-23 (phase F done – packet 3 and the final review of 85be
 | D | `estimation/{rls,bank}.py`, `control/adaptive_mpc.py`, `FrenetMPC(param_model=True)`, `experiments/cx_d.py`, `scripts/{run,report}_cx_d.py`, `scripts/cx_d_{dev,plans}.py` | yes (6f54f30 … ea4ac82) | yes – `tests/test_adaptive.py` 8, `tests/test_cx_d.py` 5 | development checks §9 on NOM and DEV (gate passed) | protocol rev 0 and literature §D **APPROVE** (packet 1, m1–m3 / n1–n3); packets 2–5 **APPROVE**; final review 2dd4405 **APPROVE** | **yes – phase D completed** |
 | E | `control/lmpc.py`, `experiments/cx_e.py`, `scripts/cx_e_dev.py`; `scripts/run_cx_e.py` (only its `dev` stage run) and `scripts/report_cx_e.py` – **not validated: never run end to end** (review f1) | yes (d64eb47 … 5068328) | yes – `tests/test_lmpc.py` 5 | development checks §9: NLP, regression, 36 sequences – **gate failed** | protocol rev 0 **APPROVE** (packet 1); packet 2 **APPROVE**, amendment E1 option 1 (closed, no benchmark); final review 6ebaed0 **APPROVE** (f1) | **yes – phase E completed (closed without the benchmark)** |
 | F | `experiments/cx_f.py`, l7 options `retry` / `log_commands`, `scripts/{run,report}_cx_f.py`, `scripts/cx_f_dev.py` | yes (7634e2d … e0f0b0a) | yes – `tests/test_cx_f.py` 5 | development checks §9 on NOM and FD – **gate failed** (the shield part closed, F1); audit of L7's records; T1 + T2: `none` regression, `main` reproduction, `retry` (2 332 laps) | literature §F and protocol rev 0 **APPROVE** (packet 1, m1–m3 / n1, n2); packet 2 **APPROVE**, amendment F1 option 1 (g1–g4); packet 3 and final review 85be4ad **APPROVE** | **yes – phase F completed (H-F2 holds; H-F1 not tested)** |
+| G | – (no code before the protocol's APPROVE) | – | – | – | literature §G and protocol rev 0: packet 1 requested | – |
 | F–G | – | not started | – | – | – | – |
 
 ## Review record
@@ -191,6 +199,7 @@ Last updated: 2026-10-23 (phase F done – packet 3 and the final review of 85be
 | 2026-10-22 | (this commit) | phase F packet 1: literature §F.1–F.12, protocol CX_F revision 0; the phase-E merge hash 490d33e recorded; the phase-E closing dates corrected (2026-10-23 → 2026-10-22, the commits' date) | **APPROVE** | m1 the applied a_b in the policy's observation (unlike L7's filters); m2 the nominal rollout ignores lag – failures within 3 s after interventions by τ; m3 `backup` on FD as background, < 6 of 12 → a more conservative a_b discussed before FV; n1 the tie rule's reason; n2 one false-intervention procedure for all; the skip count on 490d33e is 4 (my count of 3 from the progress dots was wrong) |
 | 2026-10-22 | (this commit; code 7634e2d … b94e775) | phase F packet 2: code, tests, development checks – the shield's gate failed; amendment F1; the audit of L7's records | **APPROVE**; **F1 option 1** (the shield part closed) | g1 the scope (an MPS shield with a tracker backup and a nominal check, on these cars) and the m-grid flaw stated; g2 H-F2 alone at α 0.05, 0.025 reported, H-F1 withdrawn before any T1 / T2 result; g3 none regression, main reproduction, retry 1 155 laps from a pinned worktree; g4 the shield code merged as development only, follow-ups in METHOD_MATRIX |
 | 2026-10-23 | (this commit; run e0f0b0a) | phase F packet 3: T1 + T2 – the `none` regression, the `main` reproduction check, `retry`; H-F2 holds; the benchmark section – with the **final review** of `cx/F-safety` | **APPROVE** (both) | the bare tracker's 6 / 14 / 22 laps (none / main / retry) added to the Reading as a description |
+| 2026-10-23 | (this commit) | phase G packet 1: literature §G.1–G.9, protocol CX_G revision 0; the phase-F merge hash 1922066 recorded | requested | – |
 
 ## Tests
 
@@ -243,9 +252,6 @@ Phase D: `results/CX/D/plans/` (main checkout) – the new plans of the library 
 
 ## Next actions
 
-1. Phase G (real-time: learned warm starts, delay-aware prediction for RTI, advanced-step MPC, deadline-aware fallback,
-   solver-failure recovery; timing of solver, end-to-end, sensor and actuation delay – roadmap; L9's rule, 50 ms on one
-   vCPU): branch `cx/G-realtime` from the new `main`; record the phase-F merge hash in its first commit; literature
-   entries (§G) and the protocol `docs/CX_G_protocol.md` for review; no code before its APPROVE. Phase F leaves G the
-   question of a filter with retries meeting 50 ms.
+1. Phase G: the review of packet 1 (literature §G, protocol CX_G revision 0); on APPROVE the code and the development
+   checks of its section 9 (packet 2) before any GT lap.
 2. Follow-up candidates (CONTROL_METHOD_MATRIX.md) stay unscheduled – among them E.2's ATV-QP learning MPC.

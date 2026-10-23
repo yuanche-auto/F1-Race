@@ -675,6 +675,103 @@ reaches the lateral position with relative degree 3 through saturating, non-affi
 degree 1 by construction) is the smooth counterpart of a shield. (e) No racing work was found that compares a shield with
 a minimal-modification filter around learned policies, on unselected seeds, with completion and false-intervention counts.
 
+## Phase G – real-time control: delay compensation, the real-time iteration and its relatives
+
+Checked 2026-10-23. Full texts as PDF (text extracted with pdftotext) or ar5iv / arXiv HTML where stated; journal
+versions not obtained (their venues are noted as found, not checked). L9's literature check (docs/L9_protocol.md,
+2026-10-18: the RTI, Verschueren et al.'s racing RTI, acados, neural approximations) is not repeated here.
+
+### G.1 Diehl, Bock, Schlöder et al. – the real-time iteration (Diehl et al., J. Process Control 12, 2002; Diehl, Bock, Schlöder, SIAM J. Control Optim. 43, 2005) (bibliographic, as cited in G.2)
+
+* One full Gauss–Newton SQP step per sampling time, with the initial value embedded in the QP (the "tangential
+  predictor"); nominal stability of the scheme is shown in these works (per G.2, not read).
+
+### G.2 Gros, Zanon, Quirynen, Bemporad, Diehl – *From linear to nonlinear MPC: bridging the gap via the real-time iteration*, Int. J. Control 93(1), 2020, 62–80 (full text read in part, the SYSCOP PDF: sections 3–4)
+
+* **Two timelines** (their Fig. 3):
+  * A converged SQP can start from a model-based *prediction* of the state at the time the solution will be applied.
+    It still rests on outdated information, because measurements that arrive during the iterations are ignored.
+  * The RTI instead takes one Newton step per sampling time, always with the latest state estimate – "an approximate
+    solution computed using the most up-to-date information".
+* **Preparation and feedback phases:** the linearisation and condensing are done before the measurement arrives; after
+  it, only the QP is solved. Their remark: **the delay introduced by the feedback time can be accommodated "as in
+  linear MPC, by including a corresponding prediction in the state estimate".**
+* The advanced-step controller (G.3) is described there: it solves the NLP to convergence, starting from a prediction
+  of the future initial state, and corrects the solution with a tangential predictor when the actual state is known.
+
+### G.3 Zavala, Biegler – *The advanced-step NMPC controller: optimality, stability and robustness*, Automatica 45(1), 2009, 86–93 (abstract, Optimization Online; mechanism as described in G.2)
+
+* The NLP is solved in the background for the predicted next state. When the measurement arrives, the solution is
+  updated by an NLP sensitivity step.
+* The controller has the nominal stability of NMPC without computational delay, and ISS robustness (abstract).
+* The converged-NLP counterpart of the RTI's split. Not read in full.
+
+### G.4 Findeisen, Allgöwer – *Computational delay in nonlinear model predictive control*, IFAC ADCHEM 2003 (proceedings 2004, 427–432) (full text read in part, the PDF: sections 1–3)
+
+* **Computation time neglected** in NMPC schemes becomes a delay between the state information and the input, which
+  "can lead to a drastic performance decrease or even to instability".
+* **Their approach:**
+  * keep applying the input of the last recalculation during the (maximum) computation time δ_c;
+  * either constrain the first δ_c of the new open-loop input to it, or **use that input to predict x(t_i + δ_c) and
+    solve the problem from the predicted state**;
+  * with a known maximum computation time and a horizon long enough, nominal stability follows (CSTR example).
+* **Assumptions:** the model is exact (nominal), and the computation time has a known bound.
+
+### G.5 Liniger, Domahidi, Morari – *Optimization-based autonomous racing of 1:43 scale RC cars*, arXiv:1711.07300 (the published venue not checked; full text read in part, ar5iv)
+
+* The system delay of one sampling period (both controllers send the new input at the end of the 20 ms period) is
+  compensated by integrating the nonlinear model forward over the delay (second-order Runge–Kutta) from the Kalman
+  filter's state estimate.
+* 50 Hz. **No comparison with and without the compensation is reported.**
+
+### G.6 Kabzan et al. – *AMZ Driverless: The Full Autonomous Racing System*, arXiv:1905.05150 (v1 May 2019; full text read in part, the arXiv PDF: the MPC section and the lessons learned)
+
+* MPCC after Liniger et al. (2015): ForcesPro NLP, 50 ms, N = 40 (2 s look-ahead). The SLAM's observation delay is
+  compensated with the integrated odometry.
+* **The total delay from a cone detection to the command reaching the car is about 300 ms.** At the handling limits
+  this "can lead to severe instabilities" (e.g. a missed braking point). The workaround was to limit the top speed and
+  the wheel torques. Reducing and handling delays consistently is named as the next season's focus.
+
+### G.7 Kalaria, Lin, Dolan – *Delay-aware Robust Control for Safe Autonomous Driving and Racing*, arXiv:2208.13856 (extends their IEEE IV 2022 paper; full text read, ar5iv)
+
+* **Method:**
+  * the computation delay is estimated online with an adaptive Kalman filter (the bound is mean + 2 σ);
+  * the initial state is shifted forward by the estimated delay (plus a fixed action delay) with the buffered nominal
+    commands;
+  * a first-order steering lag is modelled;
+  * a tube MPC (LTV model, tightened constraints, CBFs) is used.
+* **Results:** CARLA racing, single runs. With compensation, lap 35.34 s and no lane violation; without, 35.46 s and
+  one violation (a crash). With a learned controller under a safety QP: 36.51 s / 0 against 38.04 s / 2.
+* **Limits stated:** simulation only; no repeated runs; the delay values are not given in numbers.
+
+### G.8 Dirckx, Bos, Vandewal, Vanroye, Decré, Swevers – *ASAP-MPC: An Asynchronous Update Scheme for Online Motion Planning with Nonlinear MPC*, arXiv:2402.06263 (v2 Mar 2024; abstract)
+
+* An asynchronous update for varying, possibly large solve times: the successive NMPC solutions are merged into one
+  continuous trajectory, which a linear state feedback tracks. Quadcopter (hardware in the loop) and a truck-trailer.
+* It cites Findeisen–Allgöwer (G.4) and the advanced-step controller (G.3) as the two main strategies for
+  computational delay (per the search result). Not read in full.
+
+### G.9 Sambharya, Hall, Amos, Stellato – *End-to-End Learning to Warm-Start for Real-Time Quadratic Optimization*, arXiv:2212.08260 (Dec 2022; the published venue not checked; abstract)
+
+* A network maps the QP parameters to a warm start for a fixed number of Douglas–Rachford iterations, trained through
+  the iterations, with Rademacher-complexity generalisation bounds; fewer iterations in three real-time applications.
+* The roadmap's "learned warm starts": aimed at iterative solvers with many iterations (L9's IPOPT); the RTI does one
+  QP per period and needs no warm-start model.
+
+**For phase G:**
+* (a) The standard remedy for a known delay between measurement and actuation is a **model-based prediction of the
+  state at the time the command takes effect**, using the inputs already decided (G.2, G.4–G.7). It is used for the
+  RTI as for linear MPC (G.2).
+* (b) **Its effect is rarely measured:** G.5 reports none; G.7 reports single simulated runs; G.6 names the delay as
+  the bottleneck and works around it with lower speeds.
+* (c) The guarantees assume an exact model and a known delay bound (G.4). On these cars the controller's model is the
+  identified one and the delay is given, so the prediction carries the model error over the delay window. A
+  mis-specified delay is the obvious robustness question.
+* (d) The advanced-step controller (G.3) and learned warm starts (G.9) target converged or iterative solvers. Under
+  L9's rule the converged IPOPT completes nothing, while the RTI already runs within the budget (2.4 ms feedback). So
+  the open question L9 left is the delay, not the solver: a 20 ms sensor delay took the RTI `lag_identified` from 79 to
+  0 of 105 (docs/L9.md).
+
 ## Phases F–G and the frontier methods
 
 Entries are written at the start of each phase, before its code (roadmap section 3). Classic sources
