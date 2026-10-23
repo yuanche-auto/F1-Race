@@ -629,10 +629,12 @@ All 105 identifications and re-plans succeeded. The exploration laps (`nmpc_rese
 **73 of 105** and L9's uncompensated RTI **5 of 105** (68 : 0, p = 6.8 · 10⁻²¹; significant at its Holm level 0.025).
 This reproduces L9's finding (79 → 0) and removes it.
 
-**H-G2 (primary): not shown.** Without a sensor delay, 72 against 72 (7 : 7, p = 1). The noise floor of S4 is 0, 0, 1
-and 1 flips in 20 repeated laps per arm (`rti` d 0, `rti_dc` d 0, `rti` d 20, `rti_dc` d 20; review m3). The 14
-discordant cases of H-G2 are consistent with that run-to-run noise (about 5 in 105). The lap times on the 65 laps both
-complete differ by +0.002 s (signed-rank p 0.92).
+**H-G2 (primary): not shown.** Without a sensor delay, 72 against 72: the discordant cases are symmetric, 7 : 7
+(p = 1), and no difference is shown. The repeat of S4 flipped 0 of 20 laps in each d = 0 arm and 1 of 20 in each
+d = 20 ms arm (review m3), so the run-to-run noise at d = 0 is not estimated by it (and between two arms that each carry
+noise, the expected number of discordant cases is about twice one arm's flips). Whether the 14 discordant cars are
+run-to-run noise or per-car differences that cancel cannot be told from these data (review h1). The lap times on the
+65 laps both complete differ by +0.002 s (signed-rank p 0.92).
 
 | arm | completed (95 %) | τ 0 / 30 / 60 ms (of 25) | disturbances (of 30) | mean lap | feedback latency ms (mean / largest P99) | position error of the state the solve assumed (median of the lap medians) |
 |---|---|---|---|---|---|---|
@@ -675,7 +677,7 @@ complete differ by +0.002 s (signed-rank p 0.92).
 * **H-G2: what it compares (correcting clarification m1).** Under L9's rule with amendment A1, the plan is already
   aligned to the time the command takes effect, so both arms act after 10 ms (≥ 99.7 % of the solves at d = 0). H-G2 therefore
   compares not the application time but **whether the state is predicted to t_k + L̂ with the plan's command before the
-  solve**. Without a sensor delay this changes nothing measurable: 72 against 72, within the noise floor.
+  solve**. Without a sensor delay: 72 against 72, 7 : 7, no difference shown.
 * **Why it works this well here – and its limit.** The state each compensated solve assumed was within micrometres of
   the true state: on these simulated cars the identified model is nearly exact, because the cars differ from the
   nominal one only in the parameters the identification estimates, including a first-order lag. Under that condition
