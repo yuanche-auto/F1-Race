@@ -1,6 +1,7 @@
 # CX-G protocol – real-time control: delay-compensated RTI under L9's rule (control expansion, phase G)
 
-Status: **revision 0, proposed for review (packet 1, 2026-10-23)**. Written after the literature check
+Status: **binding, revision 0 (2026-10-23; 277e122, APPROVE)** with the clarifications of its review (m1–m3, n1, n2;
+marked *"clarification of revision 0"*), written down before any phase-G code. Written after the literature check
 ([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §G) and before any phase-G code: no module, test, runner
 or lap of phase G exists. Before this draft: a check that L9's WSL environment still imports (Python 3.12.3, casadi
 3.8.1, acados_template; 24 vCPUs) – no lap, no solve. Branch `cx/G-realtime` from `main` 1922066 (the merge of phase
@@ -38,6 +39,19 @@ Both: exact McNemar (two-sided binomial test on the discordant pairs; the same i
 a case, section 3), **Holm over H-G1 and H-G2** at α 0.05, each also against 0.025. No direction is predicted (L9's 0 of
 105 makes H-G1's direction likely but not certain: the compensation can only use the controller's model, whose error
 grows over the window). Each test needs at least 6 discordant cases, all one way, to reach 0.025.
+
+*Clarification of revision 0 (review m1) – what H-G2 tests:* without a sensor delay, `rti` applies its command as soon as
+its solve is done (L9: 2.4 ms on average, rounded up to the 10 ms step), while `rti_dc` applies it at max(ready,
+t_k + L̂) with L̂ = 10 ms – it deliberately holds the command until the time its prediction was made for, in exchange
+for a command aligned with the predicted state. On the simulator's 10 ms grid both usually take effect at t_k + 10 ms; a
+solve that rounds up to 20 ms is applied at 20 ms by both. H-G2 tests this trade (alignment against a possibly later
+application); its direction may well favour `rti`. Section 5 reports both arms' actual application delays.
+
+*Clarification of revision 0 (review m2) – scope of H-G1:* the exploration lap runs in real time **without** the sensor
+delay and is shared by the arms (section 3), as in L9's delay condition, of which L9 wrote: "the reviewed code passes the
+delay to the evaluated lap only … The effect is therefore that of the delay on the evaluated lap, with an undelayed
+identification." **H-G1 therefore measures the compensation on the evaluated lap, on top of an identification made
+without the delay** – the same restriction as L9's.
 
 ## 2. Sets
 
@@ -117,6 +131,10 @@ The prediction (steps 1–3) is computed after the measurement and counted in th
 * **S3 – the RL policy for context:** `B_s1_500k` at d = 20 ms under L9's rule (L9: 88 of 105 with the delay, 98
   without). No compensation exists for it; it is listed as context, not a comparison.
 * **S4 – repeat:** the first 20 laps of the four primary arms, run again (L9's A2.6: outcome flips as the noise floor).
+  *Clarification of revision 0 (review m3):* **every** primary arm is repeated (both arms at both delays, 80 laps), with
+  the shared plans; the report gives the number of flips per arm (a lap whose outcome differs on the second run) and
+  puts H-G1's and H-G2's discordant counts next to this noise floor (as phase C's `nmpc_param` and phase D's numerical
+  path did). L9's repeat flipped about 1 lap in 20 for RTI – on 105 laps about 5, the order of what H-G2 may show.
 
 ## 5. Always reported
 
@@ -133,6 +151,8 @@ Per arm, on GT1 by τ and on GT2:
   * the share of "late" solves (latency above L̂);
 * **the prediction's error:** the predicted state at t_k + L̂ against the true state then (position, heading, speeds,
   steering angle; median and P95). It shows the model error over the window;
+* *clarification of revision 0 (review m1):* **the application delay** of each solve – the time from t_k to the time
+  its command takes effect – as a distribution per arm (both arms at d = 0 and at 20 ms);
 * failed QPs (fallbacks), plan exhaustion;
 * the calibration of the fixed workload per job and its vCPU;
 * the machine load (WSL and Windows, once a minute).
@@ -146,7 +166,10 @@ Exact McNemar for H-G1 and H-G2 with Holm. Secondary, uncorrected, all descripti
 
 ## 7. Second environment
 
-As before (deferred by the user): H-G1 and H-G2 are marked as not cross-checked.
+As before (deferred by the user): H-G1 and H-G2 are marked as not cross-checked. *Clarification of revision 0 (review
+n2):* the WSL environment these runs use (Ubuntu 24.04, Python 3.12.3, casadi 3.8.1, acados v0.6.0) is L9's acados
+environment, needed for the RTI – **it is not the second environment** the user deferred (Python 3.11, L7 A10), and it
+cross-checks nothing.
 
 ## 8. Compute and order
 
@@ -178,4 +201,7 @@ On NOM and GD only (records in `results/CX/G/dev/` with commit and dirty flag):
    prediction error over d + L̂ with the identified model is reported.
 3. **Laps:** the four primary arms on NOM and GD (13 cases): completions, timing, prediction errors.
 4. **Gate:** (i) `rti_dc` at d = 20 ms completes NOM; (ii) its feedback latency including the prediction stays
-   below 10 ms on average. Otherwise an amendment before any GT lap.
+   below 10 ms on average; (iii) (*clarification of revision 0, review n1*) the offline equivalence of check 1 holds –
+   `rti_dc` with d = 0 and L̂ = 0 reproduces `rti` lap by lap: the same outcome, and states equal to 1e-9 (the same
+   arithmetic is expected, so bit-equality is likely; the tolerance only allows for the order of a few floating-point
+   operations). Otherwise an amendment before any GT lap.
