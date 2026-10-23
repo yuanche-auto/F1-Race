@@ -4,6 +4,8 @@
     python scripts/cx_f_dev.py monitor          # 9.1: plan states accepted, pushed states rejected; check time
     python scripts/cx_f_dev.py laps [--workers 20]   # 9.2–9.4: backup, shield (m 0.5; B_s1_500k, tracker), retry on NOM
     python scripts/cx_f_dev.py gate             # 9.5 and 9.6 (review m3) from laps.jsonl
+    python scripts/cx_f_dev.py backup-plans [--workers 20]   # diagnostic after gate (i) failed: the bare tracker
+                                                # at speed factors on the 0.95 plan, and on slower plans, NOM + FD
 """
 from __future__ import annotations
 
@@ -119,15 +121,78 @@ def gate() -> None:
               r["no_option"])
 
 
+SPEED_FACTORS = (1.0, 0.97, 0.95, 0.92, 0.9, 0.87, 0.85)
+BACKUP_ETAS = (0.95, 0.93, 0.91, 0.88, 0.85, 0.82, 0.79, 0.76, 0.73)
+
+
+def _plan(eta: float):
+    from f1race.experiments.cx_d import plan_library
+
+    etas, plans = plan_library()
+    return plans[int(np.argmin(np.abs(etas - eta)))]
+
+
+def backup_job(args):
+    """One lap of the bare tracker: ("factor", k) on the 0.95 plan with the speed factor k held,
+    or ("plan", eta) with zero action on the plan eta (its own feed-forward)."""
+    kind, val, case_name = args
+    from f1race.experiments import cx_f, l7
+    from f1race.rl.env import RacingEnv
+
+    t0 = time.time()
+    case = cx_f.case_by_name(case_name)
+    if kind == "factor":
+        env = l7.make_env()
+        a1 = (val - 1.0) / 0.15
+        pol = lambda obs: np.array([0.0, a1])           # noqa: E731
+    else:
+        env = RacingEnv(_plan(val), randomize_plant=False, history=8, steer_mode="angle", observe="command")
+        pol = None
+    r = l7.run_lap(pol, env, case, None)
+    return {"job": f"{kind}|{val}|{case_name}", "kind": kind, "value": val, "case": case_name, "tau": case["tau"],
+            "completed": r["completed"], "lap_time": r["lap_time"], "stop_reason": r["stop_reason"],
+            "distance": r["distance"], "wall_s": time.time() - t0}
+
+
+def backup_plans(workers: int) -> None:
+    from multiprocessing import get_context
+
+    from f1race.experiments import cx_f
+
+    meta("backup_plans")
+    names = [c["name"] for c in cx_f.cases("NOM") + cx_f.cases("FD")]
+    jobs = [("factor", k, "NOM") for k in SPEED_FACTORS] + [("plan", e, n) for e in BACKUP_ETAS for n in names]
+    with get_context("spawn").Pool(min(workers, len(jobs)), maxtasksperchild=1) as pool:
+        recs = list(pool.imap_unordered(backup_job, jobs))
+    path = DEV / "backup_plans.jsonl"
+    path.write_text("".join(json.dumps(r, default=float) + "
+" for r in recs))
+    for kind, vals in (("factor", SPEED_FACTORS), ("plan", BACKUP_ETAS)):
+        for v in vals:
+            rs = [r for r in recs if r["kind"] == kind and r["value"] == v]
+            nom = [r for r in rs if r["case"] == "NOM"]
+            fd = [r for r in rs if r["case"] != "NOM"]
+            laps = [r["lap_time"] for r in rs if r["completed"]]
+            print(f"{kind} {v}: NOM {'yes' if nom and nom[0]['completed'] else 'no'} "
+                  f"({nom[0]['stop_reason']} {nom[0]['distance']:.0f} m)" if nom else "",
+                  f"FD {sum(r['completed'] for r in fd)} / {len(fd)}",
+                  "by tau " + " ".join(f"{tau}:{sum(r['completed'] for r in fd if r['tau'] == tau and 'dist' not in r['case'])}"
+                                       for tau in (0.0, 0.03, 0.06))
+                  + f" dist:{sum(r['completed'] for r in fd if 'dist' in r['case'])}" if fd else "",
+                  f"mean lap {np.mean(laps):.2f}" if laps else "")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=["monitor", "laps", "gate"])
+    ap.add_argument("what", choices=["monitor", "laps", "gate", "backup-plans"])
     ap.add_argument("--workers", type=int, default=20)
     a = ap.parse_args()
     if a.what == "monitor":
         monitor()
     elif a.what == "laps":
         laps(a.workers)
+    elif a.what == "backup-plans":
+        backup_plans(a.workers)
     else:
         gate()
 
