@@ -360,8 +360,9 @@ def timing_summary(calls: list[dict]) -> dict:
            "shift_max": int(max(c.get("shift", 1) for c in calls))}
     if "late" in calls[0]:
         out["late_rate"] = float(np.mean([c["late"] for c in calls]))   # A2: latency above L_hat
-        out["held_to_plan"] = int(sum(c["held_to_plan"] for c in calls))  # a2-M1: free before t_k + L_hat
-        out["would_restart"] = int(sum(c["would_restart"] for c in calls))  # a2-M1: a solve would have started
+        if "held_to_plan" in calls[0]:          # A2 only (CX-G's comp records "late" without them)
+            out["held_to_plan"] = int(sum(c["held_to_plan"] for c in calls))  # a2-M1: free before t_k + L_hat
+            out["would_restart"] = int(sum(c["would_restart"] for c in calls))  # a2-M1: a solve would have started
     if "miss" in calls[0]:
         out["miss_rate"] = float(np.mean([c["miss"] for c in calls]))
     return out
