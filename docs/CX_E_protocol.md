@@ -186,3 +186,72 @@ On NOM and DEV only (records in `results/CX/E/dev/` with commit and dirty flag):
    solve times.
 5. **Gate:** on NOM `lmpc` completes all 10 learning laps and its tenth lap is faster than its first; on DEV it completes
    the tenth lap on at least 3 of the cars whose initialisation completed; otherwise an amendment before any CEV lap.
+
+
+### 9. Results of the development checks (2026-10-22; packet 2) – **the gate failed**
+
+NOM and the DEV cars only; records in `results/CX/E/dev/` (git-ignored): `laps.jsonl` (24 sequences at d64eb47, dirty false –
+`laps_meta.json`), `diag.jsonl` (12 sequences at 7507114, `diag_meta.json`), `nlp.json` (5068328), `regression.json`
+(7507114), `summary.json`; no error record.
+
+1. **NLP** (`nlp.json`): from states of a stored `nmpc` lap of the nominal car (76.40 s), with that lap's own states around
+   its state 30 steps later as the safe set (K = 10, the lap in both P slots) and Γ = 0: every solve converges with the
+   terminal slack below 10⁻⁸ and λ on the simplex (sum 1, min ≥ 3 · 10⁻⁵); near the line (s = 4 257 m, s_N = 4 370 m)
+   all of λ's weight lies on stored points past the line (clarification m3).
+2. **Regression** (`regression.json`, DEV car 1; the two initialisation laps stored): the one-step residual of
+   (v_x, v_y, r) on a stored lap 0.019 / 0.030 / 0.0071 → 0.0004 / 0.0009 / 0.0002 (in sample); on a faster lap (the
+   0.95 plan, out of sample) 0.027 / 0.034 / 0.012 → 0.018 / 0.022 / 0.0096, with 15 % of the samples outside the
+   bandwidth (Γ = 0). In the learning laps 38–62 % of the stages fall back to the nominal model.
+3. **Initialisation:** both laps complete on NOM and on all five DEV cars (86.9–87.0 s and 83.1–83.5 s).
+4. **Learning laps** (`laps.jsonl`; 10 learning laps were planned for each):
+
+   | variant | NOM | DEV cars 1–5 |
+   |---|---|---|
+   | `lmpc` K = 20 (the registered development setting) | lap 1 off at 442 m | all five off on lap 1 (465–470 m, turn 1) |
+   | `lmpc` K = 10 | lap 1 77.0 s, lap 2 off (343 m) | all five off on lap 1 (471 m – 3 838 m) |
+   | `lmpc` K = 5 | lap 1 77.0 s, lap 2 off (406 m) | all five off on lap 1 (470 m – 2 974 m) |
+   | `lmpc_nominal` K = 10 | lap 1 76.6 s, lap 2 off (471 m) | 2 complete lap 1 (77.6, 77.2 s) and leave on lap 2; 3 leave on lap 1 |
+
+   Solve time 132–681 ms mean per lap (`nmpc`'s initialisation laps 137–186 ms), under 20 parallel jobs.
+5. **Gate: failed** for every setting – no sequence completes more than one learning lap on NOM or the DEV cars, none
+   reaches the tenth.
+
+**Mechanism (development diagnostics, `diag.jsonl`; options added for them only, the registered settings unchanged):**
+
+* *On the nominal car the model is exact* – one solve's prediction and the measured state 50 ms later agree to 10⁻³ while
+  the limits hold – yet the learning laps leave the track. The first learning lap jumps from the initialisation laps' 83 s to 76.4–77.0 s: every
+  solve places the terminal state at the far end of the window (the lowest time-to-go), so the target moves ahead of the
+  stored lap's timeline at each solve. Near the limit – braking into turn 1 – the terminal condition becomes unreachable
+  (the share of solves with terminal slack above 10⁻³ grows over the laps, e.g. 0.03 → 0.17 → 0.33) and the car leaves.
+* A **convex combination of stored states is a feasible state for a linear (or linearised, E.2's ATV) model, not for the
+  nonlinear model here**: over a window of tens of metres (K = 20: 442 m on NOM in lap 1) or across two laps of different
+  speed and line, the combined terminal state lies off every stored trajectory. Fewer points help: K ≤ 10 completes lap 1
+  on NOM; the last lap only (P = 1) and the steering angle in the terminal condition (against clarification m3's
+  reasoning) add at most one or two laps: the best sequence, `lmpc_nominal` K 5, P 2, δ in the terminal condition,
+  completes three learning laps on NOM (76.5, 76.4, 76.4 s) and leaves on the fourth (483 m); with P = 1 NOM completes two
+  (76.4, 75.9 s) and DEV car 1 two (77.1, 76.6 s), then turn 1.
+* *On the DEV cars* the first learning lap plans with the nominal model at η 0.95 – `nmpc`'s aggressiveness – and leaves
+  where `nmpc` leaves (DEV car 4: 3 838–3 841 m with every `lmpc_nominal` variant – the corner `nmpc` loses on it; 468–473 m and 2 597 m
+  with the regression); the regression has data only
+  at the initialisation laps' speeds and falls back on 38–62 % of the stages, and with it the cars leave on lap 1 as well.
+
+## Amendment E1 (proposed 2026-10-22, packet 2; for the review – no CEV lap before it is decided)
+
+*Cause:* the gate of section 9 failed (no sequence beyond the second learning lap; the registered development setting
+K = 20 fails the first on every car). The method as adapted (E.2's local convex hull with the nominal nonlinear model in
+the NLP) does not learn safely here; the development diagnostics point at the relaxation's loss of feasibility near the
+limit and at the first lap's model-based aggressiveness on mismatched cars.
+
+Options (the reviewer decides; nothing is run before):
+
+1. **Close phase E without the benchmark** (as phase B's option B3.2): the result is the development finding above,
+   reported in CONTROL_EXPANSION_BENCHMARK.md as a negative development result – the racing LMPC of E.2 / E.4, adapted to
+   this car's nonlinear model and a 1.5 s horizon at up to 85 m/s, does not complete ten learning laps on the nominal car
+   or the development cars; no test claim. *Proposed.*
+2. **Run the benchmark with the gate waived** (as phase B's B3.1), with the grid K ∈ {5, 10, 20} (E.2's 20 over two laps
+   is K = 10 here) and the tie broken to K = 10: H-E1 / H-E2 as registered. Expected (from the development cars): `lmpc`
+   completes few or no tenth laps, H-E1 is untestable, H-E2 measures how fast it fails. Cost ~1 300 laps (the LMPC
+   sequences end early).
+3. **Re-design and re-register** (a new protocol revision before any lap): E.2's ATV-QP formulation (linearised along the
+   candidate, so that the convex hull is a feasible set of the model it uses), or a bound on the progress per lap; both
+   are larger changes than an amendment and would be reviewed as revision 1.

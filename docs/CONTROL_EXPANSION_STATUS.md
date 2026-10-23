@@ -1,11 +1,16 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-22 (phase D merged as ae87f41; phase E: protocol revision 0 APPROVE with clarifications; code next). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-23 (phase E: code and development checks done – the gate failed; amendment E1 proposed). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
 * **Current phase:** E – learning MPC (lap to lap), branch `cx/E-lmpc` from `main` ae87f41: literature §E.1–E.9 and the
   protocol [CX_E_protocol.md](CX_E_protocol.md) revision 0 **APPROVE** (d1c2043) with clarifications m1–m4, n1, n2
-  (H-E2's unequal exposure, H-E1 conditional, the line, initialisation failures apart). Code next; no CEV lap before
-  packet 2.
+  (H-E2's unequal exposure, H-E1 conditional, the line, initialisation failures apart). Code d64eb47 … 5068328
+  (`control/lmpc.py`, `experiments/cx_e.py`, runner / report / dev scripts, `tests/test_lmpc.py`). **Development gate
+  failed:** no sequence completes more than one learning lap with the registered settings (K = 20 off on the first lap
+  on every car; the best diagnostic variant three laps on NOM); mechanism – the local convex hull is not a feasible set
+  of the nonlinear model near the limit, and the first lap plans at the nominal model's η 0.95 on mismatched cars.
+  **Amendment E1** proposed with three options (close phase E without the benchmark – proposed; the benchmark with the
+  gate waived; a re-design as revision 1); packet 2 requested; no CEV lap.
   Design: `lmpc` = the NMPC's model and constraints with a local safe set and cost-to-go from the car's own laps (E.2) and
   a local regression of the model error (E.4); two initialisation laps (plans 0.73, 0.79), ten learning laps per car from
   the same initial state; H-E1 lap time and H-E2 completions of the tenth learning lap against `identified` on 50 new L2
@@ -101,7 +106,7 @@ Last updated: 2026-10-22 (phase D merged as ae87f41; phase E: protocol revision 
 | B | `control/mppi.py` (`MPPI`), `experiments/cx_b.py`, `scripts/run_cx_b.py`, `scripts/report_cx_b.py`, `scripts/cx_b_dev.py` | yes (57146e4 … baa69cb) | yes – `tests/test_mppi.py` 12, `tests/test_cx_b.py` 6 | development checks 9.1–9.8 on the nominal car; CXV tuning; CBT benchmark; secondary conditions | protocol rev 0, B1, B2, B3 and packets 2–6 **APPROVE**; final review b276f56 **APPROVE** | **yes – phase B completed** |
 | C | `control/tube.py` (`Tube`, `TubeMPCController`), `experiments/cx_c.py`, `scripts/{run,report}_cx_c.py`, `scripts/cx_c_dev.py` | yes (0689c41 … eab7c63) | yes – `tests/test_tube.py` 8, `tests/test_cx_c.py` 5 | development checks §9 on NOM and CXDEV; CXV tuning; CCT; secondary conditions | protocol rev 0, C1 and packets 2–5 **APPROVE**; final review 3dec001 **APPROVE** | **yes – phase C completed** |
 | D | `estimation/{rls,bank}.py`, `control/adaptive_mpc.py`, `FrenetMPC(param_model=True)`, `experiments/cx_d.py`, `scripts/{run,report}_cx_d.py`, `scripts/cx_d_{dev,plans}.py` | yes (6f54f30 … ea4ac82) | yes – `tests/test_adaptive.py` 8, `tests/test_cx_d.py` 5 | development checks §9 on NOM and DEV (gate passed) | protocol rev 0 and literature §D **APPROVE** (packet 1, m1–m3 / n1–n3); packets 2–5 **APPROVE**; final review 2dd4405 **APPROVE** | **yes – phase D completed** |
-| E | `control/lmpc.py`, `experiments/cx_e.py`, scripts (planned) | no | – | – | protocol rev 0 and literature §E **APPROVE** (packet 1, m1–m4 / n1, n2) | – |
+| E | `control/lmpc.py`, `experiments/cx_e.py`, `scripts/{run,report}_cx_e.py`, `scripts/cx_e_dev.py` | yes (d64eb47 … 5068328) | yes – `tests/test_lmpc.py` 5 | development checks §9: NLP, regression, 36 sequences – **gate failed** | protocol rev 0 **APPROVE** (packet 1); packet 2 with amendment E1 requested | – |
 | F–G | – | not started | – | – | – | – |
 
 ## Review record
@@ -165,6 +170,9 @@ Phase C: `results/CX/C/dev/` (main checkout) – the development checks of CX-C 
 `selected.json`, `test.jsonl`, `secondary.jsonl`, `report/`, `RUN_COMMIT*`, `SHA256_inputs*.txt`, `timeline.tsv`).
 All git-ignored.
 
+Phase E: `results/CX/E/dev/` (main checkout) – the development checks of CX-E §9 (`laps.jsonl` with `laps_meta.json`,
+`diag.jsonl` with `diag_meta.json`, `nlp.json`, `regression.json`, `summary.json`). Git-ignored.
+
 Phase D: `results/CX/D/plans/` (main checkout) – the new plans of the library (`plans_cxd.pkl`, `plans_cxd_log.json`);
 `results/CX/D/dev/` – the development checks of CX-D §9 (`unchanged.json`, `step.json`, `nlp.json`, `plans.json`,
 `replay.json` with `replay_laps/`, `laps.jsonl`, `gate.json`, `drifts.json`; after the CDT / CDD report
@@ -181,5 +189,6 @@ Phase D: `results/CX/D/plans/` (main checkout) – the new plans of the library 
 
 ## Next actions
 
-1. Phase E: the code and the development checks of protocol section 9 (packet 2); no CEV lap before its review.
+1. Phase E: the reviewer's decision on amendment E1 (packet 2: code, development checks, the failed gate); no CEV lap
+   before it.
 2. Follow-up candidates (CONTROL_METHOD_MATRIX.md) stay unscheduled.
