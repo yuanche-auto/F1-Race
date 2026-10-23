@@ -536,6 +536,145 @@ checked).
 path following), (b) data beyond the finish line (E.2: consecutive laps), (c) a model whose error the local regression or
 the nominal model keeps small (E.2, E.4) – the guarantees of E.1 do not survive the relaxations (E.2, E.4 state this).
 
+## Phase F – safety-critical control (safety filters around a proposing controller)
+
+Checked 2026-10-22. Full texts as ar5iv / arXiv HTML where stated; journal versions not obtained (their venues are noted as
+found, not checked). L7's literature check (docs/L7.md, 2026-10-17 and the addendum) already covers the RL-specific
+filters (Kalaria et al.'s DOB-CBF, Oh et al., Wu et al., Zongo and Wei, the conformal filters) – not repeated here; F.5
+upgrades its abstract-only entry of Tearle et al.
+
+### F.1 Bastani – *Safe Reinforcement Learning with Nonlinear Dynamics via Model Predictive Shielding*, arXiv:1905.10691 (v1 May 2019, first titled *Safe reinforcement learning via online shielding*; the published venue not checked; full text read, ar5iv)
+
+* **Model predictive shielding (MPS):** at every step, simulate one step of the learned policy, x′ = f(x, π̂(x)), and test
+  whether x′ is **recoverable** – whether the backup policy, simulated from x′ for at most N steps, reaches an invariant set
+  X_inv while every state on the way is safe. If it is, apply π̂(x); otherwise apply the backup's action. Cost: O(N)
+  simulation per step, nothing offline except the backup and its invariant set.
+* **Guarantee (Theorem III.1):** from X₀ ⊆ X_inv every closed-loop trajectory is safe, by induction over recoverable
+  states – **for a known, deterministic model** (stated as the main assumption; unknown dynamics left to future work).
+* **Backup:** LQR around safe equilibria with SOS-certified invariant regions (polynomial dynamics; Taylor approximations
+  otherwise void the formal guarantee), plus a recovery policy trained to reach them.
+* **Experiments:** cart-pole only (100 rollouts). The shielded policies keep 100 % safety where the unshielded one drops to
+  near zero on longer episodes; the shield **costs reward** (reported in figures only); the frequency of backup use is
+  **not reported**.
+
+### F.2 Banerjee, Rahmani, Biswas, Dillig – *Dynamic Model Predictive Shielding for Provably Safe Reinforcement Learning*, arXiv:2405.13863 (v2 Dec 2024; the venue is not stated on the page; full text read in part, HTML v2 up to the experiments)
+
+* MPS's backup is conservative and task-oblivious; DMPS replaces it, when the proposal is not recoverable, by a **local
+  planner** (an anytime MCTS, horizon 5) that searches action sequences keeping every state recoverable and scores them
+  with the policy's Q-function; the fixed backup remains the fallback. Same assumption: deterministic, perfectly known
+  dynamics.
+* Thirteen navigation benchmarks: on the dynamic ones ~25 shield invocations per episode against ~124 for MPS and higher
+  returns; planning ~0.4 s per triggered step (unoptimised Python). **Relevance:** the intervention count of a shield
+  depends on how good its fallback is – the measure phase F reports.
+
+### F.3 Agrawal, Chen, Panagou – *gatekeeper: Online Safety Verification and Control for Nonlinear Systems in Dynamic Environments*, arXiv:2211.14361 (v4 Aug 2024; full text read in part, HTML: up to the benchmarks; the conclusion not read)
+
+* A nominal planner proposes a trajectory; candidates follow it up to a switch time T_S and then a **backup controller**
+  that reaches a **backup set** C and stays there; a candidate is valid if it stays in the (shrunk) safe set until it
+  reaches C. The valid candidate with the largest T_S is committed; if none is valid the previous committed trajectory is
+  kept. **Safety for all time** follows from the backup set's invariance; with bounded disturbances and an ISS tracking
+  controller the safe set is shrunk by the tracking-error bound R (and C kept R + r from the unsafe set).
+* Median ~3.4 ms per iteration (grid of 10 switch times) against 27–78 ms for MPC-based alternatives; quadrotor
+  simulations: goal reached in 13 of 15 worlds against 10 of 15 for an MPC safety filter. **Switching, not blending**, is
+  why it follows the nominal plan more closely than a backup-blending filter (10 vs 15 m/s target speed in their firewatch
+  case). Stated limitation: **a backup controller and set must exist**; robustness margins make it conservative.
+
+### F.4 Wabersich, Zeilinger – *A predictive safety filter for learning-based control of constrained nonlinear dynamical systems*, arXiv:1812.05506 (Automatica 129, 2021, per the search result; full text read in part, ar5iv: the formulation, the theorem, the examples; the appendix not read)
+
+* The **predictive safety filter (PSF):** min ‖u_L − v₀‖ over a backup plan of N steps of a nominal model, with
+  constraints tightened along the horizon (ε_i = ε(1 − √ρ^i)/(1 − √ρ), from a contraction rate ρ), a model-confidence
+  constraint and a terminal safe set with a known local controller. Infeasible → the tail of the previous plan, horizon
+  shrinking to the terminal controller.
+* Guarantee: **safety in probability** (the confidence p_S of a Bayesian model), given initial feasibility and small
+  enough tightening constants. IPOPT / CasADi; pendulum swing-up, quadrotor landing. L7's main filter is this structure
+  (minimal deviation over an NMPC plan, back-offs from estimate (b)), without the terminal set and with the shifted-plan
+  fallback.
+
+### F.5 Tearle, Wabersich, Carron, Zeilinger – *A predictive safety filter for learning-based racing control*, arXiv:2102.11907 (2021; the published venue not checked; full text read, ar5iv – upgrades L7's abstract-only entry)
+
+* Dynamic bicycle model (Pacejka-type tyres, forward Euler), N = 60 at 80 Hz, acados RTI; objective: the deviation of the
+  first input from the desired one plus an input-rate penalty. **Terminal set: ellipsoids around steady-state cornering
+  equilibria** with a linear feedback designed by an SDP over 21 curvatures, invariance checked numerically (not a
+  stopping set). Track and terminal constraints **soft**; no tightening for model error; no fallback for a failed solve
+  described.
+* 1:28 cars, manual driving and a DAgger policy (expert: MPCC). **No completion counts, intervention rates, violation
+  counts or solve times are reported** – the evidence is trajectory heat maps. Stated limitations: invariance only on
+  constant-curvature segments; a conservative linearised design; no robustness analysis.
+
+### F.6 Chen, Jankovic, Santillo, Ames – *Backup Control Barrier Functions: Formulation and Comparative Study*, arXiv:2104.11332 (v1 Apr 2021, the only version; a Caltech record dated December 2021, the venue not checked; full text read, ar5iv)
+
+* From a small invariant set S₀ and a backup policy π keeping it invariant, the implicit set S = {x: Φ_π(x, τ) ∈ C for
+  τ ∈ [0, T], Φ_π(x, T) ∈ S₀} is **control invariant** (Theorem 1); its barrier h(x) = min(min_τ h_C(Φ(x, τ)), h_S(Φ(x, T)))
+  is used in a CBF-QP, min ‖u − u⁰‖, with one constraint per sampled τ, the gradients from the **sensitivity of the flow**
+  (variational equation Q̇ = (∂f_π/∂x) Q). The QP is feasible wherever h ≥ 0 (the backup input is a solution); the
+  composed barrier has **relative degree 1** under mild conditions (Theorem 3) – the reason it sidesteps high-order CBFs.
+* Lane keeping (Dubins car), aircraft avoidance, a 16-state quadrotor: the implicit set is close to the HJ result with a good
+  backup; online cost 1.4 ms integration + 3.6 ms QP (Dubins), 4.9 + 28.3 ms (quadrotor). Limitations stated: the set
+  depends on the backup; many QP constraints; **"not good at handling malicious disturbance"**; a known model.
+
+### F.7 Gurriet, Mote, Ames, Feron – *An Online Approach to Active Set Invariance*, IEEE CDC 2018 (abstract, via the search result and the Caltech record)
+
+* The origin of F.6: safety by staying within reach of a backup set, using online sensitivity analysis around the backup
+  trajectory instead of an offline viable set; a linear inverted pendulum. Not read in full.
+
+### F.8 Xiao, Belta – *Control Barrier Functions for Systems with High Relative Degree*, arXiv:1903.04706 (CDC 2019; the journal version *High-Order Control Barrier Functions*, IEEE TAC 67(7), 2022, not read; full text read, ar5iv)
+
+* For a constraint b of relative degree m: ψ₀ = b, ψ_i = ψ̇_{i−1} + α_i(ψ_{i−1}); if ψ_m ≥ 0 is enforced (the HOCBF
+  condition, input through L_g L_f^{m−1} b), the intersection of the sets {ψ_{i−1} ≥ 0} is forward invariant. Exponential
+  CBFs are the linear-α special case. Assumptions: **control-affine dynamics**, a uniform relative degree; QP with a CLF.
+* Adaptive cruise control (relative degree 2). Stated limitations: **conflicts with input bounds** can make the QP
+  infeasible (penalty factors on α mitigate, not remove); the initial state must satisfy all ψ_i ≥ 0. L7's CBF-QP is of
+  this kind: a second-order exponential barrier on the track edges for a point mass (relative degree 2 in the
+  accelerations), with a robust margin b_10 and friction factor η_10 – it completed 0 of 105 laps for every proposer.
+
+### F.9 Jankovic – *Robust control barrier functions for constrained stabilization of nonlinear systems*, Automatica 96, 2018, 359–367 (bibliographic and abstract, via the search result)
+
+* Robust CBFs with bounded disturbances, combined with ISS-CLFs; removes the uniform relative-degree-1 assumption. Not read
+  in full; listed as the robust-CBF reference of the roadmap.
+
+### F.10 Hsu, Hu, Fisac – *The Safety Filter: A Unified View of Safety-Critical Control in Autonomous Systems*, arXiv:2309.05837 (Annual Review of Control, Robotics, and Autonomous Systems, per the arXiv comment; full text read in part, ar5iv: up to the open problems)
+
+* Every filter is a **safety monitor** (a value function or a rollout), a **fallback policy** and an **intervention
+  scheme** (switch to the fallback, or optimise the command close to the task's). The fallback never has to be used – the
+  filter only keeps the option open (their Theorem 1). Least-restrictive = override only what would leave the maximal safe
+  set.
+* Classes: HJ reachability (maximal set; exponential in the state dimension, ~6 states in practice), CBFs (smooth, smaller
+  sets, hard to find), **rollout-based** filters (MPS: binary switch, conservative, quality set by the fallback; tube /
+  reachable-set MPC), learned critics (scalable, weak guarantees).
+* **Switching filters chatter** near the boundary; **the fallback's quality sets the conservatism** ("freezing robot");
+  probabilistic or robust guarantees rest on modelling assumptions; filter-aware task policies reduce unneeded
+  interventions.
+
+### F.11 Gacsi, Kiss, Molnar – *Braking within Barriers: Constructive Safety-Critical Control for Input-Constrained Vehicles via the Backup Set Method*, arXiv:2510.15797 (Oct 2025, submitted to IEEE T-ASE; abstract)
+
+* Backup CBFs (F.6) for a braking vehicle on asymmetric surfaces, with friction-limited inputs; backup set and controller
+  pairs built from feedback linearisation and Lyapunov equations; a four-wheel model in simulation (abstract). The search
+  summary reports that the method needs an operating point where the inputs are not saturated – **not verified** (the
+  full text was not read). The closest vehicle-dynamics backup-set work found.
+
+### F.12 Other recent items (abstracts or search results only)
+
+* Zhou, Zarrouki, Piccinini, Hu, Xie, Betz – *Safe Reinforcement Learning with a Predictive Safety Filter for Motion
+  Planning and Control: A Drifting Vehicle Example*, arXiv:2506.22894 (Jun 2025; abstract): RL chooses drift states, a
+  PSF modifies its actions (MATLAB–CarSim); no completion statistics in the abstract.
+* Cao, Joa, Borrelli – *A Simple Approach to Constraint-Aware Imitation Learning with Application to Autonomous Racing*,
+  IROS 2025, 9830–9837 (arXiv:2503.07737; abstract): constraints into the imitation objective instead of a filter.
+* Chen, Vörös, Molnar, Orosz – a lag-compensating CBF for steer-by-wire lag in lane keeping, compared with high-order and
+  backstepping CBFs (IEEE IV 2026 per the authors' page; **search result only, not read**) – the actuator-lag issue of L6
+  in CBF form.
+
+**For phase F:** (a) safety filters split into **minimal-modification optimisers** (F.4, F.5, F.8: PSF / NMPC filter,
+CBF-QP – the command is changed whenever the model cannot certify it) and **monitor-and-switch shields** (F.1–F.3: the
+proposal passes as long as a backup can still recover from where it leads). L7 tested only the first kind and measured
+88–99 % false interventions and solver-fallback runs before 57 % of the filtered failures. (b) Every guarantee assumes an
+exact (F.1, F.2, F.6) or bounded-error / probabilistic model (F.3, F.4); on these cars (L2 mismatch, lag, L3
+disturbances) none holds, so phase F measures, it does not prove. (c) The fallback's quality sets a shield's conservatism
+(F.1, F.2, F.6, F.10) and switching can chatter (F.10). (d) CBFs need control-affine dynamics and a known relative degree
+(F.8); L7's point-mass CBF-QP was the F.8 / F.9 kind and failed at turn 1; for the single-track model the steering rate
+reaches the lateral position with relative degree 3 through saturating, non-affine tyres – F.6's backup CBF (relative
+degree 1 by construction) is the smooth counterpart of a shield. (e) No racing work was found that compares a shield with
+a minimal-modification filter around learned policies, on unselected seeds, with completion and false-intervention counts.
+
 ## Phases F–G and the frontier methods
 
 Entries are written at the start of each phase, before its code (roadmap section 3). Classic sources

@@ -80,13 +80,16 @@ class NMPCFilter:
     """``FrenetMPC(mode="filter")`` around the proposal (A3.2, A3.3). ``tau_model``: lag in
     the model (estimate (a)); ``eta`` / ``backoff``: static tightening ((b)); ``band``: a
     function (filter, xf) -> (eta_k, b_k) evaluated at every decision ((c)). ``horizon``: the
-    number of 50 ms stages (30; 10 for candidate (2) of the training filter, A6)."""
+    number of 50 ms stages (30; 10 for candidate (2) of the training filter, A6). ``retry``
+    (control expansion phase F, docs/CX_F_protocol.md): failed solves retried as
+    ``FrenetMPC(retry=True)``; default off – L7's filter (L6's failure handling)."""
 
     def __init__(self, track: Track, model: DynVehicle, ref_plan, tau_model: float | None = None,
-                 eta=0.95, backoff=None, band=None, record: bool = True, horizon: int = N):
+                 eta=0.95, backoff=None, band=None, record: bool = True, horizon: int = N,
+                 retry: bool = False):
         self.mpc = FrenetMPC(track, model, ref_from_plan(ref_plan), mode="filter", N=horizon, dt=MPC_DT,
                              eta=eta, backoff=backoff, steer_lag=tau_model,
-                             param_tightening=band is not None)
+                             param_tightening=band is not None, retry=retry)
         self.conv = MPCController(self.mpc, DT, tc_eta=None)     # its frenet() only
         self.tau, self.band, self.record = tau_model, band, record
         self.u_prev = np.zeros(3)
@@ -234,12 +237,16 @@ def rollout_unfiltered(policy, env, case: dict, snap: dict, decisions: int = 60)
     return {"crashed": bool(reason), "reason": reason, "decisions": n}
 
 
-def run_lap(policy, env, case: dict, filt=None, t_max: float = 120.0, snap_at=()) -> dict:
+def run_lap(policy, env, case: dict, filt=None, t_max: float = 120.0, snap_at=(),
+            log_commands: bool = False) -> dict:
     """One flying lap of tracker + ``policy`` (obs -> action; None: the bare tracker) on
     ``case``, with ``filt`` in the loop (A3.2). Returns the outcome, the log of the true car
     (10 ms: t, state[:7], applied input, true usage) and the filter's record. ``snap_at``:
     lap distances [m]; at the first intervention at or after each, the episode state before
-    that decision is kept (``snapshots``) for the false-intervention rollouts (section 6)."""
+    that decision is kept (``snapshots``) for the false-intervention rollouts (section 6).
+    ``log_commands`` (control expansion phase F; default off): the first 10 ms command of
+    every decision as proposed (after the plant's limits) and as applied, in
+    ``decisions["u_prop"]`` / ``decisions["u_appl"]`` – also without a filter."""
     episode_s = env.episode_s
     env.episode_s = t_max
     opts = {"plant": case["plant"], "start_index": 0, "disturbances": case["dist_seed"] is not None,
@@ -252,10 +259,16 @@ def run_lap(policy, env, case: dict, filt=None, t_max: float = 120.0, snap_at=()
     st = {"first": False, "held": None}
     T, X, U, US = [], [], [], []
     dec = {"t": [], "changed": [], "fail": [], "slack": [], "limit_slack": [], "time": [], "s": []}
+    if log_commands:
+        dec.update({"u_prop": [], "u_appl": []})
 
     def apply_limits(x, u):
         out = orig(x, u)
         y = env._meas                                   # what the tracker saw at this step
+        if log_commands and filt is None and st["first"]:
+            st["first"] = False
+            dec["u_prop"].append(np.array(out, float))
+            dec["u_appl"].append(np.array(out, float))
         if filt is not None:
             filt.observe(env.t, y)
             if st["first"]:
@@ -268,6 +281,9 @@ def run_lap(policy, env, case: dict, filt=None, t_max: float = 120.0, snap_at=()
                 dec["s"].append(env.ctl.last[0] if env.ctl.last is not None else float("nan"))
                 for k in ("fail", "slack", "limit_slack", "time"):
                     dec[k].append(info[k])
+                if log_commands:
+                    dec["u_prop"].append(np.array(out, float))
+                    dec["u_appl"].append(np.array(orig(x, st["held"]) if ch else out, float))
             if st["held"] is not None:
                 out = orig(x, st["held"])
             filt.applied(out)

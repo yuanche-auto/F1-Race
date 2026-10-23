@@ -504,3 +504,94 @@ nonlinear model, a convex hull of stored states as the terminal set, the termina
 LMPC of E.2 / E.4 as such. The suspected cause, that a convex combination of stored states is a feasible state for E.2's
 linearised (ATV) model but need not be for a nonlinear one, is a hypothesis that was not tested. Follow-ups (review e3):
 E.2's ATV-QP implementation; a bound on the progress per lap; consecutive laps instead of a common initial state.
+
+## Phase F – safety filters around the L5 policies: L7's filter with retried solves (the shield part closed)
+
+Protocol [CX_F_protocol.md](CX_F_protocol.md) (revision 0 with clarifications m1–m3, n1, n2; **amendment F1, option 1**,
+with g1–g4). Run from the pinned worktree `F1-Race-worktrees/F1-Race-wt-CXF-run` at **e0f0b0a**, 2026-10-22 21:53 –
+2026-10-23 02:39 (20 processes, `.venv-rl`, one process per job); 2 332 laps, **0 error records**; inputs identical to
+the main checkout's (`SHA256_inputs_*.txt`); records (git-ignored) `results/CX/F/test.jsonl` (SHA-256 248c584b…), per-lap
+decision records `test_dec/`, report `report/CX_F.{md,json}` (`scripts/report_cx_f.py test` at e0f0b0a), the audit of
+L7's records `report/audit_l7.*` (main checkout, b94e775). **Not cross-checked** (the second environment is deferred).
+
+**The shield (H-F1) – closed without the benchmark.** The development gate of protocol §9 failed. The shield's backup
+does not drive these cars:
+* the backup of revision 0 (the L1 tracker at 0.85 of the plan speed) leaves the track even on the nominal car;
+* the tracker on a slower plan completes at most 9 of 12 development laps, and almost none with a 60 ms lag;
+* with it as the backup, the selected policy completes 3–7 of 12 development laps instead of 12.
+
+H-F1 is **not tested**, and was withdrawn before any T1 / T2 lap existed. The negative result concerns an MPS shield
+with the L1 tracker as its backup and a nominal-model check, on these cars – not shields or MPS in general (review g1).
+Also stated as found: the monitor's margin grid (0.25 / 0.5 / 1.0 m) was set without knowing that the plans themselves
+come within 0.27–0.29 m of the edge.
+
+**Checks of protocol §3 (pre-registered):**
+* the 1 155 `none` laps reproduce L7's `rl_none.jsonl` lap by lap – the same outcome everywhere, failure positions and
+  lap times identical;
+* the 22 laps of the reproduction check of `main` reproduce L7's outcome, stop reason, distance and lap time (to four
+  decimals), so **L7's `main` records are used** and no full re-run of `main` was needed.
+
+**H-F2 (primary, the only one after amendment F1; exact signed-rank, two-sided, α 0.05): holds – `retry` completes
+more laps than `main`.**
+* Over the nine final checkpoints, the completed T1 + T2 laps with `retry` minus with `main` are
+  8, 14, 19, 18, 23, 12, 14, 4, −1 (median +14; W⁺ = 44 of 45; exact p = 0.0078).
+* It is significant at α 0.05 and also at 0.025.
+
+| proposer | none | main (L7) | retry | retry : main (McNemar, only retry : only main, p) | lap-time cost of `retry` against `none` (laps both complete) |
+|---|---|---|---|---|---|
+| A_s1 | 82 | 71 | 79 | 10 : 2 (0.039) | +1.38 s (63) |
+| A_s2 | 98 | 27 | 41 | 16 : 2 (0.0013) | +3.86 s (38) |
+| A_s3 | 66 | 17 | 36 | 21 : 2 (7 · 10⁻⁵) | +3.83 s (31) |
+| B_s1 | 100 | 62 | 80 | 19 : 1 (4 · 10⁻⁵) | +2.17 s (79) |
+| B_s2 | 58 | 46 | 69 | 24 : 1 (2 · 10⁻⁶) | +2.63 s (32) |
+| B_s3 | 91 | 39 | 51 | 16 : 4 (0.012) | +2.12 s (50) |
+| C_s1 | 72 | 40 | 54 | 17 : 3 (0.0026) | +2.46 s (45) |
+| C_s2 | 74 | 66 | 70 | 4 : 0 (0.125) | +1.77 s (55) |
+| C_s3 | 61 | 55 | 54 | 5 : 6 (1) | +1.81 s (39) |
+| **nine finals** | **702** | **423** | **534** | | |
+| `B_s1_500k` (selected) | 102 | 51 | 75 | 27 : 3 (8 · 10⁻⁶) | +3.78 s (74) |
+| bare tracker | 6 | 14 | 22 | 11 : 3 (0.057) | +4.27 s (3) |
+
+**`retry` against `none` (secondary, uncorrected):** −3, −57, −30, −20, +11, −40, −18, −4, −7 (W⁺ = 4, exact p = 0.027).
+The filter with retries still costs completed laps for eight of the nine finals, and gains for one (B_s2: 69 against
+58). Over the nine finals, the retries win back 111 of the 279 laps that L7's filter cost (40 %).
+
+**What the retries change (protocol §5):**
+* **Solver fallbacks:** from 0.5–6.8 % of the decisions (`main`) to **0.05–0.3 %** (`retry`) for the nine finals –
+  below the 1 % of L7's benchmark rule for every proposer.
+* **The retries themselves:** of the 4 350 failed first attempts of the nine finals, 1 161 were recovered by the first
+  retry and 1 768 by the second; 1 421 still fell back.
+* **The failures with the filter** (L7's pb-m2, the last 3 s): 667 → 524. Those after a fallback run drop from 383 to
+  55; those after interventions (in the narrow and wide sense, ordered as L7) rise from 284 to 469. 301 of the 524
+  completed without a filter.
+* **Interventions:** 0.30–0.38 per decision (`main` 0.33–0.40); on-switches 38–75 per lap (28–69).
+* **False interventions:** 0.89–0.995 by the 3 s criterion (`main` 0.875–0.99), the same procedure as L7's (review n2;
+  for `main` the report reproduces L7's numbers exactly).
+* **Interventions followed by a failure within 3 s** (review m2; all eleven proposers), τ = 0 / 30 / 60 ms / T2: `retry` 2.4 / 5.5 / 15.9 /
+  3.9 % of the interventions; `main` 6.2 / 6.9 / 17.0 / 6.1 %.
+* **Lap time:** +1.4 to +3.9 s against `none` on the laps both complete, for the nine finals.
+
+**Reading:**
+* L7's mechanism (i), the runs of failed solves with the shifted-plan fallback, is largely the solver's:
+  * retrying the failed solves (a second IPOPT instance, cold start, from the shifted plan and then from a rollout)
+    removes most of the fallback runs;
+  * it raises the filter's completion for eight of the nine finals (H-F2, significant over the nine);
+  * it makes the filter's fallback rate usable by L7's 1 % rule.
+* L7's negative result does **not** disappear:
+  * with retries the filter still makes eight of the nine finals complete fewer laps than without it;
+  * its failures are now mostly after interventions, 469 of 524 – mechanism (ii);
+  * about nine in ten of the sampled interventions are still not needed by the 3 s criterion (an upper bound, as in
+    L7).
+* A description, not a test (review of packet 3): the bare tracker completes 6 / 14 / 22 laps with `none` / `main` /
+  `retry` – the filter helps the weak proposer and costs the L5 policies, the direction L7's hypothesis below would
+  predict.
+* What remains is the filter's caution against what the policies can do, not its solver. The interpretation that the
+  policies are more robust than the filter's model certifies stays L7's hypothesis; it is not tested here.
+* **Time, an idealisation of both filters (review of packet 2):**
+  * every decision of `main` (L7's records) and practically every one of `retry` took longer than 50 ms under the run's
+    load – `retry`: mean 191–306 ms, P99 up to ~21 s, the longest 26.6 s, because the cold retries are slow;
+  * the simulation applied the filtered command at once, so a real car would get it many decisions late;
+  * whether a filter with retries can meet the 50 ms period is phase G's subject, and `retry` makes it harder.
+* §9.4's development lap of `retry` (82.27 s on the nominal car) was development data only.
+* Follow-ups (CONTROL_METHOD_MATRIX.md): a backup that drives the lagged cars, a backup CBF on it, policies trained with
+  their filter.

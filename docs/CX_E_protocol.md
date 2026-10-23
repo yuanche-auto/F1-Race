@@ -258,7 +258,7 @@ Options (the reviewer decides; nothing is run before):
    candidate, so that the convex hull is a feasible set of the model it uses), or a bound on the progress per lap; both
    are larger changes than an amendment and would be reviewed as revision 1.
 
-### Decision on amendment E1 (the review of packet 2, 2026-10-23): option 1, with e1–e4
+### Decision on amendment E1 (the review of packet 2, 2026-10-22): option 1, with e1–e4
 
 **Phase E is closed without the benchmark; H-E1 and H-E2 are recorded as *not tested*.** The development records and the
 gate's result of section 9 are accepted. Option 2 would spend ~1 300 laps to measure at which learning lap the method fails

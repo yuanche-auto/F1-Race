@@ -1,10 +1,42 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-23 (phase E done – closed without the benchmark, final review APPROVE; merged to main; phase F next). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-23 (phase F done – packet 3 and the final review of 85be4ad APPROVE; merged to main; phase G next). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
-* **Current phase:** E done – closed without the benchmark (amendment E1, option 1); final review of 6ebaed0 **APPROVE**
-  (f1: the unvalidated scripts marked, cd71350), `cx/E-lmpc` merged to `main` (--no-ff) 2026-10-23 (merge hash recorded
-  in phase F's first commit); next F – safety-critical control (literature and protocol first). Phase E result: the
+* **Current phase:** F done – packet 3 and the final review of 85be4ad **APPROVE**; `cx/F-safety` merged to `main`
+  (--no-ff) 2026-10-23 (merge hash recorded in phase G's first commit); next G – real-time (literature and protocol
+  first). Phase F result: **H-F2 holds** – L7's main filter with retried solves completes more T1 + T2 laps than L7's
+  filter for eight of the nine L5 finals (median +14, exact p = 0.0078; not cross-checked), its solver fallbacks fall from
+  0.5–6.8 % to 0.05–0.3 % of the decisions – yet it still completes fewer laps than no filter for eight of the nine (534
+  against 702 over the nine; L7's filter 423): L7's negative result stands, its remaining failures follow interventions;
+  **H-F1 not tested** – the shield part closed by amendment F1 (no tracker-based backup drives these cars).
+  History of phase F:
+  F – safety-critical control, branch `cx/F-safety` from `main` 490d33e (the merge of phase E):
+  literature §F.1–F.12 and the protocol [CX_F_protocol.md](CX_F_protocol.md) revision 0 **APPROVE** (e2bacfd) with the
+  clarifications m1–m3, n1, n2 (the applied action in the observation; lag makes the shield optimistic – failures after
+  interventions by τ; the backup's completions on FD as background; the tie rule's reason; one false-intervention procedure).
+  Code 7634e2d … b94e775 (`experiments/cx_f.py`, l7 options `retry` / `log_commands`, `scripts/{run,report}_cx_f.py`,
+  `scripts/cx_f_dev.py`, `tests/test_cx_f.py`). **Development gate failed:** the backup a_b (the tracker at 0.85 of the
+  plan speed) leaves the track on the nominal car (the tracker completes NOM only at factor 1.0), the shield intervenes
+  in 87 % of the decisions; a development variant (the tracker on a slower plan as backup) completes at most 9 of 12 FD
+  laps alone and turns `B_s1_500k`'s 12 of 12 FD laps into 3–7; `retry` completes NOM. The audit of L7's records ran
+  (reproduces L7's false-intervention counts and failure attribution). **Amendment F1, option 1** (the review of packet 2,
+  with g1–g4): the shield part closed without the benchmark – **H-F1 not tested** (the negative result concerns an MPS
+  shield with the L1 tracker as backup and a nominal-model check, on these cars); H-F2 the only primary test (α 0.05);
+  no FV, `shield` or `backup` lap. **T1 + T2** (worktree `F1-Race-wt-CXF-run` at e0f0b0a, 2 332 laps, 0 errors): the
+  `none` regression reproduces L7 lap by lap, the `main` reproduction check 22 of 22 (L7's records used); **H-F2 holds**
+  – over the nine finals `retry` completes more laps than `main` (+8, +14, +19, +18, +23, +12, +14, +4, −1; p = 0.0078,
+  significant at 0.05 and 0.025; not cross-checked); fallbacks 0.05–0.3 % of the decisions (`main` 0.5–6.8 %); but
+  `retry` still completes fewer laps than `none` for eight of the nine finals (534 against 702; L7's `main` 423) – the
+  remaining failures follow interventions (469 of 524), false interventions 0.89–0.995. Packet 3 and the final review
+  of 85be4ad **APPROVE** (the tracker's 6 / 14 / 22 laps added to the Reading as a description). Design: on L7's test sets T1 + T2 with the nine final L5 checkpoints as proposers – `retry`
+  (L7's main filter with retried solves) against L7's `main` records (H-F2, L7's open question), and `shield` (model
+  predictive shielding: the policy's action passes while a nominal-model rollout of the tracker at 0.85 of the plan
+  speed still recovers the car; margin m tuned on the new set FV) against `none` (H-F1); `backup` alone; an audit of
+  L7's per-decision filter records. HOCBF on the single-track model, robust and backup CBFs, reachability: not in
+  phase F (reasons in the protocol, section 3.2).
+* **Phase E:** done – closed without the benchmark (amendment E1, option 1); final review of 6ebaed0 **APPROVE**
+  (f1: the unvalidated scripts marked, cd71350), `cx/E-lmpc` merged to `main` (--no-ff) 2026-10-22 as
+  **490d33e**. Phase E result: the
   learning MPC as implemented here (a nonlinear NLP with the convex hull of stored states as the terminal set) does not
   complete ten learning laps on the nominal car or the development cars – the development gate failed; **H-E1 and H-E2
   not tested**; the result concerns this implementation, its suspected cause is a hypothesis; follow-ups listed
@@ -116,6 +148,7 @@ Last updated: 2026-10-23 (phase E done – closed without the benchmark, final r
 | C | `control/tube.py` (`Tube`, `TubeMPCController`), `experiments/cx_c.py`, `scripts/{run,report}_cx_c.py`, `scripts/cx_c_dev.py` | yes (0689c41 … eab7c63) | yes – `tests/test_tube.py` 8, `tests/test_cx_c.py` 5 | development checks §9 on NOM and CXDEV; CXV tuning; CCT; secondary conditions | protocol rev 0, C1 and packets 2–5 **APPROVE**; final review 3dec001 **APPROVE** | **yes – phase C completed** |
 | D | `estimation/{rls,bank}.py`, `control/adaptive_mpc.py`, `FrenetMPC(param_model=True)`, `experiments/cx_d.py`, `scripts/{run,report}_cx_d.py`, `scripts/cx_d_{dev,plans}.py` | yes (6f54f30 … ea4ac82) | yes – `tests/test_adaptive.py` 8, `tests/test_cx_d.py` 5 | development checks §9 on NOM and DEV (gate passed) | protocol rev 0 and literature §D **APPROVE** (packet 1, m1–m3 / n1–n3); packets 2–5 **APPROVE**; final review 2dd4405 **APPROVE** | **yes – phase D completed** |
 | E | `control/lmpc.py`, `experiments/cx_e.py`, `scripts/cx_e_dev.py`; `scripts/run_cx_e.py` (only its `dev` stage run) and `scripts/report_cx_e.py` – **not validated: never run end to end** (review f1) | yes (d64eb47 … 5068328) | yes – `tests/test_lmpc.py` 5 | development checks §9: NLP, regression, 36 sequences – **gate failed** | protocol rev 0 **APPROVE** (packet 1); packet 2 **APPROVE**, amendment E1 option 1 (closed, no benchmark); final review 6ebaed0 **APPROVE** (f1) | **yes – phase E completed (closed without the benchmark)** |
+| F | `experiments/cx_f.py`, l7 options `retry` / `log_commands`, `scripts/{run,report}_cx_f.py`, `scripts/cx_f_dev.py` | yes (7634e2d … e0f0b0a) | yes – `tests/test_cx_f.py` 5 | development checks §9 on NOM and FD – **gate failed** (the shield part closed, F1); audit of L7's records; T1 + T2: `none` regression, `main` reproduction, `retry` (2 332 laps) | literature §F and protocol rev 0 **APPROVE** (packet 1, m1–m3 / n1, n2); packet 2 **APPROVE**, amendment F1 option 1 (g1–g4); packet 3 and final review 85be4ad **APPROVE** | **yes – phase F completed (H-F2 holds; H-F1 not tested)** |
 | F–G | – | not started | – | – | – | – |
 
 ## Review record
@@ -153,8 +186,11 @@ Last updated: 2026-10-23 (phase E done – closed without the benchmark, final r
 | 2026-10-22 | cd484bd (run); 2dd4405 | phase D packet 5: secondary conditions (840 laps), nmpc reproduces phase C 30 of 30 | **APPROVE** | – |
 | 2026-10-22 | 2dd4405 | **phase D final review** (whole branch vs main 4b4e091: 12 commits, 17 files, +3017 / −45) | **APPROVE** | the three standing checks pass (.venv and .venv-rl); status lines marked done before the merge |
 | 2026-10-22 | d1c2043 | phase E packet 1: literature E.1–E.9, protocol revision 0 | **APPROVE** | m1 H-E2's exposure, m2 H-E1 conditional, m3 the line and δ, m4 initialisation failures apart; n1 survivors, n2 w_T |
-| 2026-10-23 | 727297f (d64eb47 …) | phase E packet 2: code, tests, development checks – the gate failed; amendment E1 | **APPROVE**; **E1 option 1** (close without the benchmark) | e1 the result about this implementation, the cause a hypothesis; e2 the observations incl. the 75.9 s lap; e3 follow-ups; e4 the code merged |
-| 2026-10-23 | 6ebaed0 | **phase E final review** (whole branch vs main ae87f41: 7 commits, 12 files, +1751 / −13) | **APPROVE** | f1 the never-run scripts marked (cd71350); the three standing checks pass (.venv and .venv-rl) |
+| 2026-10-22 | 727297f (d64eb47 …) | phase E packet 2: code, tests, development checks – the gate failed; amendment E1 | **APPROVE**; **E1 option 1** (close without the benchmark) | e1 the result about this implementation, the cause a hypothesis; e2 the observations incl. the 75.9 s lap; e3 follow-ups; e4 the code merged |
+| 2026-10-22 | 6ebaed0 | **phase E final review** (whole branch vs main ae87f41: 7 commits, 12 files, +1751 / −13) | **APPROVE** | f1 the never-run scripts marked (cd71350); the three standing checks pass (.venv and .venv-rl) |
+| 2026-10-22 | (this commit) | phase F packet 1: literature §F.1–F.12, protocol CX_F revision 0; the phase-E merge hash 490d33e recorded; the phase-E closing dates corrected (2026-10-23 → 2026-10-22, the commits' date) | **APPROVE** | m1 the applied a_b in the policy's observation (unlike L7's filters); m2 the nominal rollout ignores lag – failures within 3 s after interventions by τ; m3 `backup` on FD as background, < 6 of 12 → a more conservative a_b discussed before FV; n1 the tie rule's reason; n2 one false-intervention procedure for all; the skip count on 490d33e is 4 (my count of 3 from the progress dots was wrong) |
+| 2026-10-22 | (this commit; code 7634e2d … b94e775) | phase F packet 2: code, tests, development checks – the shield's gate failed; amendment F1; the audit of L7's records | **APPROVE**; **F1 option 1** (the shield part closed) | g1 the scope (an MPS shield with a tracker backup and a nominal check, on these cars) and the m-grid flaw stated; g2 H-F2 alone at α 0.05, 0.025 reported, H-F1 withdrawn before any T1 / T2 result; g3 none regression, main reproduction, retry 1 155 laps from a pinned worktree; g4 the shield code merged as development only, follow-ups in METHOD_MATRIX |
+| 2026-10-23 | (this commit; run e0f0b0a) | phase F packet 3: T1 + T2 – the `none` regression, the `main` reproduction check, `retry`; H-F2 holds; the benchmark section – with the **final review** of `cx/F-safety` | **APPROVE** (both) | the bare tracker's 6 / 14 / 22 laps (none / main / retry) added to the Reading as a description |
 
 ## Tests
 
@@ -181,6 +217,13 @@ Phase C: `results/CX/C/dev/` (main checkout) – the development checks of CX-C 
 `selected.json`, `test.jsonl`, `secondary.jsonl`, `report/`, `RUN_COMMIT*`, `SHA256_inputs*.txt`, `timeline.tsv`).
 All git-ignored.
 
+Phase F: `results/CX/F/dev/` (main checkout) – the development checks of CX-F §9 (`monitor.json`, `laps.jsonl`,
+`gate.json`, `backup_plans.jsonl`, `monitor_variants.json`, `variants.jsonl`, `meta_*.json`), decision records
+`results/CX/F/dev_dec/`, `devvar_dec/`; the audit of L7's records `results/CX/F/report/audit_l7.*` (b94e775). T1 + T2:
+worktree `F1-Race-worktrees/F1-Race-wt-CXF-run` at e0f0b0a, `results/CX/F/` (`test.jsonl` 248c584b…, `test_dec/`,
+`report/CX_F.{md,json}`, `RUN_COMMIT_test`, `SHA256_inputs_{run,main_checkout}.txt`, `timeline.tsv`, `log_test.txt`,
+`log_report.txt`, `launch_test.sh`). All git-ignored.
+
 Phase E: `results/CX/E/dev/` (main checkout) – the development checks of CX-E §9 (`laps.jsonl` with `laps_meta.json`,
 `diag.jsonl` with `diag_meta.json`, `nlp.json`, `regression.json`, `summary.json`). Git-ignored.
 
@@ -200,7 +243,9 @@ Phase D: `results/CX/D/plans/` (main checkout) – the new plans of the library 
 
 ## Next actions
 
-1. Phase F (safety-critical control: an audit of the L7 filters, robust / high-order CBF, backup-set safety): branch
-   `cx/F-safety` from the new `main`; record the phase-E merge hash in its first commit; literature entries (§F) and the
-   protocol `docs/CX_F_protocol.md` for review; no code before its APPROVE.
+1. Phase G (real-time: learned warm starts, delay-aware prediction for RTI, advanced-step MPC, deadline-aware fallback,
+   solver-failure recovery; timing of solver, end-to-end, sensor and actuation delay – roadmap; L9's rule, 50 ms on one
+   vCPU): branch `cx/G-realtime` from the new `main`; record the phase-F merge hash in its first commit; literature
+   entries (§G) and the protocol `docs/CX_G_protocol.md` for review; no code before its APPROVE. Phase F leaves G the
+   question of a filter with retries meeting 50 ms.
 2. Follow-up candidates (CONTROL_METHOD_MATRIX.md) stay unscheduled – among them E.2's ATV-QP learning MPC.
