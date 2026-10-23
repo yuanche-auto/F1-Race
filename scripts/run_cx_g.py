@@ -52,7 +52,8 @@ def run_job(j: dict, d: Path) -> dict:
     cpu = sorted(os.sched_getaffinity(0))
     cal = calibration()
     t0 = time.time()
-    name = f"cxg_{j['stage']}_{j.get('arm', '')}_{j['case']}_{os.getpid()}"
+    # a CasADi function name: letters, digits, non-consecutive underscores (no empty parts)
+    name = "_".join(str(x) for x in ("cxg", j["stage"], j.get("arm"), j["case"], os.getpid()) if x)
     if j["stage"] == "explore":
         ex = l9.explore_lap(case, Track.load("Spielberg"), "rti", "realtime", name)
         (d / "explore").mkdir(exist_ok=True)
