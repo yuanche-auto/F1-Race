@@ -165,8 +165,7 @@ def backup_plans(workers: int) -> None:
     with get_context("spawn").Pool(min(workers, len(jobs)), maxtasksperchild=1) as pool:
         recs = list(pool.imap_unordered(backup_job, jobs))
     path = DEV / "backup_plans.jsonl"
-    path.write_text("".join(json.dumps(r, default=float) + "
-" for r in recs))
+    path.write_text("".join(json.dumps(r, default=float) + chr(10) for r in recs))
     for kind, vals in (("factor", SPEED_FACTORS), ("plan", BACKUP_ETAS)):
         for v in vals:
             rs = [r for r in recs if r["kind"] == kind and r["value"] == v]
