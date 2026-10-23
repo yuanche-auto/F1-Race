@@ -5,7 +5,8 @@ revision 0 with its clarifications m1–m3, n1, n2).
   ``sample_plants(nominal, 10, seed 351)[1:]`` × τ ∈ {0, 30, 60 ms} and the nominal car with the L3
   disturbances, seeds 7500–7509 (40 laps); ``FD`` – development only, seed 359, three cars × τ and
   disturbance seeds 7590–7592 (12 laps); ``NOM`` – the nominal car.
-* ``Shield`` (section 3.1): model predictive shielding (literature F.1). At every 50 ms decision, from
+* ``Shield`` (section 3.1) – **development only; the shield part of phase F was closed without the benchmark
+  (amendment F1)**: model predictive shielding (literature F.1). At every 50 ms decision, from
   the measured state y the tracker sees and a copy of the tracker: the proposal step (the tracker with
   the policy's action, 5 steps of 10 ms) and then the backup rollout (the tracker with a_b = (0, −1):
   steering offset 0, speed factor 0.85, for T_b = 3 s), both on the nominal model ``DynVehicle()``
@@ -123,7 +124,8 @@ def backup_plan(eta: float):
 
 
 class Shield:
-    """The monitor of section 3.1 on the nominal model; ``check`` returns (recoverable, info).
+    """**Development only; the shield part of phase F was closed without the benchmark (amendment F1).**
+    The monitor of section 3.1 on the nominal model; ``check`` returns (recoverable, info).
     ``mode`` "action": the backup is a_b, an action of the policy's tracker (revision 0); "plan"
     (``cfg.backup_eta``): the backup is a second tracker - the L1 tracker with zero action on the
     plan at ``backup_eta`` with its own feed-forward - whose command replaces the policy's tracker's

@@ -46,6 +46,13 @@ as E.2 implements it – an ATV QP, linearised along the candidate trajectory, s
 feasible for the model the problem uses** (the first candidate); a bound on the progress per lap (e.g. the terminal
 time-to-go not below the previous lap's at the corresponding point minus a limit); consecutive laps instead of every lap
 from the same initial state.
+From phase F (CX-F amendment F1, review g4; the shield part was closed after its development gate failed – the L1
+tracker is no backup on these cars: at a reduced speed factor it leaves the track even on the nominal car, on a slower
+plan it completes at most 9 of 12 development laps and almost none with a 60 ms lag): **a backup that drives the lagged
+cars** (e.g. a cheap surrogate of L6's lag-aware identified NMPC, 73 of 75 on L7's T1, for the rollouts of a shield);
+a **backup CBF** (literature F.6, the smooth counterpart of a shield) on such a backup; **policies trained with the filter
+they are deployed with** (Oh et al., L7's literature check); a monitor margin set from the plan's own axle margins
+(0.27–0.29 m at the least on every plan of the library).
 
 ### Follow-up candidates from phase B (MPPI; CX-B amendment B3, review d4)
 

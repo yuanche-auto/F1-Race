@@ -2,8 +2,8 @@
 
 Status: **binding, revision 0 (2026-10-22; e2bacfd, APPROVE)** with the clarifications of its review (m1–m3, n1, n2;
 marked *"clarification of revision 0"*), written down before any phase-F code. **Development gate failed (section 9):
-the shield's backup does not drive the cars; amendment F1 proposed (packet 2) – no FV, T1 or T2 lap before it is
-decided.** Written after the literature check
+the shield's backup does not drive the cars. Amendment F1, option 1 (the review of packet 2): the shield part is closed
+without the benchmark – H-F1 is not tested; H-F2 is the only primary test (α 0.05); no FV, `shield` or `backup` lap.** Written after the literature check
 ([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §F) and before any phase-F code: no module, test, runner or
 lap of phase F exists; the only measurement so far is a timing of the shield's rollout (no lap, section 9). Branch
 `cx/F-safety` from `main` 490d33e (the merge of phase E). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md)
@@ -313,7 +313,7 @@ tracker at held speed factors, which `cx_f_dev.py backup-plans` later reproduced
 A shield cannot protect better than its backup drives (review m3). Here the shield turned 12 of 12 FD laps of the
 selected policy into 3–7.
 
-## Amendment F1 (proposed 2026-10-22, packet 2; for the review – no FV, T1 or T2 lap before it is decided)
+## Amendment F1 (proposed 2026-10-22, packet 2; **decided: option 1** – see the decision below)
 
 The development gate of section 9 failed for the shield, and review m3's condition holds (`backup` 5 of 12 on FD).
 H-F2 (`retry` against `main`) does not depend on the shield, the gate or FV. Options:
@@ -339,3 +339,35 @@ H-F2 (`retry` against `main`) does not depend on the shield, the gate or FV. Opt
    * Review m1's rule would be replaced: in the plan mode the environment keeps the policy's action.
 3. **Revision 1, a re-design:** a backup reliable on lagged cars (an identified, lag-aware controller with a cheap
    rollout) – a new design and protocol, beyond phase F's scope as registered.
+
+### Decision on amendment F1 (the review of packet 2, 2026-10-22): option 1, with g1–g4
+
+**The shield part of phase F is closed without the benchmark; H-F1 is recorded as *not tested*. H-F2 continues as
+registered.** The development records, the gate's result and the audit of section 9 / 5.1 are accepted. Option 2 would
+spend ~3 000 FV laps on a direction the development laps already show; option 3 is a new design (a backup that drives
+lagged cars), listed as a follow-up.
+
+* **g1 – the scope of the negative result:** it concerns **an MPS shield with the L1 tracker as its backup and a check on
+  the nominal model, on these cars** (L2 mismatch, steering lag, L3 disturbances) – not shields or MPS in general. A
+  design flaw of section 3.1 / 4, stated as found in 9.1: the 0.95 plan itself keeps both axles closer than 0.5 m to the
+  edge on 23 % of the lap (its minimum 0.27 m; every plan of the library 0.27–0.29 m), so of the registered grid only
+  m = 0.25 lies below it – **the upper values of the grid were set without knowing this.**
+* **g2 – the level of H-F2:** with H-F1 withdrawn, H-F2 is the only primary test and is decided at **α 0.05**; its
+  verdict at 0.025 (the level each of the two would have had alongside) is reported too. H-F1 was withdrawn **because
+  the development gate failed, before any T1 / T2 result existed** (no T1 / T2 lap of any phase-F condition had run).
+* **g3 – what runs, as registered:** on T1 + T2, from a pinned worktree at one commit (RUN_COMMIT, input SHA-256 list,
+  timeline): the `none` regression against L7's `rl_none.jsonl` (lap by lap), the reproduction check of `main` (22
+  laps, rng 0, the rule of section 3 unchanged: any mismatch → `main` re-run in full) and `retry` (1 155 laps); the
+  audit of section 5.1 (already run, b94e775). **No FV lap, no `shield` or `backup` lap.** The tables of section 5 for
+  `retry` and `main` as registered; those of `shield` / `backup` fall away.
+* **g4 – the code:** `Shield` in both modes (the action a_b of revision 0 and the slower-plan variant `backup_eta`) is
+  merged as it is, off unless constructed, its docstring marked *development only; the shield part of phase F was closed
+  without the benchmark (amendment F1)*. Follow-ups in CONTROL_METHOD_MATRIX.md: a backup that drives the lagged cars
+  (e.g. a cheap surrogate of L6's lag-aware identified NMPC, which completes 73 of 75 T1 laps but is far too expensive to
+  roll out at every decision); a backup CBF (F.6) on such a backup; policies trained with the filter they are deployed
+  with (Oh et al., L7's literature).
+
+*Reminders for the report (review of packet 2):* section 9.4's `retry` lap is development data – it shows the mechanism
+works (two failed first attempts, each recovered by a retry), not H-F2's result; the audit shows every decision of
+L7's `main` above 50 ms (97 % above 100 ms) under L7's load, while L7's simulation applied the filtered command at once –
+an idealisation to be stated, and a subject of phase G.

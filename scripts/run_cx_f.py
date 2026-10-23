@@ -6,8 +6,11 @@ single-threaded BLAS. Benchmark stages run from a pinned worktree; records in re
     python scripts/run_cx_f.py jobs                                # the job lists (counts)
     python scripts/run_cx_f.py tune [--workers 20]                 # FV: shield m in {0.25, 0.5, 1.0}, none, backup
     python scripts/report_cx_f.py tune                             # the rule of section 4 -> results/CX/F/selected.json
-    python scripts/run_cx_f.py test --conditions none,main_repro,retry,backup [--workers 20]   # no parameter: any time after packet 2
-    python scripts/run_cx_f.py test --conditions shield [--workers 20]                         # needs selected.json
+    python scripts/run_cx_f.py test --conditions none,main_repro,retry [--workers 20]   # amendment F1: what runs
+    python scripts/run_cx_f.py test --conditions main_full   # only if the reproduction check of main fails (section 3)
+
+**Amendment F1 (option 1):** the shield part of phase F was closed without the benchmark – the `tune` stage and the
+`shield` / `backup` conditions are development only and were never run on FV, T1 or T2.
 
 Conditions (section 3): ``none`` (no filter), ``main_repro`` (L7's main filter on the 22 laps of the reproduction
 check, with the command log), ``retry`` (L7's main filter with retried solves), ``shield`` (section 3.1), ``backup``
@@ -98,7 +101,7 @@ def job(args):
     env = l7.make_env(mode)
     snap_at = tuple(j * L / 8 for j in range(8))
     filt = None
-    if condition in ("main_repro", "retry"):
+    if condition in ("main_repro", "main_full", "retry"):
         filt = _filter(condition, track)
         r = l7.run_lap(pol, env, case, filt, snap_at=snap_at, log_commands=True)
     elif condition == "shield":
@@ -191,6 +194,8 @@ def test_jobs(conditions: list[str]) -> list[tuple]:
             j += _jobs("test", "backup", ["backup"], names, {})
         elif c == "main_repro":
             j += [("test", "main_repro", p, n, "{}") for p, n in repro_subset()]
+        elif c == "main_full":
+            j += _jobs("test", "main_full", cx_f.PROPOSERS, names, {})
         elif c == "shield":
             j += _jobs("test", "shield", cx_f.PROPOSERS, names, {"m": _selected()["m"]})
         else:
@@ -224,15 +229,15 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("what", choices=["jobs", "tune", "test"])
     ap.add_argument("--workers", type=int, default=20)
-    ap.add_argument("--conditions", default="none,main_repro,retry,backup")
+    ap.add_argument("--conditions", default="none,main_repro,retry")
     a = ap.parse_args()
     if a.what == "jobs":
         tj = tune_jobs()
         print(f"tune: {len(tj)} laps (shield {sum(j[1] == 'shield' for j in tj)}, none {sum(j[1] == 'none' for j in tj)}, "
               f"backup {sum(j[1] == 'backup' for j in tj)})")
-        tt = test_jobs(["none", "main_repro", "retry", "backup"])
-        print("test: " + ", ".join(f"{c} {sum(j[1] == c for j in tt)}" for c in ("none", "main_repro", "retry", "backup"))
-              + " laps; shield 1155 after the selection")
+        tt = test_jobs(["none", "main_repro", "retry"])
+        print("test (amendment F1): " + ", ".join(f"{c} {sum(j[1] == c for j in tt)}" for c in ("none", "main_repro", "retry"))
+              + " laps; main_full 1155 only if the reproduction check fails")
         return
     if a.what == "tune":
         _run(tune_jobs(), OUT / "tune.jsonl", a.workers)

@@ -2,7 +2,7 @@
 
     python scripts/report_cx_f.py audit     # section 5.1 on L7's records (results/L7/partB_*) -> results/CX/F/report/audit_l7.*
     python scripts/report_cx_f.py tune      # section 4 -> results/CX/F/selected.json (with the SHA-256 of tune.jsonl)
-    python scripts/report_cx_f.py test      # sections 1, 5, 6 -> results/CX/F/report/CX_F.{md,json}
+    python scripts/report_cx_f.py test      # amendment F1: H-F2, the checks of section 3, section 5 -> results/CX/F/report/CX_F.*
 
 ``audit`` also checks that the false-intervention summary of ``experiments/cx_f.false_interventions`` reproduces
 L7's report (``results/L7/partB_report/partB.json``) – the one procedure of review n2.
@@ -125,33 +125,37 @@ def tune() -> None:
 
 
 def test() -> None:
-    """The primary tests H-F1, H-F2 (Holm), the reproduction check of main, the secondary comparisons and
-    the tables of section 5."""
+    """Amendment F1 (option 1, g2): H-F2 – the only primary test, α 0.05 (its verdict at 0.025 reported too);
+    the `none` regression and the reproduction check of `main` (section 3); the secondary comparison retry – none;
+    the tables of section 5 for `main` and `retry`."""
     from scipy.stats import binomtest
 
     from f1race.experiments import cx_f
 
     L = _length()
-    recs = load(OUT / "test.jsonl")
-    errors = sum("error" in r for r in recs)
-    recs = [r for r in recs if "error" not in r]
+    raw = load(OUT / "test.jsonl")
+    errors = sum("error" in r for r in raw)
+    recs = [r for r in raw if "error" not in r]
     l7none = {(r["policy"], r["case"]): r for r in load(L7B / "partB_none" / "rl_none.jsonl")}
-    l7main_list = load(L7B / "partB_filtered" / "rl_main.jsonl")
-    l7main = {(r["policy"], r["case"]): r for r in l7main_list}
+    l7main = {(r["policy"], r["case"]): r for r in load(L7B / "partB_filtered" / "rl_main.jsonl")}
     by = {}
     for r in recs:
         by.setdefault(r["condition"], {})[(r["policy"], r["case"])] = r
     res = {"errors": errors}
-    md = ["# CX-F – safety filters around the L5 policies on T1 + T2", "", f"Error records: {errors}.", ""]
-    # regression: none vs L7's rl_none
-    mism = []
+    md = ["# CX-F – L7's main filter with retried solves on T1 + T2 (amendment F1: the shield part closed)", "",
+          f"Error records: {errors}. H-F1 (the shield) was withdrawn before any T1 / T2 lap because the development "
+          "gate failed (protocol section 9, amendment F1); no FV, `shield` or `backup` lap was run.", ""]
+    # the regression of `none` (section 3: outcome, and the failure position within 0.013 m)
+    mism, dlap = [], []
     for k, r in by.get("none", {}).items():
         o = l7none.get(k)
-        if o is None or o["completed"] != r["completed"] or (not r["completed"] and abs(o["distance"] - r["distance"]) > 0.013) \
-                or (r["completed"] and abs(o["lap_time"] - r["lap_time"]) > 1e-6):
+        if o is None or o["completed"] != r["completed"] or (not r["completed"] and abs(o["distance"] - r["distance"]) > 0.013):
             mism.append(k)
-    res["none_regression"] = {"laps": len(by.get("none", {})), "mismatches": [list(k) for k in mism]}
-    # reproduction of main (section 3)
+        elif r["completed"]:
+            dlap.append(abs(o["lap_time"] - r["lap_time"]))
+    res["none_regression"] = {"laps": len(by.get("none", {})), "mismatches": [list(k) for k in mism],
+                              "max_lap_time_difference_s": max(dlap, default=0.0)}
+    # the reproduction check of `main` (section 3)
     rep_bad = []
     for k, r in by.get("main_repro", {}).items():
         o = l7main[k]
@@ -159,48 +163,40 @@ def test() -> None:
             abs(o["lap_time"] - r["lap_time"]) <= 0.01 if r["completed"] else abs(o["distance"] - r["distance"]) <= 1.0)
         if not ok:
             rep_bad.append(k)
+    use_l7 = len(by.get("main_repro", {})) == 22 and not rep_bad
     res["main_reproduction"] = {"laps": len(by.get("main_repro", {})), "mismatches": [list(k) for k in rep_bad],
-                                "use_L7_records": len(by.get("main_repro", {})) == 22 and not rep_bad}
-    md += [f"Regression of `none` against L7's records: {len(by.get('none', {}))} laps, mismatches {len(mism)}.",
-           f"Reproduction check of `main` (22 laps): mismatches {len(rep_bad)} -> L7's records used: "
-           f"{res['main_reproduction']['use_L7_records']}.", ""]
-    main = by.get("main_full") or l7main if res["main_reproduction"]["use_L7_records"] else by.get("main_full", {})
-    comp = {}
-    for cond, d in (("none", by.get("none", {})), ("main", main), ("retry", by.get("retry", {})),
-                    ("shield", by.get("shield", {})), ("backup", by.get("backup", {}))):
-        for (p, case), r in d.items():
-            comp.setdefault((p, cond), {})[case] = bool(r["completed"])
+                                "use_L7_records": use_l7}
+    main = l7main if use_l7 else by.get("main_full", {})
+    md += [f"* Regression of `none` against L7's `rl_none.jsonl`: {res['none_regression']['laps']} laps, "
+           f"{len(mism)} mismatches (outcome; failure position within 0.013 m); the largest lap-time difference of the "
+           f"completed laps {res['none_regression']['max_lap_time_difference_s']:.2e} s.",
+           f"* Reproduction check of `main` (22 laps, rng 0): {len(rep_bad)} mismatches -> "
+           + ("L7's records are used." if use_l7 else "`main` re-run in full (`main_full`)."), ""]
+    conds = {"none": by.get("none", {}), "main": main, "retry": by.get("retry", {})}
+    comp = {(p, c): {case: bool(r["completed"]) for (pp, case), r in d.items() if pp == p}
+            for c, d in conds.items() for p in cx_f.PROPOSERS}
+    comp = {k: v for k, v in comp.items() if v}
 
     def total(p, c):
         return sum(comp.get((p, c), {}).values())
 
-    tests = {}
-    for name, (a, b) in (("H-F1", ("shield", "none")), ("H-F2", ("retry", "main"))):
-        diffs = [total(p, a) - total(p, b) for p in cx_f.FINALS if (p, a) in comp and (p, b) in comp]
-        ex = cx_f.exact_signed_rank(diffs)
-        tests[name] = {"differences": diffs, "median": float(np.median(diffs)) if diffs else None, **ex}
-    ps = sorted(tests, key=lambda k: tests[k]["p"])
-    for i, k in enumerate(ps):                               # Holm over two
-        tests[k]["holm_level"] = 0.05 / (2 - i)
-        tests[k]["significant"] = bool(tests[k]["p"] < tests[k]["holm_level"] and
-                                       all(tests[q]["p"] < tests[q]["holm_level"] for q in ps[:i]))
-        tests[k]["below_0.025"] = bool(tests[k]["p"] < 0.025)
-    res["primary"] = tests
-    md += ["## Primary tests (Holm over H-F1 and H-F2)", ""]
-    for k in ("H-F1", "H-F2"):
-        t = tests[k]
-        md.append(f"* **{k}**: differences {t['differences']}; median {t['median']}; non-zero n {t['n']}; W+ {t['W_plus']}; "
-                  f"exact two-sided p {t['p']:.4g}; Holm level {t['holm_level']:.3f}: significant {t['significant']} "
-                  f"(below 0.025: {t['below_0.025']}). **Not cross-checked** (second environment deferred).")
-    sec = {}
-    for name, (a, b) in (("shield-main", ("shield", "main")), ("retry-none", ("retry", "none"))):
-        diffs = [total(p, a) - total(p, b) for p in cx_f.FINALS if (p, a) in comp and (p, b) in comp]
-        sec[name] = {"differences": diffs, **cx_f.exact_signed_rank(diffs)}
-    res["secondary"] = sec
-    md += ["", "## Secondary (uncorrected)", ""] + [f"* {k}: {v}" for k, v in sec.items()]
-    # completion table
-    md += ["", "## Completion (of 105) and lap time", "", "| proposer | none | main | retry | shield | McNemar shield:none | "
-           "McNemar retry:main |", "|---|---|---|---|---|---|---|"]
+    diffs = [total(p, "retry") - total(p, "main") for p in cx_f.FINALS if (p, "retry") in comp and (p, "main") in comp]
+    ex = cx_f.exact_signed_rank(diffs)
+    med = float(np.median(diffs)) if diffs else None
+    res["H-F2"] = {"differences": diffs, "median": med, **ex, "significant_0.05": bool(ex["p"] < 0.05),
+                   "significant_0.025": bool(ex["p"] < 0.025), "complete": len(diffs) == 9}
+    md += ["## H-F2 (primary; the only one after amendment F1): nine final checkpoints, completed T1 + T2 laps with "
+           "`retry` minus with `main`", "",
+           f"Differences {diffs}; median {med}; non-zero n {ex['n']}; W+ {ex['W_plus']}; exact two-sided p {ex['p']:.4g}. "
+           f"At α 0.05: **{'significant' if ex['p'] < 0.05 else 'not significant'}**; at 0.025: "
+           f"{'significant' if ex['p'] < 0.025 else 'not significant'}. **Not cross-checked** (the second environment is "
+           "deferred).", ""]
+    d2 = [total(p, "retry") - total(p, "none") for p in cx_f.FINALS if (p, "retry") in comp and (p, "none") in comp]
+    res["secondary_retry_minus_none"] = {"differences": d2, **cx_f.exact_signed_rank(d2)}
+    md += [f"Secondary (uncorrected): `retry` − `none` over the nine finals: {res['secondary_retry_minus_none']}.", "",
+           "## Completion (of 105; T1 / T2) and per-proposer McNemar", "",
+           "| proposer | none | main | retry | retry : main (only retry : only main, p) | mean lap retry | lap-time cost retry − none (laps both complete) |",
+           "|---|---|---|---|---|---|---|"]
 
     def mcn(a, b):
         keys = sorted(set(a) & set(b))
@@ -208,36 +204,80 @@ def test() -> None:
         y = sum(b[k] and not a[k] for k in keys)
         return x, y, float(binomtest(min(x, y), x + y).pvalue) if x + y else 1.0
 
+    def split(p, c):
+        d = conds[c]
+        t1 = sum(r["completed"] for (pp, _), r in d.items() if pp == p and r["set"] == "T1")
+        t2 = sum(r["completed"] for (pp, _), r in d.items() if pp == p and r["set"] == "T2")
+        return f"{t1 + t2} ({t1} / {t2})"
+
+    res["per_proposer"] = {}
     for p in cx_f.PROPOSERS:
-        cells = [str(total(p, c)) if (p, c) in comp else "-" for c in ("none", "main", "retry", "shield")]
-        m1 = mcn(comp[(p, "shield")], comp[(p, "none")]) if (p, "shield") in comp and (p, "none") in comp else None
-        m2 = mcn(comp[(p, "retry")], comp[(p, "main")]) if (p, "retry") in comp and (p, "main") in comp else None
-        md.append(f"| {p} | " + " | ".join(cells) + " | " + (f"{m1[0]} : {m1[1]} ({m1[2]:.3g})" if m1 else "-") + " | "
-                  + (f"{m2[0]} : {m2[1]} ({m2[2]:.3g})" if m2 else "-") + " |")
-    if ("backup", "backup") in comp:
-        md.append(f"| backup alone | {total('backup', 'backup')} / 105 | | | | | |")
-    # the filters in the loop, false interventions, failures after interventions by condition
-    md += ["", "## The filters in the loop", ""]
+        if (p, "retry") not in comp:
+            continue
+        x, y, pv = mcn(comp[(p, "retry")], comp.get((p, "main"), {}))
+        laps = [r["lap_time"] for (pp, _), r in conds["retry"].items() if pp == p and r["completed"]]
+        cost = [r["lap_time"] - conds["none"][(p, c)]["lap_time"] for (pp, c), r in conds["retry"].items()
+                if pp == p and r["completed"] and conds["none"].get((p, c), {}).get("completed")]
+        res["per_proposer"][p] = {c: total(p, c) for c in conds} | {"mcnemar_retry_main": [x, y, pv]}
+        md.append(f"| {p} | {split(p, 'none')} | {split(p, 'main')} | {split(p, 'retry')} | {x} : {y} ({pv:.3g}) | "
+                  f"{np.mean(laps) if laps else float('nan'):.2f} | {np.mean(cost) if cost else float('nan'):+.2f} s ({len(cost)}) |")
+    # the filters in the loop (section 5)
+    md += ["", "## The filters in the loop (section 5)", "",
+           "| proposer | condition | interventions per decision | on-switches per lap | fallbacks (share) | runs >= 3 | "
+           "ms mean / P99 max | false interventions (sampled) | retries: first failed / by retry 1 / by retry 2 / fallback |",
+           "|---|---|---|---|---|---|---|---|---|"]
     res["loop"] = {}
-    for cond, d in (("main", main), ("retry", by.get("retry", {})), ("shield", by.get("shield", {}))):
-        rl = [r for r in d.values()] if isinstance(d, dict) else []
+    for c in ("main", "retry"):
         for p in cx_f.PROPOSERS:
-            rs = [r for r in rl if r["policy"] == p and r.get("decisions")]
+            rs = [r for (pp, _), r in conds[c].items() if pp == p and r.get("decisions")]
             if not rs:
                 continue
             dec = sum(r["decisions"] for r in rs)
+            aud = [cx_f.lap_audit({k: z[k] for k in z.files}, r["completed"], L)
+                   for r in rs for z in [np.load(_dec_path(c, use_l7, p, r["case"]))]]
             fi = cx_f.false_interventions(rs, p, L)
             row = {"interventions_per_decision": sum(r["interventions"] for r in rs) / dec,
-                   "false": fi, "time_ms_mean": float(np.average([r["time_ms"][0] for r in rs],
-                                                                 weights=[r["decisions"] for r in rs]))}
-            if cond in ("retry", "shield"):
-                row["on_switches_per_lap"] = sum(r.get("on_switches", 0) for r in rs) / len(rs)
-            if cond == "shield":
-                row["no_option"] = sum(r.get("no_option", 0) for r in rs) / dec
-            if cond == "retry":
+                   "on_switches_per_lap": sum(a["on_switches"] for a in aud) / len(rs),
+                   "fallbacks": sum(r.get("filter_failures", 0) for r in rs), "fallback_share":
+                   sum(r.get("filter_failures", 0) for r in rs) / dec, "fallback_runs3": sum(a.get("fallback_runs3", 0) for a in aud),
+                   "time_ms_mean": float(np.average([r["time_ms"][0] for r in rs], weights=[r["decisions"] for r in rs])),
+                   "time_ms_p99_max": max(r["time_ms"][2] for r in rs), "false": fi}
+            if c == "retry":
                 row["retry"] = {k: sum(r["retry"][k] for r in rs) for k in rs[0]["retry"]}
-            res["loop"][f"{p}|{cond}"] = row
-            md.append(f"* {p} | {cond}: {json.dumps(row, default=float)}")
+            res["loop"][f"{p}|{c}"] = row
+            rt = row.get("retry")
+            md.append(f"| {p} | {c} | {row['interventions_per_decision']:.3f} | {row['on_switches_per_lap']:.1f} | "
+                      f"{row['fallbacks']} ({row['fallback_share']:.3f}) | {row['fallback_runs3']} | {row['time_ms_mean']:.0f} / "
+                      f"{row['time_ms_p99_max']:.0f} | {fi['false']} / {fi['sampled']} | "
+                      + (f"{rt['first_attempt_failed']} / {rt['recovered_retry1']} / {rt['recovered_retry2']} / {rt['fallbacks']}"
+                         if rt else "–") + " |")
+    # failures with a filter (L7's pb-m2) and interventions followed by a failure within 3 s, by condition (review m2)
+    md += ["", "## Failures with a filter (L7's pb-m2: the last 3 s) and interventions followed by a failure within 3 s", "",
+           "| condition | failures | fallback run | intervention | neither | of them completed without a filter | "
+           "interventions followed by a failure within 3 s (tau 0 / 30 / 60 ms / T2) |", "|---|---|---|---|---|---|---|"]
+    res["failures"] = {}
+    for c in ("main", "retry"):
+        cnt, alone, n = {"fallback run": 0, "intervention": 0, "neither": 0}, 0, 0
+        fb = {}
+        for (p, case), r in conds[c].items():
+            z = np.load(_dec_path(c, use_l7, p, case))
+            d = {k: z[k] for k in z.files}
+            a = cx_f.lap_audit(d, r["completed"], L)
+            g = "T2" if r["set"] == "T2" else f"tau{int(round(r['tau'] * 1000))}"
+            v = fb.setdefault(g, [0, 0])
+            v[0] += a["interventions"]
+            v[1] += a["interventions_before_failure"]
+            if r["completed"]:
+                continue
+            cnt[cx_f.attribute(d)] += 1
+            n += 1
+            alone += bool(conds["none"].get((p, case), {}).get("completed"))
+        res["failures"][c] = {"n": n, **cnt, "completed_without_filter": alone, "interventions_then_failure": fb}
+        md.append(f"| {c} | {n} | {cnt['fallback run']} | {cnt['intervention']} | {cnt['neither']} | {alone} | "
+                  + " / ".join(f"{fb.get(g, [0, 0])[1]} of {fb.get(g, [0, 0])[0]}" for g in ("tau0", "tau30", "tau60", "T2")) + " |")
+    md += ["", "Note (review of packet 2): every decision of L7's `main` took longer than 50 ms under L7's load (97 % longer "
+           "than 100 ms; audit, section 5.1), while the simulation applied the filtered command at once – an idealisation "
+           "of both `main` and `retry` here; real time is phase G's subject."]
     out = OUT / "report"
     out.mkdir(parents=True, exist_ok=True)
     (out / "CX_F.json").write_text(json.dumps(res, indent=1, default=float))
@@ -245,7 +285,17 @@ def test() -> None:
     print(NL.join(md))
 
 
+def _dec_path(condition: str, use_l7: bool, proposer: str, case: str) -> Path:
+    """The per-decision record of a lap: L7's for `main` (if its records are used), phase F's otherwise."""
+    if condition == "main" and use_l7:
+        return L7B / "partB_filtered" / "dec" / "main" / f"{proposer}__{case}.npz"
+    name = "main_full" if condition == "main" else condition
+    return OUT / "test_dec" / name / "default" / f"{proposer}__{case}.npz"
+
+
 def main() -> None:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser()
     ap.add_argument("what", choices=["audit", "tune", "test"])
     a = ap.parse_args()
