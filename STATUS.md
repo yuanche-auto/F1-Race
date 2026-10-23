@@ -1,4 +1,4 @@
-# STATUS — F1-Race (L0–L9 done; L10 PAUSED; control expansion: phases A–F done (E closed without benchmark; F's shield part closed), phases A–G done – the seven core phases complete)
+# STATUS — F1-Race (L0–L9 done; L10 PAUSED; control expansion: phases A–G done – the seven core phases complete (E closed without benchmark; F's shield part closed))
 
 Since 2026-10-14 the project runs on a new machine (below). Reviewer on this machine: Claude
 session **"F1 Race 阶段审查"** (`local_30f94a40-03cb-490d-85b4-12ad1d351d3a`); the reviewer and
