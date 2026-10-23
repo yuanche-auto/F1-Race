@@ -1,10 +1,37 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-23 (phase F done – packet 3 and the final review of 85be4ad APPROVE; merged to main; phase G next). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-23 (phase G done – packet 3 and the final review of 380124a APPROVE; merged to main; the seven core phases complete). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
-* **Current phase:** F done – packet 3 and the final review of 85be4ad **APPROVE**; `cx/F-safety` merged to `main`
-  (--no-ff) 2026-10-23 (merge hash recorded in phase G's first commit); next G – real-time (literature and protocol
-  first). Phase F result: **H-F2 holds** – L7's main filter with retried solves completes more T1 + T2 laps than L7's
+* **Current phase:** G done – packet 3 and the final review of 380124a **APPROVE**; `cx/G-realtime` merged to `main`
+  (--no-ff) 2026-10-23 (merge hash recorded in the next branch's first commit). **The seven core phases A–G are
+  complete**; next, the frontier methods of CONTROL_METHOD_MATRIX.md (roadmap section 2), each with literature and a
+  protocol first. Phase G result: **H-G1 holds** – a model-based prediction over the known sensor delay lets the RTI
+  `lag_identified` complete 73 of 105 GT laps at a 20 ms delay against 5 for L9's RTI (not cross-checked); **H-G2 not
+  shown** (72 vs 72 without a delay); with a wrong delay the compensation fails (3 of 105); on these simulated cars the
+  identified model is nearly exact, so a real car's unmodelled dynamics are not measured.
+  History of phase G:
+  G – real-time control, branch `cx/G-realtime` from `main` 1922066 (the merge of phase F):
+  literature §G.1–G.9 and the protocol [CX_G_protocol.md](CX_G_protocol.md) revision 0 **APPROVE** (277e122) with
+  clarifications m1–m3, n1, n2 (H-G2 tests alignment against a later application; H-G1 on top of an undelayed
+  identification; the repeat of every primary arm as the noise floor; the offline equivalence in the gate; the WSL
+  environment is not the second environment). Code 2833681 … bdfa2a7 (the `comp` option of `experiments/l9`, `experiments/cx_g.py`,
+  `scripts/{run,report}_cx_g.py`, `scripts/cx_g_dev.py`, `tests/test_cx_g.py`). **Development gate passed** (NOM + GD, WSL):
+  the default path reproduces L9's offline records exactly; the offline equivalence is bit-identical; with the exact
+  model the prediction error is 0; laps – `rti` 8 / 13 without and 1 / 13 with a 20 ms delay, `rti_dc` 9 / 13 and 8 / 13
+  (development data); mean latency with the prediction 3.17 ms. Two code incidents on the way (an acados name, a
+  summary function), kept and fixed. Packet 2 **APPROVE**. **GT** (WSL worktree `F1-Race-wt-CXG-run` at 5e11634,
+  2026-10-23 04:00–05:39, 0 errors): **H-G1 holds** – at a 20 ms sensor delay the compensated RTI completes 73 of 105
+  against 5 (68 : 0, p 6.8 · 10⁻²¹; not cross-checked); **H-G2 not shown** – 72 against 72 without a delay (7 : 7, p 1; the
+  repeat flipped 0 of 20 in the d = 0 arms, so whether the discordant cars are noise is not known – review h1); at 40 ms 74 against 0, with a wrong delay (20 assumed) 3; latency with
+  the prediction 3.2–3.5 ms. Packet 3 and the final review of 380124a **APPROVE** (h1: the H-G2 noise-floor wording
+  corrected). Design: L9's real-time rule (WSL, acados SQP-RTI, one vCPU, 50 ms); `lag_identified` RTI
+  with a model-based prediction over the known delay (`rti_dc`: from the delayed measurement over the sensor delay with
+  its own applied commands, and over a fixed 10 ms command latency) against L9's uncompensated RTI, with the
+  exploration, identification and plan shared per case; H-G1 at a 20 ms sensor delay (L9: 79 → 0 of 105), H-G2 without
+  one; new test set GT (seeds 371, 7700–7729); secondary: 40 ms and a mis-specified delay, `nmpc`, the RL policy, a
+  repeat. Advanced-step MPC, learned warm starts, anytime IPOPT, deadline-aware fallback: not in phase G (protocol 3.2).
+* **Phase F:** done – packet 3 and the final review of 85be4ad **APPROVE**; `cx/F-safety` merged to `main` (--no-ff)
+  2026-10-23 as **1922066**. Phase F result: **H-F2 holds** – L7's main filter with retried solves completes more T1 + T2 laps than L7's
   filter for eight of the nine L5 finals (median +14, exact p = 0.0078; not cross-checked), its solver fallbacks fall from
   0.5–6.8 % to 0.05–0.3 % of the decisions – yet it still completes fewer laps than no filter for eight of the nine (534
   against 702 over the nine; L7's filter 423): L7's negative result stands, its remaining failures follow interventions;
@@ -149,6 +176,7 @@ Last updated: 2026-10-23 (phase F done – packet 3 and the final review of 85be
 | D | `estimation/{rls,bank}.py`, `control/adaptive_mpc.py`, `FrenetMPC(param_model=True)`, `experiments/cx_d.py`, `scripts/{run,report}_cx_d.py`, `scripts/cx_d_{dev,plans}.py` | yes (6f54f30 … ea4ac82) | yes – `tests/test_adaptive.py` 8, `tests/test_cx_d.py` 5 | development checks §9 on NOM and DEV (gate passed) | protocol rev 0 and literature §D **APPROVE** (packet 1, m1–m3 / n1–n3); packets 2–5 **APPROVE**; final review 2dd4405 **APPROVE** | **yes – phase D completed** |
 | E | `control/lmpc.py`, `experiments/cx_e.py`, `scripts/cx_e_dev.py`; `scripts/run_cx_e.py` (only its `dev` stage run) and `scripts/report_cx_e.py` – **not validated: never run end to end** (review f1) | yes (d64eb47 … 5068328) | yes – `tests/test_lmpc.py` 5 | development checks §9: NLP, regression, 36 sequences – **gate failed** | protocol rev 0 **APPROVE** (packet 1); packet 2 **APPROVE**, amendment E1 option 1 (closed, no benchmark); final review 6ebaed0 **APPROVE** (f1) | **yes – phase E completed (closed without the benchmark)** |
 | F | `experiments/cx_f.py`, l7 options `retry` / `log_commands`, `scripts/{run,report}_cx_f.py`, `scripts/cx_f_dev.py` | yes (7634e2d … e0f0b0a) | yes – `tests/test_cx_f.py` 5 | development checks §9 on NOM and FD – **gate failed** (the shield part closed, F1); audit of L7's records; T1 + T2: `none` regression, `main` reproduction, `retry` (2 332 laps) | literature §F and protocol rev 0 **APPROVE** (packet 1, m1–m3 / n1, n2); packet 2 **APPROVE**, amendment F1 option 1 (g1–g4); packet 3 and final review 85be4ad **APPROVE** | **yes – phase F completed (H-F2 holds; H-F1 not tested)** |
+| G | `comp` option of `experiments/l9`, `experiments/cx_g.py`, `scripts/{run,report}_cx_g.py`, `scripts/cx_g_dev.py` | yes (2833681 … bdfa2a7) | yes – `tests/test_cx_g.py` 4 | development checks §9 on NOM and GD (WSL) – gate passed; GT (1 340 laps, WSL) | literature §G and protocol rev 0 **APPROVE** (packet 1, m1–m3 / n1, n2); packet 2 **APPROVE**; packet 3 and final review 380124a **APPROVE** (h1) | **yes – phase G completed (H-G1 holds; H-G2 not shown)** |
 | F–G | – | not started | – | – | – | – |
 
 ## Review record
@@ -191,6 +219,9 @@ Last updated: 2026-10-23 (phase F done – packet 3 and the final review of 85be
 | 2026-10-22 | (this commit) | phase F packet 1: literature §F.1–F.12, protocol CX_F revision 0; the phase-E merge hash 490d33e recorded; the phase-E closing dates corrected (2026-10-23 → 2026-10-22, the commits' date) | **APPROVE** | m1 the applied a_b in the policy's observation (unlike L7's filters); m2 the nominal rollout ignores lag – failures within 3 s after interventions by τ; m3 `backup` on FD as background, < 6 of 12 → a more conservative a_b discussed before FV; n1 the tie rule's reason; n2 one false-intervention procedure for all; the skip count on 490d33e is 4 (my count of 3 from the progress dots was wrong) |
 | 2026-10-22 | (this commit; code 7634e2d … b94e775) | phase F packet 2: code, tests, development checks – the shield's gate failed; amendment F1; the audit of L7's records | **APPROVE**; **F1 option 1** (the shield part closed) | g1 the scope (an MPS shield with a tracker backup and a nominal check, on these cars) and the m-grid flaw stated; g2 H-F2 alone at α 0.05, 0.025 reported, H-F1 withdrawn before any T1 / T2 result; g3 none regression, main reproduction, retry 1 155 laps from a pinned worktree; g4 the shield code merged as development only, follow-ups in METHOD_MATRIX |
 | 2026-10-23 | (this commit; run e0f0b0a) | phase F packet 3: T1 + T2 – the `none` regression, the `main` reproduction check, `retry`; H-F2 holds; the benchmark section – with the **final review** of `cx/F-safety` | **APPROVE** (both) | the bare tracker's 6 / 14 / 22 laps (none / main / retry) added to the Reading as a description |
+| 2026-10-23 | (this commit) | phase G packet 1: literature §G.1–G.9, protocol CX_G revision 0; the phase-F merge hash 1922066 recorded | **APPROVE** | m1 H-G2 tests the alignment against a later application, application delays reported; m2 H-G1's scope: an undelayed, shared identification (L9's restriction); m3 every primary arm repeated, flips per arm next to the discordant counts; n1 the offline equivalence a gate condition; n2 WSL is not the second environment |
+| 2026-10-23 | (this commit; code 2833681 … bdfa2a7) | phase G packet 2: code, tests, development checks – the gate passed | **APPROVE** | GT order and logging: the arms of a case in one batch (batch numbers in the records, batches.tsv), errors re-run by the last-record rule; the Reading to correct m1 (both arms act at 10 ms at d = 0) |
+| 2026-10-23 | (this commit; run 5e11634) | phase G packet 3: GT – H-G1 holds, H-G2 not shown; S1–S4; the benchmark section – with the **final review** of `cx/G-realtime` | **APPROVE** (both) | h1: H-G2 is a symmetric 7 : 7, no difference shown; the repeat (0 of 20 flips at d = 0) does not estimate the noise there, so noise and cancelling per-car differences cannot be told apart – the wording corrected |
 
 ## Tests
 
@@ -216,6 +247,13 @@ Phase C: `results/CX/C/dev/` (main checkout) – the development checks of CX-C 
 `F1-Race-worktrees/F1-Race-wt-CXC-run` (tuning at 8b6b40d, CCT and secondary at eab7c63), `results/CX/C/` (`tune.jsonl`,
 `selected.json`, `test.jsonl`, `secondary.jsonl`, `report/`, `RUN_COMMIT*`, `SHA256_inputs*.txt`, `timeline.tsv`).
 All git-ignored.
+
+Phase G: `results/CX/G/dev/` (main checkout, WSL) – the development checks of CX-G §9 (`regress.json`, `explore.jsonl`,
+`plans.jsonl`, `eval.jsonl`, `equivalence.json`, `predictor.json`, `gate.json`, `load.jsonl`, `meta_*.json`,
+`RUN_COMMIT_dev*`, `attempt1_failed/`, `report/`). GT: worktree `F1-Race-worktrees/F1-Race-wt-CXG-run` at 5e11634,
+`results/CX/G/test/` (`explore.jsonl`, `plans.jsonl`, `eval.jsonl` 1c5f7884…, `repeat_eval.jsonl`, `rl.jsonl`,
+`load.jsonl`, `batches.tsv`, `explore/`, `plans/`, `report/CX_G.{md,json}`, `RUN_COMMIT_test`, `SHA256_*.txt`,
+`timeline.tsv`, `cxg_run.sh`, `log_*.txt`). All git-ignored.
 
 Phase F: `results/CX/F/dev/` (main checkout) – the development checks of CX-F §9 (`monitor.json`, `laps.jsonl`,
 `gate.json`, `backup_plans.jsonl`, `monitor_variants.json`, `variants.jsonl`, `meta_*.json`), decision records
@@ -243,9 +281,7 @@ Phase D: `results/CX/D/plans/` (main checkout) – the new plans of the library 
 
 ## Next actions
 
-1. Phase G (real-time: learned warm starts, delay-aware prediction for RTI, advanced-step MPC, deadline-aware fallback,
-   solver-failure recovery; timing of solver, end-to-end, sensor and actuation delay – roadmap; L9's rule, 50 ms on one
-   vCPU): branch `cx/G-realtime` from the new `main`; record the phase-F merge hash in its first commit; literature
-   entries (§G) and the protocol `docs/CX_G_protocol.md` for review; no code before its APPROVE. Phase F leaves G the
-   question of a filter with retries meeting 50 ms.
+1. The seven core phases A–G are complete. Next, the frontier methods of CONTROL_METHOD_MATRIX.md (roadmap section 2:
+   "chosen for a clear paper basis and an interpretable mechanism"), each on its own branch with literature and a
+   protocol first; record the phase-G merge hash in the next branch's first commit.
 2. Follow-up candidates (CONTROL_METHOD_MATRIX.md) stay unscheduled – among them E.2's ATV-QP learning MPC.
