@@ -1,4 +1,6 @@
-"""Control expansion phase H runs (docs/CX_H_protocol.md, revision 0 with its clarifications m1–m3, n1, n2). Windows
+"""**Phase H was closed without the benchmark (amendment H1, proposed); the tune / test / secondary stages of this runner have never been run – validate them before use.** Exception: the `dev` stage was run (section 9).
+
+Control expansion phase H runs (docs/CX_H_protocol.md, revision 0 with its clarifications m1–m3, n1, n2). Windows
 `.venv`; one fresh process per job (spawn pool, maxtasksperchild=1), single-threaded BLAS. A job of `atv` / `atv_nominal`
 / `lmpc` is one car's whole sequence (two initialisation laps and ten learning laps); `nmpc` / `identified` one lap.
 Benchmark stages run from a pinned worktree; records in results/CX/H/ (key ``job`` = stage|kind|setting|case).

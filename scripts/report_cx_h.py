@@ -1,4 +1,6 @@
-"""Control expansion phase H report (docs/CX_H_protocol.md, revision 0 with its clarifications m1–m3, n1, n2).
+"""**Phase H was closed without the benchmark (amendment H1, proposed); `tune`, `test` and `secondary` have never been run – validate them before use.** Exception: `dev` was run (section 9).
+
+Control expansion phase H report (docs/CX_H_protocol.md, revision 0 with its clarifications m1–m3, n1, n2).
 
     python scripts/report_cx_h.py tune        # HV: the rule of section 4 -> results/CX/H/selected.json + report/tune.md
     python scripts/report_cx_h.py test        # HT: H-H1 (lap time, tenth learning lap vs identified, both complete) and

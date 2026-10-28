@@ -1,7 +1,9 @@
 # CX-H protocol – the ATV-QP learning MPC (control expansion, phase H – the first frontier method)
 
 Status: **binding, revision 0 (2026-10-28; 1a5c538, APPROVE)** with the clarifications of its review (m1–m3, n1, n2;
-marked *"clarification of revision 0"*), written down before any phase-H code. Written after the literature check
+marked *"clarification of revision 0"*), written down before any phase-H code. **Development gate failed (section 9);
+amendment H1 proposed – phase H closed without the benchmark (the default of clarification m1); no HV or HT lap.** Written
+after the literature check
 ([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §H, on top of §E) and before any phase-H code: no module,
 test, runner or lap of phase H exists. Branch `cx/H-atv-lmpc` from `main` c157738 (the merge of phase G). The user chose
 this method (2026-10-23) from the follow-ups of CONTROL_METHOD_MATRIX.md: phase E's first follow-up candidate (CX-E
@@ -226,3 +228,93 @@ On NOM and DEV only (records in `results/CX/H/dev/` with commit and dirty flag):
    * on NOM, `atv` completes all ten learning laps and its tenth lap is faster than its first;
    * on DEV, it completes the tenth lap on at least 3 of the cars whose initialisation completed.
    Otherwise an amendment before any HV lap.
+
+### 9. Results of the development checks (2026-10-28; packet 2) – **the gate failed**
+
+Records (git-ignored) in `results/CX/H/dev/`, with `meta_*.json` / `RUN_COMMIT_dev` (all clean):
+* at 3c69eb0: `qp.json`, `nlp_repro.json`, `laps.jsonl` (24 jobs, 0 errors), `report/` (`report_cx_h.py dev`,
+  `gate.json`);
+* at 8b17829: the diagnostic `diag.jsonl` (6 sequences, 0 errors). Its first attempt at b62f177 failed before driving –
+  `cx_a.setting_key` could not format the diagnostic's text settings. It is kept in `diag_attempt1_failed/` and was
+  fixed in 8b17829, with numbers formatted as before.
+
+Before the registered laps there was a code smoke on NOM (scratch, disclosed in 3c69eb0's message): with OSQP, 25 of 34
+QPs of the first learning lap stopped at the iteration limit, and the car left the track at 128 m.
+
+1. **The linearisation (9.1, full size, N 30, 40 points):**
+   * the constraint Jacobian matches central differences (largest relative error 5 · 10⁻⁸);
+   * at three feasible candidates (model rollouts whose end state is a stored point), OSQP solved two with every slack
+     0 – the linearised rows accept the feasible candidate. The third (s 3 000 m, 25 m/s) **stopped at OSQP's
+     iteration limit**.
+2. **Phase E's NLP unchanged (9.2):** `lmpc` K 20 on NOM reproduces phase E's record exactly – the same lap times
+   (86.88, 83.16 s), the same failure of learning lap 1.
+3. **The registered laps (9.3, K 20; development data, not a test).** The first learning lap of every car is shown;
+   no sequence got further.
+
+   | car | `atv` – lap 1 | `atv_nominal` – lap 1 | phase E's `lmpc` (NLP, K 20) – lap 1 | `nmpc` | `identified` |
+   |---|---|---|---|---|---|
+   | NOM | off at 128 m (25 QP failures) | off at 410 m (83) | off at 442 m | 76.40 s | 76.42 s |
+   | DEV_car1 | off at 163 m (41) | off at 398 m (67) | off at 469 m | 76.25 s | 76.63 s |
+   | DEV_car2 | off at 298 m (53) | off at 364 m (63) | off at 469 m | off | 77.75 s |
+   | DEV_car3 | off at 101 m (21) | off at 465 m (115) | off at 465 m | off | 78.75 s |
+   | DEV_car4 | off at 439 m (109) | spin at 364 m (52) | off at 468 m | off | 78.70 s |
+   | DEV_car5 | off at 214 m (35) | spin at 315 m (45) | off at 470 m | 75.91 s | 75.72 s |
+
+   * The initialisation laps completed on every car (86.85–87.05 s, 83.11–83.50 s).
+   * Every QP failure is OSQP's "maximum iterations reached", and the shifted plan was applied. The solve takes 280–335
+     ms on average.
+   * Linearisation error (n1; all laps failed): `atv` on the DEV cars, the median of the per-lap P95 – |ds| 14 m,
+     |dn| 8 m, |dv_x| 15 m/s.
+4. **Gate:** NOM does not complete its ten learning laps, and DEV completes the tenth on 0 of 5 started cars. **Failed.**
+   No HV or HT lap was run.
+
+**Diagnostics (clarification m1: diagnostics only, they cannot pass the gate):**
+* **Scratch, NOM, the first learning lap only:**
+  * With **qpOASES** (sparse), every QP solved. But at the first solves the QP's step went to the input bounds (the
+    steering rate's change up to 2 rad/s, the forces' 7–27 kN). That is outside the saturating tyre model's
+    linearisation (|dn| P95 30 m over the horizon), and the car left the track at 462 m.
+  * **OSQP with a box on the input step** still stopped at its iteration limit.
+  * **qpOASES with the box** (0.2 rad/s and 1 000 N per stage) solved every QP with small linearisation errors (P50
+    0.3–0.6 m) and drove 30 s without leaving the track.
+* **That last variant over full sequences on NOM and DEV** (`diag.jsonl`, 8b17829): every car left the track **on the
+  first learning lap**.
+  * Four DEV cars left at turn 1 (470–474 m). That is where phase E's NLP and `nmpc` leave on the mismatched DEV cars.
+  * NOM left at 2 765 m and DEV_car1 at 2 658 m; `nmpc` completes on both.
+  * Terminal slack above 10⁻³ in 15–39 % of the solves; |dv_x| P95 13–80 m/s; 340–510 ms per solve.
+
+**Reading:**
+* Solved as registered, the ATV-QP fails for a numerical reason first: OSQP does not converge on this problem.
+  * Its exact penalties reach 10⁶, and with no tracking term the cost is nearly linear.
+* With a robust QP solver it fails for the reason SQP methods guard against: the full step leaves the linearisation.
+* With a trust region added (a diagnostic, not the registered design), the QP is solved and stays near its
+  linearisation, **and still no car completes the first learning lap**.
+  * On the mismatched cars it leaves the track where phase E's NLP and `nmpc` leave. On NOM and DEV_car1 it gets
+    further, to ~2.7 km.
+  * With a robust solver and a trust region, the formulation **does not support phase E's hypothesis (e1) as the
+    decisive cause**. Changing to the linearised model with E.2's candidate leaves the first learning lap failing at
+    much the same places.
+  * The common factor of every variant – phase E's NLP, the registered ATV-QP and the diagnostic one – is the first
+    learning lap. Driven by the time-to-go of the stored laps, it plans at the nominal model's η 0.95 limit. This is
+    an observation, not a tested cause.
+
+## Amendment H1 (proposed 2026-10-28, packet 2; the default of clarification m1)
+
+**Phase H is closed without the benchmark; H-H1 and H-H2 are recorded as *not tested*.**
+
+* This follows the rule fixed in advance (m1): the registered gate failed, and no substantially new design is proposed
+  as part of this phase.
+* The negative result concerns **an ATV-QP of phase E's problem with E.2's candidate on these cars**:
+  * solved with OSQP as registered, it fails numerically;
+  * as a diagnostic with qpOASES and a step box, it still fails the first learning lap.
+  It is not a result about LMPC or E.2's racing LMPC as such.
+* Phase E's hypothesis e1 is weakened by the diagnostic, not refuted: the diagnostic was not the registered design.
+* **Follow-up candidates** (CONTROL_METHOD_MATRIX.md), each a new design and protocol:
+  1. a learning MPC that does not plan its first learning lap at the nominal model's limit – a progress bound per lap
+     (phase E's e3 (2)), or a safe set built from slower laps;
+  2. E.2's own model – a local regression of the velocity states instead of the nominal physics model – with a trust
+     region and a robust QP solver;
+  3. consecutive laps (phase E's e3 (3)).
+* **The code** (`ATVLearningMPC`, `ATVLMPCController`, the `cx_e.learn` option, `cx_h.py`, the scripts and the tests)
+  is merged as usual, with the registered settings and the diagnostic options (off by default), so that section 9 can
+  be reproduced. `scripts/run_cx_h.py`'s tune / test / secondary stages and `scripts/report_cx_h.py`'s tune / test /
+  secondary have never been run and are marked as such (as phase E's f1).
