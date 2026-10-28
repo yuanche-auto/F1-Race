@@ -43,9 +43,16 @@ For any later phase that uses `cx_d.DriftField`: count a start state projected t
 first 10 ms step of every drift lap ran at f_end; no outcome changed there, the definition was kept for CX-D's records).
 From phase E (CX-E amendment E1, review e3; the phase was closed after its development gate failed): **the racing LMPC
 as E.2 implements it – an ATV QP, linearised along the candidate trajectory, so that the convex hull of stored states is
-feasible for the model the problem uses** (the first candidate); a bound on the progress per lap (e.g. the terminal
+feasible for the model the problem uses** (the first candidate; tried as phase H, closed – see below); a bound on the progress per lap (e.g. the terminal
 time-to-go not below the previous lap's at the corresponding point minus a limit); consecutive laps instead of every lap
 from the same initial state.
+From phase H (CX-H amendment H1, review i3; the phase was closed after its development gate failed – an ATV-QP of phase
+E's problem with E.2's candidate, solved with OSQP, left the track on learning lap 1 on every car, as did a diagnostic
+with qpOASES and a step box), in this order: (1) **a bound on the progress per lap, or a safe set built from slower
+laps**, so that the first learning lap is not planned at the nominal model's limit; (2) **E.2's own local-regression
+model** of the velocity states, with a trust region and a robust QP solver; (3) **consecutive laps**. **Precondition for
+any later LMPC phase** (after phases E and H both failed their development gates): show on NOM that its first learning lap
+completes reliably before a benchmark is registered.
 From phase F (CX-F amendment F1, review g4; the shield part was closed after its development gate failed – the L1
 tracker is no backup on these cars: at a reduced speed factor it leaves the track even on the nominal car, on a slower
 plan it completes at most 9 of 12 development laps and almost none with a 60 ms lag): **a backup that drives the lagged

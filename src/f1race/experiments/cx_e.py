@@ -97,6 +97,10 @@ def _lap_metrics(res, track, ctl=None) -> dict:
             out.update({"term_slack_share_above_1e-3": float(np.mean(ts_ > 1e-3)), "term_slack_max": float(ts_.max())})
         if getattr(ctl, "diag", None):
             out["regression_fallback_share"] = float(np.mean([d["fallback_share"] for d in ctl.diag]))
+        if getattr(ctl, "lin_err", None):              # phase H's ATV controller: the linearisation error per solve
+            le = np.array(ctl.lin_err)
+            out["lin_err_ds_dn_dvx_p50"] = [float(v) for v in np.median(le, axis=0)]
+            out["lin_err_ds_dn_dvx_p95"] = [float(v) for v in np.percentile(le, 95, axis=0)]
     return out
 
 
@@ -105,9 +109,12 @@ def _run(case: dict, track, ctl, x0) -> object:
     return sim.run(ctl, x0, t_max=T_LAP + 15.0, laps=1.0 + RUNOUT / track.length)
 
 
-def learn(case: dict, kind: str, setting: dict) -> dict:
-    """Section 3: the initialisation laps and the ten learning laps of one car."""
-    from ..control.lmpc import TERM, TERM7, LapStore, LearningMPC, LMPCController, Recorder
+def learn(case: dict, kind: str, setting: dict, solver: str = "nlp") -> dict:
+    """Section 3: the initialisation laps and the ten learning laps of one car. ``solver`` (control expansion phase H,
+    docs/CX_H_protocol.md): "nlp" – this phase's IPOPT problem (default); "atv" – the same problem as one QP per solve
+    along E.2's candidate (``ATVLearningMPC``, ``ATVLMPCController``)."""
+    from ..control.lmpc import (TERM, TERM7, ATVLearningMPC, ATVLMPCController, LapStore, LearningMPC, LMPCController,
+                                Recorder)
     from ..control.nmpc import FrenetMPC, MPCController
     from ..track import Track
     from .l1 import dyn_reference
@@ -128,8 +135,17 @@ def learn(case: dict, kind: str, setting: dict) -> dict:
     P = int(setting.get("P", P_LAPS))                 # development options (protocol section 9): P, delta in the terminal
     term = TERM7 if setting.get("term7") else TERM    # condition, fewer learning laps; the registered settings use none
     n_learn = int(setting.get("n_learn", N_LEARN))
-    lmpc = LearningMPC(track, model, n_pts=P * K, N=N, dt=MPC_DT, eta=ETA, margin=NMPC_SETTING["margin"], w_T=W_T,
-                       term=term)
+    if solver not in ("nlp", "atv"):
+        raise ValueError(solver)
+    cls, ctl_cls = (ATVLearningMPC, ATVLMPCController) if solver == "atv" else (LearningMPC, LMPCController)
+    kw = {}
+    if solver == "atv":                              # phase H's development diagnostics (CX-H clarification m1; the
+        if setting.get("qp_solver"):                 # registered settings use neither)
+            kw["qp_solver"], kw["qp_opts"] = setting["qp_solver"], {"printLevel": "none", "sparse": True}
+        if setting.get("trust"):
+            kw["trust"] = tuple(setting["trust"])
+    lmpc = cls(track, model, n_pts=P * K, N=N, dt=MPC_DT, eta=ETA, margin=NMPC_SETTING["margin"], w_T=W_T, term=term,
+               **kw)
     store = LapStore(lmpc._step)
     laps: list[dict] = []
     for e in INIT_ETAS:
@@ -152,7 +168,7 @@ def learn(case: dict, kind: str, setting: dict) -> dict:
                          "distance": 0.0, "failure_s": None})
             continue
         lmpc.reset()
-        ctl = LMPCController(lmpc, store, K, P, regression=kind == "lmpc", sim_dt=DT)
+        ctl = ctl_cls(lmpc, store, K, P, regression=kind == "lmpc", sim_dt=DT)
         res = _run(case, track, ctl, x0)
         m = _lap_metrics(res, track, ctl)
         m.update(lap=f"learn_{j}", kind="learn", stored_laps=len(store),

@@ -59,7 +59,12 @@ def grid(kind: str) -> list[dict]:
 
 
 def setting_key(setting: dict) -> str:
-    return ",".join(f"{k}={setting[k]:g}" for k in sorted(setting)) or "default"
+    """``k=v`` joined by commas (numbers as ``:g``; strings and lists – phase H's development options – as text)."""
+    def fmt(v) -> str:
+        if isinstance(v, (list, tuple)):
+            return "/".join(fmt(x) for x in v)
+        return f"{v:g}" if isinstance(v, (int, float)) and not isinstance(v, bool) else str(v)
+    return ",".join(f"{k}={fmt(setting[k])}" for k in sorted(setting)) or "default"
 
 
 def cases(name: str) -> list[dict]:

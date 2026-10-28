@@ -690,3 +690,65 @@ run-to-run noise or per-car differences that cancel cannot be told from these da
   of 30); the compensation does not change that. Within GT, the no-delay RTI is close to L9's (72 against 79 on other
   laps; 70 of 75 against L9's 73 of 75 on the car laps, 2 against 6 of 30 on the disturbance laps).
 * **Development data** (§9) on the development cars had shown the same picture (8 of 13 against 1 of 13).
+
+## Phase H – the ATV-QP learning MPC (the first frontier method): closed without the benchmark (a negative development result)
+
+Protocol [CX_H_protocol.md](CX_H_protocol.md): revision 0 with clarifications m1–m3, n1, n2; **amendment H1 accepted**,
+with i1–i3. The development gate of protocol §9 – phase E's gate – failed, and phase H was closed without the benchmark,
+by the default that clarification m1 fixed in advance. **H-H1 and H-H2 are not tested**; no tuning, test or secondary lap
+was run.
+
+Development records (git-ignored) are in the main checkout's `results/CX/H/dev/`:
+* `qp.json`, `nlp_repro.json` and `laps.jsonl` (24 jobs) at 3c69eb0;
+* `diag.jsonl` (6 diagnostic sequences) at 8b17829;
+* `report/` (with `gate.json`) regenerated at cfe57ad.
+
+**What was built:** `atv` solves phase E's problem row for row as one QP per step:
+* the dynamics and constraints are linearised at a candidate z̄;
+* the cost is kept exactly (its Hessian is constant), plus 10⁻⁶‖z − z̄‖²;
+* the QP is solved with OSQP.
+
+The candidate follows E.2:
+* the previous solution shifted by one step, with the terminal state Σ λᵢ succ(xᵢ) of the previous λ, and its inputs
+  formed the same way;
+* at a lap's first step, the fastest stored lap's first N + 1 states.
+
+The safe set holds the K nearest states by s around the candidate's terminal state, from the last P = 2 laps, without
+each lap's last point. `atv_nominal` is the same without E.4's correction. The laps are as in phase E: two
+initialisation laps, then up to ten learning laps from the same initial state, each driven 250 m past the line.
+
+**What happened** (the nominal car NOM and the five development cars; K 20):
+
+| variant | NOM | development cars |
+|---|---|---|
+| `atv` (registered: OSQP) | off on learning lap 1 (128 m) | all five off on lap 1 (101–439 m) |
+| `atv_nominal` (registered: OSQP) | off on lap 1 (410 m) | all five off or spun on lap 1 (315–465 m) |
+| phase E's `lmpc` (IPOPT; reproduced exactly) | off on lap 1 (442 m) | all five off on lap 1 (465–470 m) |
+| diagnostic: `atv` with qpOASES and a box on the input step (0.2 rad/s, 1 000 N per stage) | off on lap 1 (2 765 m) | DEV_car1 off on lap 1 at 2 658 m; the other four at turn 1 (470–474 m) |
+
+* The initialisation laps completed on every car.
+* With OSQP, 21–115 QPs per lap stopped at the solver's iteration limit; the shifted plan was applied for them.
+* With qpOASES and no box (a scratch run on NOM's first learning lap), every QP was solved, but the full step went to
+  the input bounds, far outside the tyre model's
+  linearisation.
+* With the box, over full sequences:
+  * the median linearisation error stayed small: |ds| 0.3–0.6 m and |dn| 0.6–1.4 m per lap;
+  * its P95 in v_x was 13–80 m/s;
+  * the terminal slack exceeded 10⁻³ in 15–39 % of the solves;
+  * qpOASES failed no QP on the four cars that left at turn 1, but failed 18 on NOM and 17 on DEV_car1, the two that got
+    to ~2.7 km. The shifted plan was applied for those.
+* Solves took 280–335 ms on average (the diagnostic 346–507 ms), far above the 50 ms period. This is an offline
+  benchmark, and phase G's real-time rule was not part of it.
+
+**Reading (review i1, i2):**
+* **Scope (i1):** the negative result concerns **an ATV-QP form of phase E's problem, solved with OSQP, with E.2's
+  candidate, on these cars**. It is not a result about LMPC as such. Nor is it about E.2's own implementation, which has
+  its own local-regression model of the velocity states, a hard terminal constraint, and N = 12 × 100 ms.
+* **e1 (i2):** the diagnostic, which is not the registered design, also fails learning lap 1. On the mismatched cars it
+  fails at much the same places as phase E's NLP. This **weakens** e1 – that the convex hull's infeasibility under the
+  nonlinear model was the decisive cause – but **does not refute** it.
+* **Observation, not a conclusion:** every variant plans its first learning lap at the nominal model's η 0.95 limit,
+  driven by the stored laps' time-to-go.
+
+**Follow-ups (i3):** see CONTROL_METHOD_MATRIX.md. Two LMPC phases have now failed at their development gate. **A later
+LMPC phase must first show, on NOM, that its first learning lap completes reliably, before a benchmark is registered.**
