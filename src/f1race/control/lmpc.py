@@ -14,6 +14,23 @@ D, c and Gamma are parameters set before every solve by ``LMPCController`` from 
 car): the K states nearest in s to the candidate terminal arclength from each of the last P laps; Gamma_k from a local,
 kernel-weighted ridge regression of the 50 ms residuals (``LapStore.regress``). The steering angle is not in the terminal
 condition (protocol section 3.2, clarification m3).
+
+**Phase H (docs/CX_H_protocol.md): ``ATVLearningMPC`` / ``ATVLMPCController``** – the same optimal control problem, row
+for row, solved as one QP per solve: every constraint row linearised at a candidate z_bar (g(z_bar) + dg(z_bar) dz), the
+cost (quadratic and linear in the variables) kept exactly, plus 1e-6 ||z - z_bar||^2 – one Gauss-Newton (RTI-type) step of
+the NLP, i.e. the affine-time-varying QP of the racing LMPC. Solver OSQP (CasADi's conic interface). The candidate: the
+previous solution shifted by one step, its terminal state z_t = sum_i lambda_i succ(D_i) – the stored states one 50 ms step
+after the selected points, weighted with the previous lambda – and its last input the successors' inputs weighted the
+same way; at a lap's first solve the fastest stored lap's first N + 1 states and N inputs. The local safe set is selected
+around z_t's s; each stored lap's last point (no successor) is excluded (review m2). A failed QP applies the candidate's
+first input – the shifted previous plan, or at a lap's first solve the stored lap's first input – and is counted.
+
+Attribution (protocol clarification m3): the formulation follows Rosolia & Borrelli, *Learning how to autonomously race a
+car: a predictive control approach* (E.2; IEEE TCST) and *Learning model predictive control for iterative tasks* (E.1;
+IEEE TAC 2018), with the error model of Xue, Zhu, Dolan & Borrelli, *Learning model predictive control with error dynamics
+regression for autonomous racing* (E.4; ICRA 2024). The open-source codes urosolia/RacingLMPC (UC Berkeley; H.1) and
+MPC-Berkeley/Racing-LMPC-ROS2 (H.2) were read and no code was copied; the successor-weighted terminal candidate is the
+construction of E.2 / H.1.
 """
 from __future__ import annotations
 
@@ -246,6 +263,36 @@ class LapStore:
             lap_ids.append(np.full(K, li))
         return np.hstack(cols), np.concatenate(cs), np.concatenate(lap_ids)
 
+    def fastest(self) -> dict:
+        """The stored lap with the shortest finish time (phase H: a lap's first candidate)."""
+        return min(self.laps, key=lambda lap: lap["T"])
+
+    def select_succ(self, s_query: float, K: int, P: int = 2, term: tuple = TERM):
+        """Phase H: as ``select`` around s_query, without each lap's last point (it has no successor, review m2), and
+        with the successors of the selected points: (D (len(term), P K), c (P K), Dsucc (7, P K), Usucc (3, P K, forces in
+        N))."""
+        cols, cs, sx, su = [], [], [], []
+        ids = list(range(len(self.laps)))[-P:]
+        while len(ids) < P:
+            ids = [ids[0]] + ids
+        for li in ids:
+            lap = self.laps[li]
+            n = len(lap["X"])
+            valid = lap["order"][lap["order"] != n - 1]
+            ss = lap["X"][valid, 0]
+            j = int(np.searchsorted(ss, s_query))
+            lo, hi = max(0, j - K), min(len(ss), j + K)
+            cand = np.arange(lo, hi)
+            near = cand[np.argsort(np.abs(ss[cand] - s_query), kind="stable")[:K]]
+            if len(near) < K:
+                near = np.concatenate([near, np.full(K - len(near), near[-1] if len(near) else len(ss) - 1)])
+            idx = valid[near]
+            cols.append(lap["X"][idx][:, list(term)].T)
+            cs.append(lap["T"] - lap["t"][idx])
+            sx.append(lap["X"][idx + 1].T)
+            su.append(lap["U"][idx + 1].T)
+        return np.hstack(cols), np.concatenate(cs), np.hstack(sx), np.hstack(su)
+
     def _samples(self):
         """All stored 50 ms transitions: z (n, 8), the residual of the velocity states (n, 3) against the nominal step."""
         if self._tree is None:
@@ -378,4 +425,135 @@ class Recorder:
         return out
 
 
-__all__ = ["LearningMPC", "LapStore", "LMPCController", "Recorder", "regressor", "TERM", "TERM7", "NZ"]
+class ATVLearningMPC(LearningMPC):
+    """``LearningMPC``'s problem solved as one QP per solve (phase H; module docstring). ``rho``: the regularisation
+    weight on ||z - z_bar||^2; ``osqp``: OSQP's options. Development diagnostics only (protocol clarification m1; the
+    registered design uses neither): ``qp_solver`` another CasADi conic plugin (e.g. "qpoases") with ``qp_opts``;
+    ``trust`` = (steering rate [rad/s], force [N]): the QP's input step from the candidate bounded per stage."""
+
+    def __init__(self, *args, rho: float = 1e-6, osqp: dict | None = None, qp_solver: str = "osqp",
+                 qp_opts: dict | None = None, trust: tuple | None = None, **kw):
+        super().__init__(*args, **kw)
+        z, J, g, p = (self._nlp[k] for k in ("x", "f", "g", "p"))
+        self._gf = ca.Function("atv_g", [z, p], [g])
+        self._jg = ca.Function("atv_jg", [z, p], [ca.jacobian(g, z)])
+        self._dJ = ca.Function("atv_dJ", [z, p], [ca.gradient(J, z)])
+        H = ca.Function("atv_H", [z, p], [ca.hessian(J, z)[0]])
+        n = z.shape[0]
+        # the cost is quadratic and linear in z: its Hessian is constant (checked at two points)
+        H0 = H(np.zeros(n), np.zeros(p.shape[0]))
+        H1 = H(np.random.default_rng(0).standard_normal(n), np.random.default_rng(1).standard_normal(p.shape[0]))
+        if float(ca.norm_inf(H0 - H1)) > 1e-9:
+            raise ValueError("the cost's Hessian is not constant")
+        self._H = H0 + 2.0 * rho * ca.DM.eye(n)
+        self.rho = rho
+        if qp_solver == "osqp":
+            opts = {"verbose": False, "eps_abs": 1e-5, "eps_rel": 1e-5, "polish": True, "max_iter": 20000}
+            opts.update(osqp or {})
+            copts = {"osqp": opts, "error_on_fail": False}
+        else:                                           # development diagnostics: another CasADi conic plugin
+            copts = {"error_on_fail": False, **(qp_opts or {})}
+        self.qp_solver, self.trust = qp_solver, trust
+        self.qp = ca.conic("atv_qp", qp_solver, {"h": self._H.sparsity(), "a": self._jg.sparsity_out(0)}, copts)
+
+    def params(self, x0, u_prev, D, c, G=None) -> np.ndarray:
+        G = np.zeros((self.N, 3, NZ)) if G is None else np.asarray(G, float)
+        return np.concatenate([x0, [u_prev[0], u_prev[1] / FS, u_prev[2] / FS], np.asarray(D, float).ravel(order="F"),
+                               np.asarray(c, float), G.ravel()])
+
+    def candidate_vector(self, Xc: np.ndarray, Uc: np.ndarray) -> np.ndarray:
+        """z_bar from candidate states (N + 1, 7) and inputs (N, 3, forces in N): slacks 0, lambda uniform (lambda enters
+        only linear rows, so its candidate value does not change the QP)."""
+        z = np.zeros(self.lbz.shape)
+        z[self.Xi] = Xc
+        z[self.Ui] = np.asarray(Uc, float) / np.array([1.0, FS, FS])
+        z[self.Li] = 1.0 / self.n_pts
+        return z
+
+    def solve_qp(self, x0: np.ndarray, u_prev: np.ndarray, D: np.ndarray, c: np.ndarray, G, zbar: np.ndarray):
+        """One QP at the candidate ``zbar``; a failed QP keeps the candidate (its first input is applied)."""
+        p = self.params(x0, u_prev, D, c, G)
+        t0 = time.time()
+        gb = np.asarray(self._gf(zbar, p)).ravel()
+        lbx, ubx = self.lbz - zbar, self.ubz - zbar
+        if self.trust is not None:                      # development diagnostic: a box on the input step
+            r = np.array([self.trust[0], self.trust[1] / FS, self.trust[1] / FS])
+            lbx[self.Ui] = np.maximum(lbx[self.Ui], -r)
+            ubx[self.Ui] = np.minimum(ubx[self.Ui], r)
+        sol = self.qp(h=self._H, g=self._dJ(zbar, p), a=self._jg(zbar, p), lba=self.lbg - gb, uba=self.ubg - gb,
+                      lbx=lbx, ubx=ubx)
+        st = self.qp.stats()
+        ok = bool(st.get("success", False))
+        z = zbar + np.asarray(sol["x"]).ravel() if ok else zbar.copy()
+        self.z = z
+        u = z[self.Ui[0]] * np.array([1.0, FS, FS])
+        info = {"status": st.get("return_status", "?"), "iter": int(st.get("iter_count", -1) or -1),
+                "time": time.time() - t0, "slack": float(np.max(z[self.Si])), "fallback": not ok,
+                "limit_slack": float(np.max(z[self.Ti])), "term_slack": float(np.max(z[self.Ei])),
+                "lam_max": float(np.max(z[self.Li]))}
+        self.stats.append(info)
+        return u, info
+
+
+class ATVLMPCController(LMPCController):
+    """``LMPCController`` with E.2's candidate and the QP (phase H; module docstring). Records per solve the
+    linearisation error: the model's rollout of the QP's inputs (the nominal step plus the correction Gamma) against the
+    QP's predicted state at N – |ds|, |dn| [m], |dv_x| [m/s] (protocol section 5)."""
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self.prev = None
+        self.lin_err: list[tuple[float, float, float]] = []
+
+    def _candidate(self):
+        m = self.mpc
+        if self.prev is None:                            # a lap's first solve: the fastest stored lap's beginning
+            lap = self.store.fastest()
+            return lap["X"][:m.N + 1].copy(), lap["U"][:m.N].copy()
+        Xp, Up, lam, Dsucc, Usucc = self.prev
+        return np.vstack([Xp[1:], Dsucc @ lam]), np.vstack([Up[1:], Usucc @ lam])
+
+    def _rollout_error(self, xf, U, X, G):
+        m = self.mpc
+        x = np.array(xf, float)
+        for k in range(m.N):
+            xn = np.asarray(m._step(x, U[k] / np.array([1.0, FS, FS]))).ravel()
+            if G is not None:
+                xn[3:6] += G[k] @ regressor(x, U[k])[0]
+            x = xn
+        return abs(x[0] - X[m.N, 0]), abs(x[1] - X[m.N, 1]), abs(x[3] - X[m.N, 3])
+
+    def __call__(self, t: float, x: np.ndarray):
+        xf = self.frenet(x)
+        if t + 1e-9 >= self.t_next:
+            m = self.mpc
+            Xc, Uc = self._candidate()
+            s_q = float(Xc[-1, 0])
+            D, c, Dsucc, Usucc = self.store.select_succ(s_q, self.K, self.P, m.term)
+            if self.regression:
+                G, fb = self.store.regress(regressor(Xc[:m.N], Uc))
+            else:
+                G, fb = None, np.ones(m.N, bool)
+            u, info = m.solve_qp(xf, self.u, D, c, G, m.candidate_vector(Xc, Uc))
+            Xs, Us, lam = m.prediction()
+            self.prev = (Xs, Us, lam, Dsucc, Usucc)
+            self.lin_err.append(self._rollout_error(xf, Us, Xs, G))
+            self.u = u
+            self.t_next = t + m.dt
+            self.log.append((t, xf[0], xf[1], info["time"], info["status"], info["slack"]))
+            self.diag.append({"t": t, "s": xf[0], "term_slack": info["term_slack"], "fallback_share": float(np.mean(fb)),
+                              "s_tilde": s_q, "c_min": float(np.min(c)),
+                              "past_line_pts": int(np.sum(D[0] > m.track.length))})
+            self.rec_t.append(t)
+            self.rec_x.append(xf.copy())
+            self.rec_u.append(u.copy())
+        drate, fd, fb_ = float(self.u[0]), float(self.u[1]), float(self.u[2])
+        if self.tc_eta is not None:
+            veh = self.mpc.veh
+            d_next = x[6] + np.clip(drate, -veh.delta_rate_max, veh.delta_rate_max) * self.sim_dt
+            fd, fb_ = traction_limit(veh, x, d_next, fd, fb_, self.tc_eta)
+        return drate, fd, fb_
+
+
+__all__ = ["LearningMPC", "LapStore", "LMPCController", "Recorder", "regressor", "TERM", "TERM7", "NZ",
+           "ATVLearningMPC", "ATVLMPCController"]
