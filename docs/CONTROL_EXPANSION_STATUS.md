@@ -1,10 +1,12 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-23 (phase H – the first frontier method, the ATV-QP learning MPC: literature §H and protocol revision 0 in review, packet 1). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-28 (phase H: protocol revision 0 APPROVE with clarifications m1–m3, n1, n2; code next). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
 * **Current phase:** H – the first frontier method (the user's choice, 2026-10-23): the ATV-QP learning MPC, phase
   E's first follow-up candidate; branch `cx/H-atv-lmpc` from `main` c157738 (the merge of phase G); literature §H.1–H.3
-  and the protocol [CX_H_protocol.md](CX_H_protocol.md) revision 0 **in review (packet 1)**; no code before its APPROVE.
+  and the protocol [CX_H_protocol.md](CX_H_protocol.md) revision 0 **APPROVE** (1a5c538) with clarifications m1–m3, n1, n2 (the gate judged on the registered
+  development laps only, a failed gate closes the phase by default; the candidate's edges; attribution of H.1 / H.2; the
+  linearisation error per lap; the reason for E's K grid). Next: code and the development checks (packet 2).
   Design: phase E's optimal control problem row for row, solved as one QP per step on the model linearised along E.2's
   candidate (the shifted solution, its terminal point from the previous λ's successors); phase E's development gate
   first; then H-H1 / H-H2 (`atv`'s tenth learning lap against `identified`, lap time and completions) on new test cars
@@ -182,7 +184,7 @@ Last updated: 2026-10-23 (phase H – the first frontier method, the ATV-QP lear
 | E | `control/lmpc.py`, `experiments/cx_e.py`, `scripts/cx_e_dev.py`; `scripts/run_cx_e.py` (only its `dev` stage run) and `scripts/report_cx_e.py` – **not validated: never run end to end** (review f1) | yes (d64eb47 … 5068328) | yes – `tests/test_lmpc.py` 5 | development checks §9: NLP, regression, 36 sequences – **gate failed** | protocol rev 0 **APPROVE** (packet 1); packet 2 **APPROVE**, amendment E1 option 1 (closed, no benchmark); final review 6ebaed0 **APPROVE** (f1) | **yes – phase E completed (closed without the benchmark)** |
 | F | `experiments/cx_f.py`, l7 options `retry` / `log_commands`, `scripts/{run,report}_cx_f.py`, `scripts/cx_f_dev.py` | yes (7634e2d … e0f0b0a) | yes – `tests/test_cx_f.py` 5 | development checks §9 on NOM and FD – **gate failed** (the shield part closed, F1); audit of L7's records; T1 + T2: `none` regression, `main` reproduction, `retry` (2 332 laps) | literature §F and protocol rev 0 **APPROVE** (packet 1, m1–m3 / n1, n2); packet 2 **APPROVE**, amendment F1 option 1 (g1–g4); packet 3 and final review 85be4ad **APPROVE** | **yes – phase F completed (H-F2 holds; H-F1 not tested)** |
 | G | `comp` option of `experiments/l9`, `experiments/cx_g.py`, `scripts/{run,report}_cx_g.py`, `scripts/cx_g_dev.py` | yes (2833681 … bdfa2a7) | yes – `tests/test_cx_g.py` 4 | development checks §9 on NOM and GD (WSL) – gate passed; GT (1 340 laps, WSL) | literature §G and protocol rev 0 **APPROVE** (packet 1, m1–m3 / n1, n2); packet 2 **APPROVE**; packet 3 and final review 380124a **APPROVE** (h1) | **yes – phase G completed (H-G1 holds; H-G2 not shown)** |
-| H | – (no code before the protocol's APPROVE) | – | – | – | literature §H and protocol rev 0: packet 1 requested | – |
+| H | – (code next) | – | – | – | literature §H and protocol rev 0 **APPROVE** (packet 1, m1–m3 / n1, n2) | – |
 | F–G | – | not started | – | – | – | – |
 
 ## Review record
@@ -228,7 +230,7 @@ Last updated: 2026-10-23 (phase H – the first frontier method, the ATV-QP lear
 | 2026-10-23 | (this commit) | phase G packet 1: literature §G.1–G.9, protocol CX_G revision 0; the phase-F merge hash 1922066 recorded | **APPROVE** | m1 H-G2 tests the alignment against a later application, application delays reported; m2 H-G1's scope: an undelayed, shared identification (L9's restriction); m3 every primary arm repeated, flips per arm next to the discordant counts; n1 the offline equivalence a gate condition; n2 WSL is not the second environment |
 | 2026-10-23 | (this commit; code 2833681 … bdfa2a7) | phase G packet 2: code, tests, development checks – the gate passed | **APPROVE** | GT order and logging: the arms of a case in one batch (batch numbers in the records, batches.tsv), errors re-run by the last-record rule; the Reading to correct m1 (both arms act at 10 ms at d = 0) |
 | 2026-10-23 | (this commit; run 5e11634) | phase G packet 3: GT – H-G1 holds, H-G2 not shown; S1–S4; the benchmark section – with the **final review** of `cx/G-realtime` | **APPROVE** (both) | h1: H-G2 is a symmetric 7 : 7, no difference shown; the repeat (0 of 20 flips at d = 0) does not estimate the noise there, so noise and cancelling per-car differences cannot be told apart – the wording corrected |
-| 2026-10-23 | (this commit) | phase H packet 1: literature §H.1–H.3, protocol CX_H revision 0 (the ATV-QP learning MPC, the user's choice of the first frontier method); the phase-G merge hash c157738 recorded | requested | – |
+| 2026-10-23 | (this commit) | phase H packet 1: literature §H.1–H.3, protocol CX_H revision 0 (the ATV-QP learning MPC, the user's choice of the first frontier method); the phase-G merge hash c157738 recorded | **APPROVE** (2026-10-28) | m1 the gate only on the registered development laps, a failed gate closes the phase by default (as E1 option 1); m2 the stored laps' last points excluded from the safe set, a failed first QP applies the candidate's first input; m3 attribution of H.1 / H.2 in the docstring; n1 the linearisation error per lap with the outcome; n2 why the K grid stays E's |
 
 ## Tests
 
@@ -288,6 +290,6 @@ Phase D: `results/CX/D/plans/` (main checkout) – the new plans of the library 
 
 ## Next actions
 
-1. Phase H (the ATV-QP learning MPC): the review of packet 1 (literature §H, protocol CX_H revision 0); on APPROVE the
-   code and the development checks of its section 9 (phase E's gate) before any HV lap.
+1. Phase H (the ATV-QP learning MPC): the code of protocol section 8.2 and the development checks of section 9 (phase
+   E's gate, judged on the registered laps only); packet 2 before any HV lap.
 2. Follow-up candidates (CONTROL_METHOD_MATRIX.md) stay unscheduled – among them E.2's ATV-QP learning MPC.

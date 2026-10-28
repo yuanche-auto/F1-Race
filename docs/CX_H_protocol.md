@@ -1,6 +1,7 @@
 # CX-H protocol – the ATV-QP learning MPC (control expansion, phase H – the first frontier method)
 
-Status: **revision 0, proposed for review (packet 1, 2026-10-23)**. Written after the literature check
+Status: **binding, revision 0 (2026-10-28; 1a5c538, APPROVE)** with the clarifications of its review (m1–m3, n1, n2;
+marked *"clarification of revision 0"*), written down before any phase-H code. Written after the literature check
 ([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §H, on top of §E) and before any phase-H code: no module,
 test, runner or lap of phase H exists. Branch `cx/H-atv-lmpc` from `main` c157738 (the merge of phase G). The user chose
 this method (2026-10-23) from the follow-ups of CONTROL_METHOD_MATRIX.md: phase E's first follow-up candidate (CX-E
@@ -30,8 +31,15 @@ amendment E1, review e3).
 as phase E registered – does it learn over ten laps where the NLP did not, and how does its tenth learning lap compare
 with the one-lap identification and full re-plan?*
 
-The phase is gated: the development gate of phase E (section 9) must be passed before any test lap. If it fails, an
-amendment follows, as in phase E.
+The phase is gated: the development gate of phase E (section 9) must be passed before any test lap.
+
+*Clarification of revision 0 (review m1) – the gate, fixed in advance:*
+* The gate is judged **only on the registered development laps of section 9.3** – K = 20, `atv` and `atv_nominal`, NOM
+  and the five DEV cars. No other setting may be tried in order to pass it. Diagnostic variants may be run, as
+  diagnostics only.
+* **If the gate fails, the default is to close phase H without the benchmark**, as amendment E1's option 1, and to
+  report the development results as they are. Only a substantially new design would be registered, as a new protocol.
+  It would not be an amendment of this one.
 
 * **H-H1 (primary):** on the test cars HT (section 2), the lap time of `atv`'s tenth learning lap and `identified`'s lap
   differ, on the cars both complete. Exact signed-rank (mid-ranks, the exact distribution), two-sided.
@@ -104,12 +112,21 @@ What changes is how it is solved, and the candidate.
     the previous λ – and its last input the stored successors' inputs, weighted the same way;
   * at a lap's first solve, the fastest stored lap's first N + 1 states and N inputs;
   * slacks at 0.
+  * *Clarification of revision 0 (review m2) – the edges:*
+    * each stored lap's **last point** (the end of its 250 m run-out) has no successor, so it is **excluded from the
+      local safe set**; the K nearest are chosen among the others;
+    * if a lap's **first** QP fails, there is no previous plan to shift, so **the candidate's first input** (the fastest
+      stored lap's first input) is applied; it is counted as a fallback.
 * **The local safe set:** the K nearest stored states by s to z_t's s from each of the last P = 2 stored laps (phase E's
   rule, with E.2's query point z_t instead of phase E's s_N + h v_x).
 * **The regression** is evaluated at the candidate (phase E: at the shifted solution). `atv_nominal` uses Γ ≡ 0.
 * **Solver:** OSQP (CasADi's conic interface; eps_abs = eps_rel = 10⁻⁵, polish on, max_iter 20 000). A QP that does not
   return "solved" applies the shifted previous plan (L6's handling, as phase E) and is counted.
 * Traction control (0.99), the applied first input, and the recording of the lap are as in phase E.
+* *Clarification of revision 0 (review m3) – attribution:* the module's docstring states that the formulation follows
+  E.2 (and E.4 for the error model), that urosolia/RacingLMPC (H.1) and MPC-Berkeley/Racing-LMPC-ROS2 (H.2) were read and
+  no code was copied, and cites the papers (E.1, E.2, E.4). H.1's licence asks for attribution to UC Berkeley and the
+  papers. Any structural borrowing – the successor-weighted terminal candidate is H.1's / E.2's – is attributed there.
 
 **Fixed now, not tuned:** the regularisation 10⁻⁶; the OSQP settings; P = 2; everything inherited from phase E.
 
@@ -133,6 +150,9 @@ What changes is how it is solved, and the candidate.
   * ties by the mean tenth lap time on the cars every tied setting completes;
   * then K = 20, then the smaller K.
   `atv_nominal` and `lmpc` use `atv`'s K. The choice and the records go to the reviewer before any HT lap.
+  *Clarification of revision 0 (review n2):* the grid stays phase E's {10, 20, 40} and is not changed to the {5, 10, 20}
+  tried in E's development diagnostics. E's grid was registered, and the candidate is defined differently here, so E's
+  observation under the NLP that smaller K did better need not carry over.
 * **Secondary on HT**, after the primary report:
   * `lmpc` (phase E's NLP, the chosen K) – the formulation ablation;
   * the secondary conditions of section 2.
@@ -149,7 +169,9 @@ As phase E section 5, per car:
 * the regression's fallback share (stages with Γ = 0);
 * QP failures (fallbacks) and the solve time;
 * **the linearisation error** of each solve – the nonlinear model's rollout of the QP's inputs against the QP's predicted
-  states, at N (position, v_x), as a median and P95 per lap. The candidate's validity is the mechanism under test;
+  states, at N (position, v_x), as a median and P95 per lap. The candidate's validity is the mechanism under test.
+  *Clarification of revision 0 (review n1):* it is reported **per lap, next to that lap's outcome**, so that a failed
+  lap's linearisation error can be compared with that of the completed laps;
 * for the tenth lap, the cars `atv` completes against those it does not (`identified`'s lap time, the seven parameter
   factors; E m2).
 
