@@ -1,4 +1,4 @@
-"""**Phase H was closed without the benchmark (amendment H1, proposed); `tune`, `test` and `secondary` have never been run – validate them before use.** Exception: `dev` was run (section 9).
+"""**Phase H was closed without the benchmark (amendment H1, accepted); `tune`, `test` and `secondary` have never been run – validate them before use.** Exception: `dev` was run (section 9).
 
 Control expansion phase H report (docs/CX_H_protocol.md, revision 0 with its clarifications m1–m3, n1, n2).
 
@@ -9,7 +9,8 @@ Control expansion phase H report (docs/CX_H_protocol.md, revision 0 with its cla
                                               # initialisation failures apart; the linearisation error per lap with its
                                               # outcome (n1); NOM apart -> report/CX_H.md, report/CX_H.json
     python scripts/report_cx_h.py secondary   # lmpc (phase E's NLP) against atv on HT; HT_LAG30, HT_WET85
-    python scripts/report_cx_h.py dev         # section 9: the same tables on the development records (NOM + DEV, K 20)
+    python scripts/report_cx_h.py dev         # section 9: the same tables on the development records (NOM + DEV, K 20),
+                                              # without the hypotheses' names or Holm (packet 2 review n1),
                                               # and the gate -> results/CX/H/dev/report/
 """
 from __future__ import annotations
@@ -162,27 +163,37 @@ def _lin_err(rs: list[dict]) -> list[str]:
     return lines
 
 
-def _report(recs: list[dict], st: dict, test_set: str, kinds: tuple[str, ...], title: str) -> tuple[list[str], dict]:
+def _report(recs: list[dict], st: dict, test_set: str, kinds: tuple[str, ...], title: str,
+            dev: bool = False) -> tuple[list[str], dict]:
+    """The report of a set. ``dev``: the development records (section 9) – the same comparisons, described without the
+    hypotheses' names or Holm, since nothing is tested on the development cars (packet 2 review n1)."""
     by = {k: {r["case"]: r for r in recs if r["kind"] == k and r["set"] == test_set} for k in kinds}
     n = len(by["atv"])
     h1 = _pair(by["atv"], by["identified"])
     p1, p2 = h1["signed_rank"]["p"], h1["mcnemar"][2]
     hb = holm({"H-H1": p1, "H-H2": p2})
     dd = h1["diffs"]
+    lap_c = f"lap time `atv` − `identified` on the {h1['both']} cars both complete"
+    lap_r = (f"mean {np.mean(dd):+.3f} s, median {np.median(dd):+.3f} s, W+ {h1['signed_rank']['W_plus']:.1f} "
+             f"(n {h1['signed_rank']['n']})" if dd else "no car completed by both")
+    comp_c = "completed laps, only `atv` : only `identified`"
+    comp_r = (f"{h1['mcnemar'][0]} : {h1['mcnemar'][1]} (`atv` {sum(r['completed'] for r in by['atv'].values())}, "
+              f"`identified` {sum(r['completed'] for r in by['identified'].values())} of {n})")
     md = [title, "",
-          "Settings: " + "; ".join(f"{k} `{cx_h.setting_key(st[k])}`" for k in kinds) + ".", "",
-          "## Primary tests (the tenth learning lap of `atv` against `identified`)", "",
-          "| test | comparison | result | p | Holm level | holds (Holm) | holds (each at 0.025) |", "|---|---|---|---|---|---|---|",
-          f"| H-H1 | lap time `atv` − `identified` on the {h1['both']} cars both complete | "
-          + (f"mean {np.mean(dd):+.3f} s, median {np.median(dd):+.3f} s, W+ {h1['signed_rank']['W_plus']:.1f} (n {h1['signed_rank']['n']})"
-             if dd else "no car completed by both – not testable")
-          + f" | {p1:.4g} | {hb['H-H1']['level']:.3f} | **{hb['H-H1']['rejected']}** | {p1 <= 0.025} |",
-          f"| H-H2 | completed laps, only `atv` : only `identified` | {h1['mcnemar'][0]} : {h1['mcnemar'][1]} "
-          f"(`atv` {sum(r['completed'] for r in by['atv'].values())}, `identified` "
-          f"{sum(r['completed'] for r in by['identified'].values())} of {n}) | {p2:.4g} | {hb['H-H2']['level']:.3f} | "
-          f"**{hb['H-H2']['rejected']}** | {p2 <= 0.025} |", "",
-          "H-H2's exposure is unequal (phase E's m1, carried over): `atv`'s tenth lap is completed only after ten learning "
-          "laps without a crash, `identified` has one scored lap. H-H1 is conditional on both completing (E m2).", ""]
+          "Settings: " + "; ".join(f"{k} `{cx_h.setting_key(st[k])}`" for k in kinds) + ".", ""]
+    if dev:
+        md += ["## The tenth learning lap of `atv` against `identified` (development data, descriptive; nothing is tested)", "",
+               "| comparison | result | p (uncorrected) |", "|---|---|---|",
+               f"| {lap_c} | {lap_r} | {p1:.4g} |", f"| {comp_c} | {comp_r} | {p2:.4g} |", ""]
+    else:
+        md += ["## Primary tests (the tenth learning lap of `atv` against `identified`)", "",
+               "| test | comparison | result | p | Holm level | holds (Holm) | holds (each at 0.025) |", "|---|---|---|---|---|---|---|",
+               f"| H-H1 | {lap_c} | {lap_r}{'' if dd else ' – not testable'} | {p1:.4g} | {hb['H-H1']['level']:.3f} | "
+               f"**{hb['H-H1']['rejected']}** | {p1 <= 0.025} |",
+               f"| H-H2 | {comp_c} | {comp_r} | {p2:.4g} | {hb['H-H2']['level']:.3f} | **{hb['H-H2']['rejected']}** | "
+               f"{p2 <= 0.025} |", "",
+               "H-H2's exposure is unequal (phase E's m1, carried over): `atv`'s tenth lap is completed only after ten learning "
+               "laps without a crash, `identified` has one scored lap. H-H1 is conditional on both completing (E m2).", ""]
     lm = list(by["atv"].values())
     init_fail = [r["case"] for r in lm if not r["started"]]
     learn_fail = [r for r in lm if r["started"] and not r["completed"]]
@@ -214,7 +225,8 @@ def _report(recs: list[dict], st: dict, test_set: str, kinds: tuple[str, ...], t
     sec = {"atv-nmpc": _pair(by["atv"], by["nmpc"]), "atv_nominal-atv": _pair(by["atv_nominal"], by["atv"])}
     imp = [r["lap_time"] - r["first_learning_lap_time"] for r in lm if r["completed"] and np.isfinite(r["first_learning_lap_time"])]
     sec["tenth-first"] = {"n": len(imp), "signed_rank": exact_signed_rank(imp), "mean": float(np.mean(imp)) if imp else math.nan}
-    md += ["", "## Secondary comparisons (uncorrected)", "", "| comparison | only first : only second | McNemar p | both complete | "
+    md += ["", "## Other comparisons (development data, uncorrected)" if dev else "## Secondary comparisons (uncorrected)", "",
+           "| comparison | only first : only second | McNemar p | both complete | "
            "lap time first − second mean / median s | signed-rank p |", "|---|---|---|---|---|---|"]
     for name in ("atv-nmpc", "atv_nominal-atv"):
         s_ = sec[name]
@@ -229,8 +241,10 @@ def _report(recs: list[dict], st: dict, test_set: str, kinds: tuple[str, ...], t
         rs = list(by[k].values())
         done = [r["lap_time"] for r in rs if r["completed"]]
         md.append(f"| {k} | {fmt_ci(len(done), len(rs))} | {np.mean(done):.3f} |" if done else f"| {k} | {fmt_ci(0, len(rs))} | – |")
-    res = {"H-H1": {k: v for k, v in h1.items() if k != "diffs"}, "holm": hb,
-           "secondary": {k: {kk: vv for kk, vv in v.items() if kk != "diffs"} for k, v in sec.items()}}
+    pair = {k: v for k, v in h1.items() if k != "diffs"}
+    other = {k: {kk: vv for kk, vv in v.items() if kk != "diffs"} for k, v in sec.items()}
+    res = ({"dev_vs_identified": pair, "dev_other": other} if dev
+           else {"H-H1": pair, "holm": hb, "secondary": other})
     return md, res
 
 
@@ -303,7 +317,8 @@ def dev(d: Path) -> None:
     _errors(recs, "dev/laps.jsonl")
     st = {"nmpc": {}, "identified": {}, "atv": cx_h.DEV_SETTING, "atv_nominal": dict(cx_h.DEV_SETTING)}
     _check(recs, st, ("DEV", "NOM"), cx_h.PRIMARY_KINDS)
-    md, res = _report(recs, st, "DEV", cx_h.PRIMARY_KINDS, "# CX-H – development checks (section 9; development data, not a test)")
+    md, res = _report(recs, st, "DEV", cx_h.PRIMARY_KINDS, "# CX-H – development checks (section 9; development data, not a test)",
+                      dev=True)
     md += _nom(recs, cx_h.PRIMARY_KINDS)
     nom = next(r for r in recs if r["kind"] == "atv" and r["set"] == "NOM")
     devs = [r for r in recs if r["kind"] == "atv" and r["set"] == "DEV"]
