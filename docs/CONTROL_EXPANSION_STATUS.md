@@ -1,6 +1,6 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-28 (phase H: code and development checks done – the gate failed; amendment H1 (close, the default of m1) proposed, packet 2). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-28 (phase H: packet 2 **APPROVE**, amendment H1 accepted – phase H closed without the benchmark; final review requested). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
 * **Current phase:** H – the first frontier method (the user's choice, 2026-10-23): the ATV-QP learning MPC, phase
   E's first follow-up candidate; branch `cx/H-atv-lmpc` from `main` c157738 (the merge of phase G); literature §H.1–H.3
@@ -11,9 +11,19 @@ Last updated: 2026-10-28 (phase H: code and development checks done – the gate
   `scripts/cx_h_dev.py`, `tests/test_atv_lmpc.py`). **Development gate failed:** with the registered OSQP the QPs stop
   at the iteration limit and `atv` / `atv_nominal` leave the track on learning lap 1 on NOM and all five DEV cars
   (101–465 m); phase E's NLP reproduces exactly. A diagnostic (qpOASES and a box on the input step; not the registered
-  design) solves every QP and still leaves on learning lap 1 – at turn 1 on four DEV cars, where E's NLP and `nmpc`
-  leave, at ~2.7 km on NOM and DEV_car1. **Amendment H1** proposed (m1's default): phase H closed without the
-  benchmark, H-H1 / H-H2 not tested; packet 2 requested; no HV / HT lap.
+  design) still leaves on learning lap 1:
+  * at turn 1 on four DEV cars, where E's NLP and `nmpc` leave, with no QP failures;
+  * at ~2.7 km on NOM and DEV_car1, with 17–18 QP failures.
+
+  Packet 2 (d66cc2b) **APPROVE**, and **amendment H1 accepted** with i1–i3 (m1's default): phase H is closed without
+  the benchmark; **H-H1 and H-H2 are not tested**.
+  * The negative result concerns the ATV-QP form of E's problem with OSQP and E.2's candidate on these cars. It is not
+    about LMPC as such, nor about E.2's own implementation.
+  * e1 is weakened, not refuted.
+  * Follow-ups are in the matrix. A later LMPC phase must first show on NOM that its first learning lap completes
+    reliably.
+  * n1: the development report has no hypothesis names (cfe57ad).
+  * The benchmark section was written. No HV or HT lap was run. Final review of `cx/H-atv-lmpc` requested.
   Design: phase E's optimal control problem row for row, solved as one QP per step on the model linearised along E.2's
   candidate (the shifted solution, its terminal point from the previous λ's successors); phase E's development gate
   first; then H-H1 / H-H2 (`atv`'s tenth learning lap against `identified`, lap time and completions) on new test cars
@@ -191,7 +201,7 @@ Last updated: 2026-10-28 (phase H: code and development checks done – the gate
 | E | `control/lmpc.py`, `experiments/cx_e.py`, `scripts/cx_e_dev.py`; `scripts/run_cx_e.py` (only its `dev` stage run) and `scripts/report_cx_e.py` – **not validated: never run end to end** (review f1) | yes (d64eb47 … 5068328) | yes – `tests/test_lmpc.py` 5 | development checks §9: NLP, regression, 36 sequences – **gate failed** | protocol rev 0 **APPROVE** (packet 1); packet 2 **APPROVE**, amendment E1 option 1 (closed, no benchmark); final review 6ebaed0 **APPROVE** (f1) | **yes – phase E completed (closed without the benchmark)** |
 | F | `experiments/cx_f.py`, l7 options `retry` / `log_commands`, `scripts/{run,report}_cx_f.py`, `scripts/cx_f_dev.py` | yes (7634e2d … e0f0b0a) | yes – `tests/test_cx_f.py` 5 | development checks §9 on NOM and FD – **gate failed** (the shield part closed, F1); audit of L7's records; T1 + T2: `none` regression, `main` reproduction, `retry` (2 332 laps) | literature §F and protocol rev 0 **APPROVE** (packet 1, m1–m3 / n1, n2); packet 2 **APPROVE**, amendment F1 option 1 (g1–g4); packet 3 and final review 85be4ad **APPROVE** | **yes – phase F completed (H-F2 holds; H-F1 not tested)** |
 | G | `comp` option of `experiments/l9`, `experiments/cx_g.py`, `scripts/{run,report}_cx_g.py`, `scripts/cx_g_dev.py` | yes (2833681 … bdfa2a7) | yes – `tests/test_cx_g.py` 4 | development checks §9 on NOM and GD (WSL) – gate passed; GT (1 340 laps, WSL) | literature §G and protocol rev 0 **APPROVE** (packet 1, m1–m3 / n1, n2); packet 2 **APPROVE**; packet 3 and final review 380124a **APPROVE** (h1) | **yes – phase G completed (H-G1 holds; H-G2 not shown)** |
-| H | `ATVLearningMPC`, `ATVLMPCController` (`control/lmpc.py`), `cx_e.learn` solver option, `experiments/cx_h.py`, `scripts/cx_h_dev.py`; `scripts/run_cx_h.py` (only `dev`) and `scripts/report_cx_h.py` (only `dev`) – the other stages never run | yes (3c69eb0 … 8b17829) | yes – `tests/test_atv_lmpc.py` 4 | development checks §9 on NOM and DEV – **gate failed**; a diagnostic variant | literature §H and protocol rev 0 **APPROVE** (packet 1, m1–m3 / n1, n2); packet 2 with amendment H1 requested | – |
+| H | `ATVLearningMPC`, `ATVLMPCController` (`control/lmpc.py`), `cx_e.learn` solver option, `experiments/cx_h.py`, `scripts/cx_h_dev.py`; `scripts/run_cx_h.py` (only `dev`) and `scripts/report_cx_h.py` (only `dev`) – the other stages never run | yes (3c69eb0 … 8b17829) | yes – `tests/test_atv_lmpc.py` 4 | development checks §9 on NOM and DEV – **gate failed**; a diagnostic variant | literature §H and protocol rev 0 **APPROVE** (packet 1, m1–m3 / n1, n2); packet 2 **APPROVE**, amendment H1 accepted (closed, no benchmark); final review requested | – |
 | F–G | – | not started | – | – | – | – |
 
 ## Review record
@@ -238,7 +248,8 @@ Last updated: 2026-10-28 (phase H: code and development checks done – the gate
 | 2026-10-23 | (this commit; code 2833681 … bdfa2a7) | phase G packet 2: code, tests, development checks – the gate passed | **APPROVE** | GT order and logging: the arms of a case in one batch (batch numbers in the records, batches.tsv), errors re-run by the last-record rule; the Reading to correct m1 (both arms act at 10 ms at d = 0) |
 | 2026-10-23 | (this commit; run 5e11634) | phase G packet 3: GT – H-G1 holds, H-G2 not shown; S1–S4; the benchmark section – with the **final review** of `cx/G-realtime` | **APPROVE** (both) | h1: H-G2 is a symmetric 7 : 7, no difference shown; the repeat (0 of 20 flips at d = 0) does not estimate the noise there, so noise and cancelling per-car differences cannot be told apart – the wording corrected |
 | 2026-10-23 | (this commit) | phase H packet 1: literature §H.1–H.3, protocol CX_H revision 0 (the ATV-QP learning MPC, the user's choice of the first frontier method); the phase-G merge hash c157738 recorded | **APPROVE** (2026-10-28) | m1 the gate only on the registered development laps, a failed gate closes the phase by default (as E1 option 1); m2 the stored laps' last points excluded from the safe set, a failed first QP applies the candidate's first input; m3 attribution of H.1 / H.2 in the docstring; n1 the linearisation error per lap with the outcome; n2 why the K grid stays E's |
-| 2026-10-28 | (this commit; code 3c69eb0 … 8b17829) | phase H packet 2: code, tests, development checks – the gate failed; a diagnostic variant; amendment H1 (close, m1's default) | requested | – |
+| 2026-10-28 | d66cc2b (code 3c69eb0 … 8b17829) | phase H packet 2: code, tests, development checks – the gate failed; a diagnostic variant; amendment H1 (close, m1's default) | **APPROVE**; **H1 accepted** (closed without the benchmark) | i1 the scope (ATV-QP of E's problem, OSQP, E.2's candidate – not LMPC, not E.2's own implementation); i2 e1 weakened, not refuted, the η 0.95 lap an observation; i3 follow-ups in order and the NOM first-lap precondition; n1 no hypothesis names in the dev report (cfe57ad); n2 the never-run stages marked |
+| 2026-10-28 | (this commit) | phase H: the decision (i1–i3, n1) in the protocol, the benchmark section, the matrix follow-ups; the diagnostic's QP failure counts added – **final review** of `cx/H-atv-lmpc` | requested | – |
 
 ## Tests
 
@@ -298,6 +309,6 @@ Phase D: `results/CX/D/plans/` (main checkout) – the new plans of the library 
 
 ## Next actions
 
-1. Phase H: the reviewer's decision on packet 2 (code, development checks, the failed gate, amendment H1 – closing the
-   phase by m1's default); then the final review of `cx/H-atv-lmpc` and the merge.
-2. Follow-up candidates (CONTROL_METHOD_MATRIX.md) stay unscheduled – among them E.2's ATV-QP learning MPC.
+1. Phase H: the final review of `cx/H-atv-lmpc`; then the merge (--no-ff), the hash sent to the reviewer and recorded
+   in the next branch's first commit.
+2. Follow-up candidates (CONTROL_METHOD_MATRIX.md) stay unscheduled – the next frontier method is the user's choice (E.2's ATV-QP was tried as phase H; for LMPC, the first learning lap on NOM first).

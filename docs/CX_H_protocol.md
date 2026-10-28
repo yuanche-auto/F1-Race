@@ -2,7 +2,8 @@
 
 Status: **binding, revision 0 (2026-10-28; 1a5c538, APPROVE)** with the clarifications of its review (m1–m3, n1, n2;
 marked *"clarification of revision 0"*), written down before any phase-H code. **Development gate failed (section 9);
-amendment H1 proposed – phase H closed without the benchmark (the default of clarification m1); no HV or HT lap.** Written
+amendment H1 accepted (the review of packet 2, 2026-10-28) – phase H closed without the benchmark (the default of
+clarification m1); no HV or HT lap.** Written
 after the literature check
 ([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §H, on top of §E) and before any phase-H code: no module,
 test, runner or lap of phase H exists. Branch `cx/H-atv-lmpc` from `main` c157738 (the merge of phase G). The user chose
@@ -232,8 +233,9 @@ On NOM and DEV only (records in `results/CX/H/dev/` with commit and dirty flag):
 ### 9. Results of the development checks (2026-10-28; packet 2) – **the gate failed**
 
 Records (git-ignored) in `results/CX/H/dev/`, with `meta_*.json` / `RUN_COMMIT_dev` (all clean):
-* at 3c69eb0: `qp.json`, `nlp_repro.json`, `laps.jsonl` (24 jobs, 0 errors), `report/` (`report_cx_h.py dev`,
-  `gate.json`);
+* at 3c69eb0: `qp.json`, `nlp_repro.json`, `laps.jsonl` (24 jobs, 0 errors). Their report, `report/`
+  (`report_cx_h.py dev`, `gate.json`), was made at 3c69eb0 and regenerated at cfe57ad (review n1, see the
+  decision below). It is kept as `report_before_n1/`;
 * at 8b17829: the diagnostic `diag.jsonl` (6 sequences, 0 errors). Its first attempt at b62f177 failed before driving –
   `cx_a.setting_key` could not format the diagnostic's text settings. It is kept in `diag_attempt1_failed/` and was
   fixed in 8b17829, with numbers formatted as before.
@@ -281,13 +283,16 @@ QPs of the first learning lap stopped at the iteration limit, and the car left t
   * Four DEV cars left at turn 1 (470–474 m). That is where phase E's NLP and `nmpc` leave on the mismatched DEV cars.
   * NOM left at 2 765 m and DEV_car1 at 2 658 m; `nmpc` completes on both.
   * Terminal slack above 10⁻³ in 15–39 % of the solves; |dv_x| P95 13–80 m/s; 340–510 ms per solve.
+  * QP failures (qpOASES; the shifted plan applied): none on the four cars that left at turn 1, 18 on NOM and 17 on
+    DEV_car1. The counts were added from `diag.jsonl` after the review of packet 2; packet 2's text gave none.
 
 **Reading:**
 * Solved as registered, the ATV-QP fails for a numerical reason first: OSQP does not converge on this problem.
   * Its exact penalties reach 10⁶, and with no tracking term the cost is nearly linear.
 * With a robust QP solver it fails for the reason SQP methods guard against: the full step leaves the linearisation.
-* With a trust region added (a diagnostic, not the registered design), the QP is solved and stays near its
-  linearisation, **and still no car completes the first learning lap**.
+* With a trust region added (a diagnostic, not the registered design), the QP is solved at nearly every step. The
+  exceptions are 18 failures on NOM and 17 on DEV_car1, of about 1 000 solves each. The median linearisation error stays
+  small, **and still no car completes the first learning lap**.
   * On the mismatched cars it leaves the track where phase E's NLP and `nmpc` leave. On NOM and DEV_car1 it gets
     further, to ~2.7 km.
   * With a robust solver and a trust region, the formulation **does not support phase E's hypothesis (e1) as the
@@ -297,7 +302,7 @@ QPs of the first learning lap stopped at the iteration limit, and the car left t
     learning lap. Driven by the time-to-go of the stored laps, it plans at the nominal model's η 0.95 limit. This is
     an observation, not a tested cause.
 
-## Amendment H1 (proposed 2026-10-28, packet 2; the default of clarification m1)
+## Amendment H1 (proposed 2026-10-28, packet 2; the default of clarification m1; **accepted** – see the decision below)
 
 **Phase H is closed without the benchmark; H-H1 and H-H2 are recorded as *not tested*.**
 
@@ -318,3 +323,36 @@ QPs of the first learning lap stopped at the iteration limit, and the car left t
   is merged as usual, with the registered settings and the diagnostic options (off by default), so that section 9 can
   be reproduced. `scripts/run_cx_h.py`'s tune / test / secondary stages and `scripts/report_cx_h.py`'s tune / test /
   secondary have never been run and are marked as such (as phase E's f1).
+
+### Decision on amendment H1 (the review of packet 2, 2026-10-28): accepted, with i1–i3
+
+**Phase H is closed without the benchmark; H-H1 and H-H2 are recorded as *not tested*.** The development records and the
+gate's result of section 9 are accepted. The decision follows the default fixed in advance by clarification m1.
+
+* **i1 – the scope of the negative result:**
+  * It concerns **an ATV-QP form of phase E's problem, solved with OSQP, with E.2's candidate, on these cars**.
+  * It is **not** a result about LMPC as such. Nor is it a result about E.2's own implementation, which differs from it
+    in three ways:
+    * E.2 uses its own local-regression model of the velocity states;
+    * its terminal constraint is hard;
+    * its horizon is N = 12 × 100 ms.
+* **i2 – what it means for phase E's e1:**
+  * The diagnostic variant also fails the first learning lap. On the mismatched cars it fails at much the same places as
+    phase E's NLP. This **weakens** e1, the hypothesis that the convex hull's infeasibility under the nonlinear model was
+    the decisive cause. It **does not refute** e1, because the diagnostic was not the registered design.
+  * That every variant plans its first learning lap at the nominal model's η 0.95 limit is recorded as an
+    **observation, not a conclusion**.
+* **i3 – follow-up candidates** (CONTROL_METHOD_MATRIX.md, in this order):
+  1. a bound on the progress per lap, or a slower safe set;
+  2. E.2's own local-regression model with a trust region and a robust QP solver;
+  3. consecutive laps.
+
+  Two LMPC phases (E, H) have now failed at their development gate. **A later LMPC phase must first show, on NOM, that
+  its first learning lap completes reliably, before a benchmark is registered.**
+* **n1 (the review's nit):** the development report used the names of the hypotheses and Holm for numbers on the
+  development cars. They are not the registered tests.
+  * The names are removed in cfe57ad: `gate.json` has `dev_vs_identified` / `dev_other`, and the markdown describes the
+    comparison and does not test it.
+  * `report/` was regenerated at cfe57ad (`report/REPORT_COMMIT`), with every number unchanged. The earlier report is
+    kept in `report_before_n1/`.
+* **n2:** the never-run stages of `run_cx_h.py` and `report_cx_h.py` stay marked, as in phase E's f1.
