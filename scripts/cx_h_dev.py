@@ -7,6 +7,9 @@ records in results/CX/H/dev/ with the commit and the dirty flag (``meta_<what>.j
     python scripts/cx_h_dev.py nlp-repro     # 9.2: phase E's NLP unchanged – lmpc K 20 on NOM against phase E's record
     python scripts/run_cx_h.py dev           # 9.3: atv, atv_nominal (K 20), nmpc, identified on NOM + DEV
     python scripts/report_cx_h.py dev        # 9.4: the tables and the gate
+    python scripts/cx_h_dev.py diag [--workers 6]   # after the gate: a diagnostic variant (clarification m1 – a diagnostic
+                                             # only, it cannot pass the gate): atv with qpOASES and a box on the QP's
+                                             # input step, on NOM + DEV -> dev/diag.jsonl
 """
 from __future__ import annotations
 
@@ -99,11 +102,27 @@ def nlp_repro() -> None:
     print(json.dumps(out, indent=1, default=float))
 
 
+DIAG_SETTING = {"K": 20, "qp_solver": "qpoases", "trust": [0.2, 1000.0]}
+
+
+def diag(workers: int) -> None:
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import run_cx_h
+
+    meta("diag")
+    names = run_cx_h._names("NOM", "DEV")
+    run_cx_h._run(run_cx_h._jobs("diag", "atv", DIAG_SETTING, names), DEV / "diag.jsonl", workers)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=["qp", "nlp-repro"])
+    ap.add_argument("what", choices=["qp", "nlp-repro", "diag"])
+    ap.add_argument("--workers", type=int, default=6)
     a = ap.parse_args()
-    {"qp": qp, "nlp-repro": nlp_repro}[a.what]()
+    if a.what == "diag":
+        diag(a.workers)
+    else:
+        {"qp": qp, "nlp-repro": nlp_repro}[a.what]()
 
 
 if __name__ == "__main__":

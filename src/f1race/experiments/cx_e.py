@@ -138,7 +138,14 @@ def learn(case: dict, kind: str, setting: dict, solver: str = "nlp") -> dict:
     if solver not in ("nlp", "atv"):
         raise ValueError(solver)
     cls, ctl_cls = (ATVLearningMPC, ATVLMPCController) if solver == "atv" else (LearningMPC, LMPCController)
-    lmpc = cls(track, model, n_pts=P * K, N=N, dt=MPC_DT, eta=ETA, margin=NMPC_SETTING["margin"], w_T=W_T, term=term)
+    kw = {}
+    if solver == "atv":                              # phase H's development diagnostics (CX-H clarification m1; the
+        if setting.get("qp_solver"):                 # registered settings use neither)
+            kw["qp_solver"], kw["qp_opts"] = setting["qp_solver"], {"printLevel": "none", "sparse": True}
+        if setting.get("trust"):
+            kw["trust"] = tuple(setting["trust"])
+    lmpc = cls(track, model, n_pts=P * K, N=N, dt=MPC_DT, eta=ETA, margin=NMPC_SETTING["margin"], w_T=W_T, term=term,
+               **kw)
     store = LapStore(lmpc._step)
     laps: list[dict] = []
     for e in INIT_ETAS:
