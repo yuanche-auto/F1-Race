@@ -12,6 +12,7 @@ Revision 1 (section 10.7), records in results/CX/I/repro/:
                                              # phase H's atv_nominal K 20 on NOM reproduce their records
     python scripts/cx_i_dev.py repro-r2      # r2: v_c's rule and the two initialisation laps at v_c (from the smoke's
                                              # progress log, results/CX/I/repro_smoke/progress_R1.jsonl)
+    python scripts/cx_i_dev.py repro-r2-usage  # r2: where the first v_c lap's largest tyre usage arises (descriptive)
 """
 from __future__ import annotations
 
@@ -123,11 +124,61 @@ def repro_r2() -> None:
     print(json.dumps(out, indent=1, default=float))
 
 
+def repro_r2_usage() -> None:
+    """r2's tyre usage (descriptive): the first v_c lap driven again (deterministic; R1's ``init_vc1`` without its
+    run-out) with the usage of each 10 ms step split into its longitudinal and lateral parts – where and why the
+    largest usage arises, against section 10.2's estimate of about 0.5."""
+    import numpy as np
+
+    from f1race.control.nmpc import FrenetMPC, MPCController
+    from f1race.dynamics import DynVehicle, tyre_forces
+    from f1race.experiments import cx_a, cx_d, cx_e, cx_i
+    from f1race.track import Track
+
+    meta("r2_usage", REPRO)
+    case = cx_e.cases("NOM")[0]
+    tr, veh = Track.load(case["track"]), DynVehicle()
+    v_c = cx_i.V_C
+    ref = {"s": tr.s, "n": np.zeros_like(tr.s), "xi": np.zeros_like(tr.s), "vx": np.full(tr.s.shape, v_c)}
+    w = {k: v * cx_e.NMPC_SETTING["c"] for k, v in cx_a.NMPC_TRACK_W.items()}
+    mpc = FrenetMPC(tr, veh, ref, mode="track", N=cx_e.N, dt=cx_e.MPC_DT, eta=cx_e.ETA,
+                    margin=cx_e.NMPC_SETTING["margin"], weights=w)
+    x0 = np.array([tr.x[0], tr.y[0], float(tr.heading_at(0.0)), v_c, 0.0, 0.0, 0.0])
+    t0 = time.time()
+    res = cx_d.make_sim(case, tr).run(MPCController(mpc, cx_e.DT), x0, t_max=1.25 * tr.length / v_c + 50.0)
+    X, U = res.state, res.inputs
+    F = tyre_forces(veh, X[:, 3], X[:, 4], X[:, 5], X[:, 6], U[:, 1], U[:, 2])
+    lon = np.stack([F["fxf"] / (veh.mu_x * F["fzf"]), F["fxr"] / (veh.mu_x * F["fzr"])], axis=1)
+    lat = np.stack([F["fyf"] / (veh.mu_y * F["fzf"]), F["fyr"] / (veh.mu_y * F["fzr"])], axis=1)
+    s = np.mod(res.progress, tr.length)
+    kap = np.interp(s, tr.s, tr.kappa)
+    peaks, um = [], res.usage.max(axis=1)
+    for i in np.argsort(-um):                          # the largest usages, at least 20 m apart
+        if len(peaks) == 10:
+            break
+        if all(abs(s[i] - p["s"]) > 20.0 for p in peaks):
+            a = int(np.argmax(res.usage[i]))
+            peaks.append({"s": float(s[i]), "t": float(res.t[i]), "axle": "front" if a == 0 else "rear",
+                          "usage": float(res.usage[i, a]), "lon": float(lon[i, a]), "lat": float(lat[i, a]),
+                          "vx": float(X[i, 3]), "kappa": float(kap[i]), "f_drive": float(U[i, 1]),
+                          "f_brake": float(U[i, 2]), "delta": float(X[i, 6]), "r": float(X[i, 5])})
+    out = {"lap_time": float(res.lap_time), "completed": bool(res.completed), "stop_reason": res.stop_reason,
+           "smoke_init_vc1": 538.5054517776696, "wall_s": time.time() - t0,
+           "usage_max_front_rear": [float(res.usage[:, 0].max()), float(res.usage[:, 1].max())],
+           "share_steps_usage_above": {str(q): float(np.mean(um > q)) for q in (0.5, 0.7, 0.8, 0.9)},
+           "lat_part_max_front_rear": [float(np.abs(lat[:, 0]).max()), float(np.abs(lat[:, 1]).max())],
+           "lon_part_max_front_rear": [float(np.abs(lon[:, 0]).max()), float(np.abs(lon[:, 1]).max())],
+           "vx_min_max": [float(X[:, 3].min()), float(X[:, 3].max())], "peaks": peaks}
+    np.savez_compressed(REPRO / "r2_usage.npz", t=res.t, s=s, usage=res.usage, lon=lon, lat=lat, vx=X[:, 3], kappa=kap)
+    (REPRO / "r2_usage.json").write_text(json.dumps(out, indent=1, default=float))
+    print(json.dumps(out, indent=1, default=float))
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=["nlp-repro", "repro-r0", "repro-r2"])
+    ap.add_argument("what", choices=["nlp-repro", "repro-r0", "repro-r2", "repro-r2-usage"])
     a = ap.parse_args()
-    {"nlp-repro": nlp_repro, "repro-r0": repro_r0, "repro-r2": repro_r2}[a.what]()
+    {"nlp-repro": nlp_repro, "repro-r0": repro_r0, "repro-r2": repro_r2, "repro-r2-usage": repro_r2_usage}[a.what]()
 
 
 if __name__ == "__main__":
