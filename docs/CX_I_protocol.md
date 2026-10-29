@@ -3,8 +3,9 @@
 Status: **binding, revision 0 (2026-10-28; bdc02d0, APPROVE)** with the clarifications of its review (m1, m2, n1, n2;
 marked *"clarification of revision 0"*), written down before any phase-I code. **I-1's development gate failed (section
 9; stage A passed, stage B failed): I-1 is closed for this phase (rule 4); no benchmark registered, no IV or IT lap.**
-**Revision 1 (2026-10-29, for review – packet 3): section 10, a reproduction check under the published LMPCs' conditions
-on NOM – a diagnostic at the user's request; I-2 and I-3 not registered.**
+**Revision 1 (2026-10-29; 1e2bf96, APPROVE – packet 3) with the clarifications of its review (m1–m3, n1–n3, marked
+*"clarification of revision 1"*), written before any code of it: section 10, a reproduction check under the published
+LMPCs' conditions on NOM – a diagnostic at the user's request; I-2 and I-3 not registered.**
 Written after the literature check
 ([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §I, on top of §E and §H) and before any phase-I code: no
 module, test, runner or lap of phase I exists. Branch `cx/I-lmpc-followups` from `main` 98f8134 (the merge of phase H).
@@ -485,6 +486,31 @@ everywhere.
     over without a new mechanism.
 * **A lap's time limit** is 1.25 × the slower initialisation lap's time, and at least 121 s.
 
+*Clarification of revision 1 (review m2) – how the laps follow each other, the initialisation laps included:*
+* **R1 and R3:**
+  * The first v_c lap starts from the start state at v_c.
+  * The second v_c lap starts, consecutively as above, from the first lap's state at its last step before the line.
+  * Learning lap 1 starts from the second v_c lap's state at its last step before the line.
+* **R2:**
+  * The η_p 0.73 lap starts from phase E's start state.
+  * The η_p 0.79 lap starts from the 0.73 lap's state before the line.
+  * Learning lap 1 starts from the 0.79 lap's state before the line, consecutively, as R2 is meant to be.
+* **The initialisation laps' controller** is `nmpc`'s tracking NMPC (`FrenetMPC`, mode "track"), with phase E's
+  initialisation settings: η 0.95, N = 30 × 50 ms, margin 0.6, and the weights `NMPC_TRACK_W` × c 2. For R1 and R3 its
+  reference is n = 0, ξ = 0, v_x = v_c everywhere.
+* **The previous command** is carried into the next lap's controller in the same way, for the initialisation laps too.
+
+*Clarification of revision 1 (review m3, part 1) – the flying start is not new.* Each new controller's initial guess
+and warm start are phase E's: the constant-speed propagation of the start state at the first solve, then the shifted
+solution. Phase E's laps also start at speed, from the 5 % plan's state at the line. The cold first solve of a
+consecutive lap is therefore no difference from phases E and I. The only difference is the carried previous command,
+and it enters only the first stage's input-rate cost.
+
+*Clarification of revision 1 (review n1) – the size of the time-to-go:* after the 540 s initialisation laps the stored
+time-to-go reaches ~540 s, against ~80 s in phase E, so the terminal cost w_T c^T λ is about seven times as large in
+the NLP's cost. **w_T stays 100, not scaled.** The smoke and check r2 report the solver failures and the shares of
+terminal slack, to show whether this matters.
+
 ### 10.4 Reported, per arm
 
 * The lap-time curve over the initialisation and learning laps, and each lap's time over the previous lap's.
@@ -497,6 +523,20 @@ everywhere.
 * The best lap and the last five laps, against `nmpc`'s 76.40 s and I-1's `pb_nominal` best lap on NOM (77.60 s).
 * For R3, the QP failures per lap.
 
+*Clarification of revision 1 (review m3, part 2) – a check of the run-out approximation.* For each pair of consecutive
+laps j, j + 1 (descriptive only):
+* the time over the first 250 m of lap j + 1, against the time over the same stretch in lap j's stored run-out (L to
+  L + 250 m);
+* the difference of the states (s, n, ξ, v_x, v_y, r, δ) at the end of that stretch.
+
+*Clarification of revision 1 (review n2) – the cause of a failure.*
+* Every failure record carries the stop reason and the number of failed solves (fallbacks) among the last 20 solves
+  (1 s) before the stop.
+* A failure is classed **"after solver failures"** if at least one of those 20 solves failed, and **"solved, still
+  left"** otherwise. For R3 the solver failure is the QP stopping at OSQP's iteration limit; phase H's experience is
+  that this kind dominates.
+* The same classes are reported for R1 and R2 (the NLP's failures).
+
 ### 10.5 Readings (fixed now, before any lap)
 
 **Definitions:**
@@ -508,11 +548,23 @@ everywhere.
 |---|---|---|
 | **(a) reproduced** | 40 of 40 completed, at least one lap near the limit, converged | Under the published conditions the LMPC works on NOM, so phases E's and I's failures belong to their conditions. R2 tells whether the slow start is needed. |
 | **(b) fails near the limit** | the sequence ends after at least one lap near the limit | The failure near the limit persists under the published conditions with an exact model. It belongs to this formulation on this car; the differences of 10.6 are untested. |
-| **(c) fails before the limit** | it ends before any lap near the limit | This points to a defect in the implementation or in the low-speed regime. It is examined as a diagnostic before any conclusion. |
+| **(c) fails before the limit** (split into (c1) and (c2) by clarification m1 below) | it ends before any lap near the limit | This points to a defect in the implementation or in the low-speed regime. It is examined as a diagnostic before any conclusion. |
 | **(d) stays away** | 40 completed, no lap near the limit | The method does not reach the limit within 40 laps, so the question is not answered. |
 | **(e) near, not converged** | 40 completed, a lap near the limit, not converged | Reported as such; there is no conclusion on stability at convergence. |
 
 R1 decides the check's reading. R2 and R3 are read the same way and reported beside it.
+
+*Clarification of revision 1 (review m1) – reading (c) split in two.* The original (c) would call a sequence that ends
+with its best lap between 78.69 s and the starting speed – e.g. 80 s – a problem of the implementation or of the low
+speeds. 80 s is not low speed; phases E and I failed in that range. So (c) becomes:
+
+| reading | condition | what it says about the question |
+|---|---|---|
+| **(c1) fails while approaching the limit** | the best learning lap is ≤ 1.10 × 76.40 = **84.04 s**, but no lap is ≤ 78.69 s | The car fails farther from the limit than in (b), of the same kind as phases E's and I's failures. This is **not** read as an implementation defect. |
+| **(c2) fails far from the limit** | the best learning lap is > 84.04 s, or the first learning lap fails | As the original (c): this points to a defect in the implementation or in the low-speed regime, and it is examined as a diagnostic before any conclusion. |
+
+**For R2,** which starts from the 83.1 s lap, (c2) can in practice occur only as a failure on the first learning lap.
+A completed learning lap slower than 84.04 s would also count, but phase E's first learning laps took 76.4–77.0 s.
 
 ### 10.6 Not claimed; the differences that remain
 
@@ -557,3 +609,7 @@ Records go to `results/CX/I/repro/`, each with the commit and a dirty flag.
    * Phase I's records give ~0.2 s per NLP solve, so a 540 s lap is ~11 000 solves, ~35–40 min.
    * R1's 40 learning laps are estimated at 5–12 h, depending on how fast it learns.
 4. The results and the reading go to the reviewer (packet 4), then to the user.
+
+*Clarification of revision 1 (review n3) – no wall-clock limit.* If R1 learns slowly, the first learning laps take
+close to 540 s each (35–40 min), and 40 laps may take more than 12 h. **No wall-clock limit is set.** A run that takes
+longer than the estimate is completed as usual, and the overrun is noted in the records.
