@@ -97,6 +97,12 @@ def _lap_metrics(res, track, ctl=None) -> dict:
             out.update({"term_slack_share_above_1e-3": float(np.mean(ts_ > 1e-3)), "term_slack_max": float(ts_.max())})
         if getattr(ctl, "diag", None):
             out["regression_fallback_share"] = float(np.mean([d["fallback_share"] for d in ctl.diag]))
+        if getattr(ctl, "eps", None) is not None and ctl.diag:   # phase I's speed bound (CX_I section 5)
+            d = ctl.diag
+            out.update({"speed_slack_share_above_1e-3": float(np.mean([d_["speed_slack"] > 1e-3 for d_ in d])),
+                        "speed_near_share": float(np.mean([d_["speed_near_share"] for d_ in d])),
+                        "speed_slack_max": float(max(d_["speed_slack"] for d_ in d)),
+                        "last_solve_s_vx_vref_vbar1": [float(d[-1][k]) for k in ("s", "vx", "v_ref", "vbar1")]})
         if getattr(ctl, "lin_err", None):              # phase H's ATV controller: the linearisation error per solve
             le = np.array(ctl.lin_err)
             out["lin_err_ds_dn_dvx_p50"] = [float(v) for v in np.median(le, axis=0)]
@@ -112,7 +118,9 @@ def _run(case: dict, track, ctl, x0) -> object:
 def learn(case: dict, kind: str, setting: dict, solver: str = "nlp") -> dict:
     """Section 3: the initialisation laps and the ten learning laps of one car. ``solver`` (control expansion phase H,
     docs/CX_H_protocol.md): "nlp" – this phase's IPOPT problem (default); "atv" – the same problem as one QP per solve
-    along E.2's candidate (``ATVLearningMPC``, ``ATVLMPCController``)."""
+    along E.2's candidate (``ATVLearningMPC``, ``ATVLMPCController``). Setting key ``eps`` (control expansion phase I,
+    docs/CX_I_protocol.md, candidate I-1; NLP only): the speed bound per lap with that step; absent – this phase's
+    problem."""
     from ..control.lmpc import (TERM, TERM7, ATVLearningMPC, ATVLMPCController, LapStore, LearningMPC, LMPCController,
                                 Recorder)
     from ..control.nmpc import FrenetMPC, MPCController
@@ -139,6 +147,11 @@ def learn(case: dict, kind: str, setting: dict, solver: str = "nlp") -> dict:
         raise ValueError(solver)
     cls, ctl_cls = (ATVLearningMPC, ATVLMPCController) if solver == "atv" else (LearningMPC, LMPCController)
     kw = {}
+    eps = setting.get("eps")
+    if eps is not None:                              # phase I (I-1): the speed bound per lap, on the NLP only
+        if solver != "nlp":
+            raise ValueError("the speed bound is defined on the NLP only")
+        kw["speed_bound"], eps = True, float(eps)
     if solver == "atv":                              # phase H's development diagnostics (CX-H clarification m1; the
         if setting.get("qp_solver"):                 # registered settings use neither)
             kw["qp_solver"], kw["qp_opts"] = setting["qp_solver"], {"printLevel": "none", "sparse": True}
@@ -168,7 +181,7 @@ def learn(case: dict, kind: str, setting: dict, solver: str = "nlp") -> dict:
                          "distance": 0.0, "failure_s": None})
             continue
         lmpc.reset()
-        ctl = ctl_cls(lmpc, store, K, P, regression=kind == "lmpc", sim_dt=DT)
+        ctl = ctl_cls(lmpc, store, K, P, regression=kind == "lmpc", sim_dt=DT, eps=eps)
         res = _run(case, track, ctl, x0)
         m = _lap_metrics(res, track, ctl)
         m.update(lap=f"learn_{j}", kind="learn", stored_laps=len(store),
@@ -206,9 +219,10 @@ def run(case: dict, kind: str, setting: dict) -> dict:
     return learn(case, kind, setting) if kind in LEARN_KINDS else fixed_lap(case, kind)
 
 
-def select(records: list[dict], kind: str = "lmpc") -> dict:
+def select(records: list[dict], kind: str = "lmpc", prefer=None) -> dict:
     """Section 4: the most completed tenth learning laps on CEV; ties by the mean tenth lap time on the cars every tied
-    setting completes (skipped if none); then K = 20, then the smaller K."""
+    setting completes (skipped if none); then K = 20, then the smaller K. ``prefer`` (a setting -> sort key; phase I: eps
+    0.04, then the smaller eps) replaces the last two steps."""
     by: dict[str, dict] = {}
     for r in records:
         if r.get("kind") != kind or "error" in r:
@@ -230,5 +244,6 @@ def select(records: list[dict], kind: str = "lmpc") -> dict:
             for k in tied:
                 table[k]["mean_lap_common"] = mean[k]
             tied = [k for k in tied if mean[k] == min(mean.values())]
-    chosen = min(tied, key=lambda k: (by[k]["setting"]["K"] != 20, by[k]["setting"]["K"]))
+    prefer = prefer or (lambda s: (s["K"] != 20, s["K"]))
+    chosen = min(tied, key=lambda k: prefer(by[k]["setting"]))
     return {"setting": by[chosen]["setting"], "setting_key": chosen, "table": table}
