@@ -3,6 +3,8 @@
 Status: **binding, revision 0 (2026-10-28; bdc02d0, APPROVE)** with the clarifications of its review (m1, m2, n1, n2;
 marked *"clarification of revision 0"*), written down before any phase-I code. **I-1's development gate failed (section
 9; stage A passed, stage B failed): I-1 is closed for this phase (rule 4); no benchmark registered, no IV or IT lap.**
+**Revision 1 (2026-10-29, for review – packet 3): section 10, a reproduction check under the published LMPCs' conditions
+on NOM – a diagnostic at the user's request; I-2 and I-3 not registered.**
 Written after the literature check
 ([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §I, on top of §E and §H) and before any phase-I code: no
 module, test, runner or lap of phase I exists. Branch `cx/I-lmpc-followups` from `main` 98f8134 (the merge of phase H).
@@ -391,3 +393,167 @@ Before the registered laps there was one scratch smoke, `pb` ε 0.04 on NOM with
     sequences.
   * I-3 (consecutive laps) adds data past the line; it does not change the formulation near the limit.
   * Neither addresses the near-limit failure seen on NOM. Their revisions must say how they would.
+
+**Review of packet 2 (437ee9e): APPROVE** (2026-10-29). I-1 is closed for this phase; no benchmark is registered. The
+review: the I-2 and I-3 revisions must first state how they address the failure near the limit on NOM with an exact
+model, or there is no reason to expect them to pass the same gate – passed to the user as written, as the basis for
+the decision.
+
+## 10. Revision 1 – a reproduction check under the published conditions (a diagnostic; the user's request)
+
+**Why.**
+* The user chose to discuss before I-2 and asked:
+  * which papers the method follows;
+  * whether the original would pass;
+  * how ours differs.
+* The answer (literature §E, §H, §I, I.5):
+  * The published racing LMPCs start far from the limit, run consecutive laps over tens of laps, and report no failure
+    statistics. The exception is E.4: on BARC, 1 of 10 trials failed, and E.2's regression failed 5 of 10 at h = 3.
+  * None starts near the limit or compares with a planner-based controller.
+  * Nobody has run the original under phase I's conditions, so whether it would pass is not known.
+* The user's instruction (2026-10-29, translated): *"Do the reproduction check first."* It is a diagnostic under the
+  published conditions, on NOM.
+
+**Its place among phase I's rules:**
+* It is a diagnostic (rule 2). It has no gate, cannot register a benchmark, and does not reopen I-1.
+* I-2 and I-3 stay unregistered. After the check the user decides: close the LMPC line, or ask for a candidate that a
+  revision registers on the check's result.
+* No lap of the check runs before this revision's APPROVE and its code.
+
+### 10.1 Question
+
+*Driven under the published racing LMPCs' conditions, does phase E's LMPC learn on NOM to a lap near the limit and keep
+completing laps there?* Phase E's LMPC here means the NLP with the nominal model, K 20 and P 2.
+* **If it does,** phases E's and I's failures belong to their conditions: a start near the limit, every lap from the
+  same state, ten laps.
+* **If it does not,** the failure near the limit belongs to the formulation as implemented here, on this car.
+
+### 10.2 The conditions carried over
+
+| condition | papers (literature) | phases E and I | this check |
+|---|---|---|---|
+| start | two laps of path following at a constant ~1.2 m/s (E.2, I.1); three laps on the centre line at 10 m/s (E.4) | `nmpc`'s tracking NMPC on the η_p 0.73 / 0.79 plans: 86.9 / 83.1 s, against `nmpc`'s 76.40 s | two laps of the same tracking NMPC on the **centre line at a constant v_c** |
+| laps | consecutive, with data past the line (E.2, E.4) | every lap from the plan's start state, with a 250 m run-out | **consecutive**: each lap starts from the previous lap's state at the line |
+| how many | converged after 29 (E.2) | 10 | **40 learning laps** |
+| model | regression (E.2); nominal plus regression (E.4); equal to the plant (I.1) | nominal plus E.4's regression (`pb`, `lmpc`); nominal (`pb_nominal`, `lmpc_nominal`) | **nominal on NOM**, equal to the plant up to the integration (I.1's condition) |
+| solver | one QP per step (E.2, H.1, I.1); an NLP or a QP (H.2) | NLP (E, I); QP (H) | NLP (R1, R2); QP (R3) |
+
+**v_c (fixed now).** v_c is the constant speed at which the centre line's largest lateral acceleration, v² max|κ|, is
+half the friction limit μ_y g, with downforce not counted:
+
+  v_c = ⌊√(0.5 μ_y g / max|κ|)⌋ = ⌊√(0.5 · 1.6 · 9.81 / 0.1159)⌋ = **8 m/s**.
+
+* Spielberg's largest |κ| is 0.116 1/m (R ≈ 8.6 m), at s ≈ 1 399 m.
+* A lap at 8 m/s takes about 540 s, about seven times `nmpc`'s lap.
+* The tyre usage is about 0.5 at that point and far lower elsewhere, so the car is far from the limit everywhere.
+* If an initialisation lap at 8 m/s does not complete, v_c is lowered in steps of 1 m/s (recorded; check r2).
+
+### 10.3 The arms (NOM only; one deterministic run each)
+
+| arm | problem | start | laps |
+|---|---|---|---|
+| **R1** (decides the reading) | `lmpc_nominal`: phase E's NLP without the regression, K 20, P 2 | two centre-line laps at v_c | 40 learning laps, consecutive |
+| R2 | the same | phase E's initialisation (η_p 0.73, then 0.79 from the first lap's end state) | the same |
+| R3 | `atv_nominal`: phase H's ATV-QP without the regression (OSQP, as registered in phase H) | as R1 | the same |
+
+* R2 separates the start from the consecutive laps.
+* R3 is E.2's form of the problem: one QP per step along E.2's candidate.
+* No speed bound: it is not in the papers.
+* Everything else is phase E's:
+  * N = 30 × 50 ms, η 0.95, margin 0.6, w_T 100;
+  * the weights;
+  * the soft terminal hull;
+  * the fallback.
+
+**The start state at v_c (R1, R3):** the centre line's point at s = 0 with its heading, v_x = v_c, and v_y = r = δ = 0.
+The line lies on the main straight. The reference of the two initialisation laps is n = 0 and ξ = 0 at v_x = v_c
+everywhere.
+
+**Consecutive laps (fixed now):**
+* **What is stored.** Each lap is simulated from its start state through the line and 250 m beyond, as in phases E and
+  I. The lap and its run-out are stored, with the time-to-go continued past the line as now.
+* **Where the next lap starts.** The next lap starts from the simulator state at the last 10 ms step before the line,
+  within one step (< 1 m) of L.
+  * It has a fresh controller. The controller's previous command is the earlier lap's command at that step.
+  * Its time is measured over one track length from that state.
+* **An approximation of continuous driving.** The data past the line come from the earlier lap's own run-out, driven
+  with the store as it was during that lap. They do not come from the next lap's first 250 m.
+* **A failure ends the sequence**, as in phases E and I. A failure is off track, a spin, or the time limit, in the lap
+  or its run-out.
+  * A retry would only repeat it: the simulation and the controller are deterministic, and the store does not change.
+  * I.1 continues after a rejected lap by narrowing its envelope; E.4 counts failed trials on hardware. Neither carries
+    over without a new mechanism.
+* **A lap's time limit** is 1.25 × the slower initialisation lap's time, and at least 121 s.
+
+### 10.4 Reported, per arm
+
+* The lap-time curve over the initialisation and learning laps, and each lap's time over the previous lap's.
+* The number of completed learning laps.
+* At a failure: the lap, the arclength, the stop reason, and the car's speed against the stored laps' speed there.
+* Per lap:
+  * the share of solves with terminal slack above 10⁻³, and its maximum;
+  * solver failures (fallbacks) and solve times;
+  * the largest tyre usage (front, rear) and the smallest edge margin.
+* The best lap and the last five laps, against `nmpc`'s 76.40 s and I-1's `pb_nominal` best lap on NOM (77.60 s).
+* For R3, the QP failures per lap.
+
+### 10.5 Readings (fixed now, before any lap)
+
+**Definitions:**
+* **Near the limit:** a learning lap within 3 % of `nmpc`'s 76.40 s, i.e. ≤ 78.69 s. I-1's `pb_nominal` left NOM
+  after laps of 77.60 and 77.65 s.
+* **Converged:** the last five completed learning laps lie within 0.5 % of each other (max / min − 1 ≤ 0.005).
+
+| reading | condition | what it says about the question |
+|---|---|---|
+| **(a) reproduced** | 40 of 40 completed, at least one lap near the limit, converged | Under the published conditions the LMPC works on NOM, so phases E's and I's failures belong to their conditions. R2 tells whether the slow start is needed. |
+| **(b) fails near the limit** | the sequence ends after at least one lap near the limit | The failure near the limit persists under the published conditions with an exact model. It belongs to this formulation on this car; the differences of 10.6 are untested. |
+| **(c) fails before the limit** | it ends before any lap near the limit | This points to a defect in the implementation or in the low-speed regime. It is examined as a diagnostic before any conclusion. |
+| **(d) stays away** | 40 completed, no lap near the limit | The method does not reach the limit within 40 laps, so the question is not answered. |
+| **(e) near, not converged** | 40 completed, a lap near the limit, not converged | Reported as such; there is no conclusion on stability at convergence. |
+
+R1 decides the check's reading. R2 and R3 are read the same way and reported beside it.
+
+### 10.6 Not claimed; the differences that remain
+
+* **Scope.** There is one deterministic run per arm, on NOM only. So there is no statement about model mismatch (DEV),
+  and there are no statistics.
+* **A pass is not a candidate.** It has no gate and registers no benchmark. Whether an LMPC under these conditions
+  should be benchmarked against `identified` is the user's decision. Such a benchmark would need more than ten laps;
+  H-I1 and H-I2 as written compare the tenth.
+* **A failure does not refute E.2 or E.4.** These remain unreproduced:
+  * the cars' scale and hardware (1:10 BARC; the IAC car only qualitatively);
+  * E.2's own regression model (I-2);
+  * H.1's safe-set details – the four fastest laps, contiguous windows, the L1 distance on the full state;
+  * soft track bounds that let a car pass the edge without ending the run (H.1's lane slack, I.1's −0.02 m acceptance).
+
+### 10.7 Development checks before the registered runs
+
+Records go to `results/CX/I/repro/`, each with the commit and a dirty flag.
+
+* **r0 – the default path unchanged.** With the new options off, these records are reproduced exactly:
+  * phase E's `lmpc` K 20 and `lmpc_nominal` K 10 development records on NOM;
+  * phase H's `atv_nominal` K 20 record on NOM.
+* **r1 – unit tests:**
+  * the centre-line reference at v_c and its start state;
+  * the consecutive start: the state, its arclength within one step of L, and the earlier lap's command carried over;
+  * the lap timed over one track length;
+  * the time-limit rule.
+* **r2 – the two initialisation laps.** Recorded before any learning lap: v_c's value, and the two laps at v_c on NOM
+  (completed, times, tyre usage). They are R1's and R3's first laps.
+* **One scratch smoke** of R1 with two learning laps is allowed. It is disclosed and not used for the reading.
+
+### 10.8 Compute and order
+
+1. Review of this revision (packet 3). No code before its APPROVE.
+2. Code:
+   * options of `cx_e.learn`, off by default: consecutive laps, a centre-line start at v_c, the number of learning
+     laps, and the lap's time limit;
+   * the arms in `experiments/cx_i.py`;
+   * `scripts/run_cx_i.py repro` and `scripts/report_cx_i.py repro`;
+   * unit tests.
+3. r0–r2, then R1–R3 in parallel: three processes, Windows `.venv`, single-threaded BLAS, one process per arm, in the
+   main checkout (a diagnostic, as the development checks).
+   * Phase I's records give ~0.2 s per NLP solve, so a 540 s lap is ~11 000 solves, ~35–40 min.
+   * R1's 40 learning laps are estimated at 5–12 h, depending on how fast it learns.
+4. The results and the reading go to the reviewer (packet 4), then to the user.

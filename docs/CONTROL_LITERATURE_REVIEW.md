@@ -896,6 +896,31 @@ a bound on the progress per lap, or a gradual expansion – and how do the publi
 * (c) Consecutive laps (E.2, E.4, E.6) and E.2's own regression model are the matrix's follow-ups 2 and 3 (§I-2, I-3 of
   the protocol). They are registered there by revision, if reached.
 
+### I.5 E.2 re-read for its lap set-up (Rosolia & Borrelli, arXiv:1901.08184, ar5iv; 2026-10-29)
+
+A second pass over E.2 (read in full for phase E), this time through a summarising fetch of the ar5iv page, for the
+reproduction check of CX_I_protocol.md section 10. The page renders some digits twice ("1010 Hz", "11 g"); they are read
+as 10 Hz and 1 g, as in E.2's entry.
+* **Start:** two laps of path following at constant speed, ~1.2 m/s, seed the safe set (section V).
+* **Consecutive laps:** each iteration's data cover two consecutive laps, so the safe set and the Q-function are defined
+  beyond the finish line. The terminal set is s ≥ L and the cost-to-go T^j − t. The safe set uses the last two
+  iterations (table I).
+* **Horizon:** N = 12 at 10 Hz; K = 20 (table I). Neither the tracks' lengths nor their radii are given (an oval and an
+  L-shaped track).
+* **Outcome:** the lap time decreases until it converges after 29 laps; laps 30–34 are shown as the steady state. The
+  largest lateral acceleration is ~1 g, against the limit μ g with μ = 1 (aerodynamics neglected). No lap times or
+  speeds are given as numbers.
+* **Not reported:** any lap that failed or left the track, and the number of experiments or trials.
+
+**For the reproduction check (protocol section 10):**
+* Conditions of the published racing LMPCs that carry over to the simulation:
+  * a slow constant-speed start (E.2, I.1 at ~1.2 m/s; E.4 on the centre line at 10 m/s);
+  * consecutive laps with data past the line (E.2, E.4);
+  * tens of laps (E.2: 29 to converge);
+  * a model equal to the plant (I.1).
+* Conditions that do not carry over: the cars' scale and hardware; soft track bounds that let a lap go past the edge
+  without ending the run (H.1's lane slack, I.1's −0.02 m acceptance). E.2's own regression model is I-2's subject.
+
 ## Phases F–G and the frontier methods
 
 Entries are written at the start of each phase, before its code (roadmap section 3). Classic sources
