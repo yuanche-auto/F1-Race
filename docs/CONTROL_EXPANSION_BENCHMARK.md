@@ -496,7 +496,9 @@ The initialisation laps complete on every car (86.9–87.0 s, 83.1–83.5 s). Th
 about the lap time of `nmpc` on the 5 % plan (76.40 s); in the diagnostics one learning lap took **75.9 s, faster than
 `nmpc`** – yet no sequence keeps it up: near the limit (braking into turn 1) the terminal condition becomes unreachable
 (the share of solves with terminal slack above 10⁻³ rising 0.03 → 0.17 → 0.33 over the laps) and the car leaves. On the
-development cars the first learning lap plans with the nominal model at η 0.95 and leaves where `nmpc` leaves; the
+development cars the first learning lap plans with the nominal model at η 0.95 and leaves – at turn 1 with the registered
+K 20, where `nmpc` does not leave; only some `lmpc_nominal` variants left at ~3.84 km, the corner where `nmpc` leaves
+three of them (CX-E §9; *corrected 2026-10-28 on the phase-I branch*); the
 regression has data only at the initialisation laps' speeds and falls back to the nominal model on 38–62 % of the stages.
 
 **Reading (review e1):** the negative result is about **this implementation** – a nonlinear NLP (IPOPT) with the nominal

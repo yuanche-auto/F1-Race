@@ -280,7 +280,9 @@ QPs of the first learning lap stopped at the iteration limit, and the car left t
     0.3–0.6 m) and drove 30 s without leaving the track.
 * **That last variant over full sequences on NOM and DEV** (`diag.jsonl`, 8b17829): every car left the track **on the
   first learning lap**.
-  * Four DEV cars left at turn 1 (470–474 m). That is where phase E's NLP and `nmpc` leave on the mismatched DEV cars.
+  * Four DEV cars left at turn 1 (470–474 m), where phase E's NLP (K 20) left them too (465–470 m). `nmpc` does **not**
+    leave there: it completes DEV_car1 and DEV_car5 and leaves the other three at ~3.83 km (`laps.jsonl`). (*corrected 2026-10-28 on the phase-I branch*:
+    packet 2 and the merged text said that `nmpc` leaves at turn 1 as well.)
   * NOM left at 2 765 m and DEV_car1 at 2 658 m; `nmpc` completes on both.
   * Terminal slack above 10⁻³ in 15–39 % of the solves; |dv_x| P95 13–80 m/s; 340–510 ms per solve.
   * QP failures (qpOASES; the shifted plan applied): none on the four cars that left at turn 1, 18 on NOM and 17 on
@@ -293,8 +295,8 @@ QPs of the first learning lap stopped at the iteration limit, and the car left t
 * With a trust region added (a diagnostic, not the registered design), the QP is solved at nearly every step. The
   exceptions are 18 failures on NOM and 17 on DEV_car1, of about 1 000 solves each. The median linearisation error stays
   small, **and still no car completes the first learning lap**.
-  * On the mismatched cars it leaves the track where phase E's NLP and `nmpc` leave. On NOM and DEV_car1 it gets
-    further, to ~2.7 km.
+  * On the mismatched cars it leaves the track at turn 1, where phase E's NLP leaves (not where `nmpc` leaves – *corrected 2026-10-28 on the phase-I branch*,
+    see the diagnostics above). On NOM and DEV_car1 it gets further, to ~2.7 km.
   * With a robust solver and a trust region, the formulation **does not support phase E's hypothesis (e1) as the
     decisive cause**. Changing to the linearised model with E.2's candidate leaves the first learning lap failing at
     much the same places.

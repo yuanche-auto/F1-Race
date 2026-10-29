@@ -52,7 +52,8 @@ with qpOASES and a step box), in this order: (1) **a bound on the progress per l
 laps**, so that the first learning lap is not planned at the nominal model's limit; (2) **E.2's own local-regression
 model** of the velocity states, with a trust region and a robust QP solver; (3) **consecutive laps**. **Precondition for
 any later LMPC phase** (after phases E and H both failed their development gates): show on NOM that its first learning lap
-completes reliably before a benchmark is registered.
+completes reliably before a benchmark is registered. **Phase I tries them in this order** (CX_I_protocol.md; the user's
+instruction, 2026-10-28).
 From phase F (CX-F amendment F1, review g4; the shield part was closed after its development gate failed – the L1
 tracker is no backup on these cars: at a reduced speed factor it leaves the track even on the nominal car, on a slower
 plan it completes at most 9 of 12 development laps and almost none with a 60 ms lag): **a backup that drives the lagged
