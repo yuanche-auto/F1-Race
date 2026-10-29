@@ -1,7 +1,9 @@
 # CX-I protocol – the learning MPC's follow-ups, a progress bound per lap first (control expansion, phase I – frontier 2)
 
 Status: **binding, revision 0 (2026-10-28; bdc02d0, APPROVE)** with the clarifications of its review (m1, m2, n1, n2;
-marked *"clarification of revision 0"*), written down before any phase-I code. Written after the literature check
+marked *"clarification of revision 0"*), written down before any phase-I code. **I-1's development gate failed (section
+9; stage A passed, stage B failed): I-1 is closed for this phase (rule 4); no benchmark registered, no IV or IT lap.**
+Written after the literature check
 ([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §I, on top of §E and §H) and before any phase-I code: no
 module, test, runner or lap of phase I exists. Branch `cx/I-lmpc-followups` from `main` 98f8134 (the merge of phase H).
 
@@ -310,3 +312,82 @@ On NOM and DEV only. Records in `results/CX/I/dev/`, each with the commit and a 
      part in the gate, which is judged on `pb` alone.
    * **A and B pass:** packet 2, with the revision that registers the benchmark (rule 3, clarification m1).
    * **Either fails:** I-1 is closed for this phase. Packet 2 reports it and carries I-2's revision (rule 4).
+
+### 9. Results of I-1's development checks (2026-10-29; packet 2) – **stage A passed, stage B failed: the gate of I-1 failed**
+
+Records (git-ignored) in `results/CX/I/dev/`, at 62fc41d (clean; `meta_*.json`, `RUN_COMMIT_dev`):
+* `nlp_repro.json`;
+* `laps.jsonl` – 26 jobs, 0 errors, run in 51 min with 20 workers;
+* `report/` (`report_cx_i.py dev`, `CX_I_dev.md`, `gate.json`).
+
+Before the registered laps there was one scratch smoke, `pb` ε 0.04 on NOM with only one learning lap
+(`results/CX/I/smoke/`): learning lap 1 took 80.83 s. The registered sequence reproduced it exactly.
+
+1. **Phase E's NLP unchanged (9.1):** with the bound off, phase E's `lmpc` K 20 on NOM reproduces its record exactly
+   (`equal: true`).
+2. **The bound (9.2):** `tests/test_cx_i.py`, 7 passed:
+   * an inactive bound gives the unbounded solution;
+   * a binding bound caps the predicted speeds;
+   * v_ref is the faster lap, including past the line;
+   * the layout with the bound off is phase E's;
+   * the sets and the ε rule.
+3. **Stage A – `pb` on NOM, learning lap 1 at each ε: 3 of 3 completed.**
+
+   | ε | learning lap 1 | expected (m2) | learning lap 2 |
+   |---|---|---|---|
+   | 0.02 | 81.84 s | ~81.5 s | off at 435 m (turn 1) |
+   | 0.04 | 80.83 s | ~80.0 s | off at 2 613 m |
+   | 0.08 | 79.07 s | ~77.0 s | spin at 2 165 m |
+
+   The bound acts as m2 expected: the first learning lap no longer jumps to ~77 s. Phases E and H left the track on
+   this lap.
+4. **Stage B – ε 0.04 on NOM and DEV.**
+
+   | car | `pb` (the gate) | `pb_nominal` (descriptive, n2) | phase E's `lmpc` K 20 – lap 1 | `nmpc` | `identified` |
+   |---|---|---|---|---|---|
+   | NOM | 80.83, then off on lap 2 (2 613 m) | 80.42, 78.51, 77.60, 77.65, then off on lap 5 (3 830 m) | off at 442 m | 76.40 s | 76.42 s |
+   | DEV_car1 | off on lap 1 (2 922 m) | 81.82, 79.37, 78.10, 77.30, then off on lap 5 (441 m) | off at 469 m | 76.25 s | 76.63 s |
+   | DEV_car2 | spin on lap 1 (2 961 m) | 80.53, 79.23, then off on lap 3 (2 735 m) | off at 469 m | off at 3 829 m | 77.75 s |
+   | DEV_car3 | off on lap 1 (2 667 m) | 80.74, 80.14, then off on lap 3 (2 746 m) | off at 465 m | off at 3 829 m | 78.75 s |
+   | DEV_car4 | 81.42, then off on lap 2 (405 m) | 80.93, 80.11, then off on lap 3 (2 737 m) | off at 468 m | off at 3 828 m | 78.70 s |
+   | DEV_car5 | off on lap 1 (2 686 m) | 81.56, 78.80, 77.73, then off on lap 4 (2 686 m) | off at 470 m | 75.91 s | 75.72 s |
+
+   * **`pb`'s solver failures:** 9–51 per learning lap, at most 11.5 % of a lap's solves. Its regression fell back
+     to the nominal model on 27–45 % of the stages.
+   * **`pb` exceeds its bound before it fails.** The largest planned excess σ per lap was 2.6–15.4 m/s on the DEV
+     cars. At the last solve before leaving, DEV_car3 drove 51.9 m/s where the stored laps had 42.7 m/s (bound 44.6),
+     and NOM at ε 0.02 drove 35.1 m/s into turn 1 against a bound of 26.7. The record holds the planned excess; it does
+     not show why the car got there.
+   * **`pb_nominal`** (the same bound, no regression):
+     * 0–15 solver failures per lap;
+     * every completed learning lap was faster than the one before (ratio 0.966–0.993), except NOM's lap 4 (0.05 s
+       slower than lap 3);
+     * the share of stages near the bound fell from ~0.55 on lap 1 to ~0.1 by lap 4, as the bound stopped binding;
+     * the cars that lasted longest (NOM, DEV_car1, DEV_car5) reached 77.3–77.7 s. That is not faster than `nmpc`
+       (76.40 s on NOM). DEV_car2–4 left on lap 3, their best laps 79.2–80.1 s;
+     * on the last laps the share of solves with terminal slack above 10⁻³ rose to 0.11–0.19 – phase E's failure near
+       the limit (CX-E §9);
+     * on NOM, where the model equals the plant up to the integration, it left on lap 5 at 3 830 m.
+5. **Gate of I-1 (`gate.json`):**
+   * A passed (3 of 3).
+   * B failed: NOM does not complete ten learning laps (`pb` leaves on lap 2), and DEV completes the tenth on 0 of 5.
+   * **The gate failed. By rule 4, I-1 is closed for this phase.** No benchmark is registered (clarification m1), and
+     no IV or IT lap was run.
+
+**Reading (development data; observations, not tested causes):**
+* **The bound did what it was designed for.** The first learning lap completed on NOM at every ε, near the expected
+  time. With `pb_nominal` the laps improved gradually, as in the published LMPCs (§I (b)).
+* **The error regression (E.4) made the sequences shorter on every car.** `pb` failed on lap 1 or 2, `pb_nominal` on
+  laps 3–5. In phase E's development records, `lmpc_nominal` never did worse than `lmpc` at the same K. With the
+  regression the cars got faster than the stored laps and than the bound. This is consistent with the regression
+  mis-predicting the speed at speeds above its data. The records do not test that.
+* **Near the limit the LMPC fails even without model error.** On NOM, `pb_nominal` reached 77.6 s and left on lap 5,
+  at 3 830 m – the corner where `nmpc` leaves three DEV cars. On the DEV cars it left at ~2.7 km (four cars) or at turn 1
+  (DEV_car1).
+  * The bound no longer binds there, and the terminal slack grows lap by lap, as in phase E.
+  * So the bound postpones phase E's failure by a few laps; it does not remove it.
+* **For the next candidates (rule 4):**
+  * I-2 regresses the velocity states entirely (E.2). The I-1 records show the partial regression of E.4 shortening the
+    sequences.
+  * I-3 (consecutive laps) adds data past the line; it does not change the formulation near the limit.
+  * Neither addresses the near-limit failure seen on NOM. Their revisions must say how they would.
