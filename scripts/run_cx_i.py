@@ -6,10 +6,15 @@ one lap. Records in results/CX/I/ (key ``job`` = stage|kind|setting|case).
 Only the development stage exists: the benchmark (IV tuning, IT test, secondary) is registered by a revision after the
 gate passes (clarification m1), and its stages are written with that revision.
 
+Revision 1 (section 10): the reproduction check on NOM – one job per arm (R1, R2, R3: the whole sequence of two
+initialisation and 40 consecutive learning laps), each lap appended to ``progress_<arm>.jsonl`` as it is done.
+
     python scripts/run_cx_i.py jobs                       # the job list (counts)
     python scripts/run_cx_i.py dev [--workers 20]         # section 9.3: stage A (pb on NOM, eps 0.02 / 0.04 / 0.08),
                                                           # stage B (pb, pb_nominal at eps 0.04 on NOM + DEV), nmpc and
                                                           # identified on NOM + DEV -> results/CX/I/dev/laps.jsonl
+    python scripts/run_cx_i.py repro [--arms R1 R2 R3]    # section 10: the arms -> results/CX/I/repro/laps.jsonl
+    python scripts/run_cx_i.py repro --arms R1 --n-learn 2 --out repro_smoke   # the scratch smoke (section 10.7)
 """
 from __future__ import annotations
 
@@ -66,6 +71,23 @@ def dev_jobs() -> list[tuple]:
     return a + b + _jobs("dev", "nmpc", {}, both) + _jobs("dev", "identified", {}, both)
 
 
+def repro_job(args):
+    """One arm of the reproduction check; each lap's record appended to its progress log as it is done."""
+    arm, n_learn, progress = args
+    t0 = time.time()
+
+    def on_lap(m):
+        with open(progress, "a", encoding="utf-8") as fo:
+            fo.write(json.dumps({"arm": arm, "wall_s": time.time() - t0, **m}, default=float) + "\n")
+
+    try:
+        out = cx_i.repro(arm, n_learn, on_lap)
+        out.update({"job": f"repro|{arm}", "stage": "repro", "wall_job_s": time.time() - t0})
+        return out
+    except Exception:                                       # noqa: BLE001
+        return {"job": f"repro|{arm}", "error": traceback.format_exc()}
+
+
 def _meta(path: Path) -> None:
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
     dirty = bool(subprocess.run(["git", "status", "--porcelain", "--", "src", "scripts", "tests"], cwd=ROOT,
@@ -97,10 +119,32 @@ def _run(jobs: list[tuple], path: Path, workers: int) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=["jobs", "dev"])
+    ap.add_argument("what", choices=["jobs", "dev", "repro"])
     ap.add_argument("--workers", type=int, default=20)
     ap.add_argument("--id-workers", type=int, default=6)
+    ap.add_argument("--arms", nargs="+", default=list(cx_i.REPRO))
+    ap.add_argument("--n-learn", type=int, default=None)
+    ap.add_argument("--out", default="repro")
     a = ap.parse_args()
+    if a.what == "repro":
+        out = OUT / a.out
+        out.mkdir(parents=True, exist_ok=True)
+        _meta(out / "meta_laps.json")
+        done = set()
+        if (out / "laps.jsonl").exists():
+            done = {json.loads(l)["job"] for l in (out / "laps.jsonl").read_text().splitlines()
+                    if l.strip() and "error" not in json.loads(l)}
+        todo = [(arm, a.n_learn, str(out / f"progress_{arm}.jsonl")) for arm in a.arms if f"repro|{arm}" not in done]
+        print(f"{len(todo)} arms -> {out}", flush=True)
+        if not todo:
+            return
+        with get_context("spawn").Pool(len(todo), maxtasksperchild=1) as pool, \
+                open(out / "laps.jsonl", "a", encoding="utf-8") as fo:
+            for rec in pool.imap_unordered(repro_job, todo):
+                fo.write(json.dumps(rec, default=float) + "\n")
+                fo.flush()
+                print(rec["job"], rec.get("stop_reason", ""), "error" if "error" in rec else "", flush=True)
+        return
     if a.what == "jobs":
         print(f"dev: {len(dev_jobs())} jobs")
         return

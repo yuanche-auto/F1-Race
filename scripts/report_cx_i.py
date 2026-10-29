@@ -6,6 +6,8 @@ I-1). Only the development report exists; the benchmark's reports are written wi
                                          # 0.04 on NOM + DEV; pb_nominal descriptive, n2), the bound's activity per lap
                                          # (section 5), phase E's and H's records beside them, and the gate
                                          # -> results/CX/I/dev/report/
+    python scripts/report_cx_i.py repro  # revision 1, section 10: the reproduction check's arms, per-lap rows, the
+                                         # run-out check and the readings -> results/CX/I/repro/report/
 """
 from __future__ import annotations
 
@@ -140,13 +142,75 @@ def dev(d: Path) -> None:
     print(NL.join(md))
 
 
+def _g(v, f="{:.2f}") -> str:
+    return "–" if v is None or (isinstance(v, float) and not np.isfinite(v)) else f.format(v)
+
+
+def repro(d: Path, sub: str = "repro") -> None:
+    """Revision 1, section 10: per arm the lap-time curve, the per-lap rows of section 10.4, the run-out check (m3), the
+    failure (n2) and the reading (section 10.5 with m1) -> results/CX/I/<sub>/report/."""
+    dd = d / sub
+    recs = {r["job"].split("|")[1]: r for r in _last(load(dd / "laps.jsonl")) if "error" not in r}
+    errs = [r for r in load(dd / "laps.jsonl") if "error" in r]
+    nmpc = 76.40
+    md = ["# CX-I – the reproduction check under the published LMPCs' conditions (revision 1, section 10; NOM, diagnostic)",
+          "", f"Records: `results/CX/I/{sub}/laps.jsonl` ({len(recs)} arms; {len(errs)} error records). "
+          f"`nmpc` on NOM: {nmpc} s; near the limit ≤ {cx_i.NEAR_LIMIT} s, approaching ≤ {cx_i.APPROACH} s; converged: the "
+          f"last five completed learning laps within {cx_i.CONVERGED:.1%}.", "",
+          "## Readings", "", "| arm | completed learning laps | best | near the limit | converged | last five | reading | "
+          "wall h |", "|" + "---|" * 8]
+    readings = {}
+    for arm in sorted(recs):
+        r = recs[arm]
+        g = cx_i.reading(r)
+        readings[arm] = g
+        md.append(f"| {arm} | {g['completed']} of {g['learning_laps']} | {_g(g['best'])} | {g['near']} | {g['converged']} | "
+                  + ", ".join(f"{t:.2f}" for t in g["last_five"]) + f" | **{g['reading']}** | {r['wall_s'] / 3600:.1f} |")
+    for arm in sorted(recs):
+        r = recs[arm]
+        md += ["", f"## {arm} – per lap (section 10.4)", "",
+               "| lap | time s | over the previous | start s m | term. slack > 1e-3 | term. slack max | fallbacks / solves | "
+               "solve ms mean | tyre usage max f / r | min edge margin m | run-out check: dt s, d v_x m/s | stop | wall min |",
+               "|" + "---|" * 13]
+        prev = None
+        for lp in r["laps"]:
+            if "solves" not in lp and not lp.get("completed"):
+                md.append(f"| {lp['lap']} | – | – | – | – | – | – | – | – | – | – | {lp.get('stop_reason')} | – |")
+                continue
+            t = lp["lap_time"] if lp["completed"] else None
+            ratio = (t / prev) if (t is not None and prev) else None
+            rc = lp.get("runout_check")
+            us = lp.get("tyre_usage_max_front_rear") or [math.nan, math.nan]
+            stop = "lap completed" if lp["completed"] and lp.get("run_out_completed") else (
+                f"{lp.get('stop_reason')} / run-out {lp.get('run_out_stop')} at {lp.get('distance', 0):.0f} m; "
+                f"{lp.get('failure_class', '')} ({lp.get('fallbacks_last20', '–')} of last 20 failed); v_x "
+                f"{_g(lp.get('failure_vx'), '{:.1f}')}, stored {_g(lp.get('failure_v_stored'), '{:.1f}')}")
+            md.append(f"| {lp['lap']} | {_g(t)} | {_g(ratio, '{:.4f}')} | {_g(lp.get('start_s'), '{:.2f}')} | "
+                      f"{_g(lp.get('term_slack_share_above_1e-3'), '{:.3f}')} | {_g(lp.get('term_slack_max'), '{:.3g}')} | "
+                      f"{lp.get('fallbacks', '–')} / {lp.get('solves', '–')} | "
+                      f"{_g((lp.get('solve_ms_mean_p95_max') or [None])[0], '{:.0f}')} | {us[0]:.3f} / {us[1]:.3f} | "
+                      f"{_g(lp.get('min_edge_margin'), '{:.2f}')} | "
+                      + (f"{rc['dt']:+.3f}, {rc['dstate_s_n_xi_vx_vy_r_delta'][3]:+.2f}" if rc else "–")
+                      + f" | {stop} | {_g((lp.get('wall_lap_s') or math.nan) / 60, '{:.0f}')} |")
+            prev = t if t is not None else prev
+    out = dd / "report"
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "CX_I_repro.md").write_text(NL.join(md) + NL, encoding="utf-8")
+    (out / "readings.json").write_text(json.dumps(readings, indent=1, default=float))
+    print(NL.join(md))
+
+
 def main() -> None:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=["dev"])
+    ap.add_argument("what", choices=["dev", "repro"])
     ap.add_argument("--dir", default=str(ROOT / "results" / "CX" / "I"))
+    ap.add_argument("--sub", default="repro")
     a = ap.parse_args()
+    if a.what == "repro":
+        repro(Path(a.dir), a.sub)
+        return
     dev(Path(a.dir))
 
 

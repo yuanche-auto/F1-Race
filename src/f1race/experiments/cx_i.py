@@ -9,6 +9,9 @@ m2, n1, n2); candidate I-1, the speed bound per lap: the sets and the controller
 * Kinds (section 3): ``pb`` (phase E's NLP with the speed bound, the error regression on), ``pb_nominal`` (Gamma = 0),
   ``lmpc`` (phase E's NLP, no bound – the bound's ablation), ``nmpc`` and ``identified`` (one scored lap, phase D's code
   path; ``identified``'s cache in results/CX/I/identified_cache).
+* Revision 1 (section 10, with its clarifications m1–m3, n1–n3): the reproduction check on NOM – ``REPRO``'s arms R1
+  (``lmpc_nominal``, NLP, two centre-line laps at v_c, consecutive laps, 40 learning laps), R2 (the same from phase E's
+  start) and R3 (phase H's ATV-QP under R1's conditions); ``repro`` runs one arm, ``reading`` gives its reading.
 """
 from __future__ import annotations
 
@@ -88,5 +91,65 @@ def select(records: list[dict]) -> dict:
     return cx_e.select(records, kind="pb", prefer=lambda s: (s["eps"] != 0.04, s["eps"]))
 
 
+# Revision 1, section 10: the reproduction check under the published LMPCs' conditions (a diagnostic on NOM; no gate)
+N_REPRO = 40
+NEAR_LIMIT = 78.69                                # section 10.5: within 3 % of nmpc's 76.40 s on NOM
+APPROACH = 84.04                                  # clarification m1: within 10 %
+CONVERGED = 0.005                                 # the last five completed learning laps: max / min - 1
+
+
+def v_c_rule(track, veh) -> float:
+    """Section 10.2: the constant speed at which the centre line's largest lateral acceleration v^2 max|kappa| is half the
+    friction limit mu_y g (downforce not counted), rounded down to 1 m/s."""
+    import math
+
+    import numpy as np
+
+    from ..vehicle import G
+
+    return float(math.floor(math.sqrt(0.5 * veh.mu_y * G / float(np.max(np.abs(track.kappa))))))
+
+
+V_C = 8.0                                         # v_c_rule on Spielberg (section 10.2; check r2)
+REPRO = {                                         # section 10.3: arm -> (phase E's kind, solver, setting)
+    "R1": ("lmpc_nominal", "nlp", {"K": K, "start": "centre", "v_c": V_C, "consecutive": True, "n_learn": N_REPRO}),
+    "R2": ("lmpc_nominal", "nlp", {"K": K, "consecutive": True, "n_learn": N_REPRO}),
+    "R3": ("lmpc_nominal", "atv", {"K": K, "start": "centre", "v_c": V_C, "consecutive": True, "n_learn": N_REPRO}),
+}
+
+
+def repro(arm: str, n_learn: int | None = None, on_lap=None) -> dict:
+    """One arm of the reproduction check on NOM (``n_learn``: fewer learning laps – the scratch smoke only)."""
+    e_kind, solver, setting = REPRO[arm]
+    setting = dict(setting)
+    if n_learn is not None:
+        setting["n_learn"] = int(n_learn)
+    r = cx_e.learn(cx_e.cases("NOM")[0], e_kind, setting, solver=solver, on_lap=on_lap)
+    r.update(kind=arm, solver=solver)
+    return r
+
+
+def reading(r: dict) -> dict:
+    """Section 10.5 with clarification m1: the arm's reading from its learning laps – (a) reproduced, (b) fails near the
+    limit, (c1) fails while approaching it, (c2) fails far from it, (d) stays away, (e) near, not converged; "init failed"
+    if the initialisation did not complete."""
+    learn = [l_ for l_ in r["laps"] if l_["kind"] == "learn"]
+    done = [l_["lap_time"] for l_ in learn if l_["completed"]]
+    out = {"learning_laps": len(learn), "completed": len(done), "best": min(done) if done else None,
+           "near": any(t <= NEAR_LIMIT for t in done), "last_five": done[-5:]}
+    out["converged"] = len(done) >= 5 and max(done[-5:]) / min(done[-5:]) - 1.0 <= CONVERGED
+    if not r["started"]:
+        out["reading"] = "init failed"
+    elif len(done) == len(learn):
+        out["reading"] = ("a" if out["converged"] else "e") if out["near"] else "d"
+    elif out["near"]:
+        out["reading"] = "b"
+    elif done and min(done) <= APPROACH:
+        out["reading"] = "c1"
+    else:
+        out["reading"] = "c2"
+    return out
+
+
 __all__ = ["cases", "case_by_name", "learn", "fixed_lap", "run", "select", "KINDS", "PRIMARY_KINDS", "LEARN", "EPS_GRID",
-           "DEV_SETTING", "SECONDARY", "setting_key"]
+           "DEV_SETTING", "SECONDARY", "setting_key", "REPRO", "V_C", "N_REPRO", "repro", "reading", "v_c_rule"]

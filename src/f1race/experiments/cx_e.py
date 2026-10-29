@@ -66,8 +66,9 @@ def cases(name: str) -> list[dict]:
     return out
 
 
-def _lap_metrics(res, track, ctl=None) -> dict:
-    """The scored lap (time at s = L) and the run-out of one simulated lap."""
+def _lap_metrics(res, track, ctl=None, t_limit: float = T_LAP) -> dict:
+    """The scored lap (time at s = L) and the run-out of one simulated lap. ``t_limit``: the lap's time limit (phase I's
+    reproduction check, CX_I section 10.3; default phase E's 121 s)."""
     L = track.length
     prog = np.asarray(res.progress, float)
     above = np.flatnonzero(prog >= L)                  # progress at each recorded step; the run-out is 250 m long
@@ -77,7 +78,7 @@ def _lap_metrics(res, track, ctl=None) -> dict:
         k = int(above[0])
         t0, t1, p0, p1 = res.t[k - 1], res.t[k], prog[k - 1], prog[k]
         lap_time = float(t0 + (t1 - t0) * (L - p0) / max(p1 - p0, 1e-12))
-    completed = crossed and lap_time <= T_LAP
+    completed = crossed and lap_time <= t_limit
     run_out_ok = bool(res.completed)                   # the sim reached L + RUNOUT
     s_c, n_c = track.project(res.state[:, 0], res.state[:, 1])
     out = {"completed": bool(completed), "lap_time": float(lap_time) if completed else math.nan,
@@ -110,17 +111,73 @@ def _lap_metrics(res, track, ctl=None) -> dict:
     return out
 
 
-def _run(case: dict, track, ctl, x0) -> object:
+def _run(case: dict, track, ctl, x0, t_max: float = T_LAP + 15.0) -> object:
     sim = cx_d.make_sim(case, track)
-    return sim.run(ctl, x0, t_max=T_LAP + 15.0, laps=1.0 + RUNOUT / track.length)
+    return sim.run(ctl, x0, t_max=t_max, laps=1.0 + RUNOUT / track.length)
 
 
-def learn(case: dict, kind: str, setting: dict, solver: str = "nlp") -> dict:
+def learn_time_limit(init_times) -> float:
+    """CX_I section 10.3: a learning lap's time limit with consecutive laps – 1.25 x the slower initialisation lap, at
+    least phase E's 121 s."""
+    return max(T_LAP, 1.25 * max(init_times))
+
+
+def _handover(res, track, rec_t, rec_u) -> tuple[int, np.ndarray, np.ndarray]:
+    """Phase I's consecutive laps (CX_I section 10.3): the last 10 ms step before the line (progress < L) – its index, the
+    simulator state there (the next lap's start) and the controller's command in force then (carried to the next lap)."""
+    k = int(np.flatnonzero(np.asarray(res.progress, float) < track.length)[-1])
+    j = max(int(np.searchsorted(np.asarray(rec_t, float), res.t[k] + 1e-9, side="right")) - 1, 0)
+    return k, np.asarray(res.state[k], float).copy(), np.asarray(rec_u[j], float).copy()
+
+
+def _frenet(track, X: np.ndarray) -> np.ndarray:
+    """(s, n, xi) of Cartesian states (n, 7)."""
+    s, n = track.project(X[:, 0], X[:, 1])
+    xi = np.angle(np.exp(1j * (X[:, 2] - track.heading_at(s))))
+    return np.column_stack([s, n, xi])
+
+
+def _runout_check(prev, k, res, track) -> dict | None:
+    """CX_I clarification m3: lap j's stored run-out against lap j + 1's first 250 m (the same stretch, from lap j + 1's
+    start, the state at lap j's step k) – the time over it and the state difference (s, n, xi, v_x, v_y, r, delta) at
+    its end; None if lap j + 1 did not reach 250 m."""
+    pj, pn = np.asarray(prev.progress, float), np.asarray(res.progress, float)
+    if pn[-1] < RUNOUT:
+        return None
+
+    def at(r_, p_, q):                                  # time and state at progress q, linear between 10 ms steps
+        i = min(max(int(np.searchsorted(p_, q)), 1), len(p_) - 1)
+        w = (q - p_[i - 1]) / max(p_[i] - p_[i - 1], 1e-12)
+        return r_.t[i - 1] + w * (r_.t[i] - r_.t[i - 1]), r_.state[i - 1] + w * (r_.state[i] - r_.state[i - 1])
+
+    tj, xj = at(prev, pj, pj[k] + RUNOUT)
+    tn, xn = at(res, pn, RUNOUT)
+    fj, fn = _frenet(track, xj[None])[0], _frenet(track, xn[None])[0]
+    ds = (fn[0] - fj[0] + 0.5 * track.length) % track.length - 0.5 * track.length
+    d = [ds, fn[1] - fj[1], float(np.angle(np.exp(1j * (fn[2] - fj[2]))))] + list(xn[3:7] - xj[3:7])
+    return {"time_runout_j": float(tj - prev.t[k]), "time_next_lap": float(tn), "dt": float(tn - (tj - prev.t[k])),
+            "dstate_s_n_xi_vx_vy_r_delta": [float(v) for v in d]}
+
+
+def learn(case: dict, kind: str, setting: dict, solver: str = "nlp", on_lap=None) -> dict:
     """Section 3: the initialisation laps and the ten learning laps of one car. ``solver`` (control expansion phase H,
     docs/CX_H_protocol.md): "nlp" – this phase's IPOPT problem (default); "atv" – the same problem as one QP per solve
     along E.2's candidate (``ATVLearningMPC``, ``ATVLMPCController``). Setting key ``eps`` (control expansion phase I,
     docs/CX_I_protocol.md, candidate I-1; NLP only): the speed bound per lap with that step; absent – this phase's
-    problem."""
+    problem.
+
+    Phase I's reproduction check (CX_I section 10, revision 1 with its clarifications); setting keys, all absent by
+    default (this phase's loop unchanged):
+    * ``consecutive``: every lap after the first starts from the previous lap's simulator state at its last 10 ms step
+      before the line, its controller with the previous lap's command in force there; the initialisation laps too. The
+      stored laps keep their own 250 m run-out. A lap's time limit: 1.25 x the slower initialisation lap, at least 121 s
+      (the initialisation laps: 121 s, or 1.25 L / v_c at a centre-line start); the simulation runs 50 s past it (the
+      run-out at low speed). A failure ends the sequence, as before. Each failure records its solver failures among
+      the last 20 solves (clarification n2); each lap after the first the run-out check (clarification m3).
+    * ``start`` = "centre" with ``v_c``: the initialisation laps are two laps of the same tracking NMPC on the centre
+      line at the constant speed v_c (reference n = 0, xi = 0, v_x = v_c), the first from the centre line's point at
+      s = 0 with its heading, v_x = v_c, v_y = r = delta = 0.
+    ``on_lap``: called with each lap's record as it is done (progress logs)."""
     from ..control.lmpc import (TERM, TERM7, ATVLearningMPC, ATVLMPCController, LapStore, LearningMPC, LMPCController,
                                 Recorder)
     from ..control.nmpc import FrenetMPC, MPCController
@@ -130,6 +187,12 @@ def learn(case: dict, kind: str, setting: dict, solver: str = "nlp") -> dict:
 
     if kind not in LEARN_KINDS:
         raise ValueError(kind)
+    consecutive = bool(setting.get("consecutive", False))   # phase I's reproduction check (CX_I section 10)
+    start = setting.get("start", "plan")
+    if start not in ("plan", "centre"):
+        raise ValueError(start)
+    if start == "centre" and not consecutive:
+        raise ValueError("the centre-line start is defined with consecutive laps (CX_I section 10)")
     t0 = time.time()
     track = Track.load(case["track"])
     plans = plans_for(case["track"])
@@ -161,18 +224,66 @@ def learn(case: dict, kind: str, setting: dict, solver: str = "nlp") -> dict:
                **kw)
     store = LapStore(lmpc._step)
     laps: list[dict] = []
-    for e in INIT_ETAS:
-        plan = lib[int(np.flatnonzero(np.isclose(etas, e))[0])]
-        mpc = FrenetMPC(track, model, ref_from_plan(plan), mode="track", N=N, dt=MPC_DT, eta=ETA,
-                        margin=NMPC_SETTING["margin"], weights=w)
-        rec = Recorder(MPCController(mpc, DT), track, MPC_DT)
-        res = _run(case, track, rec, x0)
-        m = _lap_metrics(res, track, rec)
-        m.update(lap=f"init_{e:.2f}", kind="init")
+    t_limit = T_LAP
+    if start == "centre":
+        v_c = float(setting["v_c"])
+        x0 = np.array([track.x[0], track.y[0], float(track.heading_at(0.0)), v_c, 0.0, 0.0, 0.0])
+        z = np.zeros_like(track.s)
+        ref_c = {"s": track.s, "n": z, "xi": z, "vx": np.full(track.s.shape, v_c)}
+        inits = [("init_vc1", ref_c), ("init_vc2", ref_c)]
+        t_limit = 1.25 * track.length / v_c
+    else:
+        inits = [(f"init_{e:.2f}", ref_from_plan(lib[int(np.flatnonzero(np.isclose(etas, e))[0])])) for e in INIT_ETAS]
+    x_start, u_start, prev, seq_alive = x0, None, None, True
+
+    def drive(ctl):
+        return _run(case, track, ctl, x_start, t_max=t_limit + 50.0) if consecutive else _run(case, track, ctl, x0)
+
+    def consec(m, res, ctl, rec_ctl, ok):
+        """The consecutive laps' bookkeeping (CX_I section 10.3, clarifications m3, n2)."""
+        nonlocal x_start, u_start, prev, seq_alive
+        m["start_s"] = float(_frenet(track, np.asarray(x_start, float)[None])[0, 0])
+        if prev is not None:
+            m["runout_check"] = _runout_check(prev[0], prev[1], res, track)
+        if ok:
+            k, x_start, u_start = _handover(res, track, rec_ctl.rec_t, rec_ctl.rec_u)
+            prev = (res, k)
+            return
+        seq_alive = False
+        nf = int(sum(bool(s_["fallback"]) for s_ in ctl.mpc.stats[-20:]))
+        m.update(fallbacks_last20=nf, failure_class="after solver failures" if nf else "solved, still left",
+                 failure_vx=float(res.state[-1, 3]))
+        if rec_ctl.rec_x and len(store):
+            s_lap = float(rec_ctl.rec_x[-1][0])
+            m.update(failure_s_lap=s_lap, failure_v_stored=float(store.v_ref(s_lap, P)[0]))
+
+    for label, ref in inits:
+        if not seq_alive:
+            laps.append({"lap": label, "kind": "init", "completed": False, "lap_time": math.nan,
+                         "stop_reason": "sequence ended", "distance": 0.0, "failure_s": None})
+            continue
+        mpc = FrenetMPC(track, model, ref, mode="track", N=N, dt=MPC_DT, eta=ETA, margin=NMPC_SETTING["margin"],
+                        weights=w)
+        inner = MPCController(mpc, DT)
+        if u_start is not None:
+            inner.u = u_start.copy()
+        rec = Recorder(inner, track, MPC_DT)
+        t_l = time.time()
+        res = drive(rec)
+        m = _lap_metrics(res, track, rec, t_limit)
+        m.update(lap=label, kind="init")
+        ok = m["completed"] and m["run_out_completed"]
+        if consecutive:
+            consec(m, res, inner, rec, ok)
+            m["wall_lap_s"] = time.time() - t_l
         laps.append(m)
-        if m["completed"] and m["run_out_completed"]:
+        if on_lap is not None:
+            on_lap(m)
+        if ok:
             store.add(np.array(rec.rec_t), np.array(rec.rec_x), np.array(rec.rec_u), m["lap_time"])
-    started = len(store) > 0
+    started = seq_alive if consecutive else len(store) > 0
+    if consecutive and started:
+        t_limit = learn_time_limit([l_["lap_time"] for l_ in laps])
     alive = started
     for j in range(1, n_learn + 1):
         if not alive:
@@ -182,12 +293,21 @@ def learn(case: dict, kind: str, setting: dict, solver: str = "nlp") -> dict:
             continue
         lmpc.reset()
         ctl = ctl_cls(lmpc, store, K, P, regression=kind == "lmpc", sim_dt=DT, eps=eps)
-        res = _run(case, track, ctl, x0)
-        m = _lap_metrics(res, track, ctl)
+        if u_start is not None:
+            ctl.u = u_start.copy()
+        t_l = time.time()
+        res = drive(ctl)
+        m = _lap_metrics(res, track, ctl, t_limit)
         m.update(lap=f"learn_{j}", kind="learn", stored_laps=len(store),
                  past_line_points_max=int(max((d["past_line_pts"] for d in ctl.diag), default=0)))
+        ok = m["completed"] and m["run_out_completed"]
+        if consecutive:
+            consec(m, res, ctl, ctl, ok)
+            m["wall_lap_s"] = time.time() - t_l
         laps.append(m)
-        if m["completed"] and m["run_out_completed"]:
+        if on_lap is not None:
+            on_lap(m)
+        if ok:
             store.add(np.array(ctl.rec_t), np.array(ctl.rec_x), np.array(ctl.rec_u), m["lap_time"])
         else:
             alive = False                               # a crash (in the lap or its run-out) ends the sequence
