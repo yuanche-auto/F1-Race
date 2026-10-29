@@ -1,6 +1,7 @@
 # CX-I protocol – the learning MPC's follow-ups, a progress bound per lap first (control expansion, phase I – frontier 2)
 
-Status: **draft, revision 0 (2026-10-28), for review (packet 1)**. Written after the literature check
+Status: **binding, revision 0 (2026-10-28; bdc02d0, APPROVE)** with the clarifications of its review (m1, m2, n1, n2;
+marked *"clarification of revision 0"*), written down before any phase-I code. Written after the literature check
 ([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §I, on top of §E and §H) and before any phase-I code: no
 module, test, runner or lap of phase I exists. Branch `cx/I-lmpc-followups` from `main` 98f8134 (the merge of phase H).
 
@@ -52,13 +53,19 @@ Rules:
 2. **Each candidate has its own development gate** (section 9), judged only on its registered development laps.
    Diagnostic variants may be run as diagnostics. They cannot pass a gate.
 3. **The first candidate to pass its gate gets the benchmark** (sections 4–6). Review i3 applies: the benchmark is
-   registered – made binding – by a revision after that candidate's stage A passes, and before any tuning or test lap.
+   registered – made binding – by a revision after that candidate's stage A passes (clarification m1 below: after A
+   and B), and before any tuning or test lap.
    The later candidates are not run in this phase; they stay in the matrix.
 4. **If a candidate's gate fails**, its development results are reported as they are, and the next candidate's design
    is registered by a revision (reviewed) before its code. The revision states whether it keeps I-1's bound, decided
    from I-1's development records, with the reason.
 5. **If all three fail**, phase I is closed without the benchmark, and the user decides the next step (the user's
    instruction).
+
+*Clarification of revision 0 (review m1) – when the benchmark is registered:* the revision that registers the benchmark
+is written only **after both stages of the candidate's gate (A and B, section 9) have passed**, not after stage A alone.
+A candidate whose stage A passes and whose stage B fails has failed its gate (rule 4); no benchmark is registered for
+it. No IV or IT lap is run before that revision's APPROVE.
 
 ## 2. Question and hypotheses
 
@@ -151,6 +158,19 @@ with
 
 **Tuned** (section 4): ε ∈ {0.02, 0.04, 0.08}. Development setting: ε = 0.04.
 
+*Clarification of revision 0 (review m2) – the first learning lap, and the reference past the line:*
+* At the first learning lap the last two stored laps are the **two initialisation laps** (`nmpc` on the plans at
+  η_p 0.73 and 0.79). v_ref is therefore, almost everywhere, the speed of the η_p 0.79 lap, and the first learning lap's
+  bound is **about 1.02–1.08 times that lap's speed** at each point.
+* **Expected, so that the development records show whether the bound acts:** the first learning lap takes about the
+  η_p 0.79 lap's time or a little less – roughly T₀.₇₉ / (1 + ε), on NOM about 81.5, 80.0 and 77.0 s for ε = 0.02, 0.04
+  and 0.08 (T₀.₇₉ = 83.16 s). It should not jump to ~77 s at ε = 0.02 or 0.04, as phase E's first learning laps did.
+  The figures are approximate: the bound is on v_x at each s, not on the lap time, and a line through the inside of a
+  corner gains arclength rate (ṡ = (v_x cos ξ − v_y sin ξ) / (1 − nκ)).
+* **Past the line (s > L):** v_ref is taken from the stored laps' records of their 250 m run-out, by the unwrapped
+  arclength (s from about 0 at the start, beyond L after the line), interpolated linearly as before the line. A
+  prediction never reaches beyond a stored lap's run-out: the horizon is 1.5 s, at most ~135 m at 90 m/s.
+
 **Attribution:** the module's docstring cites E.1, E.2, E.4 (the LMPC and the error regression) and I.1 (the lap-gated
 expansion that motivated a per-lap bound). The speed bound itself is this project's design (literature §I (a)).
 
@@ -203,6 +223,10 @@ time at s = L scored, 250 m past the line driven and stored unscored, a crash en
 4. then the smaller ε.
 
 `pb_nominal` uses `pb`'s ε. The choice and the records go to the reviewer before any IT lap.
+
+*Clarification of revision 0 (review n1):* the tuned parameter is **ε only**, over the grid {0.02, 0.04, 0.08}. **K is
+fixed at 20.** Ties after step 2 go to the development setting ε = 0.04, then to the smaller ε (phase E's rule, with ε
+in place of K).
 
 **Primary** on IT (and NOM, shown apart): `nmpc` and `identified` (one lap each); `pb` and `pb_nominal` (twelve laps each).
 
@@ -282,5 +306,7 @@ On NOM and DEV only. Records in `results/CX/I/dev/`, each with the commit and a 
      * on NOM at ε = 0.04, `pb` completes all ten learning laps, and its tenth is faster than its first;
      * on DEV at ε = 0.04, it completes the tenth on at least 3 of the cars whose initialisation completed.
    * The gate is judged on these registered laps only. No other setting may be tried in order to pass it.
-   * **A and B pass:** packet 2, with the revision that registers the benchmark (rule 3).
+   * *Clarification of revision 0 (review n2):* `pb_nominal`'s laps in stage B are **descriptive only**; they take no
+     part in the gate, which is judged on `pb` alone.
+   * **A and B pass:** packet 2, with the revision that registers the benchmark (rule 3, clarification m1).
    * **Either fails:** I-1 is closed for this phase. Packet 2 reports it and carries I-2's revision (rule 4).
