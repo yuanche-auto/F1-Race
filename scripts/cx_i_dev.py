@@ -15,6 +15,7 @@ Revision 1 (section 10.7), records in results/CX/I/repro/:
     python scripts/cx_i_dev.py repro-r2-usage  # r2: where the first v_c lap's largest tyre usage arises (descriptive)
     python scripts/cx_i_dev.py repro-r2-diag   # R2's reading (c2) examined: K 20 from phase E's start, R2 with K 10
     python scripts/cx_i_dev.py repro-snap      # R1 again through learning lap 3, the store pickled after every lap
+    python scripts/cx_i_dev.py repro-replay --which R3_learn1|R1_learn4   # a failed lap again from its snapshot
 """
 from __future__ import annotations
 
@@ -243,11 +244,96 @@ def repro_snap() -> None:
     print(json.dumps(out, default=float))
 
 
+_REPLAY = {"R3_learn1": ("R3", 2, "learn_1"), "R1_learn4": ("R1", 5, "learn_4")}
+
+
+def repro_replay(which: str) -> None:
+    """A failed lap of the reproduction check driven again from its snapshot (``repro-snap``; descriptive): checked
+    against the arm's record (stop, arclength, solves, fallbacks), with every solve's status, iterations, slacks and the
+    prediction's first and last stage (``replay_<which>.json``). R3's first learning lap: also its first QP solved again
+    as probes – as it was, with the time-to-go shifted by its minimum (the same QP's solution, as the lambdas sum to
+    one; clarification n1's scale), and with OSQP's iteration limit x 10."""
+    import pickle
+    from collections import Counter
+
+    import numpy as np
+
+    from f1race.control.lmpc import TERM, ATVLearningMPC, ATVLMPCController, LapStore, LearningMPC, LMPCController
+    from f1race.dynamics import DynVehicle
+    from f1race.experiments import cx_e, cx_i
+    from f1race.track import Track
+
+    arm, n, lap = _REPLAY[which]
+    meta(f"replay_{which}", REPRO)
+    snap = pickle.loads((REPRO / "snap" / f"R1_store{n}.pkl").read_bytes())
+    case = cx_e.cases("NOM")[0]
+    tr, model = Track.load(case["track"]), DynVehicle()
+    atv = cx_i.REPRO[arm][1] == "atv"
+    K, P = cx_i.K, cx_e.P_LAPS
+
+    def build(**kw):
+        return (ATVLearningMPC if atv else LearningMPC)(tr, model, n_pts=P * K, N=cx_e.N, dt=cx_e.MPC_DT, eta=cx_e.ETA,
+                                                          margin=cx_e.NMPC_SETTING["margin"], w_T=cx_e.W_T, term=TERM,
+                                                          **kw)
+
+    lm = build()
+    store = LapStore(lm._step)
+    store.laps = snap["laps"]
+    ctl = (ATVLMPCController if atv else LMPCController)(lm, store, K, P, regression=False, sim_dt=cx_e.DT)
+    ctl.u = snap["u_start"].copy()
+    pred, first = [], {}
+    solve_name = "solve_qp" if atv else "solve"
+    inner = getattr(lm, solve_name)
+
+    def solve_logged(*args, **kw):
+        if not first:
+            first["args"] = [np.array(a_, float) if a_ is not None else None for a_ in args]
+        out = inner(*args, **kw)
+        X = lm.z[lm.Xi]
+        pred.append({"n1": float(X[1, 1]), "vx1": float(X[1, 3]), "nN": float(X[-1, 1]), "vxN": float(X[-1, 3])})
+        return out
+
+    setattr(lm, solve_name, solve_logged)
+    t_limit = cx_e.learn_time_limit([l_["T"] for l_ in snap["laps"][:2]])
+    t0 = time.time()
+    res = cx_e._run(case, tr, ctl, snap["x_start"], t_max=t_limit + 50.0)
+    m = cx_e._lap_metrics(res, tr, ctl, t_limit)
+    rec = next(json.loads(l_) for l_ in (REPRO / f"progress_{arm}.jsonl").read_text().splitlines()
+               if l_.strip() and json.loads(l_)["lap"] == lap)
+    keys = ("stop_reason", "failure_s", "solves", "fallbacks")
+    rows = [{"t": d["t"], "s": d["s"], "c_min": d["c_min"], **{k: st[k] for k in ("status", "iter", "time", "fallback",
+                                                                                   "slack", "limit_slack", "term_slack")},
+             **p_} for d, st, p_ in zip(ctl.diag, lm.stats, pred)]
+    if atv:
+        for r_, le in zip(rows, ctl.lin_err):
+            r_["lin_err_ds_dn_dvx"] = list(le)
+    out = {"which": which, "wall_s": time.time() - t0, "t_limit": t_limit,
+           "replay": {k: m.get(k) for k in keys}, "record": {k: rec.get(k) for k in keys},
+           "status_counts": dict(Counter(r_["status"] for r_ in rows)), "rows": rows}
+    out["equal"] = all(out["replay"][k] == out["record"][k] for k in keys)
+    if atv:                                            # the first QP again, as probes
+        x0, u_prev, D, c, G, zbar = first["args"]
+        probes = {}
+        for name, kw, c_ in (("as_run", {}, c), ("c_shifted", {}, c - c.min()),
+                             ("max_iter_x10", {"osqp": {"max_iter": 200000}}, c)):
+            q = build(**kw)
+            u, info = q.solve_qp(x0, u_prev, D, c_, G, zbar)
+            probes[name] = {"status": info["status"], "iter": info["iter"], "fallback": info["fallback"],
+                            "time": info["time"], "u": [float(v) for v in u], "c_min_max": [float(c_.min()),
+                                                                                         float(c_.max())]}
+        out["first_qp_probes"] = probes
+    (REPRO / f"replay_{which}.json").write_text(json.dumps(out, indent=1, default=float))
+    print(json.dumps({k: v for k, v in out.items() if k != "rows"}, indent=1, default=float))
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("what", choices=["nlp-repro", "repro-r0", "repro-r2", "repro-r2-usage", "repro-r2-diag",
-                                     "repro-snap"])
+                                     "repro-snap", "repro-replay"])
+    ap.add_argument("--which", choices=sorted(_REPLAY), default="R3_learn1")
     a = ap.parse_args()
+    if a.what == "repro-replay":
+        return repro_replay(a.which)
     {"nlp-repro": nlp_repro, "repro-r0": repro_r0, "repro-r2": repro_r2, "repro-r2-usage": repro_r2_usage,
      "repro-r2-diag": repro_r2_diag, "repro-snap": repro_snap}[a.what]()
 
