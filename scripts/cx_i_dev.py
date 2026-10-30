@@ -13,6 +13,8 @@ Revision 1 (section 10.7), records in results/CX/I/repro/:
     python scripts/cx_i_dev.py repro-r2      # r2: v_c's rule and the two initialisation laps at v_c (from the smoke's
                                              # progress log, results/CX/I/repro_smoke/progress_R1.jsonl)
     python scripts/cx_i_dev.py repro-r2-usage  # r2: where the first v_c lap's largest tyre usage arises (descriptive)
+    python scripts/cx_i_dev.py repro-r2-diag   # R2's reading (c2) examined: K 20 from phase E's start, R2 with K 10
+    python scripts/cx_i_dev.py repro-snap      # R1 again through learning lap 3, the store pickled after every lap
 """
 from __future__ import annotations
 
@@ -174,11 +176,80 @@ def repro_r2_usage() -> None:
     print(json.dumps(out, indent=1, default=float))
 
 
+_R2D = [("E_start_K20", {"K": 20, "n_learn": 2}), ("R2_K10", {"K": 10, "consecutive": True, "n_learn": 2})]
+_LAP_KEYS = ("lap", "completed", "lap_time", "stop_reason", "failure_s", "solves", "fallbacks",
+             "term_slack_share_above_1e-3", "term_slack_max", "tyre_usage_max_front_rear", "min_edge_margin",
+             "fallbacks_last20", "failure_class", "failure_vx", "failure_s_lap", "failure_v_stored")
+
+
+def _r2d_job(i: int) -> dict:
+    from f1race.experiments import cx_e
+
+    name, setting = _R2D[i]
+    t0 = time.time()
+    r = cx_e.learn(cx_e.cases("NOM")[0], "lmpc_nominal", setting)
+    return {"i": i, "name": name, "setting": setting, "lap_times": r["lap_times"], "wall_s": time.time() - t0,
+            "laps": [{k: l.get(k) for k in _LAP_KEYS} for l in r["laps"]]}
+
+
+def repro_r2_diag() -> None:
+    """Reading (c2) of R2 examined (section 10.5, clarification m1; descriptive): R2's first learning lap failed. Two
+    neighbours with two learning laps each: lmpc_nominal K 20 under phase E's conditions (every lap from the plan's
+    start; is the consecutive start the cause?) and R2 with K 10 (phase E's selected K for lmpc_nominal)."""
+    from multiprocessing import get_context
+
+    meta("r2_diag", REPRO)
+    with get_context("spawn").Pool(len(_R2D), maxtasksperchild=1) as pool:
+        out = sorted(pool.map(_r2d_job, range(len(_R2D))), key=lambda r: r["i"])
+    (REPRO / "r2_diag.json").write_text(json.dumps(out, indent=1, default=float))
+    print(json.dumps([{"name": o["name"], "lap_times": o["lap_times"]} for o in out], default=float))
+
+
+def repro_snap() -> None:
+    """Snapshots for the diagnostics of R3's (c2) and R1's failure (descriptive): R1 driven again through its third
+    learning lap (deterministic; its lap times checked against R1's record), with the store and the next lap's start
+    state and carried command pickled after every stored lap – ``snap/R1_store<n>.pkl`` (n = 2: the two v_c laps, R3's
+    store at its first learning lap; n = 5: R1's store at its fourth learning lap)."""
+    import pickle
+
+    import numpy as np
+
+    from f1race.control import lmpc as L
+    from f1race.experiments import cx_e, cx_i
+
+    meta("snap", REPRO)
+    d = REPRO / "snap"
+    d.mkdir(parents=True, exist_ok=True)
+    held: dict = {}
+    handover, add = cx_e._handover, L.LapStore.add
+
+    def handover_held(res, track, rec_t, rec_u):
+        out = handover(res, track, rec_t, rec_u)
+        held["x"], held["u"] = out[1].copy(), np.asarray(out[2], float).copy()
+        return out
+
+    def add_snap(self, t, X, U, t_finish):
+        add(self, t, X, U, t_finish)
+        with open(d / f"R1_store{len(self.laps)}.pkl", "wb") as f:
+            pickle.dump({"laps": self.laps, "x_start": held["x"], "u_start": held["u"]}, f)
+
+    cx_e._handover, L.LapStore.add = handover_held, add_snap
+    t0 = time.time()
+    r = cx_i.repro("R1", n_learn=3)
+    ref = [json.loads(l)["lap_time"] for l in (REPRO / "progress_R1.jsonl").read_text().splitlines() if l.strip()][:5]
+    out = {"lap_times": r["lap_times"], "R1_record": ref, "equal": r["lap_times"] == ref, "wall_s": time.time() - t0,
+           "snapshots": sorted(p.name for p in d.glob("R1_store*.pkl"))}
+    (d / "snap.json").write_text(json.dumps(out, indent=1, default=float))
+    print(json.dumps(out, default=float))
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=["nlp-repro", "repro-r0", "repro-r2", "repro-r2-usage"])
+    ap.add_argument("what", choices=["nlp-repro", "repro-r0", "repro-r2", "repro-r2-usage", "repro-r2-diag",
+                                     "repro-snap"])
     a = ap.parse_args()
-    {"nlp-repro": nlp_repro, "repro-r0": repro_r0, "repro-r2": repro_r2, "repro-r2-usage": repro_r2_usage}[a.what]()
+    {"nlp-repro": nlp_repro, "repro-r0": repro_r0, "repro-r2": repro_r2, "repro-r2-usage": repro_r2_usage,
+     "repro-r2-diag": repro_r2_diag, "repro-snap": repro_snap}[a.what]()
 
 
 if __name__ == "__main__":
