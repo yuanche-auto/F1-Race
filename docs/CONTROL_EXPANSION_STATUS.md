@@ -1,6 +1,6 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-29 (phase I: I-1's gate failed, packet 2 **APPROVE**; the user asked for a reproduction check under the published LMPCs' conditions – protocol revision 1, section 10, packet 3 in review). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-30 (phase I: I-1's gate failed, packet 2 **APPROVE**; the reproduction check under the published LMPCs' conditions – protocol revision 1, section 10 – run: R1 reads (c1), R2 and R3 (c2), examined; packet 4 in review). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
 * **Current phase:** I – frontier 2, the learning MPC's follow-ups. The user's instruction (2026-10-28): try the method
   matrix's follow-ups (CX-H review i3) in order, and discuss if they still fail. Branch `cx/I-lmpc-followups` from `main`
@@ -22,7 +22,21 @@ Last updated: 2026-10-29 (phase I: I-1's gate failed, packet 2 **APPROVE**; the 
     (packet 3 **APPROVE**, 1e2bf96, with clarifications m1–m3, n1–n3): phase E's NLP without the regression (R1; R2
     with phase E's start; R3 phase H's ATV-QP) on NOM under the published conditions – two centre-line laps at a
     constant 8 m/s, consecutive laps, 40 learning laps; readings fixed in advance ((c) split into (c1) / (c2)). A
-    diagnostic: no gate, no benchmark; I-2 and I-3 not registered. Code next, then checks r0–r2 and R1–R3 (packet 4).
+    diagnostic: no gate, no benchmark; I-2 and I-3 not registered. Code b34eb97; diagnostics 418bf3a, bca7802, aae7f30.
+  * **The check's results (section 10.9, packet 4):**
+    * r0 reproduces three NOM records exactly.
+    * r2: both v_c laps completed (538.5 and 538.8 s). Their tyre usage reached 0.95, longitudinally (the tracking
+      NMPC's drive and brake), not the "about 0.5" of section 10.2.
+    * **R1 reads (c1).** Its learning laps took 150.8, 88.6 and 80.4 s, and it left on learning lap 4 at 3 973 m.
+      * IPOPT solved, but the plan itself crossed the edge: the soft track slack reached 1.55 m, and the terminal
+        slack grew lap by lap.
+      * This is phases E's and I's failure near the limit. The slow start and the consecutive laps only delay it.
+    * **R2 reads (c2), examined.** K 20 fails on learning lap 1 from phase E's start too. With K 10, the consecutive
+      laps repeat phase E's (76.72 s, then off at 471 m).
+    * **R3 reads (c2), examined.** OSQP hit its 20 000 iterations on 533 of 538 QPs from the first solve. Shifting the
+      time-to-go does not help; ten times the iterations solves the first QP in 2.4 s.
+    * Also disclosed: the run-out approximation is poor after the slow start (the run-outs fall back to ~8 m/s).
+    * The user decides next: close the LMPC line, or a candidate by revision.
   * Three candidates in a fixed order, each with its own development gate: **I-1** a speed bound per lap on phase E's
     NLP (registered now); **I-2** E.2's own regression model with a trust region; **I-3** consecutive laps (I-2 and I-3
     by revision, if reached).
@@ -235,7 +249,7 @@ Last updated: 2026-10-29 (phase I: I-1's gate failed, packet 2 **APPROVE**; the 
 | F | `experiments/cx_f.py`, l7 options `retry` / `log_commands`, `scripts/{run,report}_cx_f.py`, `scripts/cx_f_dev.py` | yes (7634e2d … e0f0b0a) | yes – `tests/test_cx_f.py` 5 | development checks §9 on NOM and FD – **gate failed** (the shield part closed, F1); audit of L7's records; T1 + T2: `none` regression, `main` reproduction, `retry` (2 332 laps) | literature §F and protocol rev 0 **APPROVE** (packet 1, m1–m3 / n1, n2); packet 2 **APPROVE**, amendment F1 option 1 (g1–g4); packet 3 and final review 85be4ad **APPROVE** | **yes – phase F completed (H-F2 holds; H-F1 not tested)** |
 | G | `comp` option of `experiments/l9`, `experiments/cx_g.py`, `scripts/{run,report}_cx_g.py`, `scripts/cx_g_dev.py` | yes (2833681 … bdfa2a7) | yes – `tests/test_cx_g.py` 4 | development checks §9 on NOM and GD (WSL) – gate passed; GT (1 340 laps, WSL) | literature §G and protocol rev 0 **APPROVE** (packet 1, m1–m3 / n1, n2); packet 2 **APPROVE**; packet 3 and final review 380124a **APPROVE** (h1) | **yes – phase G completed (H-G1 holds; H-G2 not shown)** |
 | H | `ATVLearningMPC`, `ATVLMPCController` (`control/lmpc.py`), `cx_e.learn` solver option, `experiments/cx_h.py`, `scripts/cx_h_dev.py`; `scripts/run_cx_h.py` (only `dev`) and `scripts/report_cx_h.py` (only `dev`) – the other stages never run | yes (3c69eb0 … 8b17829) | yes – `tests/test_atv_lmpc.py` 4 | development checks §9 on NOM and DEV – **gate failed**; a diagnostic variant | literature §H and protocol rev 0 **APPROVE** (packet 1, m1–m3 / n1, n2); packet 2 **APPROVE**, amendment H1 accepted (closed, no benchmark); final review 99732d5 **APPROVE** | **yes – phase H completed (closed without the benchmark)** |
-| I | I-1: `LearningMPC(speed_bound=True)`, `LapStore.v_ref`, `LMPCController(eps)` (`control/lmpc.py`), `experiments/cx_i.py`, `scripts/{run,report}_cx_i.py` (dev only), `scripts/cx_i_dev.py` | yes (62fc41d) | yes – `tests/test_cx_i.py` 7 | I-1's development checks §9 on NOM and DEV – stage A passed, **stage B failed** (gate failed) | literature §I and protocol rev 0 **APPROVE** (packet 1, m1, m2 / n1, n2); packet 2 (I-1's results) **APPROVE** – I-1 closed; revision 1 (the reproduction check, section 10) requested | – |
+| I | I-1: `LearningMPC(speed_bound=True)`, `LapStore.v_ref`, `LMPCController(eps)` (`control/lmpc.py`), `experiments/cx_i.py`, `scripts/{run,report}_cx_i.py`, `scripts/cx_i_dev.py`; revision 1: `cx_e.learn` options `consecutive`, `start` "centre", `on_lap`, `cx_i.REPRO` / `reading` | yes (62fc41d; b34eb97; diagnostics 418bf3a, bca7802, aae7f30) | yes – `tests/test_cx_i.py` 13 | I-1's development checks §9 on NOM and DEV – stage A passed, **stage B failed** (gate failed); the reproduction check §10.9 on NOM – R1 (c1), R2 and R3 (c2), examined | literature §I and protocol rev 0 **APPROVE** (packet 1, m1, m2 / n1, n2); packet 2 (I-1's results) **APPROVE** – I-1 closed; packet 3 (revision 1) **APPROVE** (m1–m3, n1–n3); packet 4 (the check's results) in review | – |
 | F–G | – | not started | – | – | – | – |
 
 ## Review record
@@ -351,5 +365,5 @@ Phase D: `results/CX/D/plans/` (main checkout) – the new plans of the library 
 
 ## Next actions
 
-1. Phase I: the reproduction check's code, checks r0–r2, R1–R3 on NOM, packet 4 with the reading; then the user
-   decides (close the LMPC line, or a candidate by revision).
+1. Phase I: packet 4 (the reproduction check's results, section 10.9) in review; then the user decides (close the
+   LMPC line, or a candidate by revision).

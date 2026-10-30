@@ -6,6 +6,9 @@ marked *"clarification of revision 0"*), written down before any phase-I code. *
 **Revision 1 (2026-10-29; 1e2bf96, APPROVE – packet 3) with the clarifications of its review (m1–m3, n1–n3, marked
 *"clarification of revision 1"*), written before any code of it: section 10, a reproduction check under the published
 LMPCs' conditions on NOM – a diagnostic at the user's request; I-2 and I-3 not registered.**
+**Its results (section 10.9; packet 4): R1 reads (c1) – learning laps of 150.8, 88.6 and 80.4 s, then off on learning
+lap 4 with the solver succeeding, as in phases E and I. R2 and R3 read (c2) and were examined: R2 is the same failure on
+learning lap 1 (K 20), and R3 is phase H's QP solver at its iteration limit from the first solve.**
 Written after the literature check
 ([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §I, on top of §E and §H) and before any phase-I code: no
 module, test, runner or lap of phase I exists. Branch `cx/I-lmpc-followups` from `main` 98f8134 (the merge of phase H).
@@ -613,3 +616,198 @@ Records go to `results/CX/I/repro/`, each with the commit and a dirty flag.
 *Clarification of revision 1 (review n3) – no wall-clock limit.* If R1 learns slowly, the first learning laps take
 close to 540 s each (35–40 min), and 40 laps may take more than 12 h. **No wall-clock limit is set.** A run that takes
 longer than the estimate is completed as usual, and the overrun is noted in the records.
+
+### 10.9 Results (2026-10-30; packet 4) – **R1 reads (c1); R2 and R3 read (c2), each examined: neither is a low-speed or consecutive-lap defect**
+
+**Records** (git-ignored) are in `results/CX/I/repro/`. Each carries its commit and a clean dirty flag (`meta_*.json`).
+
+| record | commit | content |
+|---|---|---|
+| `laps.jsonl`, `progress_R*.jsonl`, `log.txt` | b34eb97 | R1–R3, run in parallel 19:40–22:42; 0 error records. Wall time: R1 3.0 h, R2 0.1 h, R3 2.6 h |
+| `report/` (`report_cx_i.py repro`) | – | `CX_I_repro.md`, `readings.json` |
+| `r0.json`, `r2.json` | b34eb97 | checks r0 and r2 |
+| `r2_usage.json`, `r2_usage.npz` | 418bf3a | r2: where the v_c laps' tyre usage arises (descriptive) |
+| `r2_diag.json` | bca7802 | R2's (c2) examined: two neighbours |
+| `snap/` | bca7802 | R1 driven again through learning lap 3, the store pickled after each lap; its lap times equal R1's record |
+| `replay_R3_learn1.json`, `replay_R1_learn4.json` | aae7f30 | R3's first and R1's fourth learning lap driven again from the snapshots, each equal to its record |
+
+The diagnostics (`r2_usage`, `r2_diag`, `snap`, the replays) were written and run after the readings were known. They
+are descriptive and change no reading.
+
+**The scratch smoke** (`results/CX/I/repro_smoke/`, b34eb97) was R1 with two learning laps: 538.51, 538.77, 150.81 and
+88.63 s. The registered R1 reproduced these laps exactly. The smoke is not used for the reading.
+
+#### 10.9.1 Checks r0–r2
+
+1. **r0 – the default path is unchanged.** With the new options off, the three NOM records are reproduced lap for lap
+   (`all_equal: true`):
+   * phase E's `lmpc` K 20: 86.88 and 83.16 s, then off on learning lap 1;
+   * phase E's `lmpc_nominal` K 10: 86.88, 83.16 and 76.64 s, then off on learning lap 2;
+   * phase H's `atv_nominal` K 20: 86.88 and 83.16 s, then off on learning lap 1.
+2. **r1 – unit tests.** `tests/test_cx_i.py` has 13 tests, 6 of them new. The full suites passed at b34eb97, and at
+   aae7f30 as the packet quotes.
+3. **r2 – the two initialisation laps.**
+   * **v_c and completion.** v_c's rule gives 8 m/s; max|κ| is 0.1159 1/m at s ≈ 1 399 m. Both laps at v_c completed:
+
+     | lap | time | NMPC fallbacks | smallest edge margin | largest tyre usage (front / rear) |
+     |---|---|---|---|---|
+     | 1 | 538.51 s | 118 of 11 392 | 3.33 m | 0.935 / 0.950 |
+     | 2 | 538.77 s | 105 of 11 405 | 3.46 m | 0.951 / 0.955 |
+
+     v_c stays 8 m/s; section 10.2 lowers it only if a lap does not complete.
+   * **The tyre usage is not the "about 0.5" section 10.2 expected.** The first lap, driven again
+     (`repro-r2-usage`, 538.5055 s, as recorded), shows that the peaks are longitudinal:
+     * They come from the rear axle on the straights (κ ≈ 0). The tracking NMPC holds v_c with drive forces of
+       ~6.8 kN, often with brake force applied at the same time. v_x varies between 5.87 and 9.05 m/s.
+     * The longitudinal part exceeds 0.5 on 29 % of the steps. The lateral part exceeds 0.5 on 0.2 % of them.
+     * The lateral part's largest values:
+       * front axle: 0.745 at turn-in (s 459 m), and 0.73 at the hairpin (s ≈ 1 399 m);
+       * rear axle: 0.38.
+     * So section 10.2's estimate holds for the cornering load on the rear axle. It does not hold on the front axle, and
+       not for the tyre as a whole: the start is far from the cornering limit, not from the tyre's limit.
+
+#### 10.9.2 The arms (section 10.4)
+
+| arm | initialisation laps | learning laps completed | lap times (learning) | end | reading |
+|---|---|---|---|---|---|
+| **R1** (NLP, start at v_c) | 538.51, 538.77 s | **3 of 40** | 150.81, 88.63, **80.39** | lap 4: off at 3 973 m, *solved, still left* (0 of the last 20 solves failed); v_x 33.7 m/s, the stored laps 31.6 | **(c1)** |
+| R2 (NLP, phase E's start) | 86.88, 83.20 s | 0 of 40 | – | lap 1: off at 471 m (turn 1), *after solver failures* (1 of 20); v_x 26.0, stored 26.5 | (c2) |
+| R3 (ATV-QP, start at v_c) | 538.51, 538.77 s (as R1) | 0 of 40 | – | lap 1: off at 215 m at 8.1 m/s, *after solver failures* (20 of 20) | (c2) |
+
+**Per learning lap (R1, and R2's and R3's single failed lap):**
+
+| | R1 lap 1 | R1 lap 2 | R1 lap 3 | R1 lap 4 (failed) | R2 lap 1 | R3 lap 1 |
+|---|---|---|---|---|---|---|
+| time over the previous lap | 0.280 | 0.588 | 0.907 | – | – | – |
+| share of solves with terminal slack > 10⁻³ | 0.009 | 0.040 | 0.152 | 0.215 | 0.257 | 0.000 (the QP failed) |
+| largest terminal slack | 6.15 | 6.95 | 8.16 | 8.80 | 13.3 | 3·10⁻⁷ |
+| solver failures / solves | 5 / 3 198 | 4 / 1 951 | 8 / 1 717 | 5 / 1 439 | 7 / 148 | **533 / 538** |
+| mean solve time | 244 ms | 189 ms | 177 ms | 172 ms | 377 ms | 286 ms |
+| largest tyre usage (front / rear) | 0.980 / 0.991 | 1.011 / 0.983 | 1.018 / 0.990 | 1.004 / 0.994 | 1.030 / 0.990 | 0.880 / 0.565 |
+| smallest edge margin | 2.90 m | 1.66 m | 0.59 m | −0.04 m | −0.05 m | −0.00 m |
+
+* **Clarification n1 (the 540 s time-to-go):**
+  * R1's NLP failed on at most 0.5 % of a learning lap's solves.
+  * Its terminal slack grew lap by lap (0.9 % → 21.5 % of the solves), as in phases E and I.
+  * For R3, the time-to-go's size is not the cause either; see the probe in 10.9.3.
+* **Clarification m3 – the run-out check.** Lap j's stored run-out is compared with lap j + 1's first 250 m: the time
+  over the 250 m, and the speed difference at 250 m (lap j + 1 minus lap j).
+
+  | pair | run-out of lap j | first 250 m of lap j + 1 | Δv_x at 250 m |
+  |---|---|---|---|
+  | v_c 1 → v_c 2 | 31.08 s | 31.20 s | −0.15 m/s |
+  | v_c 2 → learning 1 | 31.44 s | 9.40 s | +21.95 m/s |
+  | learning 1 → 2 | 9.05 s | 4.84 s | +52.90 m/s |
+  | learning 2 → 3 | 8.86 s | 4.37 s | +65.29 m/s |
+  | learning 3 → 4 | 5.41 s | 3.47 s | +69.43 m/s |
+  | R2: 0.73 → 0.79 | 3.18 s | 3.18 s | +0.09 m/s |
+  | R2: 0.79 → learning 1 | 3.14 s | 3.14 s | +0.10 m/s |
+
+  * After the slow start, every learning lap's run-out braked back towards the v_c laps' speeds after the line. The data
+    past the line it was driven to are the earlier laps' run-outs, which keep the v_c laps' 8 m/s.
+  * The next laps' first 250 m took 3.5–4.8 s, so the laps crossed the line at speed.
+  * The run-out approximation is therefore poor after the slow start, as section 10.3 allowed. It stays close for R2's
+    start, as in phases E and I.
+  * Whether the slow data past the line cost time before the line is not measured.
+
+#### 10.9.3 Reading (c2) examined (clarification m1)
+
+**R2 – two neighbours** (`repro-r2-diag`, two learning laps each):
+
+| run | learning lap 1 | learning lap 2 |
+|---|---|---|
+| R2 as registered (K 20, consecutive laps) | off at 471 m | – |
+| K 20 from phase E's start (no consecutive laps) | off at 442 m | – |
+| K 10 with consecutive laps | 76.72 s | off at 471 m (*after solver failures*; v_x 26.5, stored 26.5) |
+| phase E's `lmpc_nominal` K 10 (record) | 76.64 s | off at 470.8 m |
+
+* K 20 also fails on lap 1 from phase E's start (at 442 m, where phase E's `lmpc` K 20 left). **So the consecutive
+  start is not the cause.**
+* With K 10, the consecutive laps repeat phase E's K 10 within 0.08 s and 0.3 m.
+* R2's first learning lap jumps from 83.2 s to the limit (K 10: 76.72 s ≤ 78.69 s) and fails at turn 1, on its first
+  or second lap. This is phase E's and I's failure near the limit. It is not a defect of the implementation or of low
+  speeds. Mechanically R2 still reads (c2), because its K 20 failed on lap 1.
+
+**R3 – its first learning lap driven again** (`repro-replay --which R3_learn1`). The replay equals the record: off at
+215.17 m, 538 solves, 533 failed.
+* **Solver status.** All 533 failures are OSQP's *maximum iterations reached* (20 000, phase H's setting); 5 QPs solved.
+* **What the failures do.** A failed QP keeps the candidate (phase H), so the car is driven nearly open loop on the
+  stored lap's shifted inputs. The prediction's median lateral error at N was 0.46 m. The car drifted off at 8 m/s.
+* **Probes on the first QP:**
+
+  | probe | time-to-go c | result |
+  |---|---|---|
+  | as run | 536.6–537.7 s | iteration limit |
+  | c shifted by its minimum (the same QP's solution, since the λ sum to one) | 0–1.17 s | **iteration limit** |
+  | OSQP's iteration limit × 10 (200 000) | 536.6–537.7 s | **solved, in 2.4 s** (48 × the 50 ms step) |
+
+* **So R3's (c2) is the QP solver's convergence** – phase H's dominant failure kind – present already at 8 m/s and with
+  the first QP. It is not clarification n1's scale, and it is not the learning.
+  * Phase H's ATV-QP with its OSQP settings cannot drive the v_c start. R3 therefore says nothing about the LMPC.
+  * Why OSQP converges so slowly here is not tested. One untested possibility: the two v_c laps are nearly identical,
+    so the 40 hull points come in near-duplicate pairs.
+
+#### 10.9.4 R1's failure, driven again (descriptive; `repro-replay --which R1_learn4`)
+
+The replay equals the record: off at 3 973.21 m, 1 439 solves, 5 failed. IPOPT solved 1 434 problems; 5 stopped at its
+iteration limit, one of them at 3 930.6 m.
+
+**Approaching the corner at ~3 970 m** (braking from 59.3 m/s at 3 913 m):
+* From s ≈ 3 922 m (56.7 m/s), the terminal slack became nonzero and rose to 8.2.
+* From s ≈ 3 936 m, the soft track bound's slack in the prediction grew to 1.55 m by the edge. The margin is 0.6 m, so
+  the optimiser's own plan crossed the edge.
+* IPOPT's iterations rose from ~25 to ~120.
+* *"Solved, still left"* therefore means that the soft-constrained problem was solved, and its solution left the track.
+  The car arrived faster than the stored laps (33.7 against 31.6 m/s at the edge).
+
+**Earlier on the same lap:**
+* At turn 1 (s 407–446 m), the prediction's track slack reached 0.91 m – past the edge by ~0.3 m – and the car stayed
+  on.
+* The terminal slack was nonzero in seven stretches of the lap, the largest 8.8 at turn 1.
+
+**This is phase E's and I's failure near the limit**, on NOM with an exact model up to the integration:
+* The terminal set is a soft convex hull of the K nearest stored states in s.
+* It gives no recursive feasibility once the car is faster than the stored laps.
+
+#### 10.9.5 Reading of the check, and what is not claimed
+
+**R1 decides the check's reading: (c1) – it fails while approaching the limit.** The best learning lap was 80.39 s,
+5.2 % above `nmpc`'s 76.40 s, and the fourth learning lap left the track.
+* **Under the published conditions, our LMPC learns quickly and then fails as in phases E and I.** The published
+  conditions here are a slow start far from the cornering limit, consecutive laps, and an exact model on NOM.
+  * The learning laps went 538 → 151 → 89 → 80 s.
+  * The failure came on learning lap 4, with the solver succeeding: the solution itself crossed the edge.
+* **So phases E's and I's failure does not belong to their start conditions.**
+  * The slow start and the consecutive laps do not remove it. They only move it from lap 1 or 2 to lap 4.
+  * By clarification m1, (c1) is not read as an implementation defect.
+* **R2 and R3, beside it:**
+  * R2's (c2) is the same failure on the first lap: the K 10 neighbour reaches the limit on lap 1.
+  * R3's (c2) is phase H's QP solver, which cannot drive even the v_c start.
+
+**Not claimed (section 10.6):**
+* one deterministic run per arm, on NOM only, with no statistics;
+* a pass would not have been a candidate, and there is no gate;
+* E.2 and E.4 are not refuted. These remain unreproduced:
+  * their scale and hardware;
+  * E.2's regression;
+  * H.1's safe-set details;
+  * soft track bounds that let a car pass the edge without ending the run.
+  The last is exactly where R1 ended: its own plan crossed the edge by ~1 m.
+
+**Also disclosed:**
+* **Section 10.2 misjudged the start's tyre usage** (10.9.1). The start is far from the cornering limit, but the
+  tracking NMPC used up to 0.95 of the tyre longitudinally.
+* **The run-out approximation is poor after the slow start** (10.9.2, m3).
+* **The failure records' code path** (n2) ran for the first time in the registered runs. R1's lap 4, R2 and R3 each
+  produced a complete record.
+* **The pytest results** are quoted from pytest's summary line (`-rs`).
+  * At b34eb97: `.venv` 144 passed, 7 skipped (gymnasium) in 698.06 s; `.venv-rl` 151 passed in 719.24 s.
+  * At aae7f30: `.venv` 144 passed, 7 skipped (gymnasium) in 599.07 s; `.venv-rl` 151 passed in 612.20 s.
+  * `test_no_course_content` passed. No results or data file is tracked.
+
+**What follows is the user's decision (section 10, "Its place among phase I's rules"):**
+* close the LMPC line; or
+* ask for a candidate, registered by a revision on this result.
+
+Per packet 2's review, such a candidate would have to say how it removes this failure near the limit on NOM: the soft
+terminal hull of K nearest states without recursive feasibility once the car is faster than its data.
