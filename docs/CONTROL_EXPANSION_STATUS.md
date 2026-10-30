@@ -1,6 +1,6 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-30 (phase I: I-1's gate failed, packet 2 **APPROVE**; the reproduction check under the published LMPCs' conditions – protocol revision 1, section 10 – run: R1 reads (c1), R2 and R3 (c2), examined; packet 4 in review). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-30 (phase I: I-1's gate failed, packet 2 **APPROVE**; the reproduction check under the published LMPCs' conditions – protocol revision 1, section 10 – run: R1 reads (c1), R2 and R3 (c2), examined; packet 4 **APPROVE** with clarifications m1–m3, n1–n3; the user decides next). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
 * **Current phase:** I – frontier 2, the learning MPC's follow-ups. The user's instruction (2026-10-28): try the method
   matrix's follow-ups (CX-H review i3) in order, and discuss if they still fail. Branch `cx/I-lmpc-followups` from `main`
@@ -23,7 +23,7 @@ Last updated: 2026-10-30 (phase I: I-1's gate failed, packet 2 **APPROVE**; the 
     with phase E's start; R3 phase H's ATV-QP) on NOM under the published conditions – two centre-line laps at a
     constant 8 m/s, consecutive laps, 40 learning laps; readings fixed in advance ((c) split into (c1) / (c2)). A
     diagnostic: no gate, no benchmark; I-2 and I-3 not registered. Code b34eb97; diagnostics 418bf3a, bca7802, aae7f30.
-  * **The check's results (section 10.9, packet 4):**
+  * **The check's results (section 10.9, packet 4 APPROVE with the clarifications of its review):**
     * r0 reproduces three NOM records exactly.
     * r2: both v_c laps completed (538.5 and 538.8 s). Their tyre usage reached 0.95, longitudinally (the tracking
       NMPC's drive and brake), not the "about 0.5" of section 10.2.
@@ -35,7 +35,16 @@ Last updated: 2026-10-30 (phase I: I-1's gate failed, packet 2 **APPROVE**; the 
       laps repeat phase E's (76.72 s, then off at 471 m).
     * **R3 reads (c2), examined.** OSQP hit its 20 000 iterations on 533 of 538 QPs from the first solve. Shifting the
       time-to-go does not help; ten times the iterations solves the first QP in 2.4 s.
-    * Also disclosed: the run-out approximation is poor after the slow start (the run-outs fall back to ~8 m/s).
+      * This is an implementation limit (phase H's solver settings), unrelated to the learning.
+      * So E.2's QP form remains untested under the published conditions.
+    * **Also disclosed: the run-out approximation is poor after the slow start.**
+      * The run-outs fall back to ~8 m/s.
+      * Learning laps 2 and 3 braked on the straight before the line (to 35.0 and 61.4 m/s), slowing the next laps'
+        start. This corrects packet 4's "crossed the line at speed".
+      * The direct path to R1's failure is ruled out; the indirect one is not quantified.
+      * So (b) against (c1) is open. The conclusion is unchanged: the same failure while approaching the limit.
+    * The mechanism is an explanation consistent with the replay (a soft terminal hull without recursive feasibility
+      once the car is faster than its data), not a tested cause.
     * The user decides next: close the LMPC line, or a candidate by revision.
   * Three candidates in a fixed order, each with its own development gate: **I-1** a speed bound per lap on phase E's
     NLP (registered now); **I-2** E.2's own regression model with a trust region; **I-3** consecutive laps (I-2 and I-3
@@ -301,6 +310,7 @@ Last updated: 2026-10-30 (phase I: I-1's gate failed, packet 2 **APPROVE**; the 
 | 2026-10-28 | (this commit) | phase I packet 1: literature §I.1–I.4, protocol CX_I revision 0 (the LMPC follow-ups in a fixed order – I-1 a speed bound per lap on phase E's NLP; I-2, I-3 by revision); the phase-H merge hash 98f8134 recorded; corrections to phase H's (and E's) text on where `nmpc` leaves the DEV cars | **APPROVE** (2026-10-28) | m1 the benchmark registered only after stages A and B pass (A passing and B failing is a failed gate); m2 the first learning lap's bound (~1.02–1.08 × the η_p 0.79 lap) and its expected lap time, v_ref past the line from the run-out records; n1 ε the tuned parameter, K 20; n2 `pb_nominal` descriptive in stage B |
 
 | 2026-10-29 | 437ee9e (code 62fc41d) | phase I packet 2: I-1's code, tests, development checks – stage A passed, stage B failed (the gate failed); I-1 closed for the phase (rule 4) | **APPROVE** | records recounted (26 jobs) and E's path checked; observation 2 kept as an untested explanation; the I-2 / I-3 revisions must first state how they address the failure near the limit on NOM with an exact model – to the user as written |
+| 2026-10-30 | ff50e41 (run b34eb97; diagnostics 418bf3a, bca7802, aae7f30) | phase I packet 4: the reproduction check's results (section 10.9) – r0–r2; R1 (c1), R2 and R3 (c2) examined (R2's neighbours, R3's and R1's failed laps driven again from snapshots) | **APPROVE** | m1 R3's (c2) is an implementation limit (phase H's solver settings), E.2's QP form untested – the heading corrected; m2 the mechanism an explanation consistent with the replay, the conclusion qualified (NOM, one run per arm, this implementation); m3 the run-out's effect on the reading – direct path ruled out, an indirect path via the start speed found while checking it (packet 4's "crossed the line at speed" corrected), (b) against (c1) open, conclusion unchanged; n1 IPOPT's statuses separately; n2 the learning speed against E.2 in section 10.6; n3 for the user: a real test of E.2's QP form or of the papers' past-line data each needs a revision |
 | 2026-10-29 | 1e2bf96 | phase I packet 3: protocol revision 1, section 10 – a reproduction check under the published LMPCs' conditions on NOM (the user's request after the discussion; a diagnostic); literature §I.5 (E.2 re-read for its lap set-up) | **APPROVE** | v_c = 8 m/s re-computed (max\|κ\| a real ~14 m hairpin peak; q99.9 gives 8 too); m1 reading (c) split into (c1) approaching the limit (best ≤ 84.04 s) / (c2) far from it; m2 the initialisation laps consecutive, R2's learning lap 1 from the 0.79 lap's end, the init controller's settings; m3 the run-out approximation checked per lap, the flying start as phase E's; n1 w_T 100 unscaled; n2 failure classes after solver failures / solved; n3 no wall-clock limit – written in as clarifications before the code |
 ## Tests
 
@@ -365,5 +375,5 @@ Phase D: `results/CX/D/plans/` (main checkout) – the new plans of the library 
 
 ## Next actions
 
-1. Phase I: packet 4 (the reproduction check's results, section 10.9) in review; then the user decides (close the
-   LMPC line, or a candidate by revision).
+1. Phase I: packet 4 **APPROVE** (clarifications written in). The user decides: close the LMPC line (then the phase I
+   final review and the merge), or a candidate by revision.

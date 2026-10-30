@@ -6,9 +6,12 @@ marked *"clarification of revision 0"*), written down before any phase-I code. *
 **Revision 1 (2026-10-29; 1e2bf96, APPROVE – packet 3) with the clarifications of its review (m1–m3, n1–n3, marked
 *"clarification of revision 1"*), written before any code of it: section 10, a reproduction check under the published
 LMPCs' conditions on NOM – a diagnostic at the user's request; I-2 and I-3 not registered.**
-**Its results (section 10.9; packet 4): R1 reads (c1) – learning laps of 150.8, 88.6 and 80.4 s, then off on learning
-lap 4 with the solver succeeding, as in phases E and I. R2 and R3 read (c2) and were examined: R2 is the same failure on
-learning lap 1 (K 20), and R3 is phase H's QP solver at its iteration limit from the first solve.**
+**Its results (section 10.9; packet 4 APPROVE, with the clarifications of its review): R1 reads (c1) – learning laps
+of 150.8, 88.6 and 80.4 s, then off on learning lap 4 with the solver succeeding, as in phases E and I. R2 and R3 read
+(c2) and were examined: R2 is the same failure on learning lap 1 (K 20). R3 is an implementation limit, phase H's QP
+solver at its iteration limit from the first solve; it is unrelated to the learning, so E.2's QP form remains untested.
+The run-out approximation slowed learning laps 2 and 3 before the line, so (b) against (c1) is open; the conclusion is
+unchanged.**
 Written after the literature check
 ([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §I, on top of §E and §H) and before any phase-I code: no
 module, test, runner or lap of phase I exists. Branch `cx/I-lmpc-followups` from `main` 98f8134 (the merge of phase H).
@@ -582,6 +585,11 @@ A completed learning lap slower than 84.04 s would also count, but phase E's fir
   * H.1's safe-set details – the four fastest laps, contiguous windows, the L1 distance on the full state;
   * soft track bounds that let a car pass the edge without ending the run (H.1's lane slack, I.1's −0.02 m acceptance).
 
+*Clarification of the packet-4 review (n2) – a difference seen in the results (descriptive):* the speed of learning.
+* E.2 learned gradually and converged after 29 laps.
+* R1 went from 538 s to 151 s in one lap (ratio 0.28) and reached 80 s on its third.
+* So the slow start did not bring gradual learning here.
+
 ### 10.7 Development checks before the registered runs
 
 Records go to `results/CX/I/repro/`, each with the commit and a dirty flag.
@@ -617,7 +625,12 @@ Records go to `results/CX/I/repro/`, each with the commit and a dirty flag.
 close to 540 s each (35–40 min), and 40 laps may take more than 12 h. **No wall-clock limit is set.** A run that takes
 longer than the estimate is completed as usual, and the overrun is noted in the records.
 
-### 10.9 Results (2026-10-30; packet 4) – **R1 reads (c1); R2 and R3 read (c2), each examined: neither is a low-speed or consecutive-lap defect**
+### 10.9 Results (2026-10-30; packet 4, APPROVE) – **R1 reads (c1); R2 and R3 read (c2), each examined: R2 is the same failure near the limit on its first lap, R3 an implementation limit (phase H's solver settings), unrelated to the learning**
+
+**Review of packet 4 (ff50e41): APPROVE** (2026-10-30). The review re-checked the records independently and found them
+consistent. It raised minor points m1–m3 and nits n1–n3, all on the text, with no further laps. They are written in
+below, each marked *"clarification of the packet-4 review"*. While checking m3, the builder found that one statement of
+packet 4 was wrong (10.9.2, the speed at the line); the correction is marked there too.
 
 **Records** (git-ignored) are in `results/CX/I/repro/`. Each carries its commit and a clean dirty flag (`meta_*.json`).
 
@@ -705,10 +718,24 @@ are descriptive and change no reading.
 
   * After the slow start, every learning lap's run-out braked back towards the v_c laps' speeds after the line. The data
     past the line it was driven to are the earlier laps' run-outs, which keep the v_c laps' 8 m/s.
-  * The next laps' first 250 m took 3.5–4.8 s, so the laps crossed the line at speed.
+  * ~~The next laps' first 250 m took 3.5–4.8 s, so the laps crossed the line at speed.~~ *Corrected while answering
+    the packet-4 review's m3:* the stored laps (`snap/R1_store5.pkl`) show that two learning laps braked on the straight
+    before the line. The last 200 m before the line are straight (R ≥ 367 m).
+
+    | lap | v_x at L − 100 m | v_x at L − 50 m | v_x at the line | time over the last 110 m |
+    |---|---|---|---|---|
+    | learning 1 | 29.1 m/s | 29.7 m/s | 29.6 m/s | 3.71 s |
+    | learning 2 | 62.0 m/s | 60.2 m/s | **35.0 m/s** | 2.05 s |
+    | learning 3 | 67.5 m/s (70.4 at L − 66 m) | 68.9 m/s | **61.4 m/s** | 1.64 s |
+
+    * Learning lap 1 drove ~30 m/s through the final section and did not brake.
+    * Learning laps 2 and 3 braked before the line. This is consistent with the slow data past the line in their
+      terminal sets (learning lap 1's run-out at ~30 m/s, the v_c laps' at 8 m/s); no control tests it.
   * The run-out approximation is therefore poor after the slow start, as section 10.3 allowed. It stays close for R2's
     start, as in phases E and I.
-  * Whether the slow data past the line cost time before the line is not measured.
+  * ~~Whether the slow data past the line cost time before the line is not measured.~~ It did, and through the
+    consecutive start it also slowed the next lap: learning lap 3 started at 35.0 m/s and took 4.37 s over its first
+    250 m; learning lap 4 started at 61.4 m/s and took 3.47 s. See clarification m3 of the packet-4 review in 10.9.5.
 
 #### 10.9.3 Reading (c2) examined (clarification m1)
 
@@ -747,10 +774,22 @@ are descriptive and change no reading.
   * Why OSQP converges so slowly here is not tested. One untested possibility: the two v_c laps are nearly identical,
     so the 40 hull points come in near-duplicate pairs.
 
+*Clarification of the packet-4 review (m1) – R3's (c2) is the kind (c2) names.* It is an implementation limit: phase
+H's registered OSQP settings, at low speed (8 m/s), from the first QP on. It is unrelated to the learning.
+**E.2's QP form therefore remains untested under the published conditions.** The heading of 10.9 said earlier that
+neither (c2) was a low-speed defect. For R3 that said too much, and the heading is corrected.
+
 #### 10.9.4 R1's failure, driven again (descriptive; `repro-replay --which R1_learn4`)
 
-The replay equals the record: off at 3 973.21 m, 1 439 solves, 5 failed. IPOPT solved 1 434 problems; 5 stopped at its
-iteration limit, one of them at 3 930.6 m.
+The replay equals the record: off at 3 973.21 m, 1 439 solves, 5 failed.
+
+*Clarification of the packet-4 review (n1) – IPOPT's statuses, separately:*
+* *Solve_Succeeded*: 653;
+* *Solved_To_Acceptable_Level*: 781;
+* *Maximum_Iterations_Exceeded*: 5, one of them at 3 930.6 m.
+
+The acceptable level counts as solved, as in phase E. Its tolerances are phase E's (`tol` 10⁻⁴, `acceptable_tol` 10⁻³,
+`acceptable_iter` 5, `max_iter` 500), unchanged; r0 reproduces phase E's records exactly.
 
 **Approaching the corner at ~3 970 m** (braking from 59.3 m/s at 3 913 m):
 * From s ≈ 3 922 m (56.7 m/s), the terminal slack became nonzero and rose to 8.2.
@@ -765,9 +804,19 @@ iteration limit, one of them at 3 930.6 m.
   on.
 * The terminal slack was nonzero in seven stretches of the lap, the largest 8.8 at turn 1.
 
-**This is phase E's and I's failure near the limit**, on NOM with an exact model up to the integration:
+**This is phase E's and I's failure near the limit**, on NOM with an exact model up to the integration.
+
+*Clarification of the packet-4 review (m2) – the mechanism is an explanation, not a tested cause.* The explanation
+consistent with the replay is this:
 * The terminal set is a soft convex hull of the K nearest stored states in s.
 * It gives no recursive feasibility once the car is faster than the stored laps.
+
+What the replay shows in support:
+* the terminal slack was nonzero from 3 922 m;
+* the plan's speed at N was 26–28 m/s, while the car's speed at the first stage was 33–50 m/s;
+* the track slack grew to 1.55 m.
+
+No control tests the explanation; phase E also registered its cause as a hypothesis.
 
 #### 10.9.5 Reading of the check, and what is not claimed
 
@@ -777,12 +826,40 @@ iteration limit, one of them at 3 930.6 m.
   conditions here are a slow start far from the cornering limit, consecutive laps, and an exact model on NOM.
   * The learning laps went 538 → 151 → 89 → 80 s.
   * The failure came on learning lap 4, with the solver succeeding: the solution itself crossed the edge.
-* **So phases E's and I's failure does not belong to their start conditions.**
+* **So – on NOM, with one run per arm, and for this implementation – phases E's and I's failure does not belong to
+  their start conditions** (qualified by clarification m2 of the packet-4 review).
   * The slow start and the consecutive laps do not remove it. They only move it from lap 1 or 2 to lap 4.
   * By clarification m1, (c1) is not read as an implementation defect.
 * **R2 and R3, beside it:**
   * R2's (c2) is the same failure on the first lap: the K 10 neighbour reaches the limit on lap 1.
-  * R3's (c2) is phase H's QP solver, which cannot drive even the v_c start.
+  * R3's (c2) is an implementation limit: phase H's solver settings, which cannot drive even the v_c start. It is
+    unrelated to the learning, so E.2's QP form remains untested under the published conditions (clarification m1 of
+    the packet-4 review).
+
+*Clarification of the packet-4 review (m3) – how much the run-out approximation can matter for the reading.*
+* **The direct path is ruled out.** It was checked in the code and the records:
+  * A stored state's time-to-go is T − t. T is the lap's time at the line, `lap_time`, passed to `LapStore.add`.
+    Before the line, T − t does not depend on the run-out.
+  * The run-out's states enter a lap's problem only once the horizon's end passes the line (`past_line_pts`).
+    Learning lap 4 never had any: `past_line_points_max` was 0. Laps 1–3 had up to 40.
+  * R1 failed at 3 973 m, 343 m before the line. The horizon there reached under 90 m (1.5 s at ≤ 59 m/s).
+  * The stored states near the failure, from learning laps 2 and 3, were driven while their own horizons also ended
+    before the line.
+  * So the slow run-out data did not enter the problems near the failure.
+* **An indirect path exists, and it is not quantified.**
+  * Each lap's speed at the line is the next lap's start speed (the consecutive start).
+  * The slow data past the line made learning laps 2 and 3 brake before the line (10.9.2, corrected).
+  * Learning laps 3 and 4 therefore started at 35.0 and 61.4 m/s. Every later state depends on that start, the stored
+    laps near the failure included.
+  * Learning lap 3's first 250 m took 4.37 s, against learning lap 4's 3.47 s from 61.4 m/s. This is indicative only:
+    they are different laps.
+* **For the reading:**
+  * Learning lap 3 (80.39 s) is 1.70 s above the near-limit bound of 78.69 s. Part of that may come from the
+    approximation: its slow start, and its own braking before the line.
+  * Whether R1 would have reached a lap near the limit, i.e. read (b), with data past the line taken from the next lap
+    (E.2's way) is therefore open. This run does not decide between (b) and (c1).
+  * The distinction carries no weight here. Both are the same failure while approaching the limit, with the solver
+    succeeding. **The check's conclusion is unchanged.**
 
 **Not claimed (section 10.6):**
 * one deterministic run per arm, on NOM only, with no statistics;
@@ -809,5 +886,12 @@ iteration limit, one of them at 3 930.6 m.
 * close the LMPC line; or
 * ask for a candidate, registered by a revision on this result.
 
-Per packet 2's review, such a candidate would have to say how it removes this failure near the limit on NOM: the soft
-terminal hull of K nearest states without recursive feasibility once the car is faster than its data.
+Per packet 2's review, such a candidate would have to say how it removes this failure near the limit on NOM. Its
+explanation (10.9.4, consistent with the replay, not tested) is the soft terminal hull of the K nearest states, which
+has no recursive feasibility once the car is faster than its data.
+
+*Clarification of the packet-4 review (n3) – for the user's decision; not requested now:*
+* Only a higher OSQP iteration limit, or another QP solver, would test E.2's QP form in R3's conditions. At ~2.4 s per
+  step that is not real-time, and it would need its own revision.
+* Likewise, removing the run-out approximation would need its own revision: the data past the line would be taken
+  from the next lap, as in E.2 (clarification m3 above).
