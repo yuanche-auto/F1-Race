@@ -1,13 +1,77 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-28 (phase H done – closed without the benchmark (amendment H1); final review of 99732d5 **APPROVE**; merged to main). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-11-01 (phase I done – the user closed the LMPC line after the reproduction check; closed without a benchmark; final review of f2e4263 **APPROVE**; merged to main). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
-* **Current phase:** none – phase H done: the final review of 99732d5 **APPROVE**; `cx/H-atv-lmpc` merged to `main`
-  (--no-ff) 2026-10-28 (the merge hash recorded in the next branch's first commit). **Phase H was closed without the
+* **Current phase:** none. **Phase I is done:**
+  * The final review of f2e4263 was **APPROVE**, and `cx/I-lmpc-followups` was merged to `main` (--no-ff) on
+    2026-11-01. The merge hash is recorded in the next branch's first commit.
+  * **Phase I was closed without a benchmark**, because the user closed the LMPC line after the reproduction check
+    (CX_I section 11):
+    * I-1's gate failed, and I-2 and I-3 were never registered;
+    * H-I1 and H-I2 are not tested.
+  * The negative result's scope is this implementation – phase E's NLP with a soft hull of the K nearest stored states
+    – on these simulated cars, with one run per arm on NOM for the check. It was not cross-checked.
+  * The next frontier method is the user's choice, with literature and a protocol first. The LMPC line's open points are
+    in CONTROL_METHOD_MATRIX.md ("From phase I"); they are not scheduled.
+
+  History of phase I:
+  I – frontier 2, the learning MPC's follow-ups. The user's instruction (2026-10-28): try the method
+  matrix's follow-ups (CX-H review i3) in order, and discuss if they still fail. Branch `cx/I-lmpc-followups` from `main`
+  98f8134 (the merge of phase H); literature §I.1–I.4 and the protocol [CX_I_protocol.md](CX_I_protocol.md) revision 0
+  **APPROVE** (bdc02d0) with clarifications m1 (the benchmark registered only after stages A and B pass), m2 (the first
+  learning lap's bound and its expected lap time; the reference past the line), n1 (ε tuned, K 20), n2 (`pb_nominal`
+  descriptive in the gate). I-1's code 62fc41d (`LearningMPC(speed_bound=True)`, `LapStore.v_ref`,
+  `LMPCController(eps)`, `experiments/cx_i.py`, `scripts/{run,report}_cx_i.py` (dev only), `scripts/cx_i_dev.py`,
+  `tests/test_cx_i.py`). **I-1's gate failed:**
+  * stage A passed – NOM's first learning lap completed at every ε (81.8, 80.8, 79.1 s), as clarification m2 expected;
+  * stage B failed – `pb` left on lap 2 on NOM and on lap 1 or 2 on every DEV car (0 of 5);
+  * `pb_nominal` (no regression; descriptive) improved lap by lap to 77.3–77.7 s and left on laps 3–5, NOM on lap 5;
+  * phase E's NLP reproduces exactly with the bound off.
+  I-1 is closed for this phase (rule 4); packet 2 reports it. No IV or IT lap. Packet 2 **APPROVE** (2026-10-29): the
+  review asks that an I-2 / I-3 revision first state how it addresses the failure near the limit on NOM with an exact
+  model (passed to the user as written).
+  * **The user's decision (2026-10-29):** discuss before I-2. After reading how the published racing LMPCs were run
+    (literature §E, §I, I.5), the user asked for **a reproduction check first** – protocol **revision 1, section 10**
+    (packet 3 **APPROVE**, 1e2bf96, with clarifications m1–m3, n1–n3): phase E's NLP without the regression (R1; R2
+    with phase E's start; R3 phase H's ATV-QP) on NOM under the published conditions – two centre-line laps at a
+    constant 8 m/s, consecutive laps, 40 learning laps; readings fixed in advance ((c) split into (c1) / (c2)). A
+    diagnostic: no gate, no benchmark; I-2 and I-3 not registered. Code b34eb97; diagnostics 418bf3a, bca7802, aae7f30.
+  * **The check's results (section 10.9, packet 4 APPROVE with the clarifications of its review):**
+    * r0 reproduces three NOM records exactly.
+    * r2: both v_c laps completed (538.5 and 538.8 s). Their tyre usage reached 0.95, longitudinally (the tracking
+      NMPC's drive and brake), not the "about 0.5" of section 10.2.
+    * **R1 reads (c1).** Its learning laps took 150.8, 88.6 and 80.4 s, and it left on learning lap 4 at 3 973 m.
+      * IPOPT solved, but the plan itself crossed the edge: the soft track slack reached 1.55 m, and the terminal
+        slack grew lap by lap.
+      * This is phases E's and I's failure near the limit. The slow start and the consecutive laps only delay it.
+    * **R2 reads (c2), examined.** K 20 fails on learning lap 1 from phase E's start too. With K 10, the consecutive
+      laps repeat phase E's (76.72 s, then off at 471 m).
+    * **R3 reads (c2), examined.** OSQP hit its 20 000 iterations on 533 of 538 QPs from the first solve. Shifting the
+      time-to-go does not help; ten times the iterations solves the first QP in 2.4 s.
+      * This is an implementation limit (phase H's solver settings), unrelated to the learning.
+      * So E.2's QP form remains untested under the published conditions.
+    * **Also disclosed: the run-out approximation is poor after the slow start.**
+      * The run-outs fall back to ~8 m/s.
+      * Learning laps 2 and 3 braked on the straight before the line (to 35.0 and 61.4 m/s), slowing the next laps'
+        start. This corrects packet 4's "crossed the line at speed".
+      * The direct path to R1's failure is ruled out; the indirect one is not quantified.
+      * So (b) against (c1) is open. The conclusion is unchanged: the same failure while approaching the limit.
+    * The mechanism is an explanation consistent with the replay (a soft terminal hull without recursive feasibility
+      once the car is faster than its data), not a tested cause.
+  * **The user's decision (2026-11-01): the LMPC line is closed** – protocol section 11. Phase I ends without a
+    benchmark: H-I1 and H-I2 are not tested, and no IV or IT lap was run. The open points go to the method matrix
+    ("From phase I"), not scheduled. The benchmark document's phase I section records the negative result and its
+    scope.
+  * Three candidates in a fixed order, each with its own development gate: **I-1** a speed bound per lap on phase E's
+    NLP (registered now); **I-2** E.2's own regression model with a trust region; **I-3** consecutive laps (I-2 and I-3
+    by revision, if reached).
+  * The first candidate to pass gets the benchmark, registered only after its NOM first-lap stage (review i3). If all
+    three fail, the user decides.
+* **Phase H:** done – the final review of 99732d5 **APPROVE**; `cx/H-atv-lmpc` merged to `main` (--no-ff) 2026-10-28 as
+  98f8134. **Phase H was closed without the
   benchmark** (amendment H1): the development gate failed, and H-H1 and H-H2 are not tested; the negative result concerns
-  the ATV-QP form of phase E's problem with OSQP and E.2's candidate on these cars (not cross-checked). The next frontier
-  method is the user's choice, with literature and a protocol first; for a later LMPC phase, the first learning lap on
-  NOM first (CONTROL_METHOD_MATRIX.md).
+  the ATV-QP form of phase E's problem with OSQP and E.2's candidate on these cars (not cross-checked). The user chose the
+  matrix's LMPC follow-ups next (phase I).
   History of phase H:
   H – the first frontier method (the user's choice, 2026-10-23): the ATV-QP learning MPC, phase
   E's first follow-up candidate; branch `cx/H-atv-lmpc` from `main` c157738 (the merge of phase G); literature §H.1–H.3
@@ -19,7 +83,8 @@ Last updated: 2026-10-28 (phase H done – closed without the benchmark (amendme
   at the iteration limit and `atv` / `atv_nominal` leave the track on learning lap 1 on NOM and all five DEV cars
   (101–465 m); phase E's NLP reproduces exactly. A diagnostic (qpOASES and a box on the input step; not the registered
   design) still leaves on learning lap 1:
-  * at turn 1 on four DEV cars, where E's NLP and `nmpc` leave, with no QP failures;
+  * at turn 1 on four DEV cars, where E's NLP leaves too, with no QP failures (`nmpc` leaves three DEV cars at ~3.83 km,
+    not at turn 1 – *corrected 2026-10-28 on the phase-I branch*);
   * at ~2.7 km on NOM and DEV_car1, with 17–18 QP failures.
 
   Packet 2 (d66cc2b) **APPROVE**, and **amendment H1 accepted** with i1–i3 (m1's default): phase H is closed without
@@ -209,6 +274,7 @@ Last updated: 2026-10-28 (phase H done – closed without the benchmark (amendme
 | F | `experiments/cx_f.py`, l7 options `retry` / `log_commands`, `scripts/{run,report}_cx_f.py`, `scripts/cx_f_dev.py` | yes (7634e2d … e0f0b0a) | yes – `tests/test_cx_f.py` 5 | development checks §9 on NOM and FD – **gate failed** (the shield part closed, F1); audit of L7's records; T1 + T2: `none` regression, `main` reproduction, `retry` (2 332 laps) | literature §F and protocol rev 0 **APPROVE** (packet 1, m1–m3 / n1, n2); packet 2 **APPROVE**, amendment F1 option 1 (g1–g4); packet 3 and final review 85be4ad **APPROVE** | **yes – phase F completed (H-F2 holds; H-F1 not tested)** |
 | G | `comp` option of `experiments/l9`, `experiments/cx_g.py`, `scripts/{run,report}_cx_g.py`, `scripts/cx_g_dev.py` | yes (2833681 … bdfa2a7) | yes – `tests/test_cx_g.py` 4 | development checks §9 on NOM and GD (WSL) – gate passed; GT (1 340 laps, WSL) | literature §G and protocol rev 0 **APPROVE** (packet 1, m1–m3 / n1, n2); packet 2 **APPROVE**; packet 3 and final review 380124a **APPROVE** (h1) | **yes – phase G completed (H-G1 holds; H-G2 not shown)** |
 | H | `ATVLearningMPC`, `ATVLMPCController` (`control/lmpc.py`), `cx_e.learn` solver option, `experiments/cx_h.py`, `scripts/cx_h_dev.py`; `scripts/run_cx_h.py` (only `dev`) and `scripts/report_cx_h.py` (only `dev`) – the other stages never run | yes (3c69eb0 … 8b17829) | yes – `tests/test_atv_lmpc.py` 4 | development checks §9 on NOM and DEV – **gate failed**; a diagnostic variant | literature §H and protocol rev 0 **APPROVE** (packet 1, m1–m3 / n1, n2); packet 2 **APPROVE**, amendment H1 accepted (closed, no benchmark); final review 99732d5 **APPROVE** | **yes – phase H completed (closed without the benchmark)** |
+| I | I-1: `LearningMPC(speed_bound=True)`, `LapStore.v_ref`, `LMPCController(eps)` (`control/lmpc.py`), `experiments/cx_i.py`, `scripts/{run,report}_cx_i.py`, `scripts/cx_i_dev.py`; revision 1: `cx_e.learn` options `consecutive`, `start` "centre", `on_lap`, `cx_i.REPRO` / `reading` | yes (62fc41d; b34eb97; diagnostics 418bf3a, bca7802, aae7f30) | yes – `tests/test_cx_i.py` 13 | I-1's development checks §9 on NOM and DEV – stage A passed, **stage B failed** (gate failed); the reproduction check §10.9 on NOM – R1 (c1), R2 and R3 (c2), examined | literature §I and protocol rev 0 **APPROVE** (packet 1, m1, m2 / n1, n2); packet 2 (I-1's results) **APPROVE** – I-1 closed; packet 3 (revision 1) **APPROVE** (m1–m3, n1–n3); packet 4 (the check's results) **APPROVE** (m1–m3, n1–n3); the user closed the LMPC line; final review f2e4263 **APPROVE** | **yes – phase I completed (closed without a benchmark; the LMPC line closed)** |
 | F–G | – | not started | – | – | – | – |
 
 ## Review record
@@ -257,7 +323,12 @@ Last updated: 2026-10-28 (phase H done – closed without the benchmark (amendme
 | 2026-10-23 | (this commit) | phase H packet 1: literature §H.1–H.3, protocol CX_H revision 0 (the ATV-QP learning MPC, the user's choice of the first frontier method); the phase-G merge hash c157738 recorded | **APPROVE** (2026-10-28) | m1 the gate only on the registered development laps, a failed gate closes the phase by default (as E1 option 1); m2 the stored laps' last points excluded from the safe set, a failed first QP applies the candidate's first input; m3 attribution of H.1 / H.2 in the docstring; n1 the linearisation error per lap with the outcome; n2 why the K grid stays E's |
 | 2026-10-28 | d66cc2b (code 3c69eb0 … 8b17829) | phase H packet 2: code, tests, development checks – the gate failed; a diagnostic variant; amendment H1 (close, m1's default) | **APPROVE**; **H1 accepted** (closed without the benchmark) | i1 the scope (ATV-QP of E's problem, OSQP, E.2's candidate – not LMPC, not E.2's own implementation); i2 e1 weakened, not refuted, the η 0.95 lap an observation; i3 follow-ups in order and the NOM first-lap precondition; n1 no hypothesis names in the dev report (cfe57ad); n2 the never-run stages marked |
 | 2026-10-28 | 99732d5 (cfe57ad …) | phase H: the decision (i1–i3, n1) in the protocol, the benchmark section, the matrix follow-ups; the diagnostic's QP failure counts added – **final review** of `cx/H-atv-lmpc` | **APPROVE** | the disclosed correction verified (qpOASES failures 18 / 1003 on NOM, 17 / 967 on DEV_car1, 0 elsewhere); n1 checked against `report_before_n1/`; STATUS and this file to say phase H is closed without the benchmark at the merge |
+| 2026-10-28 | (this commit) | phase I packet 1: literature §I.1–I.4, protocol CX_I revision 0 (the LMPC follow-ups in a fixed order – I-1 a speed bound per lap on phase E's NLP; I-2, I-3 by revision); the phase-H merge hash 98f8134 recorded; corrections to phase H's (and E's) text on where `nmpc` leaves the DEV cars | **APPROVE** (2026-10-28) | m1 the benchmark registered only after stages A and B pass (A passing and B failing is a failed gate); m2 the first learning lap's bound (~1.02–1.08 × the η_p 0.79 lap) and its expected lap time, v_ref past the line from the run-out records; n1 ε the tuned parameter, K 20; n2 `pb_nominal` descriptive in stage B |
 
+| 2026-10-29 | 437ee9e (code 62fc41d) | phase I packet 2: I-1's code, tests, development checks – stage A passed, stage B failed (the gate failed); I-1 closed for the phase (rule 4) | **APPROVE** | records recounted (26 jobs) and E's path checked; observation 2 kept as an untested explanation; the I-2 / I-3 revisions must first state how they address the failure near the limit on NOM with an exact model – to the user as written |
+| 2026-10-29 | 1e2bf96 | phase I packet 3: protocol revision 1, section 10 – a reproduction check under the published LMPCs' conditions on NOM (the user's request after the discussion; a diagnostic); literature §I.5 (E.2 re-read for its lap set-up) | **APPROVE** | v_c = 8 m/s re-computed (max\|κ\| a real ~14 m hairpin peak; q99.9 gives 8 too); m1 reading (c) split into (c1) approaching the limit (best ≤ 84.04 s) / (c2) far from it; m2 the initialisation laps consecutive, R2's learning lap 1 from the 0.79 lap's end, the init controller's settings; m3 the run-out approximation checked per lap, the flying start as phase E's; n1 w_T 100 unscaled; n2 failure classes after solver failures / solved; n3 no wall-clock limit – written in as clarifications before the code |
+| 2026-10-30 | ff50e41 (run b34eb97; diagnostics 418bf3a, bca7802, aae7f30) | phase I packet 4: the reproduction check's results (section 10.9) – r0–r2; R1 (c1), R2 and R3 (c2) examined (R2's neighbours, R3's and R1's failed laps driven again from snapshots) | **APPROVE** | m1 R3's (c2) is an implementation limit (phase H's solver settings), E.2's QP form untested – the heading corrected; m2 the mechanism an explanation consistent with the replay, the conclusion qualified (NOM, one run per arm, this implementation); m3 the run-out's effect on the reading – direct path ruled out, an indirect path via the start speed found while checking it (packet 4's "crossed the line at speed" corrected), (b) against (c1) open, conclusion unchanged; n1 IPOPT's statuses separately; n2 the learning speed against E.2 in section 10.6; n3 for the user: a real test of E.2's QP form or of the papers' past-line data each needs a revision |
+| 2026-11-01 | f2e4263 | phase I: the user's decision (the LMPC line closed) in the protocol (section 11), the benchmark section of phase I, the matrix's open points – **final review** of `cx/I-lmpc-followups` | **APPROVE** | 13 commits from 98f8134, a trial merge without conflicts; pytest summaries and the branch tree (no results / data, no CR) checked; "every NOM LMPC sequence of phases E–I left by its fifth learning lap" re-checked over 19 sequences; the faster-than-`nmpc` laps only in phase E's unregistered diagnostics (as CX_E §9); nit: "The sequences' fastest laps" – done before the merge |
 ## Tests
 
 `tests/test_mpcc.py` (8) and `tests/test_cx_a.py` (7) at e2cea5d (6 and 5 at 6bcc6ef), and the full suite – see the latest review packet for the command and output.
@@ -297,6 +368,18 @@ worktree `F1-Race-worktrees/F1-Race-wt-CXF-run` at e0f0b0a, `results/CX/F/` (`te
 `report/CX_F.{md,json}`, `RUN_COMMIT_test`, `SHA256_inputs_{run,main_checkout}.txt`, `timeline.tsv`, `log_test.txt`,
 `log_report.txt`, `launch_test.sh`). All git-ignored.
 
+Phase I: `results/CX/I/` (main checkout). The records:
+* `dev/` – I-1's development checks of CX-I §9, at 62fc41d (`laps.jsonl`, `nlp_repro.json`, `meta_*.json`,
+  `report/`);
+* `smoke/` and `repro_smoke/` – the disclosed scratch smokes;
+* `repro/` – the reproduction check of CX-I §10, at b34eb97:
+  * `laps.jsonl`, `progress_R*.jsonl`, `r0.json`, `r2.json`, `report/`;
+  * the diagnostics: `r2_usage.*` (418bf3a), `r2_diag.json` and `snap/` (bca7802), `replay_*.json` (aae7f30);
+* `identified_cache/`;
+* `final/` – the pytest logs.
+
+All git-ignored.
+
 Phase H: `results/CX/H/dev/` (main checkout) – the development checks of CX-H §9 (`qp.json`, `nlp_repro.json`,
 `laps.jsonl`, `diag.jsonl`, `meta_*.json`, `RUN_COMMIT_dev`, `diag_attempt1_failed/`, `report/` regenerated at cfe57ad
 with `REPORT_COMMIT`, `report_before_n1/`), `results/CX/H/identified_cache/`, the final test logs `results/CX/H/final/`.
@@ -322,5 +405,6 @@ Phase D: `results/CX/D/plans/` (main checkout) – the new plans of the library 
 ## Next actions
 
 1. The next frontier method: the user's choice from CONTROL_METHOD_MATRIX.md, on its own branch with literature and a
-   protocol first; record the phase-H merge hash in that branch's first commit. E.2's ATV-QP was tried as phase H; a
-   later LMPC phase must first show on NOM that its first learning lap completes reliably.
+   protocol first. Record the phase-I merge hash in that branch's first commit.
+   * The LMPC line is closed (CX_I section 11). Its open points are listed in the matrix ("From phase I") and are not
+     scheduled.

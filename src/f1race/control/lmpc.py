@@ -31,6 +31,14 @@ IEEE TAC 2018), with the error model of Xue, Zhu, Dolan & Borrelli, *Learning mo
 regression for autonomous racing* (E.4; ICRA 2024). The open-source codes urosolia/RacingLMPC (UC Berkeley; H.1) and
 MPC-Berkeley/Racing-LMPC-ROS2 (H.2) were read and no code was copied; the successor-weighted terminal candidate is the
 construction of E.2 / H.1.
+
+**Phase I (docs/CX_I_protocol.md, candidate I-1): the speed bound per lap** – ``LearningMPC(speed_bound=True)`` adds one
+soft row per stage i = 1..N, v_x,i <= vbar_i + sigma_i (sigma >= 0, the track slacks' exact penalty); vbar (N) is a
+parameter of each solve, appended after phase E's parameters. ``LMPCController(eps=...)`` sets vbar_i = (1 + eps)
+v_ref(s_hat_i): v_ref the largest v_x at s among the last P stored laps (``LapStore.v_ref``, linear in the unwrapped s,
+the run-out included), s_hat the shifted previous solution's arclengths (at a lap's first solve s_0 + i dt v_x,0). Off by
+default: phase E's problem, parameters and variables are unchanged. The bound is this project's design (literature §I;
+motivated by the lap-gated envelope of Zhao et al., arXiv:2608.28723, I.1).
 """
 from __future__ import annotations
 
@@ -60,13 +68,14 @@ def regressor(X: np.ndarray, U: np.ndarray) -> np.ndarray:
 class LearningMPC:
     def __init__(self, track: Track, veh: DynVehicle, n_pts: int, N: int = 30, dt: float = 0.05, eta: float = 0.95,
                  margin: float = 0.6, w_T: float = 100.0, weights: dict | None = None, max_iter: int = 500,
-                 term: tuple = TERM):
+                 term: tuple = TERM, speed_bound: bool = False):
         """``term``: the state components in the terminal condition (default TERM, without delta; development option
-        TERM7 with it)."""
+        TERM7 with it). ``speed_bound`` (phase I): the soft speed bound per stage, its bounds a parameter of each solve."""
         w = {"drate": 1.0, "dF": 0.5, "slack": 1e4, "limit_slack": 1e6, "term_slack": 1e4}
         w.update(weights or {})
         self.track, self.veh, self.N, self.dt, self.n_pts, self.w = track, veh, N, dt, n_pts, w
         self.term = tuple(term)
+        self.speed_bound = bool(speed_bound)
         nt = len(self.term)
         L = track.length
         kap = _periodic_interpolant("kap", track.s, track.kappa, L)
@@ -90,7 +99,7 @@ class LearningMPC:
         T = ca.SX.sym("T", 4, N)
         LAM = ca.SX.sym("LAM", n_pts)
         EP, EM = ca.SX.sym("EP", nt), ca.SX.sym("EM", nt)
-        nP = 7 + 3 + nt * n_pts + n_pts + N * 3 * NZ
+        nP = 7 + 3 + nt * n_pts + n_pts + N * 3 * NZ + (N if self.speed_bound else 0)
         P = ca.SX.sym("P", nP)
         i0 = 10
         Dm = ca.reshape(P[i0:i0 + nt * n_pts], nt, n_pts)
@@ -134,8 +143,16 @@ class LearningMPC:
         g.append(xN - ca.mtimes(Dm, LAM) - (EP - EM) * TERM_SCALE7[list(self.term)]); lbg += [0] * nt; ubg += [0] * nt
         g.append(ca.sum1(LAM)); lbg.append(1.0); ubg.append(1.0)
         J += w_T * ca.dot(cv, LAM) + w["term_slack"] * (ca.sumsqr(EP) + ca.sumsqr(EM) + 10.0 * (ca.sum1(EP) + ca.sum1(EM)))
+        extra = []
+        if self.speed_bound:                            # phase I: v_x,i <= vbar_i + sigma_i, i = 1..N (soft)
+            SV = ca.SX.sym("SV", N)
+            VB = P[nP - N:]
+            for i in range(1, N + 1):
+                g.append(X[3, i] - VB[i - 1] - SV[i - 1]); lbg.append(-ca.inf); ubg.append(0.0)
+            J += w["slack"] * h * ca.sumsqr(SV) + 10 * w["slack"] * h * ca.sum1(SV)
+            extra = [SV]
 
-        zv = ca.vertcat(ca.vec(X), ca.vec(U), ca.vec(S), ca.vec(T), LAM, EP, EM)
+        zv = ca.vertcat(ca.vec(X), ca.vec(U), ca.vec(S), ca.vec(T), LAM, EP, EM, *extra)
         nx, nu = 7 * (N + 1), 3 * N
         lbz, ubz = np.full(zv.shape[0], -np.inf), np.full(zv.shape[0], np.inf)
         Xi = np.arange(nx).reshape(N + 1, 7)
@@ -144,6 +161,7 @@ class LearningMPC:
         Ti = nx + nu + 2 * (N + 1) + np.arange(4 * N).reshape(N, 4)
         Li = nx + nu + 2 * (N + 1) + 4 * N + np.arange(n_pts)
         Ei = Li[-1] + 1 + np.arange(2 * nt)
+        self.Vi = Ei[-1] + 1 + np.arange(N) if self.speed_bound else np.zeros(0, int)
         lbz[Xi[:, 3]] = 2.0
         lbz[Xi[:, 6]], ubz[Xi[:, 6]] = -veh.delta_max, veh.delta_max
         lbz[Ui[:, 0]], ubz[Ui[:, 0]] = -veh.delta_rate_max, veh.delta_rate_max
@@ -154,6 +172,7 @@ class LearningMPC:
         lbz[Ti] = 0.0
         lbz[Li], ubz[Li] = 0.0, 1.0
         lbz[Ei] = 0.0
+        lbz[self.Vi] = 0.0
         self.Xi, self.Ui, self.Si, self.Ti, self.Li, self.Ei = Xi, Ui, Si, Ti, Li, Ei
         self.lbz, self.ubz = lbz, ubz
         self.lbg, self.ubg = np.array(lbg, float), np.array(ubg, float)
@@ -182,12 +201,20 @@ class LearningMPC:
         return z
 
     def solve(self, x0: np.ndarray, u_prev: np.ndarray, D: np.ndarray, c: np.ndarray,
-              G: np.ndarray | None = None) -> tuple[np.ndarray, dict]:
+              G: np.ndarray | None = None, vbar: np.ndarray | None = None) -> tuple[np.ndarray, dict]:
         """``D`` (len(term), n_pts) the stored terminal states, ``c`` (n_pts) their times-to-go, ``G`` (N, 3, NZ) the model
-        correction (None: zero). A failed solve applies the shifted previous plan (as ``FrenetMPC``)."""
+        correction (None: zero), ``vbar`` (N) the speed bounds of stages 1..N (with ``speed_bound`` only). A failed solve
+        applies the shifted previous plan (as ``FrenetMPC``)."""
         G = np.zeros((self.N, 3, NZ)) if G is None else np.asarray(G, float)
         p = np.concatenate([x0, [u_prev[0], u_prev[1] / FS, u_prev[2] / FS], np.asarray(D, float).ravel(order="F"),
                             np.asarray(c, float), G.ravel()])
+        if self.speed_bound:
+            vbar = np.asarray(vbar, float)
+            if vbar.shape != (self.N,):
+                raise ValueError("speed_bound: vbar (N,) required")
+            p = np.concatenate([p, vbar])
+        elif vbar is not None:
+            raise ValueError("vbar given without speed_bound")
         if self.z is None:
             z0, args = self.initial_guess(x0, u_prev), {}
         else:
@@ -198,6 +225,8 @@ class LearningMPC:
             z0[self.Li] = 1.0 / self.n_pts          # the stored points change from solve to solve
             z0[self.Ei] = 0.0
             args = {}
+        if self.speed_bound:                            # the speed slacks consistent with the guess
+            z0[self.Vi] = np.maximum(z0[self.Xi[1:, 3]] - vbar, 0.0)
         t0 = time.time()
         sol = self.solver(x0=z0, p=p, lbx=self.lbz, ubx=self.ubz, lbg=self.lbg, ubg=self.ubg, **args)
         st = self.solver.stats()
@@ -214,6 +243,9 @@ class LearningMPC:
                 "slack": float(np.max(z[self.Si])), "fallback": fallback,
                 "limit_slack": float(np.max(z[self.Ti])), "term_slack": float(np.max(z[self.Ei])),
                 "lam_max": float(np.max(z[self.Li]))}
+        if self.speed_bound:
+            vx = z[self.Xi[1:, 3]]
+            info.update(speed_slack=float(np.max(z[self.Vi])), speed_near_share=float(np.mean(vx >= 0.99 * vbar)))
         self.stats.append(info)
         return u, info
 
@@ -262,6 +294,15 @@ class LapStore:
             cs.append(lap["T"] - lap["t"][idx])
             lap_ids.append(np.full(K, li))
         return np.hstack(cols), np.concatenate(cs), np.concatenate(lap_ids)
+
+    def v_ref(self, s: np.ndarray, P: int = 2) -> np.ndarray:
+        """Phase I: the largest v_x at each arclength s among the last P stored laps – each lap's 50 ms records
+        interpolated linearly in the unwrapped s (the run-out past the line included; constant beyond a lap's ends)."""
+        s = np.atleast_1d(np.asarray(s, float))
+        out = np.full(s.shape, -np.inf)
+        for lap in self.laps[-P:]:
+            out = np.maximum(out, np.interp(s, lap["s_sorted"], lap["X"][lap["order"], 3]))
+        return out
 
     def fastest(self) -> dict:
         """The stored lap with the shortest finish time (phase H: a lap's first candidate)."""
@@ -342,7 +383,11 @@ class LMPCController(MPCController):
     the per-solve diagnostics. The lap's arclength starts near 0 (the start state projects to s = L - 1e-11)."""
 
     def __init__(self, lmpc: LearningMPC, store: LapStore, K: int, P: int = 2, regression: bool = True,
-                 sim_dt: float = 0.01, tc_eta: float | None = 0.99):
+                 sim_dt: float = 0.01, tc_eta: float | None = 0.99, eps: float | None = None):
+        """``eps`` (phase I): the speed bound's step, vbar_i = (1 + eps) v_ref(s_hat_i); needs ``lmpc.speed_bound``."""
+        if (eps is not None) != lmpc.speed_bound:
+            raise ValueError("eps and the problem's speed_bound go together")
+        self.eps = eps
         self.mpc = lmpc
         self.sim_dt, self.tc_eta = sim_dt, tc_eta
         self.track = lmpc.track
@@ -370,21 +415,31 @@ class LMPCController(MPCController):
                 s_tilde = xf[0] + m.N * m.dt * xf[3]
                 Xc = np.tile(xf, (m.N, 1))
                 Uc = np.tile(self.u, (m.N, 1))
+                s_hat = xf[0] + m.dt * xf[3] * np.arange(1, m.N + 1)
             else:
                 Xp, Up, _ = m.prediction()
                 s_tilde = Xp[-1, 0] + m.dt * Xp[-1, 3]
                 Xc, Uc = np.vstack([Xp[1:m.N], Xp[m.N:]]), np.vstack([Up[1:], Up[-1:]])
+                s_hat = np.append(Xp[2:, 0], Xp[-1, 0] + m.dt * Xp[-1, 3])
             D, c, lap_ids = self.store.select(s_tilde, self.K, self.P, m.term)
             if self.regression:
                 G, fb = self.store.regress(regressor(Xc, Uc))
             else:
                 G, fb = None, np.ones(m.N, bool)
-            u, info = m.solve(xf, self.u, D, c, G)
+            if self.eps is not None:
+                vbar = (1.0 + self.eps) * self.store.v_ref(s_hat, self.P)
+                u, info = m.solve(xf, self.u, D, c, G, vbar=vbar)
+            else:
+                u, info = m.solve(xf, self.u, D, c, G)
             self.u = u
             self.t_next = t + m.dt
             self.log.append((t, xf[0], xf[1], info["time"], info["status"], info["slack"]))
             self.diag.append({"t": t, "s": xf[0], "term_slack": info["term_slack"], "fallback_share": float(np.mean(fb)),
                               "s_tilde": s_tilde, "c_min": float(np.min(c)), "past_line_pts": int(np.sum(D[0] > m.track.length))})
+            if self.eps is not None:
+                self.diag[-1].update(vx=float(xf[3]), v_ref=float(self.store.v_ref(xf[0], self.P)[0]),
+                                     vbar1=float(vbar[0]), speed_slack=info["speed_slack"],
+                                     speed_near_share=info["speed_near_share"])
             self.rec_t.append(t)
             self.rec_x.append(xf.copy())
             self.rec_u.append(u.copy())
@@ -434,6 +489,8 @@ class ATVLearningMPC(LearningMPC):
     def __init__(self, *args, rho: float = 1e-6, osqp: dict | None = None, qp_solver: str = "osqp",
                  qp_opts: dict | None = None, trust: tuple | None = None, **kw):
         super().__init__(*args, **kw)
+        if self.speed_bound:
+            raise NotImplementedError("phase I's speed bound is defined on the NLP only")
         z, J, g, p = (self._nlp[k] for k in ("x", "f", "g", "p"))
         self._gf = ca.Function("atv_g", [z, p], [g])
         self._jg = ca.Function("atv_jg", [z, p], [ca.jacobian(g, z)])

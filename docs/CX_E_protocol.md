@@ -276,6 +276,9 @@ new protocol, listed as the first follow-up (e3).
   laps; the development cars leave where `nmpc` leaves. In the diagnostics `lmpc_nominal` (K 5, P 1) drove its second
   learning lap on the nominal car in **75.9 s, faster than `nmpc`'s 76.40 s** – development data, a description only:
   the mechanism can beat the tracked plan, but not lap after lap.
+  *Note (2026-10-28, on the phase-I branch):* "the development cars leave where `nmpc` leaves" holds for some
+  `lmpc_nominal` variants (~3.84 km, section 9). With the registered K 20 they left at turn 1 (465–470 m), where `nmpc`
+  does not leave.
 * **e3 – follow-up candidates** (CONTROL_METHOD_MATRIX.md): (1) E.2's ATV-QP implementation (the model linearised along
   the candidate trajectory, so that the convex hull is feasible for the model the problem uses); (2) a bound on the progress
   per lap (e.g. the terminal time-to-go not below the previous lap's at the corresponding point minus a limit); (3)

@@ -496,7 +496,9 @@ The initialisation laps complete on every car (86.9–87.0 s, 83.1–83.5 s). Th
 about the lap time of `nmpc` on the 5 % plan (76.40 s); in the diagnostics one learning lap took **75.9 s, faster than
 `nmpc`** – yet no sequence keeps it up: near the limit (braking into turn 1) the terminal condition becomes unreachable
 (the share of solves with terminal slack above 10⁻³ rising 0.03 → 0.17 → 0.33 over the laps) and the car leaves. On the
-development cars the first learning lap plans with the nominal model at η 0.95 and leaves where `nmpc` leaves; the
+development cars the first learning lap plans with the nominal model at η 0.95 and leaves – at turn 1 with the registered
+K 20, where `nmpc` does not leave; only some `lmpc_nominal` variants left at ~3.84 km, the corner where `nmpc` leaves
+three of them (CX-E §9; *corrected 2026-10-28 on the phase-I branch*); the
 regression has data only at the initialisation laps' speeds and falls back to the nominal model on 38–62 % of the stages.
 
 **Reading (review e1):** the negative result is about **this implementation** – a nonlinear NLP (IPOPT) with the nominal
@@ -752,3 +754,66 @@ initialisation laps, then up to ten learning laps from the same initial state, e
 
 **Follow-ups (i3):** see CONTROL_METHOD_MATRIX.md. Two LMPC phases have now failed at their development gate. **A later
 LMPC phase must first show, on NOM, that its first learning lap completes reliably, before a benchmark is registered.**
+
+## Phase I – the learning MPC's follow-ups: closed without a benchmark (I-1's gate failed; a reproduction check under the published conditions)
+
+Protocol [CX_I_protocol.md](CX_I_protocol.md):
+* revision 0, with clarifications m1, m2, n1, n2;
+* revision 1 (section 10, the reproduction check), with m1–m3, n1–n3 and the clarifications of the packet-4 review.
+
+**No benchmark was registered. H-I1 and H-I2 are not tested, and no IV or IT lap was run.** The user closed the LMPC
+line after the reproduction check (2026-11-01; protocol section 11).
+
+Records (git-ignored) are in the main checkout's `results/CX/I/`:
+* `dev/` – I-1's development checks, at 62fc41d;
+* `repro/` – the reproduction check at b34eb97, with its diagnostics at 418bf3a, bca7802 and aae7f30;
+* `smoke/` and `repro_smoke/` – the disclosed scratch smokes;
+* `final/` – the pytest outputs.
+
+**I-1 – a soft speed bound per lap on phase E's NLP.** The bound is v_x ≤ (1 + ε) v_ref(s), where v_ref is the faster
+of the last two stored laps.
+
+| car | `pb`, ε 0.04 (the gate) | `pb_nominal`, no regression (descriptive) |
+|---|---|---|
+| NOM | 80.83 s, then off on lap 2 | 80.42, 78.51, 77.60, 77.65 s, then off on lap 5 |
+| DEV (5 cars) | off on lap 1 or 2 (all five) | best laps 77.3–80.1 s, then off on laps 3–5 |
+
+* Stage A passed: NOM's first learning lap completed at ε 0.02, 0.04 and 0.08 (81.84, 80.83, 79.07 s).
+* Stage B failed, so I-1 was closed (rule 4).
+
+**The reproduction check** – the user's request; a diagnostic on NOM, one deterministic run per arm. It used the
+published racing LMPCs' conditions:
+* two centre-line laps at 8 m/s;
+* consecutive laps;
+* 40 learning laps;
+* the nominal model, equal to the plant.
+
+| arm | learning laps | end | reading |
+|---|---|---|---|
+| R1 – phase E's NLP, start at 8 m/s | 150.81, 88.63, 80.39 s | off on lap 4 at 3 973 m with the solver succeeding: its own plan crossed the edge | (c1) |
+| R2 – the same, from phase E's start | – | off on lap 1 at turn 1 (K 20; with K 10: 76.72 s, then off at turn 1) | (c2) |
+| R3 – phase H's ATV-QP, start at 8 m/s | – | off on lap 1 at 8 m/s: OSQP at its iteration limit on 533 of 538 QPs | (c2) |
+
+**Reading:**
+* **Scope.** The negative result concerns this implementation: phase E's NLP with a soft convex hull of the K nearest
+  stored states as its terminal set, on these simulated cars. The check ran one run per arm, on NOM only.
+  * It is not a result about LMPC as such.
+  * Nor is it about E.2's or E.4's implementations. Their scale and hardware, E.2's regression, H.1's safe-set details,
+    and soft track bounds that let a car pass the edge remain unreproduced (CX_I §10.6).
+* **Under the published conditions, this LMPC learned fast and failed while approaching the limit**, as in phase E and
+  I-1. The slow start and the consecutive laps delayed the failure to learning lap 4; they did not remove it.
+  * The explanation is a soft hull without recursive feasibility once the car is faster than its data.
+  * It is consistent with the replay of the failed lap, but not tested.
+* **On NOM, every LMPC sequence of phases E–I left the track by its fifth learning lap.** The only exception is the
+  scratch smoke, which stopped after two laps by design. The sequences' fastest laps came near
+  or below `nmpc`'s 76.40 s, and each was followed by leaving the track on the next lap:
+  * 76.64 s with phase E's registered setting (`lmpc_nominal` K 10, learning lap 1);
+  * 75.9 s in phase E's unregistered diagnostics (K 5, P 1; CX_E §9).
+* **R3 is an implementation limit** (phase H's OSQP settings). E.2's QP form remains untested under the published
+  conditions.
+* **The run-out approximation** was poor after the slow start: the laps braked before the line. So whether R1 would
+  first have reached the limit is open ((b) against (c1)); the conclusion is unchanged.
+* Not cross-checked in a second environment.
+
+**Follow-ups:** see CONTROL_METHOD_MATRIX.md ("From phase I"). The LMPC line is closed by the user's decision; the open
+points are recorded there, not scheduled.

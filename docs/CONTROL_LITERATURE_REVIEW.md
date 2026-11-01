@@ -828,6 +828,99 @@ licence with attribution, the other LGPL-2.1) – and one recent item.
   be for the nonlinear one – is tested by changing exactly those two things (the linearisation, solved as one QP per
   step, and E.2's candidate) and keeping the rest of E's design.
 
+## Phase I (frontier 2) – the learning MPC's follow-ups: a progress bound per lap first
+
+Checked 2026-10-28. Phase E's and H's entries (E.1–E.9, H.1–H.3) are the basis and are not repeated. The question for this
+check: is there a published way to keep a racing LMPC from jumping to the model's limit on its first learning lap –
+a bound on the progress per lap, or a gradual expansion – and how do the published codes start and continue the laps?
+
+### I.1 Zhao, Nguyen, Lu, Wu – *Vehicle Drift Emergence: Continuous Evolution from Grip Driving to the Handling Limit via Boundary Exploration Learning Model Predictive Control*, arXiv:2608.28723 (v1 Aug 2026; no venue listed; full text read in part, HTML: the formulation, Algorithm 1, the parameter table, the results and the limitations; the last ~4 % of the page not read)
+
+* A racing LMPC in E.2's form that **widens a state envelope lap by lap**:
+  * a level η_j ∈ [0, 1] interpolates the bounds on the sideslip angle (7° → 38°) and the yaw rate (2.4 → 6.0 rad/s);
+  * after each lap η_{j+1} = clip(η_j + 0.20) if the lap is accepted ("recoverable"), clip(η_j − 0.10) otherwise;
+  * a lap is accepted if its smallest track margin is ≥ −0.02 m, at most 15 % of its solves failed, its peak combined
+    tyre utilisation is ≤ 1.08 and all states are finite; **only accepted laps enter the safe set**.
+* A **fixed global speed bound** (10 m/s, above the observed ~2.9 m/s peaks) is the same on every lap. It is not a
+  per-lap bound; the speed allocation is learned from the terminal cost.
+* Safe set: 16 nearby samples from each of the last two accepted laps, convex hull, costs-to-go shifted to be
+  non-negative per lap; the terminal condition **soft** (weight 800). ATV-QP (OSQP), N = 25 × 50 ms, linearised once per
+  step along the warm start.
+* Two path-following laps at 1.2 m/s seed the safe set; laps 3–12 are evaluated; the laps run in sequence (the initial
+  state of each lap is not stated). At μ 0.6 the lap time falls from 49.95 s (lap 3) to 25.50 s (lap 12).
+* **Limits stated by the authors:** the controller's model **equals the plant** (no model mismatch is tested); one
+  track, deterministic, no statistics; the soft terminal condition gives no invariance guarantee.
+* For phase I: the only source found with an **explicit lap-to-lap limit on how far the next lap may go**. Its limit acts
+  on lateral states (aimed at drift) and is gated by the previous lap's outcome.
+
+### I.2 E.4 re-read for this question (Xue, Zhu, Dolan, Borrelli, arXiv:2309.10716 v2, HTML)
+
+* **No explicit speed, progress or hyperparameter schedule** limits an iteration. What limits it is implicit:
+  * the terminal set – the convex hull of nearby stored states – lets each iteration go only as far as the data allow;
+  * the hard track and input bounds;
+  * the input and input-rate costs. The authors call the rate cost **"analogous to the 'learning rate' for LMPC"**: it
+    penalises drastic input changes and keeps the car near the safe set.
+* The first laps are slow: a tracking MPC on the centre line at 10 m/s for three laps. The authors describe the car as
+  starting slow near the centre line and **incrementally** increasing its speed through the corners. The regression data
+  are sparsest in the initial laps.
+* When the state enters the finish set the car "has transitioned onto the next lap" (consecutive laps). Each lap's data
+  are stored only up to the line; past it, the stage cost is zero.
+
+### I.3 Zang, Amine, Kokolakis, Nghiem, Rosolia, Mangharam – *SIT-LMPC: Safe Information-Theoretic Learning Model Predictive Control for Iterative Tasks*, arXiv:2602.16187 (Feb 2026; IEEE RA-L 11(1), 2026, 986–993, per the arXiv page; abstract)
+
+* An iterative-task MPC built on sampling-based (information-theoretic) MPC on a GPU. A normalising-flow value function is
+  trained on the earlier iterations, and an adaptive penalty trades safety against performance. The abstract claims
+  improvement over the iterations with robust constraint satisfaction. No per-iteration bound and no model mismatch are
+  stated in the abstract. Not read in full; listed as the most recent LMPC variant found.
+
+### I.4 Consecutive laps – Brunner, Rosolia, Gonzales, Borrelli, *Repetitive learning model predictive control: An autonomous racing example*, IEEE CDC 2017, 2545–2550 (bibliographic, via dblp – E.6); Brunke, *Learning Model Predictive Control for Competitive Autonomous Racing*, arXiv:2005.00826 (May 2020, a thesis; abstract)
+
+* E.6 extends the racing LMPC to repetitive tasks. Its full text was not found. The thesis (I.4b) attributes to it the
+  lap-to-lap initial condition: **the next lap starts from the previous lap's end state, shifted back by the track
+  length**. This attribution was seen in the search result only; the thesis itself was read at the abstract only.
+* The thesis's own subject is multi-agent LMPC: several initialisations for a richer safe set and a convex state
+  selection. It is not used here.
+
+**For phase I:**
+* (a) **No source found bounds the progress of a racing LMPC per lap by speed or lap time.** The closest are:
+  * I.1's lap-gated envelope on the lateral states (matched model, no mismatch);
+  * E.4's implicit limits, its rate cost "as a learning rate".
+  Phase I's speed bound per lap (CX_I_protocol.md §3) is therefore **this project's design**, motivated by I.1's
+  gating and by E.2 / E.4 / I.1 starting far from the limit.
+* (b) **The published LMPCs start slow:** E.2 at ~1.2 m/s (BARC), converging over ~29 laps; E.4 at 10 m/s on the centre
+  line; I.1 at 1.2 m/s. Each lap improves gradually because the stored data are far from the limit.
+  * Phases E and H started within ~9 % of the η 0.95 plan's lap time: the initialisation laps took 86.9 and 83.1 s,
+    against `nmpc`'s 76.40 s. Their first learning lap went to the limit at once.
+  * A per-lap bound restores the gradual approach without slowing the initialisation laps, which `identified` and
+    `nmpc` do not need.
+* (c) Consecutive laps (E.2, E.4, E.6) and E.2's own regression model are the matrix's follow-ups 2 and 3 (§I-2, I-3 of
+  the protocol). They are registered there by revision, if reached.
+
+### I.5 E.2 re-read for its lap set-up (Rosolia & Borrelli, arXiv:1901.08184, ar5iv; 2026-10-29)
+
+A second pass over E.2 (read in full for phase E), this time through a summarising fetch of the ar5iv page, for the
+reproduction check of CX_I_protocol.md section 10. The page renders some digits twice ("1010 Hz", "11 g"); they are read
+as 10 Hz and 1 g, as in E.2's entry.
+* **Start:** two laps of path following at constant speed, ~1.2 m/s, seed the safe set (section V).
+* **Consecutive laps:** each iteration's data cover two consecutive laps, so the safe set and the Q-function are defined
+  beyond the finish line. The terminal set is s ≥ L and the cost-to-go T^j − t. The safe set uses the last two
+  iterations (table I).
+* **Horizon:** N = 12 at 10 Hz; K = 20 (table I). Neither the tracks' lengths nor their radii are given (an oval and an
+  L-shaped track).
+* **Outcome:** the lap time decreases until it converges after 29 laps; laps 30–34 are shown as the steady state. The
+  largest lateral acceleration is ~1 g, against the limit μ g with μ = 1 (aerodynamics neglected). No lap times or
+  speeds are given as numbers.
+* **Not reported:** any lap that failed or left the track, and the number of experiments or trials.
+
+**For the reproduction check (protocol section 10):**
+* Conditions of the published racing LMPCs that carry over to the simulation:
+  * a slow constant-speed start (E.2, I.1 at ~1.2 m/s; E.4 on the centre line at 10 m/s);
+  * consecutive laps with data past the line (E.2, E.4);
+  * tens of laps (E.2: 29 to converge);
+  * a model equal to the plant (I.1).
+* Conditions that do not carry over: the cars' scale and hardware; soft track bounds that let a lap go past the edge
+  without ending the run (H.1's lane slack, I.1's −0.02 m acceptance). E.2's own regression model is I-2's subject.
+
 ## Phases F–G and the frontier methods
 
 Entries are written at the start of each phase, before its code (roadmap section 3). Classic sources
