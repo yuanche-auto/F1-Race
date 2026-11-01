@@ -1,6 +1,6 @@
 """Control expansion phase I report (docs/CX_I_protocol.md, revision 0 with its clarifications m1, m2, n1, n2; candidate
-I-1). Only the development report exists; the benchmark's reports are written with the revision that registers it
-(clarification m1).
+I-1; revision 1, the reproduction check). No benchmark report exists: the benchmark was never registered (clarification
+m1; the gate failed, and the user closed the LMPC line – section 11).
 
     python scripts/report_cx_i.py dev    # section 9: stage A (pb on NOM at each eps), stage B (pb, pb_nominal at eps
                                          # 0.04 on NOM + DEV; pb_nominal descriptive, n2), the bound's activity per lap

@@ -12,6 +12,7 @@ of 150.8, 88.6 and 80.4 s, then off on learning lap 4 with the solver succeeding
 solver at its iteration limit from the first solve; it is unrelated to the learning, so E.2's QP form remains untested.
 The run-out approximation slowed learning laps 2 and 3 before the line, so (b) against (c1) is open; the conclusion is
 unchanged.**
+**The user's decision (2026-11-01; section 11): the LMPC line is closed. Phase I ends without a benchmark.**
 Written after the literature check
 ([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §I, on top of §E and §H) and before any phase-I code: no
 module, test, runner or lap of phase I exists. Branch `cx/I-lmpc-followups` from `main` 98f8134 (the merge of phase H).
@@ -895,3 +896,28 @@ has no recursive feasibility once the car is faster than its data.
   step that is not real-time, and it would need its own revision.
 * Likewise, removing the run-out approximation would need its own revision: the data past the line would be taken
   from the next lap, as in E.2 (clarification m3 above).
+
+## 11. The decision (2026-11-01): the LMPC line closed
+
+* **The user's decision** (2026-11-01, translated), after packet 4: *"Close the LMPC line."*
+* **Phase I ends here, without a benchmark.**
+  * I-1 failed its development gate (section 9). I-2 and I-3 were never registered.
+  * The reproduction check (section 10, a diagnostic) found the failure near the limit under the published conditions
+    too.
+  * H-I1 and H-I2 are not tested. No IV or IT lap was run.
+* **The negative result's scope** (sections 9, 10.6, 10.9.5):
+  * It concerns this implementation: phase E's NLP with a soft convex hull of the K nearest stored states as its
+    terminal set, on these simulated cars.
+  * The check ran one deterministic run per arm, on NOM only.
+  * It is not a result about LMPC as such, nor about E.2's or E.4's implementations.
+* **What stays in the code** (development only; with the new options off, phases E's and H's records reproduce – r0):
+  * `LearningMPC(speed_bound=True)`, `LapStore.v_ref` and `LMPCController(eps)`, the bound off by default;
+  * `cx_e.learn`'s setting keys `consecutive` and `start` "centre", and its `on_lap` callback, all off by default;
+  * `experiments/cx_i.py`;
+  * `scripts/run_cx_i.py` (`jobs`, `dev`, `repro`), `scripts/report_cx_i.py` (`dev`, `repro`) and
+    `scripts/cx_i_dev.py`. Every stage of these scripts was run; none of them has a benchmark stage;
+  * `tests/test_cx_i.py` (13).
+* **Records** (git-ignored, main checkout): `results/CX/I/dev/`, `smoke/`, `repro_smoke/`, `repro/`, `final/`
+  (the pytest outputs) and `identified_cache/`.
+* **The open points** go to CONTROL_METHOD_MATRIX.md ("From phase I"). They are not scheduled.
+* **Second environment:** not cross-checked (deferred by the user).

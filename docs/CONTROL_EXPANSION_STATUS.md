@@ -1,6 +1,6 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-10-30 (phase I: I-1's gate failed, packet 2 **APPROVE**; the reproduction check under the published LMPCs' conditions – protocol revision 1, section 10 – run: R1 reads (c1), R2 and R3 (c2), examined; packet 4 **APPROVE** with clarifications m1–m3, n1–n3; the user decides next). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-10-30 (phase I: I-1's gate failed, packet 2 **APPROVE**; the reproduction check under the published LMPCs' conditions – protocol revision 1, section 10 – run: R1 reads (c1), R2 and R3 (c2), examined; packet 4 **APPROVE** with clarifications m1–m3, n1–n3; **the user closed the LMPC line (2026-11-01): phase I ends without a benchmark – final review requested**). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
 * **Current phase:** I – frontier 2, the learning MPC's follow-ups. The user's instruction (2026-10-28): try the method
   matrix's follow-ups (CX-H review i3) in order, and discuss if they still fail. Branch `cx/I-lmpc-followups` from `main`
@@ -45,7 +45,10 @@ Last updated: 2026-10-30 (phase I: I-1's gate failed, packet 2 **APPROVE**; the 
       * So (b) against (c1) is open. The conclusion is unchanged: the same failure while approaching the limit.
     * The mechanism is an explanation consistent with the replay (a soft terminal hull without recursive feasibility
       once the car is faster than its data), not a tested cause.
-    * The user decides next: close the LMPC line, or a candidate by revision.
+  * **The user's decision (2026-11-01): the LMPC line is closed** – protocol section 11. Phase I ends without a
+    benchmark: H-I1 and H-I2 are not tested, and no IV or IT lap was run. The open points go to the method matrix
+    ("From phase I"), not scheduled. The benchmark document's phase I section records the negative result and its
+    scope.
   * Three candidates in a fixed order, each with its own development gate: **I-1** a speed bound per lap on phase E's
     NLP (registered now); **I-2** E.2's own regression model with a trust region; **I-3** consecutive laps (I-2 and I-3
     by revision, if reached).
@@ -375,5 +378,7 @@ Phase D: `results/CX/D/plans/` (main checkout) – the new plans of the library 
 
 ## Next actions
 
-1. Phase I: packet 4 **APPROVE** (clarifications written in). The user decides: close the LMPC line (then the phase I
-   final review and the merge), or a candidate by revision.
+1. Phase I: the final review of `cx/I-lmpc-followups`, then its merge to `main` (--no-ff). The merge hash goes into
+   the next branch's first commit.
+2. The next step of the control expansion is the user's choice: a frontier method of CONTROL_METHOD_MATRIX.md,
+   literature and protocol first.

@@ -3,8 +3,8 @@ Windows `.venv`; one fresh process per job (spawn pool, maxtasksperchild=1), sin
 `pb_nominal` / `lmpc` is one car's whole sequence (two initialisation laps and ten learning laps); `nmpc` / `identified`
 one lap. Records in results/CX/I/ (key ``job`` = stage|kind|setting|case).
 
-Only the development stage exists: the benchmark (IV tuning, IT test, secondary) is registered by a revision after the
-gate passes (clarification m1), and its stages are written with that revision.
+No benchmark stage exists: the benchmark (IV tuning, IT test, secondary) would have been registered by a revision after
+the gate passed (clarification m1); the gate failed, and the user closed the LMPC line (section 11).
 
 Revision 1 (section 10): the reproduction check on NOM – one job per arm (R1, R2, R3: the whole sequence of two
 initialisation and 40 consecutive learning laps), each lap appended to ``progress_<arm>.jsonl`` as it is done.

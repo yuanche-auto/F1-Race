@@ -54,6 +54,21 @@ model** of the velocity states, with a trust region and a robust QP solver; (3) 
 any later LMPC phase** (after phases E and H both failed their development gates): show on NOM that its first learning lap
 completes reliably before a benchmark is registered. **Phase I tries them in this order** (CX_I_protocol.md; the user's
 instruction, 2026-10-28).
+From phase I (CX_I_protocol.md sections 9–11). **The user closed the LMPC line after the reproduction check
+(2026-11-01); nothing here is scheduled.**
+* I-1 (a speed bound per lap) failed its gate. I-2 (**E.2's own local-regression model** with a trust region) and I-3
+  (consecutive laps) were never registered.
+* The reproduction check ran under the published conditions: a slow start, consecutive laps, and the exact model on
+  NOM. It failed while approaching the limit, with the solver succeeding.
+
+The open points:
+1. **The failure near the limit itself.** Its explanation, not tested: the soft hull of the K nearest stored states has
+   no recursive feasibility once the car is faster than its data. Any later LMPC candidate must first say how it
+   removes this (CX-I packet 2's review).
+2. **E.2's QP form under the published conditions, with a QP solver that converges.** Phase H's OSQP settings could not
+   drive even the 8 m/s start. Ten times the iterations solved the first QP, but in 2.4 s: not real-time.
+3. **Data past the line from the next lap** (E.2), instead of the lap's own run-out. After the slow start, the own
+   run-out made the laps brake before the line.
 From phase F (CX-F amendment F1, review g4; the shield part was closed after its development gate failed – the L1
 tracker is no backup on these cars: at a reduced speed factor it leaves the track even on the nominal car, on a slower
 plan it completes at most 9 of 12 development laps and almost none with a 60 ms lag): **a backup that drives the lagged
