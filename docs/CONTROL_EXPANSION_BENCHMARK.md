@@ -805,7 +805,7 @@ published racing LMPCs' conditions:
   * The explanation is a soft hull without recursive feasibility once the car is faster than its data.
   * It is consistent with the replay of the failed lap, but not tested.
 * **On NOM, every LMPC sequence of phases E–I left the track by its fifth learning lap.** The only exception is the
-  scratch smoke, which stopped after two laps by design. Its fastest laps came near
+  scratch smoke, which stopped after two laps by design. The sequences' fastest laps came near
   or below `nmpc`'s 76.40 s, and each was followed by leaving the track on the next lap:
   * 76.64 s with phase E's registered setting (`lmpc_nominal` K 10, learning lap 1);
   * 75.9 s in phase E's unregistered diagnostics (K 5, P 1; CX_E §9).
