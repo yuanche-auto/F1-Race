@@ -781,9 +781,9 @@ RESULTS = [
 def results_chart():
     themes = {
         "light": dict(ink="#0b0b0b", ink2="#52514e", muted="#6b6a65", grid="#e1e0d9", base="#9a9893",
-                      method="#2a78d6", worse="#eb6834", band="#f3f2ee"),
+                      method="#2a78d6", worse="#eb6834", band="#f3f2ee", bg="#fcfcfb", edge="#e1e0d9"),
         "dark": dict(ink="#f0efec", ink2="#c3c2b7", muted="#898781", grid="#2c2c2a", base="#6e6d68",
-                     method="#3987e5", worse="#d95926", band="#161b22"),
+                     method="#3987e5", worse="#d95926", band="#161b22", bg="#0d1117", edge="#30363d"),
     }
     words = {
         "en": dict(title="Laps completed: the baseline → the method each layer studies",
@@ -856,6 +856,8 @@ def results_chart():
                    f'role="img" aria-label="{wd["title"]}">'
                    f'<g font-family="system-ui,-apple-system,\'Segoe UI\',\'PingFang SC\',\'Microsoft YaHei\','
                    f'\'Noto Sans CJK SC\',sans-serif">'
+                   f'<rect x="0.5" y="0.5" width="{W - 1}" height="{H - 1}" rx="12" fill="{c["bg"]}" '
+                   f'stroke="{c["edge"]}"/>'
                    f'<text x="{x_lab}" y="34" fill="{c["ink"]}" font-size="19" font-weight="700">{wd["title"]}</text>'
                    f'<text x="{x_lab}" y="58" fill="{c["ink2"]}" font-size="13">{wd["sub"]}</text>'
                    f'{leg}{"".join(grid)}{"".join(body)}</g></svg>\n')
