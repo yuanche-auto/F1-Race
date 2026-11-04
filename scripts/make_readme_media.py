@@ -465,7 +465,7 @@ def spin(tr, veh, r_kin, r_dyn, fps: int = 30, slow: float = 0.5, after: float =
         if t >= t_spin:
             spin_txt.set_text(f"SPIN at {r_kin.progress[-1]:.0f} m (turn 1)")
         badge.set_text(f"×{slow:g} slow motion" if t < t1 else
-                       f"the dynamic plan completes the lap: {r_dyn.lap_time:.2f} s")
+                       f"the dynamic plan completes the lap: {r_dyn.lap_time:.1f} s")
         cxy = np.mean(cams, axis=0) if np.hypot(*np.subtract(*cams)) < 70 else np.array(cams[0])
         half = 48
         ax.set_xlim(cxy[0] - half * 1.05, cxy[0] + half * 1.05)

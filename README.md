@@ -53,10 +53,21 @@ compares several solution methods on the same problem, the same car and the same
   · 🎥 <a href="docs/media/ghost_race.mp4">MP4, 1280×720</a>
 </sub></p>
 
+<p align="center">
+  <img src="docs/media/spin.gif" alt="L1: on the dynamic car the kinematic optimum spins at turn 1, the dynamic plan completes the lap" width="100%">
+</p>
+
+<p align="center"><sub>
+  <b>Why the model matters (L1).</b> The same dynamic car – Pacejka tyres, load transfer – on two plans: the
+  kinematic L0 plan (3 % margin) spins at turn 1 as its side-slip angle runs away, while the plan made on the
+  dynamic model (5 % margin) completes the lap in 75.57 s. Slow motion, the camera follows the cars.
+  · 🎥 <a href="docs/media/spin.mp4">MP4, 1280×720</a>
+</sub></p>
+
 <!--
   To get a playable video player here: edit this README on github.com and drag docs/media/ghost_race.mp4
   into the editor; GitHub uploads it and inserts a https://github.com/user-attachments/... link that renders
-  as a video. The GIFs above play everywhere without that step.
+  as a video (the same for spin.mp4). The GIFs above play everywhere without that step.
 -->
 
 ## 📊 Results at a glance

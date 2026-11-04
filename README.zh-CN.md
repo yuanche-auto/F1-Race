@@ -50,10 +50,20 @@
   · 🎥 <a href="docs/media/ghost_race.mp4">MP4 高清版（1280×720）</a>
 </sub></p>
 
+<p align="center">
+  <img src="docs/media/spin.gif" alt="L1：在动力学车辆上，运动学最优解在 1 号弯打滑，动力学规划完成一圈" width="100%">
+</p>
+
+<p align="center"><sub>
+  <b>为什么模型很重要（L1）。</b>同一辆动力学车辆（Pacejka 轮胎、载荷转移）分别执行两种规划：L0 的运动学规划
+  （3% 裕度）在 1 号弯侧偏角失控、车辆打滑；而在动力学模型上做的规划（5% 裕度）以 75.57 s 完成一圈。
+  慢动作播放，镜头跟随车辆。· 🎥 <a href="docs/media/spin.mp4">MP4 高清版（1280×720）</a>
+</sub></p>
+
 <!--
   如需在此处显示可播放的视频：在 github.com 上编辑本 README，把 docs/media/ghost_race.mp4 拖入编辑器，
   GitHub 会上传并插入一个 https://github.com/user-attachments/... 链接，渲染为视频播放器。
-  上面的 GIF 无需这一步即可在任何地方播放。
+  spin.mp4 同理。上面的 GIF 无需这一步即可在任何地方播放。
 -->
 
 ## 📊 结果一览
