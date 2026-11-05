@@ -23,6 +23,7 @@
 <p align="center">
   <a href="#-看一圈">🎬 看一圈</a> ·
   <a href="#-结果一览">📊 结果</a> ·
+  <a href="#-那么谁在什么情形下胜出">🏁 谁胜出</a> ·
   <a href="#%EF%B8%8F-亲手探索这一圈">🕹️ 互动</a> ·
   <a href="#-研究层">🧱 研究层</a> ·
   <a href="#-控制方法扩展阶段-ai">🔬 控制扩展</a> ·
@@ -112,6 +113,115 @@
 
 <sub>每一行都有各自的测试集（不同的车辆、扰动或赛道），因此行与行之间不可直接比较。橙色表示方法比基线更差——
 负面结果同样如实报告（L7、CX-A、CX-B）。数字均来自下方表格。</sub>
+
+## 🏁 那么，谁在什么情形下胜出？
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/media/winners_zh_dark.svg">
+  <img alt="L2 到 L9 各控制器在各测试条件下完成的圈数" src="docs/media/winners_zh_light.svg" width="100%">
+</picture>
+
+逐层回答核心问题（每一行是一个测试集，请在行内比较）：
+
+* 🤖 **学习可以不需要模型——但有代价。** 当车辆与模型不符时（L2），在验证圈上选出的残差 RL 策略完成了全部
+  51 辆车，名义 NMPC 只完成 22 辆。在随机扰动下（L3），它和随机 MPC 一样可靠（30 / 30），但每圈慢约 2 s
+  （81.2 vs 79.2 s）。这需要九次训练并在完整验证圈上选优；单次训练通常存在盲区（L5）。
+* 🔧 **辨识出车辆，基于模型的控制器就重新领先。** 使用辨识参数的 NMPC 完成了 L4 的全部 25 辆车；带辨识延迟模型的
+  NMPC 在转向延迟下与 RL 同样可靠（25 / 25 / 24 vs 25 / 24 / 23），且每圈快约 4 s（L6）。
+* 🗺️ **只有辨识能够迁移。** 在四条未见过的赛道和湿滑路面上，带辨识延迟模型并重新规划的 NMPC 跑完了每一圈；
+  学习得到的策略在新赛道上 100 圈完成 0 圈，湿地上 25 圈从 8 降到 0（L8）。
+* ⏱️ **实时约束让代价反转。** 在单核 50 ms 预算内，RL 策略几乎不受影响（98 / 105），同一个 NMPC 用 IPOPT
+  求解则丢掉每一圈，acados 实时迭代把它拉回到 79 圈（L9）。
+
+## 🚀 快速开始
+
+<p align="center">
+  <img src="docs/media/quickstart_zh.gif" alt="视频教程：克隆、安装、下载赛道、运行 L0 与测试" width="100%">
+</p>
+
+<p align="center"><sub>
+  <b>视频教程。</b>下面五个步骤在全新目录中真实录制——真实耗时 2 分 16 秒（pip 缓存已预热），快进为 49 秒；
+  画面上保留真实耗时。· 🎥 <a href="docs/media/quickstart_zh.mp4">MP4</a>
+  · ⏯️ 在终端中回放：<code>asciinema play docs/media/quickstart.cast</code>
+</sub></p>
+
+**1 · 获取代码**
+
+```bash
+git clone https://github.com/yuanche-auto/F1-Race.git
+cd F1-Race
+```
+
+**2 · 安装**（Python ≥ 3.10）
+
+```bash
+python -m venv .venv && source .venv/bin/activate     # Windows：.venv\Scripts\activate
+pip install -e ".[dev]"                               # 固定版本：先执行 pip install -r requirements-lock.txt
+```
+
+**3 · 下载赛道**——来自 TUM racetrack-database，固定上游版本并校验 SHA-256（见[数据](#-数据)）
+
+```bash
+python scripts/fetch_tracks.py Spielberg
+```
+
+**4 · 运行第一层**——赛车线、最短时间最优控制与闭环验证（约 1 分钟）
+
+```bash
+python scripts/run_l0.py                              # 写入 results/L0/ 与 docs/figures/L0/
+```
+
+你应该看到 L0 表格中的数字：`"ocp_ideal": 71.26…`，以及 `closed_loop` → `ocp` 下的 `"lap_time": 72.10…`。
+
+**5 · 运行测试**（约 1 分钟；完整测试 `pytest` 约 12 分钟）
+
+```bash
+pytest -m "not slow"
+```
+
+<details>
+<summary><b>📜 所有层的复现命令</b>（L1 约 20 分钟；L2–L6 需多进程运行数小时）</summary>
+
+<br>
+
+```bash
+python -m venv .venv && .venv/Scripts/activate      # 或：source .venv/bin/activate
+pip install -e .[dev]                                # 或先：pip install -r requirements-lock.txt
+python scripts/fetch_tracks.py Spielberg             # 下载赛道数据（见"数据"）
+python scripts/run_l0.py                             # 约 65 s；写入 results/L0 与 docs/figures/L0
+python scripts/l0_studies.py                         # 约 4 分钟；网格 / 步长研究
+python scripts/run_l1.py                             # 约 20 分钟；写入 results/L1 与 docs/figures/L1
+python scripts/l1_studies.py                         # 约 40 分钟；网格 / 模型 / 跟踪器研究
+python scripts/run_l2.py                             # 约 3 小时（8 进程）；51 辆车的蒙特卡洛
+python scripts/l2_studies.py                         # 约 20 分钟；单参数敏感性
+python scripts/run_l3.py                             # 约 8 小时（12 进程），含标定 / 迭代 / 失败分析；18 个控制器 x 30 个种子
+python scripts/run_l4.py                             # 约 3 小时（7 进程）；25 辆车上辨识 + 重规划（噪声：run_l4.py noise）
+pip install -e .[rl] && python scripts/l5_multiseed.py   # L5：9 次训练、验证、测试（约 8 小时；选出的策略在 models/L5）
+python scripts/run_l6.py plans && python scripts/run_l6.py round1 --taus 0.06   # L6（第 1–4 轮与报告：见脚本）
+# L7-L9 在固定到某个提交的 worktree 中运行；步骤与命令见各层报告：
+#   L7: docs/L7.md (scripts/l7_partA.py, run_l7.py, run_l7_partB.py, train_l7.py, run_l7_partC.py; RL extras)
+#   L8: docs/L8.md (scripts/fetch_tracks.py <track>, l8_plans.py, run_l8.py, report_l8.py)
+#   L9: docs/L9.md (WSL with acados, scripts/l9_wsl/; run_l9.py, report_l9.py)
+pytest -m "not slow"                                 # 约 2 分钟（完整测试约 12 分钟；若 L1 首个初值失败约 30 分钟）
+```
+
+</details>
+
+<details>
+<summary><b>🎨 重新生成本 README 的媒体素材</b></summary>
+
+<br>
+
+[`docs/media/`](docs/media) 下的所有内容都由项目自身的代码生成（GIF / MP4 需要 ffmpeg）：动画、地图、3D 模型、
+横幅与图表由一个脚本生成（同时刷新两份 README 中内嵌的地图与 3D 内容块），视频教程由另一个脚本生成。
+
+```bash
+python scripts/make_readme_media.py                 # 全部生成；或例如 `... ghost map stl winners`
+python scripts/make_quickstart_video.py record      # 在全新克隆中重新录制五个步骤（约 3 分钟）
+python scripts/make_quickstart_video.py render      # 生成中英文教程视频
+```
+
+</details>
 
 ## 🕹️ 亲手探索这一圈
 
@@ -2218,45 +2328,6 @@ L9 之后，项目没有继续增加新的层，而是横向扩展 L1–L9 的�
 | **H** | ATV-QP 学习型 MPC | ⏹️ 未做基准测试即关闭 | 开发阶段门槛未通过 |
 | **I** | 学习型 MPC 后续工作、复现检查 | ⏹️ 未做基准测试即关闭 | 复现检查后 LMPC 方向被关闭 |
 
-## 🚀 快速开始
-
-```bash
-python -m venv .venv && .venv/Scripts/activate      # 或：source .venv/bin/activate
-pip install -e .[dev]                                # 或先：pip install -r requirements-lock.txt
-python scripts/fetch_tracks.py Spielberg             # 下载赛道数据（见"数据"）
-python scripts/run_l0.py                             # 约 65 s；写入 results/L0 与 docs/figures/L0
-python scripts/l0_studies.py                         # 约 4 分钟；网格 / 步长研究
-python scripts/run_l1.py                             # 约 20 分钟；写入 results/L1 与 docs/figures/L1
-python scripts/l1_studies.py                         # 约 40 分钟；网格 / 模型 / 跟踪器研究
-python scripts/run_l2.py                             # 约 3 小时（8 进程）；51 辆车的蒙特卡洛
-python scripts/l2_studies.py                         # 约 20 分钟；单参数敏感性
-python scripts/run_l3.py                             # 约 8 小时（12 进程），含标定 / 迭代 / 失败分析；18 个控制器 x 30 个种子
-python scripts/run_l4.py                             # 约 3 小时（7 进程）；25 辆车上辨识 + 重规划（噪声：run_l4.py noise）
-pip install -e .[rl] && python scripts/l5_multiseed.py   # L5：9 次训练、验证、测试（约 8 小时；选出的策略在 models/L5）
-python scripts/run_l6.py plans && python scripts/run_l6.py round1 --taus 0.06   # L6（第 1–4 轮与报告：见脚本）
-# L7-L9 在固定到某个提交的 worktree 中运行；步骤与命令见各层报告：
-#   L7: docs/L7.md (scripts/l7_partA.py, run_l7.py, run_l7_partB.py, train_l7.py, run_l7_partC.py; RL extras)
-#   L8: docs/L8.md (scripts/fetch_tracks.py <track>, l8_plans.py, run_l8.py, report_l8.py)
-#   L9: docs/L9.md (WSL with acados, scripts/l9_wsl/; run_l9.py, report_l9.py)
-pytest -m "not slow"                                 # 约 2 分钟（完整测试约 12 分钟；若 L1 首个初值失败约 30 分钟）
-```
-
-<details>
-<summary><b>🎨 重新生成本 README 的媒体素材</b></summary>
-
-<br>
-
-[`docs/media/`](docs/media) 下的所有内容——动画、地图、3D 模型、横幅与结果图——都由同一个脚本基于项目自身的
-代码生成（GIF / MP4 需要 ffmpeg）：
-
-```bash
-python scripts/make_readme_media.py                 # 全部生成；或例如 `... ghost map stl`
-```
-
-它也会同时刷新两份 README 中内嵌的地图与 3D 内容块。
-
-</details>
-
 ## 🗂️ 仓库结构
 
 ```mermaid
@@ -2293,7 +2364,7 @@ src/f1race/
                     从失败处开始的课程学习（L7，curriculum.py）
   experiments/      每层、每阶段一个模块（l9_distill.py：L9 的 DAgger 学生策略）
 scripts/            数据下载与各层复现脚本；l9_wsl/：L9 的 WSL 环境（acados 构建、版本、运行驱动）；
-                    make_readme_media.py：本 README 的媒体素材
+                    make_readme_media.py、make_quickstart_video.py：本 README 的媒体素材
 tests/              pytest 测试集
 docs/               各层报告与图表、实验方案、审查流程；
                     media/：本 README 的动画、地图、3D 模型、横幅与图表

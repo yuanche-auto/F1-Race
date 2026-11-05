@@ -381,8 +381,8 @@ def spin(tr, veh, r_kin, r_dyn, fps: int = 30, slow: float = 0.5, after: float =
     fig = plt.figure(figsize=(W / DPI, H / DPI), dpi=DPI, facecolor=BG)
     fig.text(0.025, 0.945, "Same car, two plans: why L1 needs a dynamic model", color=INK, fontsize=17,
              fontweight="bold", va="center")
-    fig.text(0.025, 0.905, "dynamic single-track car with Pacejka tyres and load transfer — the plan made on the "
-             "kinematic model spins at turn 1", color=MUTED, fontsize=10.5, va="center")
+    fig.text(0.025, 0.905, "dynamic single-track car, Pacejka tyres, load transfer: the kinematic plan spins at turn 1",
+             color=MUTED, fontsize=10.5, va="center")
     badge = fig.text(0.975, 0.945, "", color=INK2, fontsize=11, ha="right", va="center",
                      bbox=dict(boxstyle="round,pad=0.35", fc=PANEL, ec=GRID))
 

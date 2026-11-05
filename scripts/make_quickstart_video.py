@@ -103,7 +103,7 @@ BG, WIN, BAR = (13, 17, 23), (22, 27, 34), (33, 38, 45)
 INK, INK2, MUTED = (240, 246, 252), (201, 209, 217), (139, 148, 158)
 GREEN, BLUE, YELLOW, ORANGE, RED = (63, 185, 80), (88, 166, 255), (210, 153, 34), (217, 89, 38), (248, 81, 73)
 ACCENT = (57, 135, 229)
-COLS, ROWS = 100, 20
+COLS, ROWS = 90, 18
 TYPE_CPS = 32.0
 
 
@@ -237,16 +237,16 @@ def render(lang: str) -> None:
     real_total = sum(c["real"] for sc in scenes for c in sc["cmds"])
     cap_font = font_path("cjk") if lang == "zh" else font_path("bold")
     sub_font = font_path("cjk") if lang == "zh" else font_path("sans")
-    F = dict(mono=ImageFont.truetype(font_path("mono"), 17), mono_b=ImageFont.truetype(font_path("mono"), 17),
+    F = dict(mono=ImageFont.truetype(font_path("mono"), 21), endmono=ImageFont.truetype(font_path("mono"), 19),
              cap=ImageFont.truetype(cap_font, 34), sub=ImageFont.truetype(sub_font, 20),
              chip=ImageFont.truetype(cap_font if lang == "zh" else font_path("bold"), 16),
-             small=ImageFont.truetype(sub_font, 15), big=ImageFont.truetype(font_path("bold"), 84),
+             small=ImageFont.truetype(sub_font, 17), big=ImageFont.truetype(font_path("bold"), 84),
              mid=ImageFont.truetype(cap_font, 36), body=ImageFont.truetype(sub_font, 22),
-             ff=ImageFont.truetype(font_path("mono"), 15))
+             ff=ImageFont.truetype(font_path("cjk") if lang == "zh" else font_path("mono"), 17))
     fig_img = Image.open(ROOT / "docs" / "figures" / "L0" / "lines.png").convert("RGB")
     tw = (W - 120, H - 150)                               # terminal window size
     tx0, ty0 = 60, 128
-    line_h = 23
+    line_h = 27
     char_w = F["mono"].getlength("M")
 
     def rounded(draw, box, r, fill, outline=None):
@@ -276,12 +276,12 @@ def render(lang: str) -> None:
         d.text((W / 2, 200), "✓", font=F["big"], fill=GREEN, anchor="mm")
         d.text((W / 2, 290), tx["done"], font=F["mid"], fill=INK, anchor="mm")
         d.text((W / 2, 350), tx["next"], font=F["sub"], fill=MUTED, anchor="mm")
-        box_w = 760
+        box_w = 900
         rounded(d, (W / 2 - box_w / 2, 380, W / 2 + box_w / 2, 380 + 44 * len(tx["nexts"]) + 24), 14, WIN)
         for k, line in enumerate(tx["nexts"]):
             cmd, _, desc = line.partition("   ")
             y = 404 + 44 * k
-            d.text((W / 2 - box_w / 2 + 28, y), cmd.strip(), font=F["mono"], fill=INK)
+            d.text((W / 2 - box_w / 2 + 28, y), cmd.strip(), font=F["endmono"], fill=INK)
             d.text((W / 2 + box_w / 2 - 28, y), desc.strip(), font=F["small"] if lang == "en" else F["small"],
                    fill=MUTED, anchor="ra")
         d.text((W / 2, 640), "github.com/yuanche-auto/F1-Race", font=F["small"], fill=MUTED, anchor="mm")
@@ -348,9 +348,9 @@ def render(lang: str) -> None:
     def figure_overlay(im, sc, t):
         f0, f1 = sc["figure"]
         a = min(1.0, (t - f0) / 0.35)
-        box_w = int(980 * (0.92 + 0.08 * a))
+        box_w = int(1120 * (0.92 + 0.08 * a))
         img = fig_img.copy()
-        img.thumbnail((box_w - 32, 470))
+        img.thumbnail((box_w - 32, 450))
         bw, bh = img.size[0] + 32, img.size[1] + 92
         x0, y0 = (W - bw) // 2, ty0 + (tw[1] - bh) // 2 + int((1 - a) * 30)
         layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
@@ -360,13 +360,11 @@ def render(lang: str) -> None:
         im.paste(Image.new("RGB", (W, H), (0, 0, 0)), (0, 0), layer)
         d = ImageDraw.Draw(im)
         d.rounded_rectangle((x0, y0, x0 + bw, y0 + bh), 14, fill=(250, 250, 250))
-        d.text((x0 + 18, y0 + 18), tx["fig"], font=F["mono"], fill=(80, 80, 80))
+        d.text((x0 + 18, y0 + 16), tx["fig"], font=F["endmono"], fill=(80, 80, 80))
         im.paste(img, (x0 + 16, y0 + 48))
         if nums:
             call = tx["call"].format(**nums)
             d.text((x0 + bw / 2, y0 + bh - 24), call, font=F["sub"], fill=(30, 30, 30), anchor="mm")
-        if a < 1:
-            im = Image.blend(im, im, 1.0)
         return im
 
     mp4 = MEDIA / f"quickstart_{lang}.mp4"
