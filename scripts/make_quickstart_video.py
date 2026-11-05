@@ -37,7 +37,7 @@ CAST = MEDIA / "quickstart.cast"
 FRAMES = ROOT / "results" / "media" / "quickstart"
 REPO_URL = "https://github.com/yuanche-auto/F1-Race.git"
 CLIP_FPS = 15
-VIEWPORT = (1440, 820)
+VIEWPORT = (1200, 800)                                  # the clip shows the map and the timing tower
 
 STEPS = [
     dict(key="setup",
@@ -76,10 +76,11 @@ const fs = require('fs');
   }
   if (follow === '1') await p.evaluate(() => replay.setFollow(true));
   const n = Math.ceil((t1 - t0) / +speed * +fps);
+  const box = await p.locator('main').boundingBox();
   fs.mkdirSync(out, { recursive: true });
   for (let i = 0; i <= n; i++) {
     await p.evaluate(t => replay.seek(t), t0 + i * +speed / +fps);
-    await p.screenshot({ path: `${out}/f_${String(i).padStart(4, '0')}.png` });
+    await p.screenshot({ path: `${out}/f_${String(i).padStart(4, '0')}.png`, clip: box });
   }
   console.log(JSON.stringify({ frames: n + 1, t0, t1 }));
   await b.close();
@@ -410,7 +411,7 @@ def render(lang: str) -> None:
         uw = F["small"].getlength(url) + 30
         d.rounded_rectangle((W / 2 - uw / 2, ty0 + 6 + dy, W / 2 + uw / 2, ty0 + 30 + dy), 12, fill=WIN)
         d.text((W / 2, ty0 + 18 + dy), url, font=F["small"], fill=INK2, anchor="mm")
-        im.paste(img, (int(tx0 + (tw[0] - img.size[0]) / 2), ty0 + 36 + dy))
+        im.paste(img, (int(tx0 + (tw[0] - img.size[0]) / 2), int(ty0 + 36 + dy + (tw[1] - 36 - img.size[1]) / 2)))
         return im
 
     def caption(d, sc):

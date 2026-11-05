@@ -22,12 +22,12 @@
 
 <p align="center">
   <a href="#-watch-a-lap">🎬 Watch a lap</a> ·
+  <a href="#-quick-start-your-first-race">🏁 Your first race</a> ·
   <a href="#-results-at-a-glance">📊 Results</a> ·
-  <a href="#-so-who-wins-where">🏁 Who wins</a> ·
+  <a href="#-so-who-wins-where">🏆 Who wins</a> ·
   <a href="#%EF%B8%8F-explore-the-lap-yourself">🕹️ Explore</a> ·
   <a href="#-the-layers">🧱 Layers</a> ·
   <a href="#-control-expansion-phases-ai">🔬 Control expansion</a> ·
-  <a href="#-quick-start">🚀 Quick start</a> ·
   <a href="#%EF%B8%8F-repository-layout">🗂️ Layout</a>
 </p>
 
@@ -70,6 +70,132 @@ compares several solution methods on the same problem, the same car and the same
   into the editor; GitHub uploads it and inserts a https://github.com/user-attachments/... link that renders
   as a video (the same for spin.mp4). The GIFs above play everywhere without that step.
 -->
+
+## 🏁 Quick start: your first race
+
+<p align="center">
+  <img src="docs/media/quickstart_en.gif" alt="Video tutorial: set up, start the first race, watch the replay, push the grip to the limit" width="100%">
+</p>
+
+<p align="center"><sub>
+  <b>Video tutorial.</b> The commands below, recorded for real in a fresh directory – 2 min 1 s of real time
+  (pip with a warm cache), fast-forwarded to 62 s; the real duration stays on screen.
+  · 🎥 <a href="docs/media/quickstart_en.mp4">MP4</a>
+  · ⏯️ replay it in a terminal: <code>asciinema play docs/media/quickstart.cast</code>
+</sub></p>
+
+**Three commands to the chequered flag:**
+
+```bash
+git clone https://github.com/yuanche-auto/F1-Race.git && cd F1-Race
+python -m venv .venv && source .venv/bin/activate && pip install -e .    # Windows: .venv\Scripts\activate
+python scripts/race.py
+```
+
+The track downloads itself, each driver plans its lap (about a minute the first time, cached after that), and
+then all three drive one flying lap in the simulator:
+
+```text
+F1-Race | Spielberg | 3 drivers | one flying lap | kinematic car | grip used by the plans: 97%
+
+Practice - each driver plans the lap
+  CTR  Centre line + QSS      plan  78.80 s   (0.4 s)
+  MCV  Min. curvature + QSS   plan  72.89 s   (15.8 s)
+  OCP  Minimum-time OCP       plan  72.07 s   (21.9 s)
+Race - one flying lap each, in the simulator
+
+Classification - Spielberg, 4.32 km, grip used by the plans 97%
+  POS  DRIVER                        LAP TIME      GAP  TOP SPEED  MAX GRIP  MIN EDGE
+  1    OCP  Minimum-time OCP         1:12.105        -    320 km/h    99.5%    0.26 m
+  2    MCV  Min. curvature + QSS     1:12.903   +0.798    320 km/h    99.5%    0.24 m
+  3    CTR  Centre line + QSS        1:18.839   +6.734    320 km/h    99.5%    3.73 m
+
+Replay: results/race/Spielberg_grip0.97.html   (open it in a browser)   - 44 s in all
+```
+
+Open the replay in a browser – or run `python scripts/race.py --open`: play, pause, scrub, 1–16×, follow the
+leader.
+
+<p align="center">
+  <img src="docs/media/race_replay.png" alt="The HTML replay of a race: map with the cars, timing tower, speed traces" width="100%">
+</p>
+
+### Make it your race
+
+| Try | What happens |
+|---|---|
+| `python scripts/race.py --grip 1.0` | The plans use all of the grip and leave the tracker no room for its errors: the OCP car leaves the track at 3 842 m, and the min.-curvature car wins in 1:12.434 |
+| `python scripts/race.py --drivers ocp centre` | Pick the field from `ocp`, `mincurv` and `centre` |
+| `python scripts/race.py --track Monza` | Another circuit, downloaded on first use (Monza: the OCP wins in 1:27.749); `--help` lists the circuits |
+| `python scripts/race.py --margin 0.1` | Plan closer to the edges (default 0.3 m) |
+| `python scripts/race.py --help` | Everything else |
+
+| Driver | How it plans the lap |
+|---|---|
+| **OCP** | minimum-time optimal control: the racing line and the speed optimised together (CasADi + IPOPT) |
+| **MCV** | the minimum-curvature line (a QP), then the fastest speed profile on it (quasi-steady) |
+| **CTR** | the centre line with the same speed profile – no racing line at all |
+
+Every lap is driven, not just planned: the L0 path/speed tracker steers each car through the time-domain
+simulator, which stops a car that leaves the track. This is L0's setting – a kinematic car; from L1 on the
+cars slide, the models are wrong and the weather changes ([the layers](#-the-layers)).
+
+<details>
+<summary><b>🧪 Run the tests</b></summary>
+
+<br>
+
+```bash
+pip install -e ".[dev]"
+pytest -m "not slow"                                  # ~1 min; the full suite: pytest (~12 min)
+```
+
+</details>
+
+<details>
+<summary><b>📜 Going further: reproduce every layer</b> (L0 ~1 min, L1 ~20 min; L2–L6 hours on several processes)</summary>
+
+<br>
+
+```bash
+python -m venv .venv && .venv/Scripts/activate      # or: source .venv/bin/activate
+pip install -e .[dev]                                # or first: pip install -r requirements-lock.txt
+python scripts/fetch_tracks.py Spielberg             # downloads the track (see "Data")
+python scripts/run_l0.py                             # ~65 s; writes results/L0 and docs/figures/L0
+python scripts/l0_studies.py                         # ~4 min; grid / step studies
+python scripts/run_l1.py                             # ~20 min; writes results/L1 and docs/figures/L1
+python scripts/l1_studies.py                         # ~40 min; grid / model / tracker studies
+python scripts/run_l2.py                             # ~3 h (8 processes); Monte Carlo over 51 cars
+python scripts/l2_studies.py                         # ~20 min; one parameter at a time
+python scripts/run_l3.py                             # ~8 h (12 processes) incl. calibrate / iterate / failures; 18 controllers x 30 seeds
+python scripts/run_l4.py                             # ~3 h (7 processes); identify + re-plan on 25 cars (noise: run_l4.py noise)
+pip install -e .[rl] && python scripts/l5_multiseed.py   # L5: 9 training runs, validation, tests (~8 h; selected policies in models/L5)
+python scripts/run_l6.py plans && python scripts/run_l6.py round1 --taus 0.06   # L6 (rounds 1-4 and report: see the script)
+# L7-L9 run from worktrees pinned to one commit; the steps and commands are in each report:
+#   L7: docs/L7.md (scripts/l7_partA.py, run_l7.py, run_l7_partB.py, train_l7.py, run_l7_partC.py; RL extras)
+#   L8: docs/L8.md (scripts/fetch_tracks.py <track>, l8_plans.py, run_l8.py, report_l8.py)
+#   L9: docs/L9.md (WSL with acados, scripts/l9_wsl/; run_l9.py, report_l9.py)
+pytest -m "not slow"                                 # ~2 min (full suite ~12 min, ~30 min if the first L1 guess fails)
+```
+
+</details>
+
+<details>
+<summary><b>🎨 Regenerate the media of this README</b></summary>
+
+<br>
+
+Everything under [`docs/media/`](docs/media) is produced from the project's own code (ffmpeg needed for the
+GIF / MP4): the animations, the map, the 3D model, the banner and the charts by one script – it also
+refreshes the inline map and 3D blocks of both READMEs – and the video tutorial by another.
+
+```bash
+python scripts/make_readme_media.py                 # everything; or e.g. `... ghost map stl winners`
+python scripts/make_quickstart_video.py record      # re-record the quick start in a fresh clone (~3 min; Node + playwright)
+python scripts/make_quickstart_video.py render      # the tutorial video, English and Chinese
+```
+
+</details>
 
 ## 📊 Results at a glance
 
@@ -119,7 +245,7 @@ compares several solution methods on the same problem, the same car and the same
 each other. Orange marks a method that did worse than its baseline – negative results are reported as such
 (L7, CX-A, CX-B). The numbers come from the tables below.</sub>
 
-## 🏁 So, who wins where?
+## 🏆 So, who wins where?
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/media/winners_en_dark.svg">
@@ -140,98 +266,6 @@ The guiding question, answered layer by layer (each row is one test set; compare
   the wet (L8).
 * ⏱️ **Real time flips the cost.** Within 50 ms on one core the RL policy hardly notices (98 of 105), the same
   NMPC with IPOPT loses every lap, and acados real-time iterations bring it back to 79 (L9).
-
-## 🚀 Quick start
-
-<p align="center">
-  <img src="docs/media/quickstart_en.gif" alt="Video tutorial: clone, install, download the track, run L0 and the tests" width="100%">
-</p>
-
-<p align="center"><sub>
-  <b>Video tutorial.</b> The five steps below, recorded for real in a fresh directory – 2 min 16 s of real
-  time (pip with a warm cache), fast-forwarded to 49 s; the real duration stays on screen.
-  · 🎥 <a href="docs/media/quickstart_en.mp4">MP4</a>
-  · ⏯️ replay it in a terminal: <code>asciinema play docs/media/quickstart.cast</code>
-</sub></p>
-
-**1 · Get the code**
-
-```bash
-git clone https://github.com/yuanche-auto/F1-Race.git
-cd F1-Race
-```
-
-**2 · Install** (Python ≥ 3.10)
-
-```bash
-python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate
-pip install -e ".[dev]"                               # the pinned versions: pip install -r requirements-lock.txt first
-```
-
-**3 · Download the track** – from the TUM racetrack-database, pinned commit, SHA-256 checked (see [Data](#-data))
-
-```bash
-python scripts/fetch_tracks.py Spielberg
-```
-
-**4 · Run the first layer** – racing lines, the minimum-time OCP and the closed-loop check (~1 min)
-
-```bash
-python scripts/run_l0.py                              # writes results/L0/ and docs/figures/L0/
-```
-
-You should see the numbers of the L0 table: `"ocp_ideal": 71.26…` and, under `closed_loop` → `ocp`, `"lap_time": 72.10…`.
-
-**5 · Run the tests** (~1 min; the full suite: `pytest`, ~12 min)
-
-```bash
-pytest -m "not slow"
-```
-
-<details>
-<summary><b>📜 All layers: the reproduction commands</b> (L1 ~20 min; L2–L6 hours on several processes)</summary>
-
-<br>
-
-```bash
-python -m venv .venv && .venv/Scripts/activate      # or: source .venv/bin/activate
-pip install -e .[dev]                                # or first: pip install -r requirements-lock.txt
-python scripts/fetch_tracks.py Spielberg             # downloads the track (see "Data")
-python scripts/run_l0.py                             # ~65 s; writes results/L0 and docs/figures/L0
-python scripts/l0_studies.py                         # ~4 min; grid / step studies
-python scripts/run_l1.py                             # ~20 min; writes results/L1 and docs/figures/L1
-python scripts/l1_studies.py                         # ~40 min; grid / model / tracker studies
-python scripts/run_l2.py                             # ~3 h (8 processes); Monte Carlo over 51 cars
-python scripts/l2_studies.py                         # ~20 min; one parameter at a time
-python scripts/run_l3.py                             # ~8 h (12 processes) incl. calibrate / iterate / failures; 18 controllers x 30 seeds
-python scripts/run_l4.py                             # ~3 h (7 processes); identify + re-plan on 25 cars (noise: run_l4.py noise)
-pip install -e .[rl] && python scripts/l5_multiseed.py   # L5: 9 training runs, validation, tests (~8 h; selected policies in models/L5)
-python scripts/run_l6.py plans && python scripts/run_l6.py round1 --taus 0.06   # L6 (rounds 1-4 and report: see the script)
-# L7-L9 run from worktrees pinned to one commit; the steps and commands are in each report:
-#   L7: docs/L7.md (scripts/l7_partA.py, run_l7.py, run_l7_partB.py, train_l7.py, run_l7_partC.py; RL extras)
-#   L8: docs/L8.md (scripts/fetch_tracks.py <track>, l8_plans.py, run_l8.py, report_l8.py)
-#   L9: docs/L9.md (WSL with acados, scripts/l9_wsl/; run_l9.py, report_l9.py)
-pytest -m "not slow"                                 # ~2 min (full suite ~12 min, ~30 min if the first L1 guess fails)
-```
-
-</details>
-
-<details>
-<summary><b>🎨 Regenerate the media of this README</b></summary>
-
-<br>
-
-Everything under [`docs/media/`](docs/media) is produced from the project's own code (ffmpeg needed for the
-GIF / MP4): the animations, the map, the 3D model, the banner and the charts by one script – it also
-refreshes the inline map and 3D blocks of both READMEs – and the video tutorial by another.
-
-```bash
-python scripts/make_readme_media.py                 # everything; or e.g. `... ghost map stl winners`
-python scripts/make_quickstart_video.py record      # re-record the five steps in a fresh clone (~3 min)
-python scripts/make_quickstart_video.py render      # the tutorial video, English and Chinese
-```
-
-</details>
 
 ## 🕹️ Explore the lap yourself
 
@@ -2391,9 +2425,11 @@ src/f1race/
   rl/               Gymnasium environment for residual RL on the tracker (L5);
                     failure-start curriculum (L7, curriculum.py)
   experiments/      one module per layer and phase (l9_distill.py: the L9 DAgger students)
+  race.py           the first race: drivers, plan cache, classification; replay_html.py: its replay
 scripts/            data download and per-layer reproduction scripts; l9_wsl/: the WSL
                     environment of L9 (acados build, versions, run driver);
-                    make_readme_media.py, make_quickstart_video.py: the media of this README
+                    race.py: your first race; make_readme_media.py, make_quickstart_video.py:
+                    the media of this README
 tests/              pytest suite
 docs/               per-layer write-ups and figures, protocols, review workflow;
                     media/: animations, map, 3D model, banner and charts of this README
@@ -2422,7 +2458,7 @@ flowchart LR
 
 Track centre lines and widths come from the [TUM FTM racetrack-database](https://github.com/TUMFTM/racetrack-database)
 (LGPL-3.0). They are **not** redistributed here: `scripts/fetch_tracks.py` downloads them from a pinned
-upstream commit and checks SHA-256 sums. L0–L7 and L9 use Spielberg; L8 also uses the validation tracks Monza
+upstream commit and checks SHA-256 sums (`scripts/race.py` fetches its track the same way on first use). L0–L7 and L9 use Spielberg; L8 also uses the validation tracks Monza
 and Sakhir and the test tracks Zandvoort, SaoPaulo, Austin and Nuerburgring
 (`python scripts/fetch_tracks.py <name>`). Results (`results/`) are not committed either.
 

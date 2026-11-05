@@ -22,12 +22,12 @@
 
 <p align="center">
   <a href="#-看一圈">🎬 看一圈</a> ·
+  <a href="#-快速上手你的第一场比赛">🏁 第一场比赛</a> ·
   <a href="#-结果一览">📊 结果</a> ·
-  <a href="#-那么谁在什么情形下胜出">🏁 谁胜出</a> ·
+  <a href="#-那么谁在什么情形下胜出">🏆 谁胜出</a> ·
   <a href="#%EF%B8%8F-亲手探索这一圈">🕹️ 互动</a> ·
   <a href="#-研究层">🧱 研究层</a> ·
   <a href="#-控制方法扩展阶段-ai">🔬 控制扩展</a> ·
-  <a href="#-快速开始">🚀 快速开始</a> ·
   <a href="#%EF%B8%8F-仓库结构">🗂️ 结构</a>
 </p>
 
@@ -66,6 +66,127 @@
   GitHub 会上传并插入一个 https://github.com/user-attachments/... 链接，渲染为视频播放器。
   spin.mp4 同理。上面的 GIF 无需这一步即可在任何地方播放。
 -->
+
+## 🏁 快速上手：你的第一场比赛
+
+<p align="center">
+  <img src="docs/media/quickstart_zh.gif" alt="视频教程：准备、开始第一场比赛、观看回放、把抓地力推到极限" width="100%">
+</p>
+
+<p align="center"><sub>
+  <b>视频教程。</b>下面的命令在全新目录中真实录制——真实耗时 2 分 1 秒（pip 缓存已预热），
+  快进为 62 秒；画面上保留真实耗时。· 🎥 <a href="docs/media/quickstart_zh.mp4">MP4</a>
+  · ⏯️ 在终端中回放：<code>asciinema play docs/media/quickstart.cast</code>
+</sub></p>
+
+**三条命令，冲过终点：**
+
+```bash
+git clone https://github.com/yuanche-auto/F1-Race.git && cd F1-Race
+python -m venv .venv && source .venv/bin/activate && pip install -e .    # Windows：.venv\Scripts\activate
+python scripts/race.py
+```
+
+赛道会自动下载；每位车手先规划自己的一圈（首次约 1 分钟，之后读取缓存），然后三辆车在仿真器里各跑一个飞驰圈：
+
+```text
+F1-Race | Spielberg | 3 drivers | one flying lap | kinematic car | grip used by the plans: 97%
+
+Practice - each driver plans the lap
+  CTR  Centre line + QSS      plan  78.80 s   (0.4 s)
+  MCV  Min. curvature + QSS   plan  72.89 s   (15.8 s)
+  OCP  Minimum-time OCP       plan  72.07 s   (21.9 s)
+Race - one flying lap each, in the simulator
+
+Classification - Spielberg, 4.32 km, grip used by the plans 97%
+  POS  DRIVER                        LAP TIME      GAP  TOP SPEED  MAX GRIP  MIN EDGE
+  1    OCP  Minimum-time OCP         1:12.105        -    320 km/h    99.5%    0.26 m
+  2    MCV  Min. curvature + QSS     1:12.903   +0.798    320 km/h    99.5%    0.24 m
+  3    CTR  Centre line + QSS        1:18.839   +6.734    320 km/h    99.5%    3.73 m
+
+Replay: results/race/Spielberg_grip0.97.html   (open it in a browser)   - 44 s in all
+```
+
+在浏览器中打开回放——或运行 `python scripts/race.py --open`：播放、暂停、拖动进度、1–16 倍速、跟随领跑者。
+
+<p align="center">
+  <img src="docs/media/race_replay.png" alt="比赛的 HTML 回放：赛道与车辆、计时塔、速度曲线" width="100%">
+</p>
+
+### 打造你自己的比赛
+
+| 试试 | 会发生什么 |
+|---|---|
+| `python scripts/race.py --grip 1.0` | 规划用尽全部抓地力，给跟踪器的误差留不出余量：OCP 车在 3 842 m 冲出赛道，最小曲率车以 1:12.434 获胜 |
+| `python scripts/race.py --drivers ocp centre` | 从 `ocp`、`mincurv`、`centre` 中挑选参赛车手 |
+| `python scripts/race.py --track Monza` | 换一条赛道，首次使用时自动下载（Monza：OCP 以 1:27.749 获胜）；`--help` 列出所有赛道 |
+| `python scripts/race.py --margin 0.1` | 规划时更贴近赛道边缘（默认 0.3 m） |
+| `python scripts/race.py --help` | 其他所有选项 |
+
+| 车手 | 如何规划这一圈 |
+|---|---|
+| **OCP** | 最短时间最优控制：同时优化赛车线与速度（CasADi + IPOPT） |
+| **MCV** | 先求最小曲率线（一个 QP），再在这条线上求最快的速度曲线（准稳态） |
+| **CTR** | 沿中心线行驶，速度曲线的求法相同——完全不用赛车线 |
+
+每一圈都是真正"开"出来的，而不只是规划：L0 的路径/速度跟踪器在时域仿真器中驾驶每辆车，冲出赛道的车会被判停。
+这是 L0 的设定——运动学车辆；从 L1 开始，车会滑移、模型会出错、天气会变化（见[研究层](#-研究层)）。
+
+<details>
+<summary><b>🧪 运行测试</b></summary>
+
+<br>
+
+```bash
+pip install -e ".[dev]"
+pytest -m "not slow"                                  # 约 1 分钟；完整测试 pytest 约 12 分钟
+```
+
+</details>
+
+<details>
+<summary><b>📜 更进一步：复现每一层</b>（L0 约 1 分钟，L1 约 20 分钟；L2–L6 需多进程运行数小时）</summary>
+
+<br>
+
+```bash
+python -m venv .venv && .venv/Scripts/activate      # 或：source .venv/bin/activate
+pip install -e .[dev]                                # 或先：pip install -r requirements-lock.txt
+python scripts/fetch_tracks.py Spielberg             # 下载赛道数据（见"数据"）
+python scripts/run_l0.py                             # 约 65 s；写入 results/L0 与 docs/figures/L0
+python scripts/l0_studies.py                         # 约 4 分钟；网格 / 步长研究
+python scripts/run_l1.py                             # 约 20 分钟；写入 results/L1 与 docs/figures/L1
+python scripts/l1_studies.py                         # 约 40 分钟；网格 / 模型 / 跟踪器研究
+python scripts/run_l2.py                             # 约 3 小时（8 进程）；51 辆车的蒙特卡洛
+python scripts/l2_studies.py                         # 约 20 分钟；单参数敏感性
+python scripts/run_l3.py                             # 约 8 小时（12 进程），含标定 / 迭代 / 失败分析；18 个控制器 x 30 个种子
+python scripts/run_l4.py                             # 约 3 小时（7 进程）；25 辆车上辨识 + 重规划（噪声：run_l4.py noise）
+pip install -e .[rl] && python scripts/l5_multiseed.py   # L5：9 次训练、验证、测试（约 8 小时；选出的策略在 models/L5）
+python scripts/run_l6.py plans && python scripts/run_l6.py round1 --taus 0.06   # L6（第 1–4 轮与报告：见脚本）
+# L7-L9 在固定到某个提交的 worktree 中运行；步骤与命令见各层报告：
+#   L7: docs/L7.md (scripts/l7_partA.py, run_l7.py, run_l7_partB.py, train_l7.py, run_l7_partC.py; RL extras)
+#   L8: docs/L8.md (scripts/fetch_tracks.py <track>, l8_plans.py, run_l8.py, report_l8.py)
+#   L9: docs/L9.md (WSL with acados, scripts/l9_wsl/; run_l9.py, report_l9.py)
+pytest -m "not slow"                                 # 约 2 分钟（完整测试约 12 分钟；若 L1 首个初值失败约 30 分钟）
+```
+
+</details>
+
+<details>
+<summary><b>🎨 重新生成本 README 的媒体素材</b></summary>
+
+<br>
+
+[`docs/media/`](docs/media) 下的所有内容都由项目自身的代码生成（GIF / MP4 需要 ffmpeg）：动画、地图、3D 模型、
+横幅与图表由一个脚本生成（同时刷新两份 README 中内嵌的地图与 3D 内容块），视频教程由另一个脚本生成。
+
+```bash
+python scripts/make_readme_media.py                 # 全部生成；或例如 `... ghost map stl winners`
+python scripts/make_quickstart_video.py record      # 在全新克隆中重新录制快速上手（约 3 分钟；需要 Node + playwright）
+python scripts/make_quickstart_video.py render      # 生成中英文教程视频
+```
+
+</details>
 
 ## 📊 结果一览
 
@@ -114,7 +235,7 @@
 <sub>每一行都有各自的测试集（不同的车辆、扰动或赛道），因此行与行之间不可直接比较。橙色表示方法比基线更差——
 负面结果同样如实报告（L7、CX-A、CX-B）。数字均来自下方表格。</sub>
 
-## 🏁 那么，谁在什么情形下胜出？
+## 🏆 那么，谁在什么情形下胜出？
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/media/winners_zh_dark.svg">
@@ -132,96 +253,6 @@
   学习得到的策略在新赛道上 100 圈完成 0 圈，湿地上 25 圈从 8 降到 0（L8）。
 * ⏱️ **实时约束让代价反转。** 在单核 50 ms 预算内，RL 策略几乎不受影响（98 / 105），同一个 NMPC 用 IPOPT
   求解则丢掉每一圈，acados 实时迭代把它拉回到 79 圈（L9）。
-
-## 🚀 快速开始
-
-<p align="center">
-  <img src="docs/media/quickstart_zh.gif" alt="视频教程：克隆、安装、下载赛道、运行 L0 与测试" width="100%">
-</p>
-
-<p align="center"><sub>
-  <b>视频教程。</b>下面五个步骤在全新目录中真实录制——真实耗时 2 分 16 秒（pip 缓存已预热），快进为 49 秒；
-  画面上保留真实耗时。· 🎥 <a href="docs/media/quickstart_zh.mp4">MP4</a>
-  · ⏯️ 在终端中回放：<code>asciinema play docs/media/quickstart.cast</code>
-</sub></p>
-
-**1 · 获取代码**
-
-```bash
-git clone https://github.com/yuanche-auto/F1-Race.git
-cd F1-Race
-```
-
-**2 · 安装**（Python ≥ 3.10）
-
-```bash
-python -m venv .venv && source .venv/bin/activate     # Windows：.venv\Scripts\activate
-pip install -e ".[dev]"                               # 固定版本：先执行 pip install -r requirements-lock.txt
-```
-
-**3 · 下载赛道**——来自 TUM racetrack-database，固定上游版本并校验 SHA-256（见[数据](#-数据)）
-
-```bash
-python scripts/fetch_tracks.py Spielberg
-```
-
-**4 · 运行第一层**——赛车线、最短时间最优控制与闭环验证（约 1 分钟）
-
-```bash
-python scripts/run_l0.py                              # 写入 results/L0/ 与 docs/figures/L0/
-```
-
-你应该看到 L0 表格中的数字：`"ocp_ideal": 71.26…`，以及 `closed_loop` → `ocp` 下的 `"lap_time": 72.10…`。
-
-**5 · 运行测试**（约 1 分钟；完整测试 `pytest` 约 12 分钟）
-
-```bash
-pytest -m "not slow"
-```
-
-<details>
-<summary><b>📜 所有层的复现命令</b>（L1 约 20 分钟；L2–L6 需多进程运行数小时）</summary>
-
-<br>
-
-```bash
-python -m venv .venv && .venv/Scripts/activate      # 或：source .venv/bin/activate
-pip install -e .[dev]                                # 或先：pip install -r requirements-lock.txt
-python scripts/fetch_tracks.py Spielberg             # 下载赛道数据（见"数据"）
-python scripts/run_l0.py                             # 约 65 s；写入 results/L0 与 docs/figures/L0
-python scripts/l0_studies.py                         # 约 4 分钟；网格 / 步长研究
-python scripts/run_l1.py                             # 约 20 分钟；写入 results/L1 与 docs/figures/L1
-python scripts/l1_studies.py                         # 约 40 分钟；网格 / 模型 / 跟踪器研究
-python scripts/run_l2.py                             # 约 3 小时（8 进程）；51 辆车的蒙特卡洛
-python scripts/l2_studies.py                         # 约 20 分钟；单参数敏感性
-python scripts/run_l3.py                             # 约 8 小时（12 进程），含标定 / 迭代 / 失败分析；18 个控制器 x 30 个种子
-python scripts/run_l4.py                             # 约 3 小时（7 进程）；25 辆车上辨识 + 重规划（噪声：run_l4.py noise）
-pip install -e .[rl] && python scripts/l5_multiseed.py   # L5：9 次训练、验证、测试（约 8 小时；选出的策略在 models/L5）
-python scripts/run_l6.py plans && python scripts/run_l6.py round1 --taus 0.06   # L6（第 1–4 轮与报告：见脚本）
-# L7-L9 在固定到某个提交的 worktree 中运行；步骤与命令见各层报告：
-#   L7: docs/L7.md (scripts/l7_partA.py, run_l7.py, run_l7_partB.py, train_l7.py, run_l7_partC.py; RL extras)
-#   L8: docs/L8.md (scripts/fetch_tracks.py <track>, l8_plans.py, run_l8.py, report_l8.py)
-#   L9: docs/L9.md (WSL with acados, scripts/l9_wsl/; run_l9.py, report_l9.py)
-pytest -m "not slow"                                 # 约 2 分钟（完整测试约 12 分钟；若 L1 首个初值失败约 30 分钟）
-```
-
-</details>
-
-<details>
-<summary><b>🎨 重新生成本 README 的媒体素材</b></summary>
-
-<br>
-
-[`docs/media/`](docs/media) 下的所有内容都由项目自身的代码生成（GIF / MP4 需要 ffmpeg）：动画、地图、3D 模型、
-横幅与图表由一个脚本生成（同时刷新两份 README 中内嵌的地图与 3D 内容块），视频教程由另一个脚本生成。
-
-```bash
-python scripts/make_readme_media.py                 # 全部生成；或例如 `... ghost map stl winners`
-python scripts/make_quickstart_video.py record      # 在全新克隆中重新录制五个步骤（约 3 分钟）
-python scripts/make_quickstart_video.py render      # 生成中英文教程视频
-```
-
-</details>
 
 ## 🕹️ 亲手探索这一圈
 
@@ -2363,8 +2394,10 @@ src/f1race/
   rl/               在跟踪器上做残差 RL 的 Gymnasium 环境（L5）；
                     从失败处开始的课程学习（L7，curriculum.py）
   experiments/      每层、每阶段一个模块（l9_distill.py：L9 的 DAgger 学生策略）
+  race.py           第一场比赛：车手、规划缓存、成绩表；replay_html.py：比赛回放
 scripts/            数据下载与各层复现脚本；l9_wsl/：L9 的 WSL 环境（acados 构建、版本、运行驱动）；
-                    make_readme_media.py、make_quickstart_video.py：本 README 的媒体素材
+                    race.py：你的第一场比赛；make_readme_media.py、make_quickstart_video.py：
+                    本 README 的媒体素材
 tests/              pytest 测试集
 docs/               各层报告与图表、实验方案、审查流程；
                     media/：本 README 的动画、地图、3D 模型、横幅与图表
@@ -2392,7 +2425,7 @@ flowchart LR
 ## 📦 数据
 
 赛道中心线与宽度来自 [TUM FTM racetrack-database](https://github.com/TUMFTM/racetrack-database)（LGPL-3.0）。
-本仓库**不**重新分发这些数据：`scripts/fetch_tracks.py` 会从固定的上游提交下载并校验 SHA-256。L0–L7 与 L9
+本仓库**不**重新分发这些数据：`scripts/fetch_tracks.py` 会从固定的上游提交下载并校验 SHA-256（`scripts/race.py` 首次使用某条赛道时也以同样方式下载）。L0–L7 与 L9
 使用 Spielberg；L8 还使用验证赛道 Monza、Sakhir 与测试赛道 Zandvoort、SaoPaulo、Austin、Nuerburgring
 （`python scripts/fetch_tracks.py <name>`）。结果目录（`results/`）同样不提交。
 
