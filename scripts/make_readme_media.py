@@ -16,6 +16,7 @@ Outputs in docs/media/:
   speed_landscape.stl        the same line in 3D, height = speed
   banner_{en,zh}.svg         animated header (a dot drives the minimum-time lap)
   results_{en,zh}_{light,dark}.svg   completed laps, baseline -> the layer's method
+  winners_{en,zh}_{light,dark}.svg   who wins where: laps per controller and test condition
   snippets/                  the compact GeoJSON / STL blocks inlined in the READMEs
 
 The L1 plans are read from results/L1/l1_plans.pkl when it exists (scripts/run_l1.py),
@@ -107,8 +108,8 @@ def l0_lines(cache: Path | None = None):
     return tr, veh, labelled(lines)
 
 
-LABELS = {"ocp": ("Minimum-time OCP", "line and speed optimised together"),
-          "mincurv": ("Min. curvature + QSS", "geometric line, then the speed"),
+LABELS = {"ocp": ("Minimum-time OCP", "line + speed optimised"),
+          "mincurv": ("Min. curvature + QSS", "geometric line first"),
           "centre": ("Centre line + QSS", "no racing line")}
 
 
@@ -157,7 +158,7 @@ def style_axes(ax):
 
 # --------------------------------------------------------------------------- ghost race
 def ghost_race(tr, lines, speedup: float = 4.0, fps: int = 30, hold: float = 3.0):
-    W, H, DPI = 1280, 720, 100
+    W, H, DPI = 1280, 720, 125                         # 125 dpi: text legible at README width
     for ln in lines:
         ln["s_len"] = tr.length
     lead_lap = min(ln["lap"] for ln in lines)
@@ -238,7 +239,7 @@ def ghost_race(tr, lines, speedup: float = 4.0, fps: int = 30, hold: float = 3.0
     clock = fig.text(x0, 0.775, "", color=INK, fontsize=30, fontweight="bold", family="DejaVu Sans Mono",
                      va="center")
     fig.text(x0, 0.70, "POS   LINE", color=MUTED, fontsize=9, fontweight="bold")
-    fig.text(0.895, 0.70, "SPEED", color=MUTED, fontsize=9, fontweight="bold", ha="right")
+    fig.text(0.905, 0.70, "SPEED", color=MUTED, fontsize=9, fontweight="bold", ha="right")
     fig.text(0.975, 0.70, "GAP", color=MUTED, fontsize=9, fontweight="bold", ha="right")
     rows = []
     for k in range(3):
@@ -249,12 +250,12 @@ def ghost_race(tr, lines, speedup: float = 4.0, fps: int = 30, hold: float = 3.0
                                              color=SERIES[k], lw=0)),
             name=fig.text(x0 + 0.045, y + 0.012, "", color=INK, fontsize=11.5, va="center"),
             sub=fig.text(x0 + 0.045, y - 0.017, "", color=MUTED, fontsize=8.5, va="center"),
-            v=fig.text(0.895, y, "", color=INK, fontsize=12, va="center", ha="right", family="DejaVu Sans Mono"),
+            v=fig.text(0.905, y, "", color=INK, fontsize=12, va="center", ha="right", family="DejaVu Sans Mono"),
             gap=fig.text(0.975, y, "", color=INK2, fontsize=12, va="center", ha="right",
                          family="DejaVu Sans Mono"),
         )
         rows.append(r)
-    note = fig.text(x0, 0.335, "", color=INK2, fontsize=10, va="top", linespacing=1.5)
+    note = fig.text(x0, 0.405, "", color=INK2, fontsize=10, va="top", linespacing=1.35)
 
     # speed traces over centreline distance
     axs = fig.add_axes([0.055, 0.075, 0.92, 0.15])
@@ -266,7 +267,8 @@ def ghost_race(tr, lines, speedup: float = 4.0, fps: int = 30, hold: float = 3.0
     axs.tick_params(colors=MUTED, labelsize=8.5, length=0)
     axs.grid(color=GRID, lw=0.8)
     axs.set_axisbelow(True)
-    axs.set_xlabel("distance along the centre line [km]", color=MUTED, fontsize=9, labelpad=2)
+    axs.text(1.0, 1.08, "distance along the centre line [km]", transform=axs.transAxes, color=MUTED, fontsize=9,
+             ha="right")
     axs.text(-0.04, 1.08, "SPEED [km/h]", transform=axs.transAxes, color=MUTED, fontsize=9, fontweight="bold")
     traces, tdots = [], []
     for ln, c in zip(lines[::-1], SERIES[::-1]):
@@ -315,15 +317,15 @@ def ghost_race(tr, lines, speedup: float = 4.0, fps: int = 30, hold: float = 3.0
                 r["v"].set_text(f"{v * 3.6:5.0f}")
                 r["gap"].set_text("—" if p == 0 else f"+{max(gap, 0):.2f}")
         if t >= t_end:
-            note.set_text(f"The racing line alone is worth {lines[2]['lap'] - lines[1]['lap']:.2f} s;\n"
-                          f"optimising line and speed together\nanother {lines[1]['lap'] - lines[0]['lap']:.2f} s.")
+            note.set_text(f"racing line alone: −{lines[2]['lap'] - lines[1]['lap']:.2f} s\n"
+                          f"line + speed together: another −{lines[1]['lap'] - lines[0]['lap']:.2f} s")
         fig.canvas.draw()
         proc.stdin.write(fig.canvas.buffer_rgba().tobytes())
     proc.stdin.close()
     proc.wait()
     plt.close(fig)
     print(f"{mp4.name}: {mp4.stat().st_size / 1e6:.2f} MB")
-    mp4_to_gif(mp4, OUT / "ghost_race.gif", fps=15, width=800, colors=96)
+    mp4_to_gif(mp4, OUT / "ghost_race.gif", fps=15, width=960, colors=96)
 
 
 # --------------------------------------------------------------------------- L1 spin
@@ -365,7 +367,7 @@ def car_polygon(x, y, psi, length=5.4, width=2.0):
 
 
 def spin(tr, veh, r_kin, r_dyn, fps: int = 30, slow: float = 0.5, after: float = 1.5, hold: float = 2.5):
-    W, H, DPI = 1280, 720, 100
+    W, H, DPI = 1280, 720, 125                         # 125 dpi: text legible at README width
     runs = [dict(r=r_kin, name="L0 kinematic optimum + L0 tracker", c=SERIES[1], short="kinematic plan"),
             dict(r=r_dyn, name="L1 dynamic plan (5 % margin) + L1 tracker", c=SERIES[0], short="dynamic plan")]
     t_spin = float(r_kin.t[-1])
@@ -379,8 +381,8 @@ def spin(tr, veh, r_kin, r_dyn, fps: int = 30, slow: float = 0.5, after: float =
     fig = plt.figure(figsize=(W / DPI, H / DPI), dpi=DPI, facecolor=BG)
     fig.text(0.025, 0.945, "Same car, two plans: why L1 needs a dynamic model", color=INK, fontsize=17,
              fontweight="bold", va="center")
-    fig.text(0.025, 0.905, "dynamic single-track car with Pacejka tyres and load transfer — the plan made on the "
-             "kinematic model spins at turn 1", color=MUTED, fontsize=10.5, va="center")
+    fig.text(0.025, 0.905, "dynamic single-track car, Pacejka tyres, load transfer: the kinematic plan spins at turn 1",
+             color=MUTED, fontsize=10.5, va="center")
     badge = fig.text(0.975, 0.945, "", color=INK2, fontsize=11, ha="right", va="center",
                      bbox=dict(boxstyle="round,pad=0.35", fc=PANEL, ec=GRID))
 
@@ -476,7 +478,7 @@ def spin(tr, veh, r_kin, r_dyn, fps: int = 30, slow: float = 0.5, after: float =
     proc.wait()
     plt.close(fig)
     print(f"{mp4.name}: {mp4.stat().st_size / 1e6:.2f} MB")
-    mp4_to_gif(mp4, OUT / "spin.gif", fps=15, width=800, colors=96)
+    mp4_to_gif(mp4, OUT / "spin.gif", fps=15, width=960, colors=96)
 
 
 # --------------------------------------------------------------------------- map / 3D
@@ -865,6 +867,143 @@ def results_chart():
     print("results charts written")
 
 
+# --------------------------------------------------------------------------- who wins where
+# completed laps per controller (columns) and test condition (rows); None = not run in that layer.
+# Every number is from the README tables of the layer named in the row.
+WIN_COLS = [("tracker", ("L1 tracker", "L1 跟踪器"), (("plan +", "tracking"), ("规划 +", "跟踪"))),
+            ("nmpc", ("NMPC", "NMPC"), (("nominal", "model"), ("名义", "模型"))),
+            ("smpc", ("Stochastic MPC", "随机 MPC"), (("calibrated", "back-offs"), ("标定", "回退量"))),
+            ("ident", ("NMPC", "NMPC"), (("identified", "parameters"), ("辨识", "参数"))),
+            ("lag", ("NMPC", "NMPC"), (("identified", "lag model"), ("辨识", "延迟模型"))),
+            ("rl", ("Residual RL", "残差 RL"), (("selected on", "validation"), ("验证集", "选优")))]
+WIN_ROWS = [
+    (("Car differs from the model", "车辆与模型不符"), [
+        (("L2", "51 cars", "51 辆车"), 51, dict(tracker=3, nmpc=22, rl=51)),
+        (("L4", "25 cars", "25 辆车"), 25, dict(nmpc=13, ident=25))]),
+    (("Random friction, gusts, noise", "随机摩擦、阵风、噪声"), [
+        (("L3", "30 laps", "30 圈"), 30, dict(tracker=0, nmpc=5, smpc=30, rl=30))]),
+    (("Steering lag the models lack", "模型中没有的转向延迟"), [
+        (("L6", "τ = 10 ms", "τ = 10 ms"), 25, dict(nmpc=12, smpc=22, ident=22, lag=25, rl=25)),
+        (("L6", "τ = 30 ms", "τ = 30 ms"), 25, dict(nmpc=3, smpc=22, ident=0, lag=25, rl=24)),
+        (("L6", "τ = 60 ms", "τ = 60 ms"), 25, dict(nmpc=0, smpc=9, ident=0, lag=24, rl=23))]),
+    (("New tracks, wet grip", "新赛道、湿滑路面"), [
+        (("L8", "4 new tracks", "4 条新赛道"), 100, dict(tracker=4, nmpc=49, smpc=81, lag=100, rl=0)),
+        (("L8", "wet, grip × 0.85", "湿地，抓地 × 0.85"), 25, dict(tracker=0, nmpc=0, smpc=0, lag=25, rl=8)),
+        (("L8", "wet, grip × 0.75", "湿地，抓地 × 0.75"), 25, dict(tracker=0, nmpc=0, smpc=0, lag=25, rl=0))]),
+    (("50 ms budget on one core", "单核 50 ms 实时预算"), [
+        (("L9", "real time", "实时"), 105, dict(lag=79, rl=98))]),
+]
+
+
+def _mix(c0, c1, a):
+    h = lambda c: [int(c[i:i + 2], 16) for i in (1, 3, 5)]
+    x, y = h(c0), h(c1)
+    return "#" + "".join(f"{int(round(x[i] + (y[i] - x[i]) * a)):02x}" for i in range(3))
+
+
+def _ramp(stops, a):
+    a = min(max(a, 0.0), 1.0) * (len(stops) - 1)
+    i = min(int(a), len(stops) - 2)
+    return _mix(stops[i], stops[i + 1], a - i)
+
+
+def winner_heatmap():
+    """Who wins where: one row per test condition, one column per controller, the cell
+    coloured by the share of laps completed (sequential blue), the best of each row ringed."""
+    themes = {
+        "light": dict(bg="#fcfcfb", edge="#e1e0d9", ink="#0b0b0b", ink2="#52514e", muted="#6b6a65",
+                      empty="#f0efec", ring="#0b0b0b",
+                      ramp=["#e8f1fc", "#b7d3f6", "#6da7ec", "#2a78d6", "#184f95", "#0d366b"]),
+        "dark": dict(bg="#0d1117", edge="#30363d", ink="#f0efec", ink2="#c3c2b7", muted="#898781",
+                     empty="#161b22", ring="#f0efec",
+                     ramp=["#14243a", "#184f95", "#256abf", "#3987e5", "#6da7ec", "#b7d3f6"]),
+    }
+    words = {
+        "en": dict(title="Who wins where? Laps completed, per controller and test condition",
+                   sub="each row is one test set of the layer named; a ring marks the most reliable controller "
+                       "of the row; – = not run in that layer",
+                   rt="RTI; IPOPT 0", low="0 %", high="100 % of the row's laps"),
+        "zh": dict(title="谁在什么情形下胜出？各控制器在各测试条件下完成的圈数",
+                   sub="每一行是对应层的一个测试集；圆环标出该行最可靠的控制器；– = 该层未测试",
+                   rt="RTI；IPOPT 为 0", low="0 %", high="该行测试圈的 100 %"),
+    }
+    W = 1000
+    x_cols = 318
+    cw, ch, gap = 106, 38, 6
+    top = 160
+    for lang, wd in words.items():
+        li = 0 if lang == "en" else 1
+        for th, c in themes.items():
+            out = []
+            # column headers
+            for k, (_, name, sub) in enumerate(WIN_COLS):
+                cx = x_cols + k * (cw + gap) + cw / 2
+                out.append(f'<text x="{cx:.0f}" y="{top - 44}" fill="{c["ink"]}" font-size="13.5" font-weight="700" '
+                           f'text-anchor="middle">{name[li]}</text>')
+                for r, part in enumerate(sub[li]):
+                    out.append(f'<text x="{cx:.0f}" y="{top - 27 + 14 * r}" fill="{c["muted"]}" font-size="11.5" '
+                               f'text-anchor="middle">{part}</text>')
+            y = top
+            for gname, rows in WIN_ROWS:
+                out.append(f'<text x="24" y="{y + 15}" fill="{c["ink"]}" font-size="13.5" font-weight="700">'
+                           f'{gname[li]}</text>')
+                y += 24
+                for (layer, en, zh), n, vals in rows:
+                    best = max(vals.values())
+                    out.append(f'<text x="36" y="{y + ch / 2 + 5:.0f}" fill="{c["ink"]}" font-size="13" '
+                               f'font-weight="700">{layer}</text>')
+                    out.append(f'<text x="70" y="{y + ch / 2 + 5:.0f}" fill="{c["ink2"]}" font-size="13">'
+                               f'{en if lang == "en" else zh}</text>')
+                    for k, (key, _, _) in enumerate(WIN_COLS):
+                        x = x_cols + k * (cw + gap)
+                        v = vals.get(key)
+                        if v is None:
+                            out.append(f'<rect x="{x}" y="{y}" width="{cw}" height="{ch}" rx="6" fill="{c["empty"]}"/>')
+                            out.append(f'<text x="{x + cw / 2:.0f}" y="{y + ch / 2 + 5:.0f}" fill="{c["muted"]}" '
+                                       f'font-size="13" text-anchor="middle">–</text>')
+                            continue
+                        a = v / n
+                        fill = _ramp(c["ramp"], a)
+                        lum = sum(int(fill[i:i + 2], 16) * w for i, w in ((1, .299), (3, .587), (5, .114))) / 255
+                        txt = "#0b0b0b" if lum > 0.55 else "#ffffff"
+                        out.append(f'<rect x="{x}" y="{y}" width="{cw}" height="{ch}" rx="6" fill="{fill}"/>')
+                        if v == best and best > 0:
+                            out.append(f'<rect x="{x - 2.5}" y="{y - 2.5}" width="{cw + 5}" height="{ch + 5}" rx="8" '
+                                       f'fill="none" stroke="{c["ring"]}" stroke-width="2"/>')
+                        label = f'{v}<tspan font-size="11" font-weight="400" opacity="0.8"> / {n}</tspan>'
+                        out.append(f'<text x="{x + cw / 2:.0f}" y="{y + ch / 2 + 5:.0f}" fill="{txt}" font-size="15" '
+                                   f'font-weight="700" text-anchor="middle">{label}</text>')
+                        if layer == "L9" and key == "lag":
+                            out.append(f'<text x="{x + cw / 2:.0f}" y="{y + ch + 14:.0f}" fill="{c["muted"]}" '
+                                       f'font-size="11" text-anchor="middle">{wd["rt"]}</text>')
+                        out.append(f'<title>{layer} {en}: {WIN_COLS[k][1][0]} ({" ".join(WIN_COLS[k][2][0])}) '
+                                   f'{v}/{n}</title>')
+                    y += ch + gap
+                y += 10
+            # legend: the ramp
+            ly = y + 18
+            lx0, lx1 = x_cols, x_cols + 300
+            stops = "".join(f'<stop offset="{i / (len(c["ramp"]) - 1):.2f}" stop-color="{col}"/>'
+                            for i, col in enumerate(c["ramp"]))
+            out.append(f'<defs><linearGradient id="g{lang}{th}">{stops}</linearGradient></defs>')
+            out.append(f'<rect x="{lx0}" y="{ly}" width="{lx1 - lx0}" height="10" rx="5" fill="url(#g{lang}{th})"/>')
+            out.append(f'<text x="{lx0}" y="{ly + 27}" fill="{c["muted"]}" font-size="12">{wd["low"]}</text>')
+            out.append(f'<text x="{lx1}" y="{ly + 27}" fill="{c["muted"]}" font-size="12" text-anchor="end">'
+                       f'{wd["high"]}</text>')
+            Hh = ly + 46
+            svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {Hh}" width="{W}" height="{Hh}" '
+                   f'role="img" aria-label="{wd["title"]}">'
+                   f'<g font-family="system-ui,-apple-system,\'Segoe UI\',\'PingFang SC\',\'Microsoft YaHei\','
+                   f'\'Noto Sans CJK SC\',sans-serif">'
+                   f'<rect x="0.5" y="0.5" width="{W - 1}" height="{Hh - 1}" rx="12" fill="{c["bg"]}" '
+                   f'stroke="{c["edge"]}"/>'
+                   f'<text x="24" y="38" fill="{c["ink"]}" font-size="19" font-weight="700">{wd["title"]}</text>'
+                   f'<text x="24" y="62" fill="{c["ink2"]}" font-size="13">{wd["sub"]}</text>'
+                   f'{"".join(out)}</g></svg>\n')
+            (OUT / f"winners_{lang}_{th}.svg").write_text(svg)
+    print("winner heatmaps written")
+
+
 # --------------------------------------------------------------------------- READMEs
 README_BLOCKS = {"map.geojson": "geojson", "speed_landscape_inline.stl": "stl"}
 
@@ -893,12 +1032,12 @@ def update_readmes():
 # --------------------------------------------------------------------------- main
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("only", nargs="*", help="ghost spin map stl banner chart (default: all)")
+    ap.add_argument("only", nargs="*", help="ghost spin map stl banner chart winners (default: all)")
     ap.add_argument("--no-l1", action="store_true", help="skip the spin animation (needs the L1 plans)")
     ap.add_argument("--cache", type=Path, default=None,
                     help="pickle of the L0 lines (written once, then reused), e.g. results/media/l0_lines.pkl")
     args = ap.parse_args(argv)
-    todo = set(args.only or ["ghost", "spin", "map", "stl", "banner", "chart"])
+    todo = set(args.only or ["ghost", "spin", "map", "stl", "banner", "chart", "winners"])
     if args.no_l1:
         todo.discard("spin")
     OUT.mkdir(parents=True, exist_ok=True)
@@ -906,7 +1045,9 @@ def main(argv=None):
         raise SystemExit("ffmpeg is needed for the animations")
     if "chart" in todo:
         results_chart()
-    if todo - {"chart"}:
+    if "winners" in todo:
+        winner_heatmap()
+    if todo - {"chart", "winners"}:
         tr, veh, lines = l0_lines(args.cache)
         ocp = lines[0]
         if "banner" in todo:
