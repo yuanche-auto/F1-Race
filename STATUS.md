@@ -1,4 +1,4 @@
-# STATUS — F1-Race (L0–L9 done; L10 PAUSED; control expansion: phases A–G done (E closed without benchmark; F's shield part closed); phase H done – closed without the benchmark; phase I, the LMPC follow-ups: done – closed without a benchmark, the LMPC line closed by the user)
+# STATUS — F1-Race (L0–L9 done; L10 PAUSED; control expansion: phases A–G done (E closed without benchmark; F's shield part closed); phase H done – closed without the benchmark; phase I, the LMPC follow-ups: done – closed without a benchmark, the LMPC line closed by the user; phase J, robust adaptive MPC: protocol revision 0 for review)
 
 Since 2026-10-14 the project runs on a new machine (below). Reviewer on this machine: Claude
 session **"F1 Race 阶段审查"** (`local_30f94a40-03cb-490d-85b4-12ad1d351d3a`); the reviewer and

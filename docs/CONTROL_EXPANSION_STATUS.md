@@ -1,8 +1,22 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-11-01 (phase I done – the user closed the LMPC line after the reproduction check; closed without a benchmark; final review of f2e4263 **APPROVE**; merged to main). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-11-24 (phase J opened – the user chose robust adaptive MPC; literature §J and the protocol CX_J revision 0 written, packet 1 for review; no code). Phase I is done (merged 70a51f6). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
-* **Current phase:** none. **Phase I is done:**
+* **Current phase:** J – frontier 3, robust adaptive MPC: a tube around an adaptive model (the user's choice,
+  2026-11-24). Branch `cx/J-robust-adaptive` from `main` 85059dc; the merge of phase I is `main` **70a51f6** (recorded in
+  the branch's first commit).
+  * Literature §J and [CX_J_protocol.md](CX_J_protocol.md) revision 0 are written, for review (packet 1). **No phase-J code
+    exists.**
+  * **Design:**
+    * phase D's online estimate (RLS) as the model of phase C's tube;
+    * the tube's box shrunk by the estimate's covariance, capped at the L2 half-widths;
+    * an extra disturbance bound from the controller's own past prediction errors.
+  * **Primaries:**
+    * H-J1 – under a falling grip, `ra` against `adaptive`;
+    * H-J2 – under noise and lag, `ra` against `tube` (it can come out against `ra`).
+  * The gate on DEV is in the protocol's section 9. If it fails, the phase closes without a benchmark by default.
+
+* **Phase I is done:**
   * The final review of f2e4263 was **APPROVE**, and `cx/I-lmpc-followups` was merged to `main` (--no-ff) on
     2026-11-01. The merge hash is recorded in the next branch's first commit.
   * **Phase I was closed without a benchmark**, because the user closed the LMPC line after the reproduction check
@@ -404,7 +418,6 @@ Phase D: `results/CX/D/plans/` (main checkout) – the new plans of the library 
 
 ## Next actions
 
-1. The next frontier method: the user's choice from CONTROL_METHOD_MATRIX.md, on its own branch with literature and a
-   protocol first. Record the phase-I merge hash in that branch's first commit.
+1. Phase J: review of literature §J and the protocol revision 0 (packet 1). Code only after its APPROVE.
    * The LMPC line is closed (CX_I section 11). Its open points are listed in the matrix ("From phase I") and are not
      scheduled.
