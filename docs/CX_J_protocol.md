@@ -1,8 +1,9 @@
 # CX-J protocol – robust adaptive MPC: a tube around the adaptive model (control expansion, phase J – frontier 3)
 
-Status: **draft, revision 0, second version (2026-11-24), for review (packet 1b). Not binding; no code of phase J exists.**
-The first version (2187b53) was reviewed as packet 1: **CHANGES_REQUESTED** (M1, M2, m1–m5, n1, n2). Its points are worked into
-this version; the calculations behind M1 and M2 were repeated independently with phase C's existing code (section 3.7). Written after
+Status: **binding, revision 0 (2026-11-24; ab83afb, APPROVE – packet 1b)** with the clarifications of its review (m1, m2, n1–n3,
+marked *"clarification of revision 0"*), written down before any phase-J code. No module, test, runner or lap of phase J existed.
+The first version (2187b53) was reviewed as packet 1: CHANGES_REQUESTED (M1, M2, m1–m5, n1, n2). Its points are worked into this
+version; the calculations behind M1 and M2 were repeated independently with phase C's existing code (section 3.7). Written after
 the literature check ([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.md) §J) and before any phase-J code: no
 module, test, runner or lap of phase J exists. Branch `cx/J-robust-adaptive` from `main` 85059dc. The merge of phase I is
 `main` **70a51f6** (recorded here, as agreed at its final review). The ten commits 70a51f6..85059dc are the README, media
@@ -147,6 +148,11 @@ clipping to the prior), and κ = 2 (fixed):
 
 `ra_fixed` and `ra_fixed_res` use h = c always.
 
+*Clarification of revision 0 (packet-1b review m2) – stage 0.* Φ_{0,0} = I, so a non-zero e₀ would give stage 0 a bound that C does
+not have. Decided: **stage 0 is not tightened, as in C** – η_0 = η, the back-off's stage 0 is unused, and the cap shares leave
+stage 0 out. Its constraints depend on the measured state, which is given, so tightening them could only make them violated.
+e₀ enters from stage 1. At e₀ = 0 and d_s = 0 the tube must equal C's (9.1).
+
 ### 3.4 The residual terms
 
 What the model did not predict, from the controller's own past predictions:
@@ -158,6 +164,8 @@ What the model did not predict, from the controller's own past predictions:
 * **A per-stage term d_s = ρ_s q**, added to W_k: an error of the model that persists through the horizon, such as the lag or
   the estimate's error.
 * **The residuals cannot tell the two apart.** ρ₀ and ρ_s are chosen by tuning (section 4), with 0 allowed for both.
+* *Clarification of revision 0 (packet-1b review n2) – a feedback that is not analysed:* a tighter tube changes the trajectory,
+  which changes the residuals and so q. No claim is made about its stability.
 
 The first version put everything into the per-stage term with ρ ∈ {0.5, 1, 2}. The packet-1 review showed, and section 3.7
 confirms, that a zero-mean noise repeated with one sign over 30 stages inflates the tube to its caps: the mean back-off at stage
@@ -211,9 +219,12 @@ scripts, not in the repository. They say nothing about closed-loop laps.
 
 * With the half-widths 0.055 and 0.025 around the nominal car, 22.5 % of 100 000 L2 cars have μ below 0.945, 50.2 % a mass
   above 1.025, and 61.4 % at least one factor outside; with the symmetric cap, none.
-* **A shrunk box has almost no margin left:** η 0.933 against 0.830 for C's box. The residual terms must carry the margin, with
-  ρ₀ and ρ_s above zero, or `ra` has the certainty-equivalent controller's margin under noise and lag. This is the question
-  of H-J2.
+* **A shrunk box has almost no margin left:** η 0.933 against 0.830 for C's box. At least one of the residual terms must carry
+  the margin (ρ₀ or ρ_s above zero – each alone gives some), or `ra` has the certainty-equivalent controller's margin under noise
+  and lag. This is the question of H-J2.
+* *The packet-1b review re-computed the table at its own 12 points* (sizes and order agree) *and the two grid settings that
+  combine both terms:* 0.1 × C + ρ₀ 2, ρ_s 0.1: 0.39 / 0.28 m, 0.44, 0.787; + ρ₀ 4, ρ_s 0.2: 0.74 / 0.53 m, 0.65, 0.762. Under
+  pure noise the grid's middle is about as tight as C's box. No laps.
 * The figures of the review (a slightly different set of points) agree in size.
 
 ## 4. Tuning (JV only, one lap per car, condition and setting)
@@ -296,12 +307,21 @@ On NOM and DEV only (records in `results/CX/J/dev/` with commit and dirty flag).
    * The initial-error propagation against an explicit reachable set on random box initial errors; the residual terms on
      synthetic predictions; a fallback is skipped; fewer than ten residuals give 0.
 2. **The box and the residual terms before any tuning** (replays of phase D's RLS on recorded laps, no selection). The laps are
-   `nmpc`, `tube` and `adaptive` on the DEV cars in **all four conditions**, including the noise laps, where the estimate is
-   biased and |θ̂ − θ| ≤ κσ is informative:
+   `nmpc`, `tube` and `adaptive` on the DEV cars and NOM in **all four conditions**, including the noise laps, where the estimate is
+   biased and |θ̂ − θ| ≤ κσ is informative. *Clarification of revision 0 (packet-1b review m1):*
+   * these laps do not exist yet (phase D's DEV records have no `tube`, no noise and no lag laps, and no predictions). They are
+     driven first, with the existing controllers, recording every solve's first-stage prediction (all solves) and the whole
+     prediction (every tenth solve); they are also the reference laps of 9.4;
+   * the q of `nmpc` and `tube` come from the nominal model, not from `ra`'s θ̂, and `ra`'s own q in closed loop will differ, so
+     the replays are descriptive;
+   * **order:** replays → the gate laps (9.4) → packet 2 → tuning. After the replays the grid and the gate's setting are not changed
+     without a revision;
+   * the share of capped stages is computed with the stage-0 rule of 3.3;
    * σ_i and |θ̂_i − θ_i| along the laps, whether 2σ_i is ever below the cap, and how often |θ̂_i − θ_i| ≤ 2σ_i;
    * q per component and condition; for each grid setting the share of stages at the caps.
-   * **If 2σ_i is at the cap on more than 95 % of the steps of every lap, the shrinking is empty**, `ra` and `ra_fixed_res` are the
-     same problem and `ra_shrink` and `ra_fixed` the same (up to rounding). Decided now (review n1): the phase goes on as
+   * **If 2σ_i is at the cap on more than 95 % of the steps of every lap, the shrinking is empty**, `ra` and `ra_fixed_res` are
+     almost the same problem and `ra_shrink` and `ra_fixed` too (*clarification of revision 0, packet-1b review n1:* the remaining
+     5 % of the steps let the closed loops diverge). Decided now (review n1): the phase goes on as
      registered, without a new review, and the reports and the reading say so. H-J1 and H-J2 stay on `ra`.
 3. **Timing:** the parameterised tube per solve, next to phase C's 11.5 ms, and the NLP.
 4. **Development laps** (NOM and DEV in the four conditions: 6 cars × 4 = 24 laps each): `nmpc`, `tube`, `adaptive`,
