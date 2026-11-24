@@ -2457,6 +2457,7 @@ scripts/            data download and per-layer reproduction scripts; l9_wsl/: t
                     environment of L9 (acados build, versions, run driver);
                     race.py: your first race; make_readme_media.py, make_quickstart_video.py:
                     the media of this README
+notebooks/          first_race.ipynb: the first race in Colab or Jupyter
 tests/              pytest suite
 docs/               per-layer write-ups and figures, protocols, review workflow;
                     media/: animations, map, 3D model, banner and charts of this README

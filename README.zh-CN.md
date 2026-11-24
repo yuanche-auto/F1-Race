@@ -2421,6 +2421,7 @@ src/f1race/
 scripts/            数据下载与各层复现脚本；l9_wsl/：L9 的 WSL 环境（acados 构建、版本、运行驱动）；
                     race.py：你的第一场比赛；make_readme_media.py、make_quickstart_video.py：
                     本 README 的媒体素材
+notebooks/          first_race.ipynb：在 Colab 或 Jupyter 中跑第一场比赛
 tests/              pytest 测试集
 docs/               各层报告与图表、实验方案、审查流程；
                     media/：本 README 的动画、地图、3D 模型、横幅与图表
