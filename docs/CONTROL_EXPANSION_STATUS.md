@@ -5,16 +5,19 @@ Last updated: 2026-11-24 (phase J opened – the user chose robust adaptive MPC;
 * **Current phase:** J – frontier 3, robust adaptive MPC: a tube around an adaptive model (the user's choice,
   2026-11-24). Branch `cx/J-robust-adaptive` from `main` 85059dc; the merge of phase I is `main` **70a51f6** (recorded in
   the branch's first commit).
-  * Literature §J and [CX_J_protocol.md](CX_J_protocol.md) revision 0 are written, for review (packet 1). **No phase-J code
-    exists.**
+  * Literature §J and [CX_J_protocol.md](CX_J_protocol.md) revision 0 were reviewed as packet 1 (2187b53):
+    **CHANGES_REQUESTED** (M1 the box is not phase C's, M2 the residual term inflates the tube, m1–m5, n1, n2). The second version
+    works them in; packet 1b is for review. **No phase-J code exists.**
   * **Design:**
     * phase D's online estimate (RLS) as the model of phase C's tube;
-    * the tube's box shrunk by the estimate's covariance, capped at the L2 half-widths;
-    * an extra disturbance bound from the controller's own past prediction errors.
+    * the tube's box shrunk by the estimate's covariance, under a symmetric cap that contains phase C's box;
+    * an initial state-error term and a small per-stage term, both from the controller's own past prediction errors.
   * **Primaries:**
     * H-J1 – under a falling grip, `ra` against `adaptive`;
     * H-J2 – under noise and lag, `ra` against `tube` (it can come out against `ra`).
   * The gate on DEV is in the protocol's section 9. If it fails, the phase closes without a benchmark by default.
+  * **Corrections to phase I's text (merged in 70a51f6)**, found by the builder on re-reading and made on this branch: CX_I
+    10.9.1 (the v_c laps' usage peaks are not all on the straights) and 10.9.5 (538 s is not a learning lap).
 
 * **Phase I is done:**
   * The final review of f2e4263 was **APPROVE**, and `cx/I-lmpc-followups` was merged to `main` (--no-ff) on
@@ -343,6 +346,8 @@ Last updated: 2026-11-24 (phase J opened – the user chose robust adaptive MPC;
 | 2026-10-29 | 1e2bf96 | phase I packet 3: protocol revision 1, section 10 – a reproduction check under the published LMPCs' conditions on NOM (the user's request after the discussion; a diagnostic); literature §I.5 (E.2 re-read for its lap set-up) | **APPROVE** | v_c = 8 m/s re-computed (max\|κ\| a real ~14 m hairpin peak; q99.9 gives 8 too); m1 reading (c) split into (c1) approaching the limit (best ≤ 84.04 s) / (c2) far from it; m2 the initialisation laps consecutive, R2's learning lap 1 from the 0.79 lap's end, the init controller's settings; m3 the run-out approximation checked per lap, the flying start as phase E's; n1 w_T 100 unscaled; n2 failure classes after solver failures / solved; n3 no wall-clock limit – written in as clarifications before the code |
 | 2026-10-30 | ff50e41 (run b34eb97; diagnostics 418bf3a, bca7802, aae7f30) | phase I packet 4: the reproduction check's results (section 10.9) – r0–r2; R1 (c1), R2 and R3 (c2) examined (R2's neighbours, R3's and R1's failed laps driven again from snapshots) | **APPROVE** | m1 R3's (c2) is an implementation limit (phase H's solver settings), E.2's QP form untested – the heading corrected; m2 the mechanism an explanation consistent with the replay, the conclusion qualified (NOM, one run per arm, this implementation); m3 the run-out's effect on the reading – direct path ruled out, an indirect path via the start speed found while checking it (packet 4's "crossed the line at speed" corrected), (b) against (c1) open, conclusion unchanged; n1 IPOPT's statuses separately; n2 the learning speed against E.2 in section 10.6; n3 for the user: a real test of E.2's QP form or of the papers' past-line data each needs a revision |
 | 2026-11-01 | f2e4263 | phase I: the user's decision (the LMPC line closed) in the protocol (section 11), the benchmark section of phase I, the matrix's open points – **final review** of `cx/I-lmpc-followups` | **APPROVE** | 13 commits from 98f8134, a trial merge without conflicts; pytest summaries and the branch tree (no results / data, no CR) checked; "every NOM LMPC sequence of phases E–I left by its fifth learning lap" re-checked over 19 sequences; the faster-than-`nmpc` laps only in phase E's unregistered diagnostics (as CX_E §9); nit: "The sequences' fastest laps" – done before the merge |
+| 2026-11-24 | 2187b53 | phase J packet 1: literature §J and protocol CX_J revision 0 | **CHANGES_REQUESTED** | M1 the L2 box is not centred on the nominal car, so θ̂ ± h is not C's box (61 % of the L2 cars would start outside it); M2 the per-stage residual inflates the tube to its caps under noise, and the grid had no small values; m1 the 2 × 2 ablation; m2 the gate's reference may be uninformative; m3 H-J2 by car; m4 the cold-solve check; m5 NOM's seeds, the replay's conditions; n1, n2. Worked into the second version |
+| 2026-11-24 | (reviewer's correction of the phase-I reviews) | packets 4 and final review, phase I | – | *As stated by the reviewer:* the code changes from b34eb97 on had not been read at packet 4 and the final review (records and tests only); they have now read the changes of `cx_e`, `cx_i` and `run_cx_i.py` against 437ee9e and found no defect, but not `cx_i_dev.py`, `report_cx_i.py` and `tests/test_cx_i.py`. r0 was checked only by `all_equal` then; its record and now were compared since: equal. The count of curvature points above 0.08 (packet 3) and the remark that the builder's correction was recorded are unverified / not true. **Phase I's conclusion is unchanged; its reviews do not cover these three files.** |
 ## Tests
 
 `tests/test_mpcc.py` (8) and `tests/test_cx_a.py` (7) at e2cea5d (6 and 5 at 6bcc6ef), and the full suite – see the latest review packet for the command and output.
@@ -418,6 +423,6 @@ Phase D: `results/CX/D/plans/` (main checkout) – the new plans of the library 
 
 ## Next actions
 
-1. Phase J: review of literature §J and the protocol revision 0 (packet 1). Code only after its APPROVE.
+1. Phase J: review of the protocol revision 0, second version (packet 1b). Code only after its APPROVE.
    * The LMPC line is closed (CX_I section 11). Its open points are listed in the matrix ("From phase I") and are not
      scheduled.

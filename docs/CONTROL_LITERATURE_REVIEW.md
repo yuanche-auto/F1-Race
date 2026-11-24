@@ -975,7 +975,7 @@ not checked against the text. Earlier entries used here: C.4, C.8 (tubes), D.2, 
   g(x̄, ū) + σ_s(s̄) + σ_o(ē) ≤ 0. In its simplified form the nominal starts at the estimate.
 * Standard schemes use worst-case bounds computed offline; the authors report that their online bounds are conservative too,
   typically about ten times the true error or more. The point for us: noise belongs in the **state** error, not in the process
-  disturbance. Our 3.4 puts it in the disturbance (stated as a simplification).
+  disturbance. CX-J's initial-error term e₀ (its 3.4) does that, without a bound; the packet-1 review asked for it.
 
 ### J.6 Vaskov, Quirynen, Menner, Berntorp – *Friction-adaptive stochastic nonlinear model predictive control for autonomous vehicles*, Vehicle System Dynamics 62(2), 2024, 347–371 (arXiv:2305.03798v1, May 2023; read in part: abstract, introduction, the estimator and SNMPC sections, the results' text)
 

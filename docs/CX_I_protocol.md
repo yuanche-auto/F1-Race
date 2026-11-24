@@ -671,8 +671,12 @@ are descriptive and change no reading.
      v_c stays 8 m/s; section 10.2 lowers it only if a lap does not complete.
    * **The tyre usage is not the "about 0.5" section 10.2 expected.** The first lap, driven again
      (`repro-r2-usage`, 538.5055 s, as recorded), shows that the peaks are longitudinal:
-     * They come from the rear axle on the straights (κ ≈ 0). The tracking NMPC holds v_c with drive forces of
-       ~6.8 kN, often with brake force applied at the same time. v_x varies between 5.87 and 9.05 m/s.
+     * *Corrected 2026-11-24 (the builder's re-reading, on the phase-J branch; the first version said "from the rear axle on the
+       straights"):* the largest usages are at several kinds of place. Peaks 1, 2 and 4 of the list are rear-axle, drive, at |κ| ≤
+       0.005; peak 3 is rear-axle at κ = −0.016 (s 1 372 m, at the approach of the hairpin); peak 5, the front axle's
+       largest (0.935, s 459 m), is at turn-in with longitudinal −0.565 and lateral −0.745 together, so it is a combined usage.
+       The tracking NMPC holds v_c with drive forces of ~6.8 kN, often with brake force applied at the same time. v_x varies
+       between 5.87 and 9.05 m/s.
      * The longitudinal part exceeds 0.5 on 29 % of the steps. The lateral part exceeds 0.5 on 0.2 % of them.
      * The lateral part's largest values:
        * front axle: 0.745 at turn-in (s 459 m), and 0.73 at the hairpin (s ≈ 1 399 m);
@@ -825,7 +829,8 @@ No control tests the explanation; phase E also registered its cause as a hypothe
 5.2 % above `nmpc`'s 76.40 s, and the fourth learning lap left the track.
 * **Under the published conditions, our LMPC learns quickly and then fails as in phases E and I.** The published
   conditions here are a slow start far from the cornering limit, consecutive laps, and an exact model on NOM.
-  * The learning laps went 538 → 151 → 89 → 80 s.
+  * From initialisation laps of 538 s, the learning laps took 151, 89 and 80 s. *(Corrected 2026-11-24: the first version
+    called the 538 s lap a learning lap.)*
   * The failure came on learning lap 4, with the solver succeeding: the solution itself crossed the edge.
 * **So – on NOM, with one run per arm, and for this implementation – phases E's and I's failure does not belong to
   their start conditions** (qualified by clarification m2 of the packet-4 review).
