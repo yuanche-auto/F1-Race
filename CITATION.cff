@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use F1-Race, please cite it as below."
+title: "F1-Race: minimum-lap-time racing, layer by layer"
+type: software
+authors:
+  - name: "yuanche-auto"
+repository-code: "https://github.com/yuanche-auto/F1-Race"
+license: MIT
+version: "0.1.0"
+date-released: "2026-11-05"
+abstract: >-
+  A self-contained study of how to drive a racing car around a track as fast as
+  possible, built up in layers: optimal racing lines and minimum-time optimal
+  control, a dynamic car with tyre slip, model mismatch, random disturbances,
+  system identification, reinforcement learning, structural model error, new
+  tracks and wet grip, and real-time control, each layer comparing several
+  model-based and learning-based methods on the same car, track and test laps.
+keywords:
+  - minimum-lap-time
+  - optimal control
+  - model predictive control
+  - stochastic MPC
+  - system identification
+  - reinforcement learning
+  - autonomous racing
