@@ -414,7 +414,8 @@ def test_cold_solves_of_the_combined_nlp_agree_to_the_solver_tolerance(track):
         ua, _ = A.solve(x, np.zeros(3), eta=eta, backoff=back, theta=th)
         ub, _ = B.solve(x, np.zeros(3), eta=eta, backoff=back)
         assert np.max(np.abs((ua - ub) / np.array([1.0, FS, FS]))) < 1e-3
-        assert np.max(np.abs(A.z[A.Xi] - B.z[B.Xi])) < 1e-2
+        assert np.max(np.abs(A.z[A.Xi] - B.z[B.Xi])) < 1e-3                # section 9.1's tolerance (review of packet 2)
+        assert np.max(np.abs(A.z[A.Ui] - B.z[B.Ui])) < 1e-3
 
 
 @needs_plan
