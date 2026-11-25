@@ -287,3 +287,44 @@ def test_settings_of_the_ablations(track):
                               ("ra_shrink", True, 0.0)):
         ctl, mpc, x0, extra = cx_j.build(kind, cx_j.DEV_SETTING, track, case, cx_j.make_sim(case, track))
         assert ctl.shrink is shrink and ctl.rho0 == rho and ctl.rho_s == (0.1 if rho else 0.0)
+
+
+# ---------------------------------------------------------------- the report's hypothesis tests
+def _report():
+    import importlib.util
+    import sys
+    sys.path.insert(0, str(ROOT / "scripts"))
+    spec = importlib.util.spec_from_file_location("report_cx_j", ROOT / "scripts" / "report_cx_j.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+def test_report_h_j1_and_h_j2(tmp_path):
+    m = _report()
+
+    def rec(v, t=80.0):
+        return {"completed": v, "lap_time": t if v else math.nan}
+    jd = {"ra": {c: rec(c <= 45) for c in range(1, 51)}, "adaptive": {c: rec(c <= 34 or c == 50) for c in range(1, 51)}}
+    r = m.h_j1(jd)
+    assert r["only_first"] == 11 and r["only_second"] == 1 and r["improved"] == 11 and r["worsened"] == 1
+    assert r["unchanged"] == 38 and r["completed"] == [45, 35]
+    from scipy.stats import binomtest
+    assert r["p"] == pytest.approx(binomtest(1, 12).pvalue)
+    assert all(math.isnan(v) for v in m.interval(0, 0)) and m.interval(0, 5)[0] == 0.0 and m.interval(5, 5)[1] == 1.0
+    assert m.interval(5, 10) == pytest.approx([0.187, 0.813], abs=1e-3)
+    jn = {"ra": {c: rec(c <= 10) for c in range(1, 51)}, "tube": {c: rec(c <= 33) for c in range(1, 51)}}
+    jl = {"ra": {c: rec(True) for c in range(1, 51)}, "tube": {c: rec(c <= 44) for c in range(1, 51)}}
+    h = m.h_j2(jn, jl)                                       # per car: jn counts differ for 11..33 (-1); jl +1 for 45..50
+    assert h["worsened"] == 23 and h["improved"] == 6 and h["unchanged"] == 21
+    assert h["laps_completed"] == [60, 77] and h["n_nonzero"] == 29
+    same = {"ra": jl["ra"], "tube": jl["ra"]}                # no difference anywhere
+    z = m.h_j2(same, same)
+    assert z["p"] == 1.0 and z["n_nonzero"] == 0 and z["unchanged"] == 50
+
+
+def test_report_test_stage_requires_full_sets(tmp_path, monkeypatch):
+    m = _report()
+    (tmp_path / "test.jsonl").write_text("")
+    with pytest.raises(SystemExit):
+        m.test(tmp_path)
