@@ -7,7 +7,10 @@ Last updated: 2026-11-24 (phase J opened – the user chose robust adaptive MPC;
   the branch's first commit).
   * Literature §J and [CX_J_protocol.md](CX_J_protocol.md) revision 0 were reviewed as packet 1 (2187b53):
     **CHANGES_REQUESTED** (M1 the box is not phase C's, M2 the residual term inflates the tube, m1–m5, n1, n2). The second version
-    ab83afb: packet 1b **APPROVE** with clarifications m1, m2, n1–n3, written in before any code. Code next.
+    ab83afb: packet 1b **APPROVE** with clarifications m1, m2, n1–n3, written in before any code. Code 9b92813; development
+    checks done (protocol §9 results): C's tube and D's adaptive reproduced exactly, 72 reference laps and 96 gate laps
+    without errors, replays (the box is not informative under noise and lag; the residual terms act on noise, hardly on lag),
+    **the gate passed** (`ra` 10 / 10 and 8 / 10; `adaptive` 10, `tube` 7). Packet 2 next.
   * **Design:**
     * phase D's online estimate (RLS) as the model of phase C's tube;
     * the tube's box shrunk by the estimate's covariance, under a symmetric cap that contains phase C's box;
@@ -424,6 +427,6 @@ Phase D: `results/CX/D/plans/` (main checkout) – the new plans of the library 
 
 ## Next actions
 
-1. Phase J: the code (section 8), the development checks and the gate, then packet 2.
+1. Phase J: packet 2 (code, checks, gate) in review; then the tuning on JV, then the test laps.
    * The LMPC line is closed (CX_I section 11). Its open points are listed in the matrix ("From phase I") and are not
      scheduled.

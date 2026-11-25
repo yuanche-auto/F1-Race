@@ -339,3 +339,71 @@ On NOM and DEV only (records in `results/CX/J/dev/` with commit and dirty flag).
 5. **NOM's fixed values** (review m5): its drift is s_on 1 600 m, ℓ 800 m, f_end 0.82; its noise seed is 399 900. **The drifts
    drawn for JD**, reported before any JV lap: s_on, ℓ, f_end distributions, the number of cars with
    μ · f_end < 0.70, and the shares of drifts that end before ~2.7 km and ~3.83 km.
+
+### 9. Results of the development checks (2026-11-24; packet 2) – **the gate passed**
+
+Records (git-ignored) are in `results/CX/J/dev/`, all at 9b92813 (clean; `meta_*.json`): `repro.json`, `drifts.json`, `refs.jsonl`
+(72 laps, 0 errors) with `replay_laps/`, `replay.json`, `gate.jsonl` (96 laps, 0 errors) and `gate.json`. The order was the one
+of clarification m1: reproduction, references, replays, gate laps. After the replays neither the grid nor the gate's
+setting was changed. These are development data on six cars; they support no claim about H-J1 or H-J2.
+
+1. **Code against the parents (9.1).**
+   * `repro.json`: with the new options off, phase C's `tube` (78.279 s) and phase D's `adaptive` (76.399 s) reproduce their NOM
+     records in nine fields (time, stop reason, distance, margin, solves, fallbacks, usage, steering effort).
+   * `tests/test_cx_j.py` (13): the initial-error reachable set against the support function and against random errors; the combined
+     NLP's constraint distances and objective at the same point as the tightened NLP of the car (10⁻⁹); the tube at the nominal
+     car with C's explicit box equals C's `Tube` (10⁻⁹) and the cap box's disturbance is at least as large; the box, the quantile,
+     a short closed-loop drive; the sets and seeds; the drift's start; the selection rule. Three mutations (no e₀, no shrinking,
+     disturbance × 0.9) each make a test fail.
+   * Not checked against a car other than the nominal one in closed loop: a vertex car with a tightening in a lap.
+2. **The box and the residual terms, replayed (9.2; 72 recorded laps, the RLS on what the controller saw).**
+   * **The shrinking is not empty:** 2σ_μ is below the cap on about 47 % of the steps in exact data (other parameters 70–91 %); on 7–19 % of the steps
+     every parameter is at the cap, in lag 8–46 %.
+   * **In exact data σ is conservative:** the true error is within 2σ on 100 % of the steps for nearly every factor
+     (`adaptive` ClA: 93 %), and σ_μ (0.043) is about ten times the typical |μ̂ − μ| (0.004–0.007).
+   * **Under noise and lag the box does not contain the truth:** |μ̂ − μ| ≤ h on 13–59 % of the steps (noise; the RLS is biased, as
+     phase D) and 43–56 % (lag). Lag also pulls I_z and the others far off. The box is not a reliable statement of uncertainty there; the margin
+     must come from the rest of the tube.
+   * **The residual q** (median over the laps): under noise 0.11 m (n), 0.23 m/s (v_x), 0.11 m/s (v_y); in exact data and under the
+     lag small (lag: v_y 0.013–0.11 m/s, r 0.014–0.048 rad/s), so the residual terms hardly act on the lag.
+   * **Capped shares with the recorded predictions** (mean over the laps; stage-0 rule): η at the cap on 25 % of the stages for the
+     cap box without residuals in exact data, 4 % for the shrunk box; under noise the shrunk box 7.5 %, with (ρ₀ 2, ρ_s 0.1) 34 %,
+     with (4, 0.2) 42 %; mean η 0.851 (cap box), 0.880 (shrunk), 0.824 and 0.805.
+3. **Timing (9.3; gate laps, 20 processes in parallel):** the parameterised tube takes 11–15 ms per solve on average
+   (P95 15–36 ms by kind; the largest single step 60–260 ms, under load), phase C's 11.5 ms; the NLP 187–323 ms (mean per condition).
+   Offline, as before.
+4. **Development laps and the gate (9.4).** Completed laps of five DEV cars and NOM per condition (in this order):
+
+   | | constant (DEV / NOM) | drift | noise | lag |
+   |---|---|---|---|---|
+   | `nmpc` | 2 of 5 / 1 | 0 of 5 / 0 | 1 of 5 / 1 | 0 of 5 / 1 |
+   | `tube` | 5 / 1 | 1 / 0 | 2 / 1 | 5 / 1 |
+   | `adaptive` | 5 / 1 | 5 / 1 | 0 / 0 | 0 / 0 |
+   | **`ra`** (2, 0.1) | **5 / 1** | **5 / 1** | **3 / 1** | **5 / 1** |
+   | `ra_fixed` | 5 / 1 | 5 / 1 | 4 / 1 | 5 / 1 |
+   | `ra_fixed_res` | 5 / 1 | 5 / 1 | 3 / 1 | 5 / 1 |
+   | `ra_shrink` | 5 / 1 | 5 / 1 | 2 / 0 | 5 / 1 |
+
+   * **Gate:** (1) `ra` completes NOM constant; (2) `ra` 10 of 10 on DEV constant + drift, `adaptive` 10 (at least 9 needed; the reference has
+     information); (3) `ra` 8 of 10 on DEV noise + lag, `tube` 7 (at least 4 needed). **Passed.**
+   * **Lap times on the completed laps (description):** constant `ra` 76.7–79.7 s, `adaptive` 76.4–79.7 s, `tube` 77.8–79.1 s; drift
+     `ra` 79.0–88.2 s (`adaptive` 78.9–88.5 s); noise (DEV and NOM) `ra` 83.9–85.0 s, `tube` 78.2–80.1 s; **lag `ra` 82.6–88.9 s, `tube`
+     77.5–79.3 s**.
+   * **Why `ra` is slow under the lag (observation):** the RLS absorbs the lag; μ̂ ends the laps 0.09–0.32 below the true value
+     (median |μ̂ − μ| 0.20) and the plan coordinate is about 0.74 on the median (`adaptive`: 0.84; it ends 0.01–0.26 low). So
+     `ra`, like `ra_shrink`, completes with a plan that is slower than the car could drive. `adaptive` has the same kind of
+     bias and still leaves the track on all six laps. These are laps, not proofs of the cause. (Under noise μ̂ ends 0.06–0.16 too
+     high for `ra`, as phase D found for the RLS.)
+   * **The gate does not separate the `ra` kinds**, and noise is the hard condition: 3 of 5 for `ra`, 4 of 5 for `ra_fixed`; no
+     selection is made on these laps (the tuning and the test decide on their own data).
+5. **The drifts drawn (9.5):** JD – s_on 681–2 580 m, ℓ 118–1 460 m, f_end 0.751–0.900, μ·f_end 0.698–0.909 (one of 50 cars
+   below 0.70); all drifts have begun before 2.7 km and ended before 3.83 km, 66 % before 2.7 km. JV_D (ten cars): f_end
+   as drawn for phase D; none below 0.70; 60 % end before 2.7 km, 90 % before 3.83 km.
+
+**Not changed by these results:** the grid, the gate's setting, κ, the selection rule, the hypotheses. Two things the
+replays and laps suggest, which the test will or will not show:
+* the residual terms act on noise, not on lag, and the box is not informative there; H-J2's noise half and lag half may go
+  different ways;
+* under lag the completions of `ra` come with laps 4–10 s slower than `tube`'s, which McNemar on completions does not see.
+  Section 6's secondary lap-time test covers only JT; **a description of the lap times of JN and JL on the cars both complete is
+  added to the report** (no test; stated here before any JT / JD / JN / JL lap).
