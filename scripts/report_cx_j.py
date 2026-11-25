@@ -191,6 +191,67 @@ def diagnostics(S: dict) -> list[str]:
     return md
 
 
+COMP = ("s", "n", "xi", "vx", "vy", "r", "delta")
+
+
+def always_reported(S: dict) -> list[str]:
+    """Section 5's list for every controller (review of packet 3, m2): the laps, the limits, the effort and the solver – means over
+    the 50 laps of a set (lap time, failure distance and stop reasons on their own laps); the residual terms' per-component P50
+    and P95 (q, e0 = rho0 q, d_s = rho_s q) and the adaptation metrics of the adaptive controllers."""
+    md = ["## Always reported (section 5; means over the 50 laps of a set; description)", "",
+          "| set | kind | lap time mean / median / min / max [s] | failure distance median [m] | stop reasons of the lost laps | edge margin min [m] | centre offset mean / max [m] | plan-line offset mean / max [m] | tyre usage max f / r | steer rate rms | force incr. rms [N] | track slack max | limit slack max | solve ms P95 / P99 / max | not converged | fallbacks |",
+          "|---|---|" + "---|" * 14]
+    for c in "CDNL":
+        for k in (*KINDS, *(("adaptive_oracle",) if c in "CD" and "adaptive_oracle" in S[c] else ())):
+            rs = list(S[c][k].values())
+            done = [r["lap_time"] for r in rs if r["completed"]]
+            lost = [r for r in rs if not r["completed"]]
+            stops: dict = {}
+            for r in lost:
+                stops[r["stop_reason"]] = stops.get(r["stop_reason"], 0) + 1
+            dist = [r["distance"] for r in lost]
+            m = lambda f: _num(rs, f)                                             # noqa: E731
+            md.append("| " + " | ".join([
+                SETS[c], k, (f"{np.mean(done):.2f} / {np.median(done):.2f} / {min(done):.2f} / {max(done):.2f}" if done else "-"),
+                f"{np.median(dist):.0f}" if dist else "-", ", ".join(f"{a} {n}" for a, n in sorted(stops.items())) or "-",
+                f"{m(lambda r: r['min_edge_margin']):.2f}",
+                f"{m(lambda r: r['centre_offset_abs_mean_max'][0]):.2f} / {m(lambda r: r['centre_offset_abs_mean_max'][1]):.2f}",
+                f"{m(lambda r: r['plan_line_offset_abs_mean_max'][0]):.2f} / {m(lambda r: r['plan_line_offset_abs_mean_max'][1]):.2f}",
+                f"{m(lambda r: r['tyre_usage_max_front_rear'][0]):.2f} / {m(lambda r: r['tyre_usage_max_front_rear'][1]):.2f}",
+                f"{m(lambda r: r['steer_rate_rms']):.3f}", f"{m(lambda r: r['force_increment_rms_N']):.0f}",
+                f"{m(lambda r: r['track_slack_max_mean'][0]):.3f}", f"{m(lambda r: r['limit_slack_max']):.4f}",
+                f"{m(lambda r: r['solve_ms_mean_p95_p99_max'][1]):.0f} / {m(lambda r: r['solve_ms_mean_p95_p99_max'][2]):.0f} / {m(lambda r: r['solve_ms_mean_p95_p99_max'][3]):.0f}",
+                f"{m(lambda r: r['not_converged']):.1f}", f"{m(lambda r: r['fallbacks']):.1f}"]) + " |")
+    md += ["", "Residual terms of the `ra` kinds with residual terms, per component (mean of the laps' P50 / P95; q, then e0 = rho0 q and"
+           " d_s = rho_s q with the lap's setting):", ""]
+    for c in "CDNL":
+        for k in ("ra", "ra_fixed_res"):
+            rs = list(S[c][k].values())
+            s = rs[0]["setting"]
+            for i, name in enumerate(COMP):
+                q50 = _num(rs, lambda r, i=i: r["q_p50_p95_per_component"][i][0])
+                q95 = _num(rs, lambda r, i=i: r["q_p50_p95_per_component"][i][1])
+                if i == 0:
+                    line = f"* {SETS[c]} `{k}` (rho0 {s['rho0']:g}, rho_s {s['rho_s']:g}): "
+                line = line + f"{name} q {q50:.4g} / {q95:.4g}, e0 {s['rho0'] * q50:.4g} / {s['rho0'] * q95:.4g}, d_s {s['rho_s'] * q50:.4g} / {s['rho_s'] * q95:.4g}; "
+            md.append(line.rstrip("; "))
+    md += ["", "Adaptation metrics (phase D's; `adaptive`, `adaptive_oracle` and the `ra` kinds):", "",
+           "| set | kind | mu error P50 / P95 | mu error at the lap end | too-fast share | settled from [s] (median of those that settle) | never settled | plan eta P50 | drift: settle delay [s] (median) |",
+           "|---|---|---|---|---|---|---|---|---|"]
+    for c in "CDNL":
+        for k in (("adaptive", "adaptive_oracle", *cx_j.RA_KINDS) if c in "CD" else ("adaptive", *cx_j.RA_KINDS)):
+            rs = list(S[c].get(k, {}).values())
+            if not rs or "mu_abs_err_p50_p95" not in rs[0]:
+                continue
+            st = [r["settle_from_start_s"] for r in rs if r.get("settle_from_start_s") is not None]
+            dl = [r["drift_settle_delay_s"] for r in rs if r.get("drift_settle_delay_s") is not None]
+            md.append(f"| {SETS[c]} | {k} | {_num(rs, lambda r: r['mu_abs_err_p50_p95'][0]):.3f} / {_num(rs, lambda r: r['mu_abs_err_p50_p95'][1]):.3f} | "
+                      f"{_num(rs, lambda r: r['mu_err_end']):+.3f} | {_num(rs, lambda r: r['too_fast_share']):.2f} | "
+                      f"{(f'{np.median(st):.1f}' if st else '-')} | {sum(r.get('settle_from_start_s') is None for r in rs)} | "
+                      f"{_num(rs, lambda r: r['plan_eta_p5_p50_p95'][1]):.3f} | " + (f"{np.median(dl):.1f}" if dl else "-") + " |")
+    return md
+
+
 def nominal(recs: list[dict]) -> list[str]:
     """NOM in the four conditions, apart from the tests."""
     md = ["## NOM (apart; one lap per condition)", "", "| kind | constant | drift | noise | lag |", "|---|---|---|---|---|"]
@@ -205,7 +266,21 @@ def nominal(recs: list[dict]) -> list[str]:
     return md
 
 
+def _complete(d: Path, n: int = 1528) -> None:
+    """Review of packet 3, n1: the file's lines (``load`` keeps the last record of a job) – ``n`` lines, distinct jobs, the 28 NOM
+    laps (seven kinds in four conditions), no error record."""
+    rows = [json.loads(l) for l in (d / "test.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
+    jobs = [r["job"] for r in rows]
+    if len(rows) != n or len(set(jobs)) != n:
+        raise SystemExit(f"test.jsonl: {len(rows)} lines, {len(set(jobs))} distinct jobs instead of {n}")
+    nom = {(r["kind"], r["case"]) for r in rows if r["case"].startswith("NOM_")}
+    want = {(k, f"NOM_{c}_car0") for k in KINDS for c in "CDNL"}
+    if nom != want:
+        raise SystemExit(f"NOM laps: {sorted(nom ^ want)[:4]}")
+
+
 def test(d: Path) -> None:
+    _complete(d)
     recs = load(d / "test.jsonl")
     _errors(recs, "test.jsonl")
     _guards(recs, json.loads((d / "selected.json").read_text())["ra"]["setting"])
@@ -255,10 +330,10 @@ def test(d: Path) -> None:
     md += ["", "**H-J2 beside the lap times of the same laps (description, no test; review of packet 2):** where both `ra` and `tube`"
            " complete, the lap time of `ra` minus `tube`:"]
     for key, t in jl.items():
-        md.append(f"* {key}: {t['n']} cars, mean {t['mean']:+.2f} s, median {t['median']:+.2f} s")
+        md.append(f"* {key}: " + (f"{t['n']} cars, mean {t['mean']:+.2f} s, median {t['median']:+.2f} s" if t["n"] else "no car completes both – no lap time"))
     md += ["", f"**Secondary comparisons (uncorrected; {N_SECONDARY} comparisons):**", "```", json.dumps(
         {k: v for k, v in sec.items() if k != "jn_jl_lap_time_both_complete"}, indent=1, default=float), "```", ""]
-    md += diagnostics(S) + [""] + nominal(recs)
+    md += diagnostics(S) + [""] + always_reported(S) + [""] + nominal(recs)
     (d / "report" / "CX_J.md").write_text("\n".join(md) + "\n", encoding="utf-8")
     print("\n".join(md[:24]))
 

@@ -411,12 +411,13 @@ setting was changed. These are development data on six cars; they support no cla
      high for `ra`, as phase D found for the RLS.)
    * **The gate does not separate the `ra` kinds**, and noise is the hard condition: 3 of 5 for `ra`, 4 of 5 for `ra_fixed`; no
      selection is made on these laps (the tuning and the test decide on their own data).
-   * **Residual terms and noise (observation):** where `ra`'s residual terms act, its noise laps are slower – `ra` 83.9–85.0 s, `ra_fixed`
-     77.5–81.2 s, the latter completing one lap more. Plan η: `ra` 1.0 in noise (μ̂ too high), 0.68–0.82 under lag (median 0.75).
+   * **Residual terms and noise (observation; qualified by the review of packet 3, m1):** the gate's `ra` (ρ₀ 2, ρ_s 0.1) drives slower noise laps than
+     `ra_fixed`: 83.9–85.0 s against 77.5–81.2 s, the latter completing one lap more. The tuning shows that this goes with ρ₀, not with ρ_s (9.6), and the
+     gate's setting is not the selected one, so it does not represent the test setting. Plan η: `ra` 1.0 in noise (μ̂ too high), 0.68–0.82 under lag (median 0.75).
    * **Solver failures (fallbacks), per lap on the six noise laps:** `ra` 1, 2, 2, 6, 73, 2 (the lap with 73 is DEV_N_car5's, which left the track; mean 14.3 over the six, 16.8 over
      the five DEV laps), `ra_fixed_res` 2, 2, 4, 2, 51, 18, `ra_fixed` 0, 2, 5, 3, 0, 0, `ra_shrink` 4, 1, 0, 1, 0, 1; in the other conditions 0–2.
-   * **Coverage diagnostic** (share of the covered stages whose realised lateral error exceeds the back-off): `ra` 0.07–0.09 in every condition (the constant and
-     lag 0.08–0.09, noise 0.07), `ra_fixed` 0.075–0.54 (noise 0.54), `ra_fixed_res` 0.06–0.07, `ra_shrink` 0.10–0.82 (noise 0.82).
+   * **Coverage diagnostic** (share of the covered stages whose realised lateral error exceeds the back-off; means over the six laps of a condition): `ra` 0.07–0.09 in every condition (the constant and
+     lag 0.08–0.09, noise 0.07; per lap 0.06–0.10), `ra_fixed` 0.075–0.54 (noise 0.54), `ra_fixed_res` 0.06–0.07, `ra_shrink` 0.10–0.82 (noise 0.82).
    * **What separates the `ra` kinds from `adaptive` under the lag is not known.** All four complete the five DEV lag laps; `adaptive`
      completes none, with the same slow-plan bias; `ra_shrink` has almost no margin (mean η 0.92) and also completes (review n3).
 5. **The drifts drawn (9.5):** JD – s_on 681–2 580 m, ℓ 118–1 460 m, f_end 0.751–0.900, μ·f_end 0.698–0.909 (one of 50 cars
@@ -465,4 +466,7 @@ Completed laps of 40 (10 cars per condition), in the registered order of the gri
   0.05 s slower under drift, and 0.2–0.3 s faster under noise and lag (2 and 8 cars). Its lost laps: JV_D_car6 at 3 821 m and JV_L_car4 at 457 m. Its
   noise laps take 76.2–80.5 s.
 * **The 38 of 40 is after a selection on these cars** (biased upward), and the ten cars were used to tune phase D's λ_μ. It is not a result.
-* `ra` and `ra_shrink` differ here (ρ_s 0.2 against 0); `ra_fixed_res` uses the selected (0, 0.2).
+* `ra` and `ra_shrink` differ here (ρ_s 0.2 against 0); `ra_fixed_res` uses the selected (0, 0.2). **So the selected `ra` has no state-error term: only the
+  per-stage term** (ρ₀ 0). The conclusion will say so (review of packet 3).
+* **Lap times under noise (mean of the completed laps; different cars complete, a description):** ρ₀ 0: 77.7, 78.7 and 78.8 s (ρ_s 0, 0.1, 0.2; 2, 8 and 10 laps); ρ₀
+  2: 85.9, 85.1, 85.2 s; ρ₀ 4: 88.5, 86.2, 86.2 s. The slow noise laps go with ρ₀, not with ρ_s (review of packet 3, m1).

@@ -337,6 +337,11 @@ def test_report_test_stage_requires_full_sets(tmp_path, monkeypatch):
     (tmp_path / "selected.json").write_text('{"ra": {"setting": {"rho0": 2.0, "rho_s": 0.1}}}')
     with pytest.raises(SystemExit):
         m.test(tmp_path)
+    row = {"job": "j", "kind": "nmpc", "case": "JT_car1"}
+    import json as _json
+    (tmp_path / "test.jsonl").write_text("\n".join(_json.dumps(row) for _ in range(1528)))        # one job 1 528 times
+    with pytest.raises(SystemExit, match="distinct"):
+        m._complete(tmp_path)
     from f1race.experiments import cx_j
     recs = [{"kind": k, "case": f"{s}_car{c}", "setting": {"rho0": 2.0, "rho_s": 0.1} if k in cx_j.RA_KINDS else {}}
             for s in ("JT", "JD", "JN", "JL") for k in (*cx_j.TEST_KINDS, *(("adaptive_oracle",) if s in ("JT", "JD") else ()))
