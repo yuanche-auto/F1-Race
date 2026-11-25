@@ -319,9 +319,13 @@ def adaptation_metrics(case: dict, ctl, sim, etas, track) -> dict:
     return out
 
 
-def lap(case: dict, kind: str, setting: dict) -> dict:
+def lap(case: dict, kind: str, setting: dict, build_fn=None, sim_fn=None, adaptive_kinds=ADAPTIVE_KINDS, wrap=None,
+        post=None) -> dict:
     """One lap of ``kind`` with ``setting`` on ``case``; the metrics of section 5 (as phases A-C, against the 5 % plan,
-    plus the adaptation metrics)."""
+    plus the adaptation metrics). The last five arguments are for later phases (control expansion phase J) and default to
+    this phase's: ``build_fn`` / ``sim_fn`` in place of ``build`` / ``make_sim``, the kinds with adaptation metrics,
+    ``wrap(controller, mpc)`` around the driven controller, ``post(out, controller, mpc, sim, result, track, extra)``
+    before the record is returned."""
     from ..control.nmpc import FrenetMPC, MPCController
     from ..track import Track
     from .l1 import dyn_reference
@@ -331,7 +335,7 @@ def lap(case: dict, kind: str, setting: dict) -> dict:
     track = Track.load(case["track"])
     plans = plans_for(case["track"])
     o = plans[ETA]
-    sim = make_sim(case, track)
+    sim = (sim_fn or make_sim)(case, track)
     extra_rec: dict = {}
     if kind == "identified":
         parts = identified_parts(case, track)
@@ -350,7 +354,9 @@ def lap(case: dict, kind: str, setting: dict) -> dict:
         ctl, extra = MPCController(mpc, DT), {}
         extra_rec["plan_lap_time"] = float(op.lap_time)
     else:
-        ctl, mpc, x0, extra = build(kind, setting, track, case, sim)
+        ctl, mpc, x0, extra = (build_fn or build)(kind, setting, track, case, sim)
+    if wrap is not None:
+        ctl = wrap(ctl, mpc)
     res = sim.run(ctl, x0, t_max=T_MAX)
     X, U = res.state, res.inputs
     L = track.length
@@ -387,10 +393,12 @@ def lap(case: dict, kind: str, setting: dict) -> dict:
         **cx_b.overlap_metrics(U),
         **extra_rec,
     }
-    if kind in ADAPTIVE_KINDS:
+    if kind in adaptive_kinds:
         out.update(adaptation_metrics(case, ctl, sim, extra["etas"], track))
     if case["drift"] is not None and not res.completed:
         out["failure_s_minus_onset"] = float(np.mod(s_c[-1], L) - case["drift"]["s_on"])
+    if post is not None:
+        post(out, ctl, mpc, sim, res, track, extra)
     out["wall_s"] = time.time() - t0
     return out
 

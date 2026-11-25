@@ -921,6 +921,109 @@ as 10 Hz and 1 g, as in E.2's entry.
 * Conditions that do not carry over: the cars' scale and hardware; soft track bounds that let a lap go past the edge
   without ending the run (H.1's lane slack, I.1's −0.02 m acceptance). E.2's own regression model is I-2's subject.
 
+## Phase J (frontier 3) – robust adaptive MPC: a tube around an adaptive model
+
+Checked 2026-11-24 (web search, arXiv, author manuscripts). No paper was found that combines online friction estimation,
+a tube that shrinks or grows with the estimate's uncertainty, and a race car; that is the result of a few searches, not a
+proof that none exists. Reading status is stated per entry. "Read" means the text of the PDF was extracted and the named
+parts were read; where an entry says a summary was used, a tool's summary of the page stands for the rest and its numbers were
+not checked against the text. Earlier entries used here: C.4, C.8 (tubes), D.2, D.6, D.13.
+
+### J.1 D.13 re-read – Köhler, Kötting, Soloperto, Allgöwer, Müller, *A robust adaptive model predictive control framework for nonlinear uncertain systems* (arXiv:1911.02899; **text of sections III-C (set update), III-G (remarks), IV (example) and V read now**; I–III in phase D; proofs and the appendix not read)
+
+* **Set update (Algorithm 1):** the non-falsified set of one measurement is {θ : x_t − f(x, u) − G(x, u) θ ∈ D}; the current
+  hypercube θ̄ ⊕ ηB intersected with the last M of them; 2p linear programs give the smallest box, its centre and half-width
+  η_t = ½ max_i (θ_i,max − θ_i,min), projected so that the hypercubes are nested. The point estimate in the cost is an LMS
+  estimate.
+* **Parameters must enter affinely.** Remark 4 says that for nonlinearly parametrised systems the set-membership estimate is
+  already hard and the design of the mismatch bound is unclear; the conclusion lists the extension as open. Our B sits inside
+  the tyre curve.
+* **Time-varying θ (Remark 1):** the non-falsified sets and the predicted parameter set are dilated by the rate bound; the
+  intersection with the initial set needs a re-centring of the nominal parameters, which the authors say makes the
+  recursive-feasibility analysis harder; the stability result becomes finite gain with an extra term.
+* **Example:** x ∈ R², two parameters of ±1 %, T₀ 0.05 s. After 40 updates η_t/η_0 ≈ 2.5 %; the tube at the end of the
+  horizon shrank by more than 55 %; the closed-loop stage cost over 50 steps 3.5 % below a robust MPC without adaptation.
+
+### J.2 C.5 read in part – Sasfi, Zeilinger, Köhler, *Robust adaptive MPC using control contraction metrics* (arXiv:2209.11713; the PDF's text: introduction, section 2, the setup of section 3 and the computation-time table; the rest via a summary)
+
+* ẋ = f(x) + B(x)u + G(x, u)θ + E(x)d, θ in a polytope (G affine in u), d in a polytope; the parameter set is a polytope
+  intersected with non-falsified sets; the nominal parameter is a decision variable (no LMS). Tube scaling
+  δ̇ = −(ρ_c − L_D) δ + a worst case over the vertices of Θ and D; constraints tightened by c_j δ. State and input are assumed
+  measured exactly; only the measured state derivative may be noisy (read in the text of section 2).
+* Planar quadrotor (θ = 1/m ± 1 %), N 25: adaptation adds about 10 % to the RMPC's time; the offline CCM took 10 min.
+
+### J.3 Lorenzen, Cannon, Allgöwer – *Robust MPC with recursive model update*, Automatica 103, 2019, 461–471 (author manuscript; sections 3 (estimation), 4.1 and the introduction read; the MPC theorems and examples skimmed)
+
+* Linear x⁺ = A(θ)x + B(θ)u + w. A bounding polytope set (set membership, non-increasing; a fixed number of half-spaces kept
+  by a linear programme) and, **separately**, a point estimate (LMS) for the cost: the set is used for the constraints and
+  the estimate for performance.
+* **Time-varying θ (4.1):** with a rate bound d_θ, the set is dilated: Θ_k = D_1(Θ_{k−1} ∩ Δ_k), and the prediction uses
+  Θ_{l|k} = D_l(Θ_k) ∩ Θ. The LMS filter gets an extra tracking error from the variation, so the authors advise the
+  certainty-equivalence cost only for slow variations, with a persistently exciting input.
+* The limitation stated by the authors: a common Lyapunov function for all parameters of the prior set.
+
+### J.4 Bujarbaruah, Zhang, Tanaskovic, Borrelli – *Adaptive MPC under time varying uncertainty: robust and stochastic* (arXiv:1909.13473, v4 2021; read in part: the problem setup and the set recursion; the rest via a summary)
+
+* Linear, an additive offset Eθ_t with a bounded rate of change. Each step relaxes the existing half-spaces by the rate and adds
+  two rows for the new measurement; the prediction set widens along the horizon by the rate; the terminal set is the full prior
+  set. No friction, no vehicle (a check of the text found none).
+
+### J.5 Köhler, Müller, Allgöwer – *Robust output feedback model predictive control using online estimation bounds* (arXiv:2105.03427, May 2021; read in part: the abstract, introduction, the bounds of III and the simplified MPC of IV-C as extracted; V the setup)
+
+* A nonlinear output-feedback tube: an estimation-error bound ē_k computed **online** (observer stability, detectability, set
+  membership, MHE) enters the tube dynamics s̄_{k+1} = ρ s̄_k + γ(ē_k) + γ_w(w̄) and the tightening
+  g(x̄, ū) + σ_s(s̄) + σ_o(ē) ≤ 0. In its simplified form the nominal starts at the estimate.
+* Standard schemes use worst-case bounds computed offline; the authors report that their online bounds are conservative too,
+  typically about ten times the true error or more. The point for us: noise belongs in the **state** error, not in the process
+  disturbance. CX-J's initial-error term e₀ (its 3.4) does that, without a bound; the packet-1 review asked for it.
+
+### J.6 Vaskov, Quirynen, Menner, Berntorp – *Friction-adaptive stochastic nonlinear model predictive control for autonomous vehicles*, Vehicle System Dynamics 62(2), 2024, 347–371 (arXiv:2305.03798v1, May 2023; read in part: abstract, introduction, the estimator and SNMPC sections, the results' text)
+
+* **The closest published work:** an estimate of the tyre-friction curve online (a Gaussian-process curve by a particle filter, or
+  a linear stiffness), with its covariance, in a stochastic NMPC: the mean in the prediction, the covariance propagated through
+  the friction Jacobians, a pre-stabilising feedback, and chance constraints as back-offs (normal approximation).
+  The controller is agnostic to the estimator as long as it gives a mean and a covariance.
+* Double lane changes with a snow stage in simulation (200 Monte Carlo runs per speed; CarSim; worst-case ~40 ms per step on a
+  dSPACE MicroAutoBox-II). An adaptive nominal NMPC (no covariance) is one of the baselines. Not a race car; no tube; no lap.
+* **Difference from ours:** ours is a reachable-set tube from vertices of a box in all seven parameters, with the friction-ellipse
+  factors tightened, on a minimum-time tracking NMPC at the limit, and an extra disturbance measured from the controller's own
+  past prediction errors.
+
+### J.7 Lew, Greiff, Djeumou, Suminaka, Thompson, Subosits – *Risk-averse model predictive control for racing in adverse conditions* (arXiv:2410.17183, Oct 2024; abstract, introduction, the results' captions and headings read)
+
+* CVaR constraint for the track bounds over sampled tyre parameters (full-scale Lexus LC 500, wet area). The authors note that
+  methods that fix the uncertainty during the optimisation give no incentive to reduce it. Sampling of models, not a tube;
+  parameters not adapted online (not found in the parts read).
+
+### J.8 Gulisano, Masoni, Gabiccini, Guiggiani – *Disturbance-aware minimum-time planning strategies for motorsport vehicles with probabilistic safety certificates* (arXiv:2506.13622v1, June 2025; abstract, introduction and headings read)
+
+* Offline minimum-time planning with tightened tyre-friction and track constraints, the covariance propagated with or without a
+  time-varying LQR. Offline planning, not adaptation; the LQR-shaped propagation is the same idea as phase C's.
+
+### J.9 Others, not read beyond the stated parts
+
+* **Dey, Bhasin, arXiv:2603.15912** (16 Mar 2026; abstract and sections 1–3 via a summary) – linear, a polytope of [A B]; tube
+  cross-section recomputed as the set shrinks.
+* **Buerger, Cannon, arXiv:2603.05029** (5 Mar 2026; abstract and the problem setup) – nonlinear with known basis functions,
+  ellipsoidal tubes by SOCP, set membership; a small example; per-iteration times from 0.05 s (n_x 2) to 11 s (n_x 12) by a
+  summary (not checked).
+* **CAPE, arXiv:2606.05480** (June 2026; abstract and sections I–IV, the rest via a summary) – an online scalar mismatch radius
+  widens the track margin, m = m₀ + γ r; the authors call it a surrogate for tube tightening, not a tube. Racing-scale
+  simulation; the rule for the radius is not given in the text read.
+* **Gadgil, Tomar, arXiv:2608.17902** (Aug 2026; a review, text read by search terms only) – points to Sakhdari and Azad, *Adaptive
+  tube-based nonlinear MPC for economic autonomous cruise control* (IEEE TVT 2018; RLS plus a tube, bibliographic, not read), Vo
+  et al. (IEEE Access 2022; interval / set-membership; not read) and Vaskov et al. (J.6).
+
+### For the protocol
+
+* The published schemes rest on assumptions that do not hold here (affine parameters, a set-membership set, exact states). CX-J
+  takes their structure and states each departure (protocol section 3.5).
+* Every scheme that adapts a set lets it shrink, and then the margin shrinks with it. The published examples have no unmodelled
+  dynamics and no measurement noise. What the tube gains in CX-C and CX-D under noise and lag came from a box that was too wide
+  for those cars, so the phase has to test whether a residual-based disturbance replaces it.
+* Vaskov et al. (J.6) is the model for using the estimator's covariance, and D.13 / J.3 for the nested sets and the separate
+  point estimate.
+
 ## Phases F–G and the frontier methods
 
 Entries are written at the start of each phase, before its code (roadmap section 3). Classic sources

@@ -817,3 +817,132 @@ published racing LMPCs' conditions:
 
 **Follow-ups:** see CONTROL_METHOD_MATRIX.md ("From phase I"). The LMPC line is closed by the user's decision; the open
 points are recorded there, not scheduled.
+
+## Phase J – robust adaptive MPC: a tube around the adaptive model
+
+Protocol [CX_J_protocol.md](CX_J_protocol.md) (revision 0 with its clarifications; results and deviations in section 10).
+Runs from the pinned worktree `F1-Race-worktrees/F1-Race-wt-CXJ-run` at c68d871 (clean; inputs identical to phase D's run by
+SHA-256). Records (git-ignored) in its `results/CX/J/`:
+* `tune.jsonl` (39dee27610ac62a9…), `selected.json` (3fae54ba08a328a1…) – 360 JV laps;
+* `test.jsonl` (ed53c7657c585e41…) – 1 528 laps, 0 error records, every record at c68d871; `launches_test.jsonl`;
+* `report/CX_J.md`, `report/CX_J.json`.
+
+The test laps ran 2026-11-24 22:24:51–23:59 and 2026-11-25 01:22:11–05:28:09 (5 h 40 min; 7 h were estimated). They were paused in
+between at the user's request, and the 20 laps in progress were driven again from their start.
+
+**Not cross-checked in a second environment.**
+
+**Controllers.** `ra` is phase D's online estimate (RLS, λ_μ 0.995) as the model of phase C's tube. Its box is
+θ̂ ± min(cap, 2σ), and a per-stage disturbance ρ_s q is added, where q is the 0.9-quantile of its own last 40 first-stage
+prediction errors.
+
+**Setting chosen on JV:** ρ₀ 0, ρ_s 0.2 (38 of 40 laps).
+* It lies at the grid's edges (the smallest ρ₀, the largest ρ_s), and the grid was not extended. The best setting may lie outside.
+* **So the tested `ra` has no initial-error term; only the per-stage term is tested.** The protocol had expected noise to belong in the
+  initial error; on JV that was not so.
+
+### Primary tests: H-J1 holds, H-J2 is not shown
+
+| test | data | result | exact p | Holm | at 0.025 |
+|---|---|---|---|---|---|
+| **H-J1** | JD – 50 new cars, the grip falling during the lap | `ra` 47, `adaptive` 36 of 50; only `ra` 12, only `adaptive` 1 | 0.0034 (McNemar) | **holds** (level 0.025) | holds |
+| **H-J2** | JN + JL – the same cars with noise, and with lag; 100 laps | `ra` 84, `tube` 75 laps; cars with more laps 14, fewer 5, as many 31 | 0.064 (signed-rank per car, n 19) | **not shown** (level 0.05) | no |
+
+The exact 95 % interval of the share of improved cars among the changed ones: H-J1 12 of 13, 0.64–1.00; H-J2 14 of 19, 0.49–0.91.
+
+**H-J2 beside its two halves and their lap times (description, no test).** The sum of the two halves hides that they go opposite ways:
+
+| condition | `ra` | `tube` | only `ra` : only `tube` | lap time of `ra` minus `tube` where both complete |
+|---|---|---|---|---|
+| JN – measurement noise | 44 | 27 | 20 : 3 | −2.81 s on average, median −2.24 s (24 cars; `ra` is the faster on every one) |
+| JL – unmodelled 30 ms steering lag | 40 | 48 | 0 : 8 | **+5.87 s on average, median +5.55 s** (40 cars) |
+
+"Not shown" is not "no worse" (protocol section 1). **Under the lag `ra` completes fewer cars than `tube`, and its laps are 6 s slower.**
+The halves have no registered test (section 6's JN and JL comparisons are against `adaptive`); the counts and lap
+times above are a description, added beside H-J2 at the request of the reviews of packet 2 and of the record check. Because the halves go opposite ways,
+the p of 0.064 for the sum is not evidence that the two controllers are alike, and H-J2 is neither "no difference" nor "better".
+
+### Completed laps (of 50, exact 95 % intervals)
+
+| set | `nmpc` | `tube` | `adaptive` | **`ra`** | `ra_fixed` | `ra_fixed_res` | `ra_shrink` | `adaptive_oracle` |
+|---|---|---|---|---|---|---|---|---|
+| JT – constant | 14 (0.16–0.42) | 48 (0.86–1.00) | 41 (0.69–0.91) | **48 (0.86–1.00)** | 48 (0.86–1.00) | 43 (0.73–0.94) | 49 (0.89–1.00) | 43 (0.73–0.94) |
+| JD – grip falling | 0 (0.00–0.07) | 4 (0.02–0.19) | 36 (0.58–0.84) | **47 (0.83–0.99)** | 45 (0.78–0.97) | 42 (0.71–0.93) | 47 (0.83–0.99) | 43 (0.73–0.94) |
+| JN – noise | 4 (0.02–0.19) | 27 (0.39–0.68) | 0 (0.00–0.07) | **44 (0.76–0.95)** | 36 (0.58–0.84) | 45 (0.78–0.97) | 12 (0.13–0.38) | – |
+| JL – lag | 4 (0.02–0.19) | 48 (0.86–1.00) | 5 (0.03–0.22) | **40 (0.66–0.90)** | 41 (0.69–0.91) | 40 (0.66–0.90) | 40 (0.66–0.90) | – |
+
+The four sets are the same 50 cars. A JT and a JD lap of a car are the same lap until the drift begins (for example car 26 leaves at
+1 409 m in both, with 51 fallbacks), so the four rows are not independent evidence. There is no composite (protocol section 1).
+
+NOM, one lap per condition (apart from the tests): `ra` 77.37, 82.46, 77.25, 85.39 s (constant, drift, noise, lag); `tube` 78.28 s, off at
+3 807 m, 80.09, 78.41 s; `adaptive` 76.40, 81.44 s, off at 463 m, off at 457 m; `nmpc` 76.40 s, off at 2 211 m, 78.65, 79.30 s.
+
+### Secondary comparisons (21, uncorrected)
+
+| set | comparison | only `ra` : only the other | p |
+|---|---|---|---|
+| JT | `ra` – `adaptive` | 9 : 2 | 0.065 |
+| JT | `ra` – `tube` | 2 : 2 | 1 |
+| JT | `ra` – `nmpc` | 36 : 2 | 5 · 10⁻⁹ |
+| JD | `ra` – `tube` | 44 : 1 | 3 · 10⁻¹² |
+| JD | `ra` – `adaptive_oracle` | 5 : 1 | 0.22 |
+| JN | `ra` – `adaptive` | 44 : 0 | 1 · 10⁻¹³ |
+| JL | `ra` – `adaptive` | 36 : 1 | 6 · 10⁻¹⁰ |
+
+JT lap time where both complete (signed-rank): `ra` − `tube` −0.69 s on 46 cars (p 5 · 10⁻⁵); `ra` − `adaptive` +0.76 s on 39 cars (p 1 · 10⁻¹⁰).
+
+Ablations, only `ra` : only the ablation (p):
+
+| set | `ra_fixed` (cap box, no residual) | `ra_shrink` (shrinking box, no residual) | `ra_fixed_res` (cap box, residual) |
+|---|---|---|---|
+| JT | 1 : 1 (1) | 0 : 1 (1) | 5 : 0 (0.06) |
+| JD | 2 : 0 (0.5) | 0 : 0 (1) | 5 : 0 (0.06) |
+| JN | 9 : 1 (0.02) | **34 : 2 (2 · 10⁻⁸)** | 1 : 2 (1) |
+| JL | 4 : 5 (1) | 5 : 5 (1) | 0 : 0 (1) |
+
+`ra_fixed_res` uses the setting selected for `ra`; that favours `ra`. The figures are among 12 uncorrected ablation comparisons.
+
+### Reading
+
+* **H-J1: when the grip falls during the lap, the tube around the adaptive model completes more cars than the adaptive model alone**
+  (47 against 36; phase D's drift ranges, new cars, one track). `adaptive`'s 14 lost laps end at ~2.7 km (8), ~3.8 km (4), 2.2 km (1)
+  and 1.4 km (1); `ra`'s three end at ~1.4 km (2) and 2.2 km (1). The price is lap time: +0.75 s on the 35 JD cars both complete (a
+  description) and +0.76 s on JT.
+* **The other three forms of the tube (a description; only `ra` against `adaptive` has a registered test):** on JD `ra_shrink` – no residual term – completes 47 as well
+  (0 : 0 against `ra`) and `ra_fixed` 45; on JT and JD `ra` is not separated from these two. **Neither the shrinking of the box nor the residual term is shown to
+  matter there.** Against `adaptive` on JD (not registered, counts only): `ra_shrink` 12 : 1, `ra_fixed` 12 : 3, `ra_fixed_res` 11 : 5 (42 laps; not
+  separated from `adaptive`). The shrinking buys lap time (a description): `ra` is 1.0 s faster than `ra_fixed` on JT (47 cars) and on JD (45). The full
+  cap box with the residual term (`ra_fixed_res`) loses five more cars than `ra` on each of the two sets (5 : 0, p 0.06); five of its seven lost JT
+  laps have 20 or more fallbacks. The oracle – the true car and
+  friction, no tube – completes 43 (5 : 1 for `ra`, not significant).
+* **H-J2 is not shown, and its halves go opposite ways.**
+  * **Noise:** `ra` completes more than `tube` and faster. The ablations suggest that the per-stage residual term carries this (uncorrected secondary comparisons): without it (`ra_shrink`) 12 laps,
+    with the full cap box and no residual 36, with it 44 (`ra`) and 45 (`ra_fixed_res`). The estimate itself is wrong under noise – μ̂ is 0.12 too high
+    at the lap end, with a σ of 0.026; the true μ is inside its interval on 15 % of the steps, and the plan is too fast on 99 %
+    of the solves. The box does not cover this; the margin comes from the residual term (median back-off 0.32 m against
+    `ra_shrink`'s 0.02 m). The ablations suggest that the laps are completed through this margin rather than through a good estimate.
+  * **Lag:** `ra` is worse than `tube` in both respects. All ten lost laps end in turn 1 (456–466 m), and `tube` completes eight
+    of these ten cars. The RLS has no lag in its model, and its estimates are off (μ̂ 0.18 too low, I_z 0.50 and B 0.19 off at the lap
+    end); the plan is slow: 85.3 s against 79.7 s on average (each over its own completed laps). Neither the box nor the residual term changes the count: 40, 40, 41 and 40
+    for the four `ra` kinds. **`tube`'s robustness to the lag is not kept.**
+  * The cause of the ten turn-1 losses is not tested. In these laps h_μ is at its cap all the time (the estimate has had no corner to learn
+    from), and the realised lateral error is 1.9–7.1 times the bound at its P95 (per lap). An unregistered look: the lost cars have
+    a lower tyre stiffness (B 0.93 against 1.02 on average); 10 cars, no test.
+* **JT: `ra` completes as many as `tube` (48, 2 : 2) and is 0.69 s faster; against `adaptive` 48 to 41 (9 : 2, p 0.065, not significant)
+  at +0.76 s.** It does not need the L2 ranges centred on the nominal car, but it uses them as a cap (no variant without the cap was run).
+* **The answer to the phase's question is partly yes:** `ra` keeps what `adaptive` gains when the grip falls (and adds to it), and what `tube`
+  gains under noise (and adds to it), but not what `tube` gains under the lag.
+* **Solver failures.** Fallbacks are concentrated in a few laps, most of them lost (laps with 20 or more; lost among them): JT `ra` 3 (2; max 240),
+  `ra_fixed_res` 5 (5); JD 2 (1) and 4 (4); JN 3 (3) and 4 (4); `tube` under noise 7 (5), `ra_fixed` 8 (6). It also happens without the residual
+  term (`ra_fixed` and `ra_shrink` 1 (1) each on JT and on JD). None under the lag. `ra` on JT car 33 has 240 fallbacks and is lost, whereas `ra_shrink` has
+  none and completes; the residual term is the only difference between the two. Why the solver fails there is not tested.
+* **Coverage:** the share of stages whose realised lateral error exceeds the back-off is 0.095, 0.085, 0.121 and 0.139 for `ra` (constant, drift, noise, lag);
+  `ra_fixed` 0.54 and `ra_shrink` 0.79 under noise. The tube's bound is not a guarantee (as phase C; a description).
+* **Numerical repeatability (not registered; protocol 10.4):** of 20 NOM laps that the development checks had also driven, one (`nmpc` under the lag)
+  differed, so a single lap may differ by rounding between runs. A repeat of the 300 laps of the two primaries, decided after the registered
+  results had been seen, gave 300 identical laps and no flip. Every result here is of one run per lap; the other 1 228 laps were not repeated, apart
+  from the NOM laps above and two the reviewer drove.
+* **Limits:** the tuning used the same kinds and sizes of disturbance as the test (noise, lag, drift) on other cars; the setting is
+  at the grid's edges; one lag (30 ms) and one noise level; the L2 ranges are the cap, as for `tube`; exact model structure except the lag;
+  one track; offline (IPOPT without a time budget: the NLP 168–226 ms on average for the `ra` kinds and the tube 10 ms per solve, 50 ms
+  would be real time); certainty equivalence in the plan; not cross-checked in a second environment.

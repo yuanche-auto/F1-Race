@@ -133,8 +133,8 @@ class FrenetMPC:
         wr = _periodic_interpolant("wr", track.s, track.w_right, L)
         self.param_model = bool(param_model)
         self.library = isinstance(ref, (list, tuple))
-        if self.param_tightening and self.param_model:
-            raise ValueError("param_model with param_tightening is not implemented")
+        if self.param_tightening and self.param_model and soft_limits is not True:
+            raise ValueError("param_model with param_tightening is defined with soft limits at every stage")
         if self.library:
             sg = np.asarray(ref[ref_grid]["s"], float)
             lib = {key: np.column_stack([np.interp(sg, np.asarray(o["s"], float), np.asarray(o[key], float), period=L)
