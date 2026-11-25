@@ -252,6 +252,38 @@ def always_reported(S: dict) -> list[str]:
     return md
 
 
+PAR = ("mu", "m", "ClA", "CdA", "Iz", "B", "aero_front")
+
+
+def box_and_tightening(S: dict) -> list[str]:
+    """The rest of section 5's list for the ``ra`` kinds (added after the first report, description only): each h_i (P5 / P50 / P95)
+    and its share of steps at the cap, sigma_i against |error_i| at the lap end, the back-off and eta_k (P5 / P50 / P95), the tube's
+    time, the coverage ratio; means over the 50 laps of a set. And the laps with many fallbacks."""
+    md = ["## Box and tightening of the `ra` kinds (section 5; means over the 50 laps of a set; description)", "",
+          "| set | kind | h per parameter, P5 / P50 / P95 | at the cap, share per parameter | abs. error and sigma at the lap end, per parameter |"
+          " back-off P5 / P50 / P95 [m] | eta_k P5 / P50 / P95 | tube ms mean / P95 / max | realised error over bound P50 / P95 |",
+          "|---|---|" + "---|" * 7]
+    for c in "CDNL":
+        for k in cx_j.RA_KINDS:
+            rs = list(S[c][k].values())
+            tri = lambda key, n=3: " / ".join(f"{_num(rs, lambda r, j=j: r[key][j]):.3f}" for j in range(n))      # noqa: E731
+            h = "; ".join(PAR[i] + " " + " / ".join(f"{_num(rs, lambda r, i=i, j=j: r['h_p5_p50_p95_per_param'][i][j]):.3f}" for j in range(3))
+                          for i in range(7))
+            cap = "; ".join(f"{PAR[i]} {_num(rs, lambda r, i=i: r['at_cap_share_per_param'][i]):.2f}" for i in range(7))
+            es = "; ".join(f"{PAR[i]} {_num(rs, lambda r, i=i: abs(r['err_end_vs_sigma_end'][i][0])):.3f}, "
+                           f"{_num(rs, lambda r, i=i: r['err_end_vs_sigma_end'][i][1]):.3f}" for i in range(7))
+            tm = " / ".join(f"{_num(rs, lambda r, j=j: r['tube_ms_mean_p95_max'][j]):.1f}" for j in range(3))
+            md.append(f"| {SETS[c]} | {k} | {h} | {cap} | {es} | {tri('backoff_m_p5_p50_p95')} | {tri('eta_k_p5_p50_p95')} | {tm} | "
+                      f"{tri('coverage_err_over_bound_p50_p95', 2)} |")
+    md += ["", "Laps with 20 fallbacks or more (lost among them), and the most on one lap:", ""]
+    for c in "CDNL":
+        md.append(f"* {SETS[c]}: " + ", ".join(
+            f"`{k}` {sum(r['fallbacks'] >= 20 for r in S[c][k].values())} "
+            f"({sum(r['fallbacks'] >= 20 and not r['completed'] for r in S[c][k].values())}), max {max(r['fallbacks'] for r in S[c][k].values())}"
+            for k in KINDS))
+    return md
+
+
 def nominal(recs: list[dict]) -> list[str]:
     """NOM in the four conditions, apart from the tests."""
     md = ["## NOM (apart; one lap per condition)", "", "| kind | constant | drift | noise | lag |", "|---|---|---|---|---|"]
@@ -333,7 +365,7 @@ def test(d: Path) -> None:
         md.append(f"* {key}: " + (f"{t['n']} cars, mean {t['mean']:+.2f} s, median {t['median']:+.2f} s" if t["n"] else "no car completes both – no lap time"))
     md += ["", f"**Secondary comparisons (uncorrected; {N_SECONDARY} comparisons):**", "```", json.dumps(
         {k: v for k, v in sec.items() if k != "jn_jl_lap_time_both_complete"}, indent=1, default=float), "```", ""]
-    md += diagnostics(S) + [""] + always_reported(S) + [""] + nominal(recs)
+    md += diagnostics(S) + [""] + always_reported(S) + [""] + box_and_tightening(S) + [""] + nominal(recs)
     (d / "report" / "CX_J.md").write_text("\n".join(md) + "\n", encoding="utf-8")
     print("\n".join(md[:24]))
 

@@ -8,6 +8,8 @@ the literature check ([CONTROL_LITERATURE_REVIEW.md](CONTROL_LITERATURE_REVIEW.m
 module, test, runner or lap of phase J exists. Branch `cx/J-robust-adaptive` from `main` 85059dc. The merge of phase I is
 `main` **70a51f6** (recorded here, as agreed at its final review). The ten commits 70a51f6..85059dc are the README, media
 and `race.py` work merged by the user; no file of this phase's scope changed in them.
+**The development gate passed (section 9), ρ₀ 0 / ρ_s 0.2 was selected on JV (9.6), and the 1 528 test laps ran (section 10): H-J1 holds, H-J2
+is not shown.** The results are in the benchmark document; packet 4 for review.
 
 The user's choice (2026-11-24, translated): *"Robust adaptive MPC."* It comes from the method matrix's phase-D list ("a
 tube around the adaptive model (robust adaptive MPC, D.13)"; CX-D review m3).
@@ -470,3 +472,80 @@ Completed laps of 40 (10 cars per condition), in the registered order of the gri
   per-stage term** (ρ₀ 0). The conclusion will say so (review of packet 3).
 * **Lap times under noise (mean of the completed laps; different cars complete, a description):** ρ₀ 0: 77.7, 78.7 and 78.8 s (ρ_s 0, 0.1, 0.2; 2, 8 and 10 laps); ρ₀
   2: 85.9, 85.1, 85.2 s; ρ₀ 4: 88.5, 86.2, 86.2 s. The slow noise laps go with ρ₀, not with ρ_s (review of packet 3, m1).
+
+## 10. The test laps (2026-11-24/25; packet 4)
+
+### 10.1 What ran
+
+* 1 528 laps from the pinned worktree `F1-Race-worktrees/F1-Race-wt-CXJ-run` at c68d871 (clean at both launches), 20 workers, one
+  process per lap, single-threaded BLAS. `test.jsonl`: 1 528 lines, 1 528 distinct jobs, **0 error records**, every record at
+  c68d871; SHA-256 `ed53c7657c585e417cf53e4a35b233ae55c8012f51c31af58d7df4e3a214f8d7`, sent to the reviewer at 05:28:36, before the
+  report was made (the report script started at 05:28:44 and wrote its files at 05:28:46) and before any outcome was read. The
+  reviewer checked the records and recomputed both primaries from `test.jsonl` independently, before seeing the report: equal.
+* Time: 22:24:51–23:59 and 01:22:11–05:28:09, 5 h 40 min in total (section 8 estimated about 7 h); 111 h of job time.
+* The report is `scripts/report_cx_j.py` of the branch (135782b for the first report), on the run's records; `src` is unchanged since c68d871.
+  All numbers of the tables below were recomputed from `test.jsonl` by a separate script without project code (tests,
+  intervals, lap-time differences): identical.
+
+### 10.2 Deviations and what was added after the report
+
+1. **Pause.** At the user's request the run was stopped at 23:59 with 441 laps done and resumed at 01:22:11 with the same command; the runner
+   skips the jobs with a record, so `launches_test.jsonl` has two lines (1 528 and 1 087 jobs). The 20 laps in progress were stopped
+   without a record and driven again from their start. The two tracebacks in `log_test.txt` are the stopped workers'
+   `BrokenPipeError`s; there is none after the resumption. The jobs run in the order of their kinds: the first 441 records are
+   `nmpc` (200), `tube` (200) and 41 of `adaptive`; **every `ra` kind and the oracle ran after the pause**. Each lap is a new process
+   and its seeds come from the job, so the pause should not change later laps – but a lap can differ by rounding (10.4), and
+   the pause was not tested as such; the repeat of 10.4, one run without a pause, gave the same 300 laps. The reviewer drove four laps again from both parts (two `adaptive` JT, `tube` JL, `ra`
+   JL): equal to the records in completion, lap time, distance and solves. Solve times are descriptions (the machine's load was not controlled,
+   and the kinds did not run side by side).
+2. **The report was extended after the outcomes were known:** section 5 asks for each h_i and its share at the cap, σ_i against the error at
+   the lap end, the P5 / P95 of the back-off and of η_k, and the tube's time, which the first report did not print (the records had them). The
+   table `Box and tightening` was added, with a count of the laps with many fallbacks; `CX_J.json` (tests, counts) is byte-identical
+   before and after. The first report was written at 05:28:46 (`CX_J.md` 44fbd7c2…, `CX_J.json` b51e2f82…), the extended one at 05:30:23 (`CX_J.md`
+   79252d49…, `CX_J.json` b51e2f82…); the first is kept in the main checkout's `results/CX/J/report_first/`.
+3. **An unregistered repeat of the 300 laps of the two primaries** (10.4). Its rule was written **after the registered results had been
+   seen** and before any of its laps: the registered results stand as run; the repeat's numbers neither replace nor are pooled with
+   them; whatever it shows is reported, as a description of the numerical repeatability – also if H-J2 crosses 0.05 there.
+
+### 10.3 Results
+
+The tables, the tests and the reading are in [CONTROL_EXPANSION_BENCHMARK.md](CONTROL_EXPANSION_BENCHMARK.md) (Phase J). In short:
+* **H-J1 holds:** JD, `ra` 47 and `adaptive` 36 of 50; 12 : 1, p 0.0034 (Holm level 0.025; also at 0.025).
+* **H-J2 is not shown:** JN + JL, `ra` 84 and `tube` 75 of 100 laps; cars 14 improved, 5 worsened, 31 unchanged; p 0.064 (level 0.05). The halves go
+  opposite ways: noise 44 against 27, lag 40 against 48; the lag laps of `ra` are 5.9 s slower. Section 9's expectation ("H-J2's noise half
+  and lag half may go different ways", written before any test lap) came true. *"Not shown" is not "no worse".*
+* Not cross-checked in a second environment.
+* **The tested `ra` has no initial-error term** (ρ₀ 0 selected), and its setting is at the grid's edges.
+* `ra_shrink` and `ra` are the same on JT and JD to one car (0 : 1, 0 : 0); they differ under noise (34 : 2).
+
+### 10.4 Numerical repeatability (not registered)
+
+**The finding.** The 20 NOM laps that the development checks had driven with the same kind and no residual setting (`nmpc`, `tube`, `adaptive`,
+`ra_fixed`, `ra_shrink`, four conditions) were compared with the test's, every field that measures no time: **19 identical, one different** –
+`nmpc` under the lag, 78.43 s in the development record (9b92813) and 79.30 s in the test. Phase D's three NOM records (`nmpc`,
+`tube`, `adaptive`, constant) equal the test's to the last digit.
+* Driven again six times (four as the test, two with the recording of the development laps): all six equal the test's lap, 79.298 s. So the
+  development record is the odd one. The reviewer found the same difference and drove the lap seven times, also all 79.298 s. Its recorded arrays agree with a new recorded lap up to solve 417, then differ by 10⁻¹³ in a predicted state
+  and by 4 · 10⁻⁹ in the applied input; about 3 s later the difference is 0.1 m, then metres.
+* That a solve's result can differ by rounding between two runs is new here (in phases B–D every repeated lap was identical, 68 of 68, 34 of 34
+  and 30 of 30). The cause is not known (the machine has two kinds of cores; not tested).
+* **So a lap's result, and the completion of a lap near its limit, may differ between two runs of the same job. The registered results
+  are those of one run per lap** (reviewer's finding d1).
+
+**The repeat.** The 300 laps of the two primaries again, from the same code:
+
+* 2026-11-25 05:35:55–06:46:49, the pinned worktree's code (c68d871, clean), 20 workers, one process per lap, single-threaded BLAS; 300 laps,
+  0 error records. Records: the main checkout's `results/CX/J/repeat/` (git-ignored), `repeat.jsonl` SHA-256
+  `aca6d385e7d46d3a409aa2f5a18b78646752a556a9a2cc28472c6ab110b5ada4`, `launches_repeat.jsonl`, `log_repeat.txt`. The runner is a script outside the
+  repository; it calls `cx_j.lap` with the registered cases and settings.
+* **All 300 laps are identical to the registered ones** (JD `ra` and `adaptive`, JN and JL `ra` and `tube`, 50 each): 34 166 recorded values
+  compared over the 300 laps, to the last digit; only the timings differ (`wall_s`, `wall_job_s`, the solve, tube and estimator-update times). 433 684 solves.
+* **No flip:** no (kind, case) completes in one run and not in the other, and the 58 laps that do not complete stop at the same distance for
+  the same reason. There is therefore no list of flips with two stopping positions.
+* Hence H-J1 and H-J2 on the repeat are the registered numbers (12 : 1, p 0.003418; 14 / 5 / 31, p 0.063568). The repeat is the same laps
+  driven twice, not new evidence, and is not pooled with them.
+* **What it says:** the registered laps of the two primaries do not depend on the run on this machine, as far as one repeat can show: 0 of 300
+  (exact 95 % upper limit 1.2 % if laps differed independently). It does not say that a lap cannot differ: `nmpc` NOM under the lag did once. It
+  does not cover the other 1 228 test laps, another machine, another number of workers or the second Python environment.
+* The source difference between the odd development record (9b92813) and the test (c68d871) is only the tuning rule `select` in
+  `cx_j.py`, which no lap calls; so a difference of the committed code is excluded. The cause stays unknown.

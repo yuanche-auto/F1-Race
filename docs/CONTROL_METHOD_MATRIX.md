@@ -69,6 +69,17 @@ The open points:
    drive even the 8 m/s start. Ten times the iterations solved the first QP, but in 2.4 s: not real-time.
 3. **Data past the line from the next lap** (E.2), instead of the lap's own run-out. After the slow start, the own
    run-out made the laps brake before the line.
+From phase J (CX_J_protocol.md section 10; a tube around the adaptive model). The candidates of CX-D review m3's list that remain are the
+moving-horizon estimator and the plan library. **Open points, not scheduled:**
+1. **The steering lag.** None of the four `ra` kinds keeps `tube`'s robustness to a 30 ms lag (40, 40, 41 and 40 of 50 against 48; all lost
+   laps of the four kinds end in turn 1, 456–467 m), and the laps are 5.2–6.7 s slower. The RLS has no lag in its model, and its estimates are off under
+   the lag (benchmark, reading). A lag-aware estimator (L6 identifies the lag) is a candidate; the cause of the turn-1 losses is not tested.
+2. **Errors in variables.** Under noise μ̂ is 0.12 too high at the lap end with a σ of 0.026, so the box does not cover the truth; the laps are completed through the residual's
+   margin (benchmark, reading). An estimator that treats the state noise (a moving-horizon estimator, literature D.5–D.7) could make the box informative (not tested).
+3. **The setting at the grid's edges** (ρ₀ 0, ρ_s 0.2): larger ρ_s were not tried. The initial-error term (ρ₀ > 0) was not better on JV and is not in
+   the tested controller.
+4. **Solver failures** in a few laps, most of them lost; more of them with the full box or the residual term (benchmark, reading).
+5. **Real time:** offline here (NLP ~0.2 s, tube 10 ms).
 From phase F (CX-F amendment F1, review g4; the shield part was closed after its development gate failed – the L1
 tracker is no backup on these cars: at a reduced speed factor it leaves the track even on the nominal car, on a slower
 plan it completes at most 9 of 12 development laps and almost none with a 60 ms lag): **a backup that drives the lagged

@@ -1,6 +1,6 @@
 # Control expansion – status (resume point)
 
-Last updated: 2026-11-24 (phase J opened – the user chose robust adaptive MPC; literature §J and the protocol CX_J revision 0 written, packet 1 for review; no code). Phase I is done (merged 70a51f6). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
+Last updated: 2026-11-25 (phase J – the 1 528 test laps are run and reported: H-J1 holds, H-J2 is not shown; packet 4 for review). Phase I is done (merged 70a51f6). Roadmap: [CONTROL_EXPANSION_ROADMAP.md](CONTROL_EXPANSION_ROADMAP.md).
 
 * **Current phase:** J – frontier 3, robust adaptive MPC: a tube around an adaptive model (the user's choice,
   2026-11-24). Branch `cx/J-robust-adaptive` from `main` 85059dc; the merge of phase I is `main` **70a51f6** (recorded in
@@ -10,7 +10,13 @@ Last updated: 2026-11-24 (phase J opened – the user chose robust adaptive MPC;
     ab83afb: packet 1b **APPROVE** with clarifications m1, m2, n1–n3, written in before any code. Code 9b92813; development
     checks done (protocol §9 results): C's tube and D's adaptive reproduced exactly, 72 reference laps and 96 gate laps
     without errors, replays (the box is not informative under noise and lag; the residual terms act on noise, hardly on lag),
-    **the gate passed** (`ra` 10 / 10 and 8 / 10; `adaptive` 10, `tube` 7). Packet 2 next.
+    **the gate passed** (`ra` 10 / 10 and 8 / 10; `adaptive` 10, `tube` 7). Packets 2 and 3 **APPROVE** (the JV tuning: ρ₀ 0,
+    ρ_s 0.2, 38 of 40, at the grid's edges).
+  * **Test laps** (2026-11-24/25, worktree `F1-Race-wt-CXJ-run` at c68d871, 1 528 laps, 0 errors, paused once at the user's request):
+    **H-J1 holds** (falling grip: `ra` 47, `adaptive` 36 of 50; 12 : 1, p 0.0034; Holm and 0.025); **H-J2 is not shown** (noise + lag: `ra`
+    84, `tube` 75 of 100 laps, p 0.064; noise 44 against 27, lag 40 against 48 and 5.9 s slower). Not cross-checked. The
+    text is in the benchmark document and protocol section 10. An unregistered repeat of the primaries' 300 laps gave 300 identical laps
+    (protocol 10.4). Packet 4 is in review.
   * **Design:**
     * phase D's online estimate (RLS) as the model of phase C's tube;
     * the tube's box shrunk by the estimate's covariance, under a symmetric cap that contains phase C's box;
@@ -295,7 +301,7 @@ Last updated: 2026-11-24 (phase J opened – the user chose robust adaptive MPC;
 | G | `comp` option of `experiments/l9`, `experiments/cx_g.py`, `scripts/{run,report}_cx_g.py`, `scripts/cx_g_dev.py` | yes (2833681 … bdfa2a7) | yes – `tests/test_cx_g.py` 4 | development checks §9 on NOM and GD (WSL) – gate passed; GT (1 340 laps, WSL) | literature §G and protocol rev 0 **APPROVE** (packet 1, m1–m3 / n1, n2); packet 2 **APPROVE**; packet 3 and final review 380124a **APPROVE** (h1) | **yes – phase G completed (H-G1 holds; H-G2 not shown)** |
 | H | `ATVLearningMPC`, `ATVLMPCController` (`control/lmpc.py`), `cx_e.learn` solver option, `experiments/cx_h.py`, `scripts/cx_h_dev.py`; `scripts/run_cx_h.py` (only `dev`) and `scripts/report_cx_h.py` (only `dev`) – the other stages never run | yes (3c69eb0 … 8b17829) | yes – `tests/test_atv_lmpc.py` 4 | development checks §9 on NOM and DEV – **gate failed**; a diagnostic variant | literature §H and protocol rev 0 **APPROVE** (packet 1, m1–m3 / n1, n2); packet 2 **APPROVE**, amendment H1 accepted (closed, no benchmark); final review 99732d5 **APPROVE** | **yes – phase H completed (closed without the benchmark)** |
 | I | I-1: `LearningMPC(speed_bound=True)`, `LapStore.v_ref`, `LMPCController(eps)` (`control/lmpc.py`), `experiments/cx_i.py`, `scripts/{run,report}_cx_i.py`, `scripts/cx_i_dev.py`; revision 1: `cx_e.learn` options `consecutive`, `start` "centre", `on_lap`, `cx_i.REPRO` / `reading` | yes (62fc41d; b34eb97; diagnostics 418bf3a, bca7802, aae7f30) | yes – `tests/test_cx_i.py` 13 | I-1's development checks §9 on NOM and DEV – stage A passed, **stage B failed** (gate failed); the reproduction check §10.9 on NOM – R1 (c1), R2 and R3 (c2), examined | literature §I and protocol rev 0 **APPROVE** (packet 1, m1, m2 / n1, n2); packet 2 (I-1's results) **APPROVE** – I-1 closed; packet 3 (revision 1) **APPROVE** (m1–m3, n1–n3); packet 4 (the check's results) **APPROVE** (m1–m3, n1–n3); the user closed the LMPC line; final review f2e4263 **APPROVE** | **yes – phase I completed (closed without a benchmark; the LMPC line closed)** |
-| F–G | – | not started | – | – | – | – |
+| J | `FrenetMPC` with `param_model` and `param_tightening` together (`control/nmpc.py`), `control/radaptive.py` (`AdaptiveTube`, `RobustAdaptiveMPCController`), `cx_d.lap` hooks, `experiments/cx_j.py`, `scripts/{run,report}_cx_j.py`, `scripts/cx_j_dev.py` | yes (9b92813 … 135782b) | yes – `tests/test_cx_j.py` 19 | development checks §9 on NOM and DEV (gate passed); JV tuning (360 laps); test laps (1 528) | literature §J and protocol rev 0 (packet 1 CHANGES_REQUESTED, 1b **APPROVE**); packets 2, 3 **APPROVE**; packet 4 in review | **not yet – packet 4 and the final review** |
 
 ## Review record
 
@@ -352,6 +358,10 @@ Last updated: 2026-11-24 (phase J opened – the user chose robust adaptive MPC;
 | 2026-11-24 | 2187b53 | phase J packet 1: literature §J and protocol CX_J revision 0 | **CHANGES_REQUESTED** | M1 the L2 box is not centred on the nominal car, so θ̂ ± h is not C's box (61 % of the L2 cars would start outside it); M2 the per-stage residual inflates the tube to its caps under noise, and the grid had no small values; m1 the 2 × 2 ablation; m2 the gate's reference may be uninformative; m3 H-J2 by car; m4 the cold-solve check; m5 NOM's seeds, the replay's conditions; n1, n2. Worked into the second version |
 | 2026-11-24 | ab83afb | phase J packet 1b: protocol CX_J revision 0, second version | **APPROVE** | m1 the replay laps do not exist yet (drive them first; order replays → gate → packet 2 → tuning), m2 stage 0, n1–n3 – written in as clarifications before any code |
 | 2026-11-24 | (reviewer's correction of the phase-I reviews) | packets 4 and final review, phase I | – | *As stated by the reviewer:* the code changes from b34eb97 on had not been read at packet 4 and the final review (records and tests only); they have now read the changes of `cx_e`, `cx_i` and `run_cx_i.py` against 437ee9e and found no defect, but not `cx_i_dev.py`, `report_cx_i.py` and `tests/test_cx_i.py`. r0 was checked only by `all_equal` then; its record and now were compared since: equal. The count of curvature points above 0.08 (packet 3) and the remark that the builder's correction was recorded are unverified / not true. **Phase I's conclusion is unchanged.** *(Later, packet 1b's review, as stated by the reviewer: those three files have now been read, at the merged 70a51f6, and no defect that affects the conclusions was found; not re-run. `repro-replay` and `repro-snap` compare the stop reason, the failure arclength, the solves and the failures – lap times for `snap` –, not the states step by step. The builder's two corrections of CX_I agree with `r2_usage.json`; the ninth peak is front-axle braking, 0.915 at s 3 410 m.)* |
+| 2026-11-24 | 85bcafe (c68d871) | phase J packet 2: code, tests, development checks (gate passed), runner and report | **APPROVE** | m1 registered checks of 9.1 missing in the first tests (added), m2 the report's diagnostics, m3 `select` and the guards, m4 the overwritten `meta_gate` (one launch line per start), m5 section 9's per-lap figures, n1–n4; done in c68d871, 7044d91 and 68e447c |
+| 2026-11-24 | 1c126fd (run c68d871) | phase J packet 3: the JV tuning (360 laps; ρ₀ 0, ρ_s 0.2) | **APPROVE** | m1 the slow noise laps go with ρ₀, m2 the always-reported list, n1 1 528 distinct jobs, n2 no-common-car lines, n3 the coverage definition; done in 135782b |
+| 2026-11-25 | (this commit; run c68d871) | phase J packet 4: the 1 528 test laps, H-J1 holds, H-J2 not shown; the benchmark section, protocol section 10 | in review | – |
+
 ## Tests
 
 `tests/test_mpcc.py` (8) and `tests/test_cx_a.py` (7) at e2cea5d (6 and 5 at 6bcc6ef), and the full suite – see the latest review packet for the command and output.
@@ -391,6 +401,12 @@ worktree `F1-Race-worktrees/F1-Race-wt-CXF-run` at e0f0b0a, `results/CX/F/` (`te
 `report/CX_F.{md,json}`, `RUN_COMMIT_test`, `SHA256_inputs_{run,main_checkout}.txt`, `timeline.tsv`, `log_test.txt`,
 `log_report.txt`, `launch_test.sh`). All git-ignored.
 
+Phase J: `results/CX/J/dev/` (main checkout) – the development checks of CX-J §9 (`repro.json`, `refs.jsonl`, `gate.jsonl`, `replay.json`,
+`gate.json`, `drifts.json`, `replay_laps/`, `meta_*.json`), `final/` (the pytest logs), `repeat/` (the unregistered repeat of section 10.4:
+`noml.jsonl`, `repeat.jsonl`, `launches_repeat.jsonl`). Tuning and test: worktree `F1-Race-worktrees/F1-Race-wt-CXJ-run` at
+c68d871, `results/CX/J/` (`tune.jsonl`, `selected.json`, `test.jsonl` ed53c765…, `launches_*.jsonl`, `log_*.txt`, `RUN_COMMIT_*`,
+`SHA256_inputs_run.txt`, `report/`). All git-ignored.
+
 Phase I: `results/CX/I/` (main checkout). The records:
 * `dev/` – I-1's development checks of CX-I §9, at 62fc41d (`laps.jsonl`, `nlp_repro.json`, `meta_*.json`,
   `report/`);
@@ -427,6 +443,6 @@ Phase D: `results/CX/D/plans/` (main checkout) – the new plans of the library 
 
 ## Next actions
 
-1. Phase J: packet 2 **APPROVE**; the JV tuning is done (selected rho0 0, rho_s 0.2, at the grid edges; 38 of 40), packet 3 in review; then the test laps from the pinned worktree.
+1. Phase J: packet 4 (the test laps' results and report) for review; then the final review of `cx/J-robust-adaptive` and the merge. The next frontier method is the user's choice.
    * The LMPC line is closed (CX_I section 11). Its open points are listed in the matrix ("From phase I") and are not
      scheduled.
