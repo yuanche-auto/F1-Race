@@ -457,8 +457,10 @@ Completed laps of 40 (10 cars per condition), in the registered order of the gri
 * **It sits at the grid's edges** (ρ_s the largest, ρ₀ the smallest). Larger ρ_s were not tried, and the grid is not extended: it was
   fixed before any lap, and after the replays it may not be changed (clarification m1). The report states that the best
   setting may lie outside.
-* **The initial-error term did not help.** ρ₀ > 0 never gives more completed laps than ρ₀ = 0 at the same ρ_s; the per-stage term does.
-  The protocol had argued that noise belongs in the initial error (section 3.4, literature J.5); on these ten cars this was not so. No reason is tested.
+* **The initial-error term helped little.** At ρ_s 0.1 and 0.2 every ρ₀ > 0 gave fewer completed laps than ρ₀ = 0 (33 and 32 against
+  35; 36 and 33 against 38); at ρ_s = 0, ρ₀ 4 gave 31 against 29 and ρ₀ 2 the same 29. The per-stage term gave more at every
+  ρ₀ except (4, 0) to (4, 0.1) (31, 32, 33). The protocol had argued that noise belongs in the initial error (section 3.4, literature J.5); on these ten cars the per-stage term
+  mattered more. No reason is tested. *(First version of this item, corrected before packet 3: it said that ρ₀ > 0 never gives more.)*
 * **Description of the selected setting:** on the cars both it and (0, 0) complete it is 0.1 s slower in the constant condition and
   0.05 s slower under drift, and 0.2–0.3 s faster under noise and lag (2 and 8 cars). Its lost laps: JV_D_car6 at 3 821 m and JV_L_car4 at 457 m. Its
   noise laps take 76.2–80.5 s.
