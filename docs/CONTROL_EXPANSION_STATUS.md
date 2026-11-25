@@ -427,6 +427,6 @@ Phase D: `results/CX/D/plans/` (main checkout) – the new plans of the library 
 
 ## Next actions
 
-1. Phase J: packet 2 (code, checks, gate) in review; then the tuning on JV, then the test laps.
+1. Phase J: packet 2 **APPROVE**; the JV tuning is done (selected rho0 0, rho_s 0.2, at the grid edges; 38 of 40), packet 3 in review; then the test laps from the pinned worktree.
    * The LMPC line is closed (CX_I section 11). Its open points are listed in the matrix ("From phase I") and are not
      scheduled.

@@ -431,3 +431,36 @@ replays and laps suggest, which the test will or will not show:
   Section 6's secondary lap-time test covers only JT; **a description of the lap times of JN and JL on the cars both complete is
   added to the report** (no test; stated here before any JT / JD / JN / JL lap). The review of packet 2 agrees that it stays a
   description, and asks that the report's text puts it next to H-J2, not in an appendix.
+
+### 9.6 Tuning on JV (2026-11-24; packet 3)
+
+Run 20:10–22:08 from the pinned worktree `F1-Race-worktrees/F1-Race-wt-CXJ-run` at c68d871 (clean; inputs identical to phase D's run by
+SHA-256), 360 laps, 0 error records, no case twice. Records (git-ignored) in that worktree's `results/CX/J/`: `tune.jsonl`
+(39dee27610ac62a9…), `launches_tune.jsonl`, `selected.json`, `report/tune.md`.
+
+Completed laps of 40 (10 cars per condition), in the registered order of the grid:
+
+| ρ₀, ρ_s | all | constant | drift | noise | lag |
+|---|---|---|---|---|---|
+| 0, 0 (`ra_shrink`) | 29 | 10 | 9 | 2 | 8 |
+| 0, 0.1 | 35 | 10 | 9 | 8 | 8 |
+| **0, 0.2** | **38** | 10 | 9 | **10** | 9 |
+| 2, 0 | 29 | 10 | 9 | 4 | 6 |
+| 2, 0.1 | 33 | 10 | 9 | 8 | 6 |
+| 2, 0.2 | 36 | 10 | 9 | 9 | 8 |
+| 4, 0 | 31 | 10 | 9 | 6 | 6 |
+| 4, 0.1 | 32 | 10 | 9 | 4 | 9 |
+| 4, 0.2 | 33 | 10 | 9 | 7 | 7 |
+
+* **Selected by the rule (the most completed laps): ρ₀ = 0, ρ_s = 0.2** (38 of 40). It is the only setting with that number, so no tie
+  was broken.
+* **It sits at the grid's edges** (ρ_s the largest, ρ₀ the smallest). Larger ρ_s were not tried, and the grid is not extended: it was
+  fixed before any lap, and after the replays it may not be changed (clarification m1). The report states that the best
+  setting may lie outside.
+* **The initial-error term did not help.** ρ₀ > 0 never gives more completed laps than ρ₀ = 0 at the same ρ_s; the per-stage term does.
+  The protocol had argued that noise belongs in the initial error (section 3.4, literature J.5); on these ten cars this was not so. No reason is tested.
+* **Description of the selected setting:** on the cars both it and (0, 0) complete it is 0.1 s slower in the constant condition and
+  0.05 s slower under drift, and 0.2–0.3 s faster under noise and lag (2 and 8 cars). Its lost laps: JV_D_car6 at 3 821 m and JV_L_car4 at 457 m. Its
+  noise laps take 76.2–80.5 s.
+* **The 38 of 40 is after a selection on these cars** (biased upward), and the ten cars were used to tune phase D's λ_μ. It is not a result.
+* `ra` and `ra_shrink` differ here (ρ_s 0.2 against 0); `ra_fixed_res` uses the selected (0, 0.2).
