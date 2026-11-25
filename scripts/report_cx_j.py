@@ -132,6 +132,79 @@ def _guards(recs: list[dict], selected: dict) -> None:
                 raise SystemExit(f"{SETS[c]} {k}: {len(cars)} cars instead of 1 ... 50")
 
 
+N_SECONDARY = 21                                        # section 6: 3 + 2 + 2 + 2 + 12
+
+
+def _num(rs: list[dict], f) -> float:
+    v = [x for x in (f(r) for r in rs) if x is not None and not (isinstance(x, float) and math.isnan(x))]
+    return float(np.mean(v)) if v else math.nan
+
+
+def _failures(rs: dict) -> str:
+    """Where the lost laps end: the number by corner of the failure positions (m, rounded to 50) and the stop reasons."""
+    out: dict = {}
+    for r in rs.values():
+        if not r["completed"]:
+            pos = r.get("failure_s")
+            key = f"{50 * round(pos / 50):.0f} m" if pos is not None else r["stop_reason"]
+            out[key] = out.get(key, 0) + 1
+    return ", ".join(f"{k} {v}" for k, v in sorted(out.items(), key=lambda t: -t[1])) or "-"
+
+
+def diagnostics(S: dict) -> list[str]:
+    """Section 5 for the ``ra`` kinds (means over the 50 laps of a set) and the solver's work for every kind."""
+    md = ["## Diagnostics (means over the laps of a set; description)", "",
+          "| set | kind | solve ms | tube ms | fallbacks / lap | h_mu at cap | err <= h (mu) | q n [m] | q vx [m/s] | e0 n | d_s n | eta_k P50 | back-off P50 [m] | eta capped | track capped | coverage exceed |",
+          "|---|---|" + "---|" * 14]
+    for c in "CDNL":
+        for k in (*KINDS, *(("adaptive_oracle",) if c in "CD" and "adaptive_oracle" in S[c] else ())):
+            rs = list(S[c][k].values())
+            ra = k in cx_j.RA_KINDS
+            row = [SETS[c], k, f"{_num(rs, lambda r: r['solve_ms_mean_p95_p99_max'][0]):.0f}",
+                   f"{_num(rs, lambda r: r['tube_ms_mean_p95_max'][0]):.1f}" if ra else "-",
+                   f"{_num(rs, lambda r: r['fallbacks']):.1f}"]
+            if ra:
+                q = [_num(rs, lambda r, i=i: r["q_p50_p95_per_component"][i][0]) for i in range(7)]
+                rho = rs[0]["setting"] if k in ("ra", "ra_fixed_res") else {"rho0": 0.0, "rho_s": 0.0}
+                row += [f"{_num(rs, lambda r: r['at_cap_share_per_param'][0]):.2f}",
+                        f"{_num(rs, lambda r: r['err_within_h_share_per_param'][0]):.2f}", f"{q[1]:.3f}", f"{q[3]:.3f}",
+                        f"{rho['rho0'] * q[1]:.3f}", f"{rho['rho_s'] * q[1]:.4f}",
+                        f"{_num(rs, lambda r: r['eta_k_p5_p50_p95'][1]):.3f}",
+                        f"{_num(rs, lambda r: r['backoff_m_p5_p50_p95'][1]):.3f}",
+                        f"{_num(rs, lambda r: r['capped_eta_share_mean']):.3f}",
+                        f"{_num(rs, lambda r: r['capped_track_share_mean']):.3f}",
+                        f"{_num(rs, lambda r: r['coverage_exceed_share']):.3f}"]
+            else:
+                row += ["-"] * 11
+            md.append("| " + " | ".join(row) + " |")
+    md += ["", "Where the lost laps end (number of laps by position, rounded to 50 m):", ""]
+    for c in "CDNL":
+        for k in KINDS:
+            md.append(f"* {SETS[c]} `{k}`: {_failures(S[c][k])}")
+    md += ["", "Parameter error at the lap end against sigma, and the shares |error| <= h per parameter (mu, m, ClA, CdA, Iz, B, aero_front):", ""]
+    for c in "CDNL":
+        rs = list(S[c]["ra"].values())
+        md.append(f"* {SETS[c]} `ra`: |error| <= h on "
+                  + ", ".join(f"{_num(rs, lambda r, i=i: r['err_within_h_share_per_param'][i]):.2f}" for i in range(7)) + "; sigma P50 "
+                  + ", ".join(f"{_num(rs, lambda r, i=i: r['sigma_p50_per_param'][i]):.3f}" for i in range(7)) + "; mean mu error at the lap end "
+                  f"{_num(rs, lambda r: r['mu_err_end']):+.3f}; too-fast share {_num(rs, lambda r: r['too_fast_share']):.2f}")
+    return md
+
+
+def nominal(recs: list[dict]) -> list[str]:
+    """NOM in the four conditions, apart from the tests."""
+    md = ["## NOM (apart; one lap per condition)", "", "| kind | constant | drift | noise | lag |", "|---|---|---|---|---|"]
+    by: dict = {}
+    for r in recs:
+        if r["case"].startswith("NOM_"):
+            by.setdefault(r["kind"], {})[r["case"].split("_")[1]] = r
+    for k in KINDS:
+        md.append(f"| {k} | " + " | ".join(
+            (f"{by[k][c]['lap_time']:.2f} s" if by[k][c]["completed"] else f"off ({by[k][c].get('failure_s', 0):.0f} m)") if c in by.get(k, {}) else "-"
+            for c in "CDNL") + " |")
+    return md
+
+
 def test(d: Path) -> None:
     recs = load(d / "test.jsonl")
     _errors(recs, "test.jsonl")
@@ -167,18 +240,27 @@ def test(d: Path) -> None:
                 out["completed"][SETS[c]][k] = sum(_done(S[c][k]).values())
     (d / "report").mkdir(parents=True, exist_ok=True)
     (d / "report" / "CX_J.json").write_text(json.dumps(out, indent=1, default=float))
+    all_kinds = KINDS + (("adaptive_oracle",) if "adaptive_oracle" in out["completed"]["JT"] else ())
     md = ["# CX-J – robust adaptive MPC", "", f"H-J1 (JD, `ra` against `adaptive`): {h1['only_first']} : {h1['only_second']}, p {h1['p']:.4g}; "
           f"completed {h1['completed'][0]} / {h1['completed'][1]}; cars improved / worsened / unchanged "
           f"{h1['improved']} / {h1['worsened']} / {h1['unchanged']}, improved share {h1['improved_share_interval']}",
           f"H-J2 (JN + JL, `ra` against `tube`): per-car signed-rank p {h2['p']:.4g} (n {h2['n_nonzero']}), laps {h2['laps_completed']}; "
           f"cars improved / worsened / unchanged {h2['improved']} / {h2['worsened']} / {h2['unchanged']}, improved share "
           f"{h2['improved_share_interval']}", f"Holm: {hm}", "",
-          "| set | " + " | ".join(KINDS) + " |", "|---|" + "---|" * len(KINDS)]
+          "| set | " + " | ".join(all_kinds) + " |", "|---|" + "---|" * len(all_kinds)]
     for c in "CDNL":
-        md.append(f"| {SETS[c]} | " + " | ".join(fmt_ci(out["completed"][SETS[c]][k], 50) for k in KINDS) + " |")
-    md += ["", "Secondary (uncorrected):", "```", json.dumps(sec, indent=1, default=float), "```"]
+        md.append(f"| {SETS[c]} | " + " | ".join(fmt_ci(out["completed"][SETS[c]][k], 50) if k in out["completed"][SETS[c]] else "-"
+                                               for k in all_kinds) + " |")
+    jl = sec["jn_jl_lap_time_both_complete"]
+    md += ["", "**H-J2 beside the lap times of the same laps (description, no test; review of packet 2):** where both `ra` and `tube`"
+           " complete, the lap time of `ra` minus `tube`:"]
+    for key, t in jl.items():
+        md.append(f"* {key}: {t['n']} cars, mean {t['mean']:+.2f} s, median {t['median']:+.2f} s")
+    md += ["", f"**Secondary comparisons (uncorrected; {N_SECONDARY} comparisons):**", "```", json.dumps(
+        {k: v for k, v in sec.items() if k != "jn_jl_lap_time_both_complete"}, indent=1, default=float), "```", ""]
+    md += diagnostics(S) + [""] + nominal(recs)
     (d / "report" / "CX_J.md").write_text("\n".join(md) + "\n", encoding="utf-8")
-    print("\n".join(md[:4] + md[4:14]))
+    print("\n".join(md[:24]))
 
 
 def main() -> None:
