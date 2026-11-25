@@ -908,18 +908,19 @@ Ablations, only `ra` : only the ablation (p):
   (47 against 36; phase D's drift ranges, new cars, one track). `adaptive`'s 14 lost laps end at ~2.7 km (8), ~3.8 km (4), 2.2 km (1)
   and 1.4 km (1); `ra`'s three end at ~1.4 km (2) and 2.2 km (1). The price is lap time: +0.75 s on the 35 JD cars both complete (a
   description) and +0.76 s on JT.
-* **What carries H-J1 is the tube around θ̂, in any of its forms:** `ra_shrink` completes 47 as well (0 : 0 against `ra`), `ra_fixed` 45. On JT and JD `ra` is not
-  separated from these two. **Neither the shrinking of the box nor the residual term is shown to
-  matter there.** The shrinking buys lap time (a description): `ra` is 1.0 s faster than `ra_fixed` on JT (47 cars) and on JD (45). The full
+* **The other three forms of the tube (a description; only `ra` against `adaptive` has a registered test):** on JD `ra_shrink` – no residual term – completes 47 as well
+  (0 : 0 against `ra`) and `ra_fixed` 45; on JT and JD `ra` is not separated from these two. **Neither the shrinking of the box nor the residual term is shown to
+  matter there.** Against `adaptive` on JD (not registered, counts only): `ra_shrink` 12 : 1, `ra_fixed` 12 : 3, `ra_fixed_res` 11 : 5 (42 laps; not
+  separated from `adaptive`). The shrinking buys lap time (a description): `ra` is 1.0 s faster than `ra_fixed` on JT (47 cars) and on JD (45). The full
   cap box with the residual term (`ra_fixed_res`) loses five more cars than `ra` on each of the two sets (5 : 0, p 0.06); five of its seven lost JT
   laps have 20 or more fallbacks. The oracle – the true car and
-  friction, no tube – completes 43: knowing the car is not enough, a margin matters (5 : 1, not significant).
+  friction, no tube – completes 43 (5 : 1 for `ra`, not significant).
 * **H-J2 is not shown, and its halves go opposite ways.**
-  * **Noise:** `ra` completes more than `tube` and faster. What carries this is the per-stage residual term: without it (`ra_shrink`) 12 laps,
+  * **Noise:** `ra` completes more than `tube` and faster. The ablations suggest that the per-stage residual term carries this (uncorrected secondary comparisons): without it (`ra_shrink`) 12 laps,
     with the full cap box and no residual 36, with it 44 (`ra`) and 45 (`ra_fixed_res`). The estimate itself is wrong under noise – μ̂ is 0.12 too high
     at the lap end, with a σ of 0.026; the true μ is inside its interval on 15 % of the steps, and the plan is too fast on 99 %
     of the solves. The box does not cover this; the margin comes from the residual term (median back-off 0.32 m against
-    `ra_shrink`'s 0.02 m). The laps are completed through this margin, not through a good estimate.
+    `ra_shrink`'s 0.02 m). The ablations suggest that the laps are completed through this margin rather than through a good estimate.
   * **Lag:** `ra` is worse than `tube` in both respects. All ten lost laps end in turn 1 (456–466 m), and `tube` completes eight
     of these ten cars. The RLS has no lag in its model, and its estimates are off (μ̂ 0.18 too low, I_z 0.50 and B 0.19 off at the lap
     end); the plan is slow: 85.3 s against 79.7 s on average (each over its own completed laps). Neither the box nor the residual term changes the count: 40, 40, 41 and 40
@@ -928,7 +929,7 @@ Ablations, only `ra` : only the ablation (p):
     from), and the realised lateral error is 1.9–7.1 times the bound at its P95 (per lap). An unregistered look: the lost cars have
     a lower tyre stiffness (B 0.93 against 1.02 on average); 10 cars, no test.
 * **JT: `ra` completes as many as `tube` (48, 2 : 2) and is 0.69 s faster; against `adaptive` 48 to 41 (9 : 2, p 0.065, not significant)
-  at +0.76 s.** It does not need the L2 ranges centred on the nominal car, but it needs them as a cap.
+  at +0.76 s.** It does not need the L2 ranges centred on the nominal car, but it uses them as a cap (no variant without the cap was run).
 * **The answer to the phase's question is partly yes:** `ra` keeps what `adaptive` gains when the grip falls (and adds to it), and what `tube`
   gains under noise (and adds to it), but not what `tube` gains under the lag.
 * **Solver failures.** Fallbacks are concentrated in a few laps, most of them lost (laps with 20 or more; lost among them): JT `ra` 3 (2; max 240),

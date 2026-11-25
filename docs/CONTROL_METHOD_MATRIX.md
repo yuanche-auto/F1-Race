@@ -74,8 +74,8 @@ moving-horizon estimator and the plan library. **Open points, not scheduled:**
 1. **The steering lag.** None of the four `ra` kinds keeps `tube`'s robustness to a 30 ms lag (40, 40, 41 and 40 of 50 against 48; all lost
    laps of the four kinds end in turn 1, 456–467 m), and the laps are 5.2–6.7 s slower. The RLS has no lag in its model, and its estimates are off under
    the lag (benchmark, reading). A lag-aware estimator (L6 identifies the lag) is a candidate; the cause of the turn-1 losses is not tested.
-2. **Errors in variables.** Under noise μ̂ is 0.12 too high at the lap end with a σ of 0.026, so the box does not cover the truth; the laps are completed through the residual's
-   margin (benchmark, reading). An estimator that treats the state noise (a moving-horizon estimator, literature D.5–D.7) could make the box informative (not tested).
+2. **Errors in variables.** Under noise μ̂ is 0.12 too high at the lap end with a σ of 0.026, so the box does not cover the truth; the ablations suggest that the laps are completed through the
+   residual's margin (benchmark, reading). An estimator that treats the state noise (a moving-horizon estimator, literature D.5–D.7) could make the box informative (not tested).
 3. **The setting at the grid's edges** (ρ₀ 0, ρ_s 0.2): larger ρ_s were not tried. The initial-error term (ρ₀ > 0) was not better on JV and is not in
    the tested controller.
 4. **Solver failures** in a few laps, most of them lost; more of them with the full box or the residual term (benchmark, reading).

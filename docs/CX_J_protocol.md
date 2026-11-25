@@ -9,7 +9,7 @@ module, test, runner or lap of phase J exists. Branch `cx/J-robust-adaptive` fro
 `main` **70a51f6** (recorded here, as agreed at its final review). The ten commits 70a51f6..85059dc are the README, media
 and `race.py` work merged by the user; no file of this phase's scope changed in them.
 **The development gate passed (section 9), ρ₀ 0 / ρ_s 0.2 was selected on JV (9.6), and the 1 528 test laps ran (section 10): H-J1 holds, H-J2
-is not shown.** The results are in the benchmark document; packet 4 for review.
+is not shown.** The results are in the benchmark document; packet 4 (2207b3f) **APPROVE**, in final review.
 
 The user's choice (2026-11-24, translated): *"Robust adaptive MPC."* It comes from the method matrix's phase-D list ("a
 tube around the adaptive model (robust adaptive MPC, D.13)"; CX-D review m3).
