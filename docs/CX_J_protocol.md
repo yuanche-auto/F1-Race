@@ -343,26 +343,41 @@ On NOM and DEV only (records in `results/CX/J/dev/` with commit and dirty flag).
 ### 9. Results of the development checks (2026-11-24; packet 2) – **the gate passed**
 
 Records (git-ignored) are in `results/CX/J/dev/`, all at 9b92813 (clean; `meta_*.json`): `repro.json`, `drifts.json`, `refs.jsonl`
-(72 laps, 0 errors) with `replay_laps/`, `replay.json`, `gate.jsonl` (96 laps, 0 errors) and `gate.json`. The order was the one
-of clarification m1: reproduction, references, replays, gate laps. After the replays neither the grid nor the gate's
+(72 laps, 0 errors) with `replay_laps/`, `replay.json`, `gate.jsonl` (96 laps, 0 errors) and `gate.json`. *(Review of packet 2, m4:
+the gate laps' own meta was overwritten by the table's, 19:33:23; the laps' commit 9b92813 is consistent with the logs and with
+the git history – `src` is unchanged from 9b92813 to 85bcafe – but has no direct record. From now on every launch adds a line to
+`launches_*.jsonl` and every lap record carries its commit.)* The order was the one of clarification m1, except that the
+reproduction check and the reference laps overlapped in time (references 18:38:53, reproduction finished 18:49): references and
+reproduction, replays, gate laps. After the replays neither the grid nor the gate's
 setting was changed. These are development data on six cars; they support no claim about H-J1 or H-J2.
 
 1. **Code against the parents (9.1).**
    * `repro.json`: with the new options off, phase C's `tube` (78.279 s) and phase D's `adaptive` (76.399 s) reproduce their NOM
      records in nine fields (time, stop reason, distance, margin, solves, fallbacks, usage, steering effort).
-   * `tests/test_cx_j.py` (13): the initial-error reachable set against the support function and against random errors; the combined
+   * *(Section 9.1's registered checks were not all in the first version of these tests, and the packet did not say so; the review of
+     packet 2 (m1) found it, and they were added after it – the items marked **added** below.)*
+   * `tests/test_cx_j.py` (19): the initial-error reachable set against the support function and against random errors; the combined
      NLP's constraint distances and objective at the same point as the tightened NLP of the car (10⁻⁹); the tube at the nominal
      car with C's explicit box equals C's `Tube` (10⁻⁹) and the cap box's disturbance is at least as large; the box, the quantile,
-     a short closed-loop drive; the sets and seeds; the drift's start; the selection rule. Three mutations (no e₀, no shrinking,
-     disturbance × 0.9) each make a test fail.
-   * Not checked against a car other than the nominal one in closed loop: a vertex car with a tightening in a lap.
+     a short closed-loop drive; the sets and seeds; the drift's start; the selection rule; the report's hypothesis functions. Three mutations
+     (no e₀, no shrinking, disturbance × 0.9) each make a test fail.
+   * **added:** finite differences of the parameterised Jacobians (A, B, the usage gradients) at a vertex car; the combined NLP at four
+     states (the first version had one state and four random points); its cold solves against the tightened NLP of the same
+     car (applied input within 10⁻³ scaled, four states); the cap box's back-off and friction tightening at least C's at every stage of five
+     predictions (the first version compared W at one); a fallback's residual is skipped (injected, two of them); f(L − 10⁻⁷) = 1.
+   * Not checked against a car other than the nominal one in closed loop: a vertex car with a tightening in a lap (the review of
+     packet 2 does not require it: the equality at points and in single solves suffices).
 2. **The box and the residual terms, replayed (9.2; 72 recorded laps, the RLS on what the controller saw).**
-   * **The shrinking is not empty:** 2σ_μ is below the cap on about 47 % of the steps in exact data (other parameters 70–91 %); on 7–19 % of the steps
-     every parameter is at the cap, in lag 8–46 %.
+   * **The shrinking is not empty:** 2σ_μ is below the cap on 47 % of the steps in the constant condition (mean over 18 laps; 33 %
+     in the drift condition, 35 % in noise, 44 % in lag; per lap 0–82 %), other parameters 70–91 % in the constant condition. Every
+     parameter is at the cap on 9 % of the steps of a lap in the constant condition (median; 8–10 %), 14 % under drift (up to 30 %),
+     6 % under noise (up to 41 %) and 10 % under lag (up to 81 %).
    * **In exact data σ is conservative:** the true error is within 2σ on 100 % of the steps for nearly every factor
      (`adaptive` ClA: 93 %), and σ_μ (0.043) is about ten times the typical |μ̂ − μ| (0.004–0.007).
-   * **Under noise and lag the box does not contain the truth:** |μ̂ − μ| ≤ h on 13–59 % of the steps (noise; the RLS is biased, as
-     phase D) and 43–56 % (lag). Lag also pulls I_z and the others far off. The box is not a reliable statement of uncertainty there; the margin
+   * **Under noise and lag the box does not contain the truth:** |μ̂ − μ| ≤ h on 4–96 % of the steps of a lap under noise (median 29 %;
+     the RLS is biased, as phase D) and 1–100 % under lag (median 28 %), over all 18 parent laps per condition. The figures 13–59 %
+     and 43–56 % of the first version were means of the three parents; in exact data the figure is at least 90 % in every lap. Lag also
+     pulls I_z and the others far off. The box is not a reliable statement of uncertainty there; the margin
      must come from the rest of the tube.
    * **The residual q** (median over the laps): under noise 0.11 m (n), 0.23 m/s (v_x), 0.11 m/s (v_y); in exact data and under the
      lag small (lag: v_y 0.013–0.11 m/s, r 0.014–0.048 rad/s), so the residual terms hardly act on the lag.
@@ -396,6 +411,14 @@ setting was changed. These are development data on six cars; they support no cla
      high for `ra`, as phase D found for the RLS.)
    * **The gate does not separate the `ra` kinds**, and noise is the hard condition: 3 of 5 for `ra`, 4 of 5 for `ra_fixed`; no
      selection is made on these laps (the tuning and the test decide on their own data).
+   * **Residual terms and noise (observation):** where `ra`'s residual terms act, its noise laps are slower – `ra` 83.9–85.0 s, `ra_fixed`
+     77.5–81.2 s, the latter completing one lap more. Plan η: `ra` 1.0 in noise (μ̂ too high), 0.68–0.82 under lag (median 0.75).
+   * **Solver failures (fallbacks), per lap on the six noise laps:** `ra` 1, 2, 2, 6, 73, 2 (the lap with 73 is DEV_N_car5's, which left the track; mean 14.3 over the six, 16.8 over
+     the five DEV laps), `ra_fixed_res` 2, 2, 4, 2, 51, 18, `ra_fixed` 0, 2, 5, 3, 0, 0, `ra_shrink` 4, 1, 0, 1, 0, 1; in the other conditions 0–2.
+   * **Coverage diagnostic** (share of the covered stages whose realised lateral error exceeds the back-off): `ra` 0.07–0.09 in every condition (the constant and
+     lag 0.08–0.09, noise 0.07), `ra_fixed` 0.075–0.54 (noise 0.54), `ra_fixed_res` 0.06–0.07, `ra_shrink` 0.10–0.82 (noise 0.82).
+   * **What separates the `ra` kinds from `adaptive` under the lag is not known.** All four complete the five DEV lag laps; `adaptive`
+     completes none, with the same slow-plan bias; `ra_shrink` has almost no margin (mean η 0.92) and also completes (review n3).
 5. **The drifts drawn (9.5):** JD – s_on 681–2 580 m, ℓ 118–1 460 m, f_end 0.751–0.900, μ·f_end 0.698–0.909 (one of 50 cars
    below 0.70); all drifts have begun before 2.7 km and ended before 3.83 km, 66 % before 2.7 km. JV_D (ten cars): f_end
    as drawn for phase D; none below 0.70; 60 % end before 2.7 km, 90 % before 3.83 km.
@@ -406,4 +429,5 @@ replays and laps suggest, which the test will or will not show:
   different ways;
 * under lag the completions of `ra` come with laps 4–10 s slower than `tube`'s, which McNemar on completions does not see.
   Section 6's secondary lap-time test covers only JT; **a description of the lap times of JN and JL on the cars both complete is
-  added to the report** (no test; stated here before any JT / JD / JN / JL lap).
+  added to the report** (no test; stated here before any JT / JD / JN / JL lap). The review of packet 2 agrees that it stays a
+  description, and asks that the report's text puts it next to H-J2, not in an appendix.

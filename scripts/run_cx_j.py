@@ -39,7 +39,7 @@ def _job(args: tuple) -> dict:
 
     t0 = time.time()
     setting = json.loads(setting_json)
-    out: dict = {"stage": stage, "job": _key(args)}
+    out: dict = {"stage": stage, "job": _key(args), "commit": os.environ.get("CXJ_COMMIT", "?")}
     try:
         case = cx_j.case_by_name(case_name)
         out.update(cx_j.lap(case, kind, setting, record=record))
@@ -92,12 +92,15 @@ def test_jobs(setting: dict) -> list[tuple]:
     return jobs
 
 
-def _meta(path: Path) -> None:
+def _launch(path: Path, n: int) -> None:
+    """One line per launch (review m4: never overwritten): the commit, the dirty flag, the time and the number of jobs."""
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
     dirty = bool(subprocess.run(["git", "status", "--porcelain", "--", "src", "scripts", "tests"], cwd=ROOT,
                                 capture_output=True, text=True).stdout.strip())
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"commit": commit, "dirty": dirty, "time": time.strftime("%Y-%m-%dT%H:%M:%S")}, indent=1))
+    os.environ["CXJ_COMMIT"] = commit + ("+dirty" if dirty else "")
+    with path.open("a") as fh:
+        fh.write(json.dumps({"commit": commit, "dirty": dirty, "time": time.strftime("%Y-%m-%dT%H:%M:%S"), "jobs": n}) + "\n")
 
 
 def _run(jobs: list[tuple], path: Path, workers: int) -> None:
@@ -108,7 +111,7 @@ def _run(jobs: list[tuple], path: Path, workers: int) -> None:
     if path.exists():
         done = {json.loads(l)["job"] for l in path.read_text().splitlines() if l.strip()}
     todo = [j for j in jobs if _key(j) not in done]
-    _meta(path.parent / f"meta_{path.stem}.json")
+    _launch(path.parent / f"launches_{path.stem}.jsonl", len(todo))
     print(f"{len(todo)} jobs -> {path}", flush=True)
     if not todo:
         return

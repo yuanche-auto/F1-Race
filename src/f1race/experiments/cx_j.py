@@ -253,8 +253,8 @@ def lap(case: dict, kind: str, setting: dict, record: str | Path | None = None) 
 
 
 # ---------------------------------------------------------------- tuning rule
-def select(records: list[dict]) -> dict:
-    """Section 4 for ``ra``: the most completed JV laps of all four conditions; ties by the mean lap time on the cases every
+def select(records: list[dict], full: bool = False) -> dict:
+    """Section 4 for ``ra`` (``full``: require the nine grid settings on exactly the forty JV laps): the most completed JV laps of all four conditions; ties by the mean lap time on the cases every
     tied setting completes (skipped if none); then the setting nearest the middle of the grid (rho0 2, rho_s 0.1); then the
     smaller rho0, the smaller rho_s. Different lap counts or cases stop it."""
     by: dict[str, dict] = {}
@@ -262,11 +262,17 @@ def select(records: list[dict]) -> dict:
         if r.get("kind") != "ra" or "error" in r:
             continue
         d = by.setdefault(r["setting_key"], {"setting": r["setting"], "done": {}})
+        if r["case"] in d["done"]:
+            raise ValueError(f"ra {r['setting_key']}: {r['case']} twice")
         d["done"][r["case"]] = r["lap_time"] if r["completed"] else None
     if not by:
         raise ValueError("no records for ra")
     if len({frozenset(d["done"]) for d in by.values()}) != 1:
         raise ValueError("ra: settings with different laps or cases")
+    if full:                                             # the registered tuning: 9 settings x 40 JV laps (review m3)
+        names = {c["name"] for cond in CONDITIONS for c in cases(f"JV_{cond}")}
+        if set(by) != {setting_key(g) for g in RHO_GRID} or set(next(iter(by.values()))["done"]) != names:
+            raise ValueError("ra: not the nine grid settings on the forty JV laps")
     table = {k: {"setting": d["setting"], "completed": sum(v is not None for v in d["done"].values()),
                  "laps": len(d["done"])} for k, d in by.items()}
     best = max(t_["completed"] for t_ in table.values())

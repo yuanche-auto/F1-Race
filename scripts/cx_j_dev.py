@@ -192,7 +192,7 @@ def replay(workers: int) -> None:
 
 
 def gate() -> None:
-    meta("gate")
+    meta("gate_table")                                   # the run's own record is written by run_cx_j.py (review m4)
     refs = [json.loads(l) for l in (DEV / "refs.jsonl").read_text().splitlines() if l.strip()]
     ra = [json.loads(l) for l in (DEV / "gate.jsonl").read_text().splitlines() if l.strip()]
     allr = refs + ra

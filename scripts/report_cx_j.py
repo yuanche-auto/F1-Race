@@ -47,7 +47,7 @@ def tune(d: Path) -> None:
     path = d / "tune.jsonl"
     recs = load(path)
     _errors(recs, "tune.jsonl")
-    sel = cx_j.select(recs)
+    sel = cx_j.select(recs, full=True)
     (d / "report").mkdir(parents=True, exist_ok=True)
     out = {"tune_sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "ra": sel}
     (d / "selected.json").write_text(json.dumps(out, indent=1, default=float))
@@ -113,14 +113,30 @@ def h_j2(jn: dict, jl: dict) -> dict:
             "improved_share_interval": interval(up, up + dn), "laps_completed": [sum(a), sum(b)], "cars": len(cars)}
 
 
+def _guards(recs: list[dict], selected: dict) -> None:
+    """Review m3: no case twice for a kind; each set, kind and car number 1 ... 50 (``adaptive_oracle`` on JT and JD); the ``ra``
+    kinds' settings the selected one (the others use none)."""
+    seen: set = set()
+    for r in recs:
+        key = (r["kind"], r["case"])
+        if key in seen:
+            raise SystemExit(f"{key} twice")
+        seen.add(key)
+        if r["kind"] in cx_j.RA_KINDS and cx_j.setting_key(r["setting"]) != cx_j.setting_key(selected):
+            raise SystemExit(f"{key}: setting {r['setting']} is not the selected {selected}")
+    for c in "CDNL":
+        kinds = KINDS + (("adaptive_oracle",) if c in "CD" else ())
+        for k in kinds:
+            cars = {int(x.rsplit("_car", 1)[1]) for kk, x in seen if kk == k and x.startswith(f"{SETS[c]}_car")}
+            if cars != set(range(1, 51)):
+                raise SystemExit(f"{SETS[c]} {k}: {len(cars)} cars instead of 1 ... 50")
+
+
 def test(d: Path) -> None:
     recs = load(d / "test.jsonl")
     _errors(recs, "test.jsonl")
+    _guards(recs, json.loads((d / "selected.json").read_text())["ra"]["setting"])
     S = {c: _by(recs, SETS[c]) for c in "CDNL"}
-    for c in "CDNL":
-        for k in KINDS:
-            if len(S[c].get(k, {})) != 50:
-                raise SystemExit(f"{SETS[c]} {k}: {len(S[c].get(k, {}))} laps instead of 50")
     h1, h2 = h_j1(S["D"]), h_j2(S["N"], S["L"])
     hm = holm({"H-J1": h1["p"], "H-J2": h2["p"]})
     out = {"H-J1": h1, "H-J2": h2, "holm": hm, "each_at_0.025": {"H-J1": h1["p"] <= 0.025, "H-J2": h2["p"] <= 0.025}}

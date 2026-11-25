@@ -97,16 +97,16 @@ def test_combined_nlp_equals_the_tightened_nlp_of_the_car(track):
     rng = np.random.default_rng(1)
     eta = np.full(30, 0.9)
     back = np.concatenate([[0.0], np.full(30, 0.08)])
-    x0 = np.array([1000.0, 0.2, 0.01, 60.0, 0.1, 0.05, 0.02])
     up = np.array([0.1, 3000.0, 0.0]) / np.array([1.0, 1e4, 1e4])
-    pa = np.concatenate([x0, up, eta, back, th])
-    pb = np.concatenate([x0, up, eta, back])
     fA = ca.Function("a", [A._nlp["x"], A._nlp["p"]], [A._nlp["f"], A._nlp["g"]])
     fB = ca.Function("b", [B._nlp["x"], B._nlp["p"]], [B._nlp["f"], B._nlp["g"]])
-    for _ in range(4):
+    for s0, vx in ((1000.0, 60.0), (450.0, 30.0), (2700.0, 70.0), (3830.0, 40.0)):      # four states (review m1)
+        x0 = np.array([s0, 0.2, 0.01, vx, 0.1, 0.05, 0.02])
+        pa = np.concatenate([x0, up, eta, back, th])
+        pb = np.concatenate([x0, up, eta, back])
         z = np.clip(rng.normal(size=A.lbz.shape) * 0.1, -0.5, 0.5)
-        z[A.Xi[:, 3]] = 50.0 + rng.normal(size=31)
-        z[A.Xi[:, 0]] = 1000.0 + np.linspace(0, 75, 31)
+        z[A.Xi[:, 3]] = vx + rng.normal(size=31)
+        z[A.Xi[:, 0]] = s0 + np.linspace(0, 1.5 * vx, 31)
         z[A.Ti] = np.abs(z[A.Ti])
         ja, ga = (np.asarray(v).ravel() for v in fA(z, pa))
         jb, gb = (np.asarray(v).ravel() for v in fB(z, pb))
@@ -209,7 +209,7 @@ def test_quantile_needs_ten_residuals_and_uses_the_last_forty():
 
 @needs_lib
 def test_controller_short_drive_and_residuals(track):
-    """One second on the nominal car: the terms are logged, a fallback's residual is skipped."""
+    """One second on the nominal car: the terms are logged (the fallback's skip: the next test)."""
     from f1race.experiments import cx_j
 
     case = cx_j.cases("NOM_C")[0]
@@ -250,7 +250,7 @@ def test_start_fixed_drift():
     from f1race.experiments.cx_j import StartFixedDrift
     L = 4315.7403
     d = StartFixedDrift(L, 1600.0, 800.0, 0.82)
-    assert d(L - 1.4e-11) == 1.0 and d(0.0) == 1.0 and d(L - 1e-3) == pytest.approx(0.82)
+    assert d(L - 1.4e-11) == 1.0 and d(L - 1e-7) == 1.0 and d(0.0) == 1.0 and d(L - 1e-3) == pytest.approx(0.82)
     assert d(2000.0) == pytest.approx(1.0 - 0.18 * 400.0 / 800.0) and d(2500.0) == pytest.approx(0.82)
     assert np.allclose(d(np.array([L - 1.4e-11, 100.0])), 1.0)
 
@@ -276,6 +276,14 @@ def test_select_rule():
     assert cx_j.select(flat)["setting"] == cx_j.DEV_SETTING
     with pytest.raises(ValueError):
         cx_j.select(flat[:-1])
+    with pytest.raises(ValueError):                          # twice the same case
+        cx_j.select(flat + flat[:1])
+    with pytest.raises(ValueError):                          # full: the forty JV laps
+        cx_j.select(flat, full=True)
+    names = [c["name"] for cond in cx_j.CONDITIONS for c in cx_j.cases(f"JV_{cond}")]
+    full = [{"kind": "ra", "setting": g, "setting_key": cx_j.setting_key(g), "case": n, "completed": False,
+             "lap_time": math.nan} for g in cx_j.RHO_GRID for n in names]
+    assert len(names) == 40 and cx_j.select(full, full=True)["setting"] == cx_j.DEV_SETTING
 
 
 @needs_lib
@@ -326,5 +334,123 @@ def test_report_h_j1_and_h_j2(tmp_path):
 def test_report_test_stage_requires_full_sets(tmp_path, monkeypatch):
     m = _report()
     (tmp_path / "test.jsonl").write_text("")
+    (tmp_path / "selected.json").write_text('{"ra": {"setting": {"rho0": 2.0, "rho_s": 0.1}}}')
     with pytest.raises(SystemExit):
         m.test(tmp_path)
+    from f1race.experiments import cx_j
+    recs = [{"kind": k, "case": f"{s}_car{c}", "setting": {"rho0": 2.0, "rho_s": 0.1} if k in cx_j.RA_KINDS else {}}
+            for s in ("JT", "JD", "JN", "JL") for k in (*cx_j.TEST_KINDS, *(("adaptive_oracle",) if s in ("JT", "JD") else ()))
+            for c in range(1, 51)]
+    m._guards(recs, {"rho0": 2.0, "rho_s": 0.1})
+    wrong = [{**r, "setting": {"rho0": 4.0, "rho_s": 0.1}} if r["kind"] == "ra" and r["case"] == "JT_car1" else r for r in recs]
+    for bad in (recs + recs[:1], recs[:-1], wrong):
+        with pytest.raises(SystemExit):
+            m._guards(bad, {"rho0": 2.0, "rho_s": 0.1})
+
+
+# ---------------------------------------------------------------- checks of section 9.1 added after the review of packet 2 (m1)
+def _vertex_theta():
+    from f1race.experiments.l2 import PERTURBATION
+    return np.array([PERTURBATION[k][j] for k, j in (("mu", 0), ("m", 1), ("ClA", 0), ("CdA", 1), ("Iz", 0), ("B", 1),
+                                                     ("aero_front", 1))])
+
+
+def _car_of(th):
+    from f1race.control.nmpc import param_vehicle
+    plant = param_vehicle(DynVehicle(), th)
+    return DynVehicle(**{f: float(getattr(plant, f)) for f in plant.__dataclass_fields__})
+
+
+@needs_plan
+def test_parameterised_jacobians_match_differences(track):
+    """A, B of the step and the gradients of the axles' usage^2 at a vertex car, against central differences."""
+    from f1race.control.nmpc import FS, param_vehicle
+    from f1race.control.radaptive import AdaptiveTube
+    from f1race.dynamics import tyre_forces
+
+    x, X, U = _prediction(track, s=2600.0)
+    th = _vertex_theta()
+    mpc = _mpc(track, param_model=True)
+    tube = AdaptiveTube(mpc, margin=0.6)
+    A, B = tube.linearise(X, U, th)
+    Us = U / np.array([1.0, FS, FS])
+    Gx, Gu = tube._gjac(X[:-1].T, Us.T, tube._theta(th))
+    Gx = np.asarray(Gx).reshape(2, 30, 7).transpose(1, 0, 2)
+    Gu = np.asarray(Gu).reshape(2, 30, 3).transpose(1, 0, 2)
+    veh = param_vehicle(DynVehicle(), th)
+
+    def usage2(xx, uu):
+        F = tyre_forces(veh, xx[3], xx[4], xx[5], xx[6], uu[1] * FS, uu[2] * FS)
+        return np.array([(F["fxf"] / (veh.mu_x * F["fzf"])) ** 2 + (F["fyf"] / (veh.mu_y * F["fzf"])) ** 2,
+                         (F["fxr"] / (veh.mu_x * F["fzr"])) ** 2 + (F["fyr"] / (veh.mu_y * F["fzr"])) ** 2])
+
+    def step(xx, uu):
+        return np.asarray(mpc._step(xx, uu, th)).ravel()
+    for k in (0, 10, 20, 29):
+        for i in range(7):
+            h = 1e-5 * max(1.0, abs(X[k, i]))
+            e = np.zeros(7); e[i] = h
+            assert np.allclose(A[k][:, i], (step(X[k] + e, Us[k]) - step(X[k] - e, Us[k])) / (2 * h), atol=1e-4, rtol=1e-4)
+            assert np.allclose(Gx[k][:, i], (usage2(X[k] + e, Us[k]) - usage2(X[k] - e, Us[k])) / (2 * h), atol=1e-4, rtol=1e-4)
+        for i in range(3):
+            h = 1e-6
+            e = np.zeros(3); e[i] = h
+            assert np.allclose(B[k][:, i], (step(X[k], Us[k] + e) - step(X[k], Us[k] - e)) / (2 * h), atol=1e-4, rtol=1e-4)
+            assert np.allclose(Gu[k][:, i], (usage2(X[k], Us[k] + e) - usage2(X[k], Us[k] - e)) / (2 * h), atol=1e-4, rtol=1e-4)
+
+
+@needs_plan
+def test_cold_solves_of_the_combined_nlp_agree_to_the_solver_tolerance(track):
+    from f1race.control.nmpc import FS
+
+    th = _vertex_theta()
+    A, B = _mpc(track, param_model=True), _mpc(track, veh=_car_of(th))
+    o = _plan()
+    eta = np.full(30, 0.9)
+    back = np.concatenate([[0.0], np.full(30, 0.08)])
+    for s0 in (450.0, 1500.0, 2600.0, 3800.0):
+        x = np.array([s0] + [float(np.interp(s0, o.s, getattr(o, k))) for k in ("n", "xi", "vx", "vy", "r", "delta")])
+        A.z = B.z = None
+        ua, _ = A.solve(x, np.zeros(3), eta=eta, backoff=back, theta=th)
+        ub, _ = B.solve(x, np.zeros(3), eta=eta, backoff=back)
+        assert np.max(np.abs((ua - ub) / np.array([1.0, FS, FS]))) < 1e-3
+        assert np.max(np.abs(A.z[A.Xi] - B.z[B.Xi])) < 1e-2
+
+
+@needs_plan
+def test_cap_box_tightens_at_least_as_phase_cs_at_every_stage(track):
+    """Review m1: the back-off and the friction tightening, not W alone, at several places."""
+    from f1race.control.radaptive import CAP, AdaptiveTube
+    from f1race.control.tube import PARAM_ORDER
+    from f1race.experiments.l2 import PERTURBATION
+
+    ta = AdaptiveTube(_mpc(track, param_model=True), margin=0.6)
+    lo = np.array([PERTURBATION[k][0] for k in PARAM_ORDER])
+    hi = np.array([PERTURBATION[k][1] for k in PARAM_ORDER])
+    for s0 in (450.0, 1000.0, 1500.0, 2600.0, 3800.0):
+        x, X, U = _prediction(track, s=s0)
+        c = ta.compute(X, U, X0, lo, hi)
+        w = ta.compute(X, U, X0, X0 - CAP, X0 + CAP)
+        assert np.all(w["b_raw"] >= c["b_raw"] - 1e-9) and np.all(w["D"] >= c["D"] - 1e-9)
+        assert np.all(w["eta"] <= c["eta"] + 1e-9)
+
+
+@needs_lib
+def test_a_fallback_is_not_a_residual(track):
+    """After a solve that fell back, the next step's residual is not recorded (clarification: section 3.4)."""
+    from f1race.experiments import cx_j
+
+    case = cx_j.cases("NOM_C")[0]
+    sim = cx_j.make_sim(case, track)
+    ctl, mpc, x0, extra = cx_j.build("ra", cx_j.DEV_SETTING, track, case, sim)
+    orig, n = mpc.solve, {"k": 0}
+
+    def solve(*a, **kw):
+        u, info = orig(*a, **kw)
+        n["k"] += 1
+        if n["k"] in (5, 9):
+            info = {**info, "fallback": True}
+        return u, info
+    mpc.solve = solve
+    sim.run(ctl, x0, t_max=1.0)
+    assert len(ctl.residuals) == n["k"] - 1 - 2
