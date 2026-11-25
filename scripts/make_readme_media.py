@@ -10,8 +10,8 @@ takes its numbers from the README tables (RESULTS below, each row with its sourc
     python scripts/make_readme_media.py --no-l1            # skip the spin animation
 
 Outputs in docs/media/:
-  ghost_race.gif / .mp4      the three ideal L0 plans driven side by side (x4 playback)
-  spin.gif / .mp4            L1: the kinematic optimum on the dynamic car against the dynamic plan
+  ghost_race.webp / .mp4     the three ideal L0 plans driven side by side (x4 playback)
+  spin.webp / .mp4           L1: the kinematic optimum on the dynamic car against the dynamic plan
   spielberg[.zh].geojson     the minimum-time line on a map (georeferenced, see GEO_ANCHOR)
   speed_landscape.stl        the same line in 3D, height = speed
   banner_{en,zh}.svg         animated header (a dot drives the minimum-time lap)
@@ -141,13 +141,19 @@ def ffmpeg_pipe(path: Path, w: int, h: int, fps: int):
          "-preset", "slow", "-movflags", "+faststart", str(path)], stdin=subprocess.PIPE)
 
 
-def mp4_to_gif(mp4: Path, gif: Path, fps: int = 15, width: int = 800, colors: int = 96):
-    vf = (f"fps={fps},scale={width}:-1:flags=lanczos,split[a][b];"
-          f"[a]palettegen=max_colors={colors}:stats_mode=diff[p];"
-          f"[b][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle")
-    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(mp4), "-vf", vf, "-loop", "0", str(gif)],
-                   check=True)
-    print(f"{gif.name}: {gif.stat().st_size / 1e6:.2f} MB")
+def to_webp(src, out: Path, fps: int = 15, width: int = 960, quality: int = 75, src_fps: int | None = None,
+            pad_16_9: bool = False):
+    """Animated WebP for the README (about half the size of a GIF, full colour; GitHub plays it
+    like a GIF). ``src`` is a video file, or an image sequence pattern with ``src_fps``;
+    ``pad_16_9`` letterboxes a wider clip to 16:9 on the page background."""
+    inp = ["-framerate", str(src_fps), "-i", str(src)] if src_fps else ["-i", str(src)]
+    vf = f"fps={fps},scale={width}:-2:flags=lanczos"
+    if pad_16_9:
+        vf += f",pad={width}:{round(width * 9 / 16 / 2) * 2}:(ow-iw)/2:(oh-ih)/2:color=0x0d1117"
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", *inp, "-vf", vf,
+                    "-c:v", "libwebp_anim", "-loop", "0", "-q:v", str(quality), "-compression_level", "6",
+                    "-preset", "drawing", str(out)], check=True)
+    print(f"{out.name}: {out.stat().st_size / 1e6:.2f} MB")
 
 
 def style_axes(ax):
@@ -325,7 +331,7 @@ def ghost_race(tr, lines, speedup: float = 4.0, fps: int = 30, hold: float = 3.0
     proc.wait()
     plt.close(fig)
     print(f"{mp4.name}: {mp4.stat().st_size / 1e6:.2f} MB")
-    mp4_to_gif(mp4, OUT / "ghost_race.gif", fps=15, width=960, colors=96)
+    to_webp(mp4, OUT / "ghost_race.webp")
 
 
 # --------------------------------------------------------------------------- L1 spin
@@ -478,7 +484,7 @@ def spin(tr, veh, r_kin, r_dyn, fps: int = 30, slow: float = 0.5, after: float =
     proc.wait()
     plt.close(fig)
     print(f"{mp4.name}: {mp4.stat().st_size / 1e6:.2f} MB")
-    mp4_to_gif(mp4, OUT / "spin.gif", fps=15, width=960, colors=96)
+    to_webp(mp4, OUT / "spin.webp")
 
 
 # --------------------------------------------------------------------------- map / 3D

@@ -1,0 +1,29 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  fast:
+    runs-on: ubuntu-latest
+    env:
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install (the pinned versions)
+        run: |
+          pip install -r requirements-lock.txt
+          pip install -e . --no-deps
+      - name: Track data (pinned upstream commit, SHA-256 checked)
+        run: python scripts/fetch_tracks.py Spielberg
+      - name: Fast tests
+        run: pytest -m "not slow"
+      - name: The first race
+        run: python scripts/race.py --drivers centre mincurv

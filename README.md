@@ -7,74 +7,88 @@
 </p>
 
 <p align="center">
+  <a href="#quick-start-your-first-race"><b>Quick start</b></a> ·
+  <a href="#results"><b>Results</b></a> ·
+  <a href="#the-layers"><b>Reports</b></a> ·
+  <a href="docs/CONTROL_EXPANSION_BENCHMARK.md"><b>Benchmark</b></a> ·
+  <a href="notebooks/first_race.ipynb"><b>Notebook</b></a> ·
+  <a href="#citing-f1-race"><b>Cite</b></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/yuanche-auto/F1-Race/actions/workflows/tests.yml"><img alt="tests" src="https://github.com/yuanche-auto/F1-Race/actions/workflows/tests.yml/badge.svg"></a>
+  <a href="https://colab.research.google.com/github/yuanche-auto/F1-Race/blob/main/notebooks/first_race.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg"></a>
   <img alt="Python 3.10+" src="https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white">
-  <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-2ea44f">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-2ea44f"></a>
   <img alt="CasADi + IPOPT" src="https://img.shields.io/badge/optimal%20control-CasADi%20%2B%20IPOPT-d95926">
   <img alt="acados RTI" src="https://img.shields.io/badge/real%20time-acados%20RTI-6250d6">
-  <img alt="RL: SB3 SAC" src="https://img.shields.io/badge/RL-SB3%20SAC-EE4C2C?logo=pytorch&logoColor=white">
-  <img alt="pytest" src="https://img.shields.io/badge/tests-pytest-0A9EDC?logo=pytest&logoColor=white">
-  <br>
-  <img alt="Layers L0 to L9 done" src="https://img.shields.io/badge/layers-L0%E2%80%93L9%20done-2ea44f">
-  <img alt="Control expansion phases A to I done" src="https://img.shields.io/badge/control%20expansion-A%E2%80%93I%20done-2a78d6">
-  <img alt="Pre-registered protocols" src="https://img.shields.io/badge/protocols-pre--registered-52514e">
-  <img alt="Independent review before every merge" src="https://img.shields.io/badge/merge-after%20independent%20review-52514e">
+  <img alt="PyTorch" src="https://img.shields.io/badge/RL-PyTorch%20%2B%20SB3-EE4C2C?logo=pytorch&logoColor=white">
 </p>
+
+**F1-Race** is a self-contained study of how to drive a racing car around a track as fast as possible, built
+up in layers. Each layer adds one source of difficulty and compares several model-based and learning-based
+methods on the same car, the same track and the same test laps. The question behind all of it: *in which
+settings does a learning-based controller beat a model-based one, and why?*
 
 <p align="center">
-  <a href="#-watch-a-lap">🎬 Watch a lap</a> ·
-  <a href="#-quick-start-your-first-race">🏁 Your first race</a> ·
-  <a href="#-results-at-a-glance">📊 Results</a> ·
-  <a href="#-so-who-wins-where">🏆 Who wins</a> ·
-  <a href="#%EF%B8%8F-explore-the-lap-yourself">🕹️ Explore</a> ·
-  <a href="#-the-layers">🧱 Layers</a> ·
-  <a href="#-control-expansion-phases-ai">🔬 Control expansion</a> ·
-  <a href="#%EF%B8%8F-repository-layout">🗂️ Layout</a>
+  <img src="docs/media/ghost_race.webp" alt="Ghost race at Spielberg: minimum-time OCP 71.26 s, minimum-curvature line 72.14 s, centre line 77.89 s" width="100%">
+  <br><sub><b>Three ways to drive one lap (L0).</b> The ideal plans of the L0 table side by side: the racing line
+  alone is worth 5.75 s, optimising line and speed together another 0.88 s.
+  · <a href="docs/media/ghost_race.mp4">MP4</a></sub>
 </p>
 
-A self-contained study of how to drive a racing car around a track as fast as possible, built up in
-**layers**. Each layer adds one source of difficulty – tyre dynamics, a car that differs from the model,
-random disturbances, an unknown car, a structural model error, new tracks, a real-time budget – and
-compares several solution methods on the same problem, the same car and the same test laps.
-
-> **The guiding question of the whole series:** *in which settings does a learning-based controller beat
-> a model-based one, and why?*
-
----
-
-## 🎬 Watch a lap
-
-<p align="center">
-  <img src="docs/media/ghost_race.gif" alt="Ghost race at Spielberg: minimum-time OCP 71.26 s, minimum-curvature line 72.14 s, centre line 77.89 s" width="100%">
-</p>
-
-<p align="center"><sub>
-  <b>Ghost race (L0).</b> The three ideal plans of the L0 table driven side by side on Spielberg, with a live
-  timing tower, the tightest corner zoomed in and the speed traces below. The racing line alone is worth
-  5.75 s; optimising line and speed together another 0.88 s.
-  · 🎥 <a href="docs/media/ghost_race.mp4">MP4, 1280×720</a>
-</sub></p>
-
-<p align="center">
-  <img src="docs/media/spin.gif" alt="L1: on the dynamic car the kinematic optimum spins at turn 1, the dynamic plan completes the lap" width="100%">
-</p>
-
-<p align="center"><sub>
-  <b>Why the model matters (L1).</b> The same dynamic car – Pacejka tyres, load transfer – on two plans: the
-  kinematic L0 plan (3 % margin) spins at turn 1 as its side-slip angle runs away, while the plan made on the
-  dynamic model (5 % margin) completes the lap in 75.57 s. Slow motion, the camera follows the cars.
-  · 🎥 <a href="docs/media/spin.mp4">MP4, 1280×720</a>
-</sub></p>
+<table>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <a href="docs/L1.md"><img src="docs/media/spin.webp" alt="L1: on a car with tyre slip the kinematic plan spins at turn 1, the dynamic plan completes the lap" width="100%"></a>
+      <br><b>Why the model matters (L1)</b>
+      <br><sub>On a car with tyre slip the kinematic optimum spins at turn 1; the plan made on the dynamic model
+      finishes in 75.57 s. · <a href="docs/media/spin.mp4">MP4</a></sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <a href="#quick-start-your-first-race"><img src="docs/media/race_dnf.webp" alt="race.py --grip 1.0: the minimum-time car leaves the track at 3.84 km" width="100%"></a>
+      <br><b>No margin for error (<code>race.py --grip 1.0</code>)</b>
+      <br><sub>With all of the grip planned in, the fastest plan leaves the track at 3.84 km and the
+      min.-curvature car wins.</sub>
+    </td>
+  </tr>
+</table>
 
 <!--
-  To get a playable video player here: edit this README on github.com and drag docs/media/ghost_race.mp4
-  into the editor; GitHub uploads it and inserts a https://github.com/user-attachments/... link that renders
-  as a video (the same for spin.mp4). The GIFs above play everywhere without that step.
+  To get a playable video player: edit this README on github.com and drag docs/media/*.mp4 into the editor;
+  GitHub uploads it and inserts a https://github.com/user-attachments/... link that renders as a video.
+  The animated WebP images above play everywhere without that step.
 -->
 
-## 🏁 Quick start: your first race
+## Highlights
+
+* **A race in one command.** `python scripts/race.py` plans three drivers' laps, drives them in the simulator
+  and prints a classification with an HTML replay – about a minute the first time, seconds after that.
+* **Ten layers of difficulty on one car and track.** From a known kinematic model (L0) to tyre slip, cars that
+  differ from the model, random friction and gusts, unknown cars, a steering lag the models lack, new tracks,
+  wet grip and a 50 ms budget on one core (L9).
+* **Model-based and learning-based control on shared test sets.** Minimum-time optimal control, NMPC,
+  stochastic, tube, adaptive and learning MPC, MPCC, MPPI, residual reinforcement learning, safety filters and
+  acados real-time iterations.
+* **Claims you can check.** From L5 on, the hypotheses, test sets and statistics were fixed in a reviewed
+  protocol before the first test lap; exact tests throughout, and negative results reported as such.
+
+## News
+
+* **2026-11-05** – `scripts/race.py`: your first race in one command, with an HTML replay and a
+  [notebook](notebooks/first_race.ipynb).
+* **2026-11-01** – Control expansion complete: nine phases from MPCC and MPPI to tube, adaptive and learning
+  MPC, safety filters and delay-compensated RTI ([benchmark](docs/CONTROL_EXPANSION_BENCHMARK.md)).
+* **2026-10-19** – L9, real time on one core: IPOPT 0 / 105 laps, acados RTI 79 / 105 ([report](docs/L9.md)).
+* **2026-10-18** – L8, four unseen tracks and wet grip: only identification and re-planning transfer
+  ([report](docs/L8.md)).
+* **2026-10-17** – L7: a safety filter and a failure curriculum for the RL policies – both did worse
+  ([report](docs/L7.md)).
+
+## Quick start: your first race
 
 <p align="center">
-  <img src="docs/media/quickstart_en.gif" alt="Video tutorial: set up, start the first race, watch the replay, push the grip to the limit" width="100%">
+  <img src="docs/media/quickstart_en.webp" alt="Video tutorial: set up, start the first race, watch the replay, push the grip to the limit" width="100%">
 </p>
 
 <p align="center"><sub>
@@ -120,6 +134,19 @@ leader.
   <img src="docs/media/race_replay.png" alt="The HTML replay of a race: map with the cars, timing tower, speed traces" width="100%">
 </p>
 
+**Or from Python** – after the first race the track is on disk:
+
+```python
+from f1race.race import RaceConfig, race, report, write_replay
+
+result = race(RaceConfig(track="Spielberg", grip=1.0))   # the plans use all of the grip
+print(report(result))
+write_replay(result, "my_race.html")
+```
+
+**Or without installing anything:** [open the first-race notebook in Colab](https://colab.research.google.com/github/yuanche-auto/F1-Race/blob/main/notebooks/first_race.ipynb) – the race, the
+classification and the replay in the browser.
+
 ### Make it your race
 
 | Try | What happens |
@@ -138,7 +165,7 @@ leader.
 
 Every lap is driven, not just planned: the L0 path/speed tracker steers each car through the time-domain
 simulator, which stops a car that leaves the track. This is L0's setting – a kinematic car; from L1 on the
-cars slide, the models are wrong and the weather changes ([the layers](#-the-layers)).
+cars slide, the models are wrong and the weather changes ([the layers](#the-layers)).
 
 <details>
 <summary><b>🧪 Run the tests</b></summary>
@@ -186,7 +213,7 @@ pytest -m "not slow"                                 # ~2 min (full suite ~12 mi
 <br>
 
 Everything under [`docs/media/`](docs/media) is produced from the project's own code (ffmpeg needed for the
-GIF / MP4): the animations, the map, the 3D model, the banner and the charts by one script – it also
+animated WebP / MP4): the animations, the map, the 3D model, the banner and the charts by one script – it also
 refreshes the inline map and 3D blocks of both READMEs – and the video tutorial by another.
 
 ```bash
@@ -197,7 +224,7 @@ python scripts/make_quickstart_video.py render      # the tutorial video, Englis
 
 </details>
 
-## 📊 Results at a glance
+## Results
 
 <table>
   <tr>
@@ -245,7 +272,7 @@ python scripts/make_quickstart_video.py render      # the tutorial video, Englis
 each other. Orange marks a method that did worse than its baseline – negative results are reported as such
 (L7, CX-A, CX-B). The numbers come from the tables below.</sub>
 
-## 🏆 So, who wins where?
+## Who wins where?
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/media/winners_en_dark.svg">
@@ -267,12 +294,12 @@ The guiding question, answered layer by layer (each row is one test set; compare
 * ⏱️ **Real time flips the cost.** Within 50 ms on one core the RL policy hardly notices (98 of 105), the same
   NMPC with IPOPT loses every lap, and acados real-time iterations bring it back to 79 (L9).
 
-## 🕹️ Explore the lap yourself
+## Explore the lap yourself
 
 These blocks are rendered by GitHub as **interactive** widgets – pan, zoom, rotate and click. (In viewers
 that do not render them, open the files under [`docs/media/`](docs/media).)
 
-### 🗺️ The minimum-time line on the real circuit
+### The minimum-time line on the real circuit
 
 Drag and zoom the map; **click** a segment for its speed band, or a marker for the top speed and the
 hardest braking, the slowest point, and the four corners where failed test laps leave the track. The line is the L0 minimum-time solution, georeferenced onto the Red Bull
@@ -2089,7 +2116,7 @@ endsolid speed_landscape
 
 </details>
 
-### 🧭 How the layers build on each other
+### How the layers build on each other
 
 ```mermaid
 flowchart TB
@@ -2116,7 +2143,7 @@ flowchart TB
   P --> U --> LRN --> D --> N
 ```
 
-## 🧱 The layers
+## The layers
 
 | Layer | Setting | Methods compared | Status |
 |---|---|---|---|
@@ -2369,7 +2396,7 @@ controller on this machine (WSL, acados v0.6.0) and under this rule. See [docs/L
 > **Not yet done:** the protocols of L7–L9 ask for the primary results to be re-run in a second Python
 > environment; that is deferred (see [STATUS.md](STATUS.md)).
 
-## 🔬 Control expansion (phases A–I)
+## Control expansion (phases A–I)
 
 After L9 the project widened the control methods of L1–L9 instead of adding a layer: nine phases, each with
 its own literature review, protocol, tuning and test cars ([roadmap](docs/CONTROL_EXPANSION_ROADMAP.md),
@@ -2387,7 +2414,7 @@ its own literature review, protocol, tuning and test cars ([roadmap](docs/CONTRO
 | **H** | ATV-QP learning MPC | ⏹️ closed without the benchmark | the development gate failed |
 | **I** | learning-MPC follow-ups, reproduction check | ⏹️ closed without a benchmark | the LMPC line was closed after the check |
 
-## 🗂️ Repository layout
+## Repository layout
 
 ```mermaid
 flowchart LR
@@ -2430,6 +2457,7 @@ scripts/            data download and per-layer reproduction scripts; l9_wsl/: t
                     environment of L9 (acados build, versions, run driver);
                     race.py: your first race; make_readme_media.py, make_quickstart_video.py:
                     the media of this README
+notebooks/          first_race.ipynb: the first race in Colab or Jupyter
 tests/              pytest suite
 docs/               per-layer write-ups and figures, protocols, review workflow;
                     media/: animations, map, 3D model, banner and charts of this README
@@ -2437,7 +2465,7 @@ docs/               per-layer write-ups and figures, protocols, review workflow;
 
 </details>
 
-## 🔁 Development process
+## Development process
 
 Every layer is developed on its own branch and merged only after an independent review
 ([docs/workflow.md](docs/workflow.md), [STATUS.md](STATUS.md)):
@@ -2454,7 +2482,7 @@ flowchart LR
   F -- approve --> G["⤵️ merge to main"]
 ```
 
-## 📦 Data
+## Data
 
 Track centre lines and widths come from the [TUM FTM racetrack-database](https://github.com/TUMFTM/racetrack-database)
 (LGPL-3.0). They are **not** redistributed here: `scripts/fetch_tracks.py` downloads them from a pinned
@@ -2466,7 +2494,22 @@ The README media in `docs/media/` contain only computed results (the L0 lines, d
 data. The map's geographic anchor was fitted once to the Red Bull Ring outline of
 [bacinger/f1-circuits](https://github.com/bacinger/f1-circuits) (MIT); that outline is not included.
 
-## 📄 License
+## Citing F1-Race
+
+If F1-Race helps your work, please cite it; GitHub's *Cite this repository* button reads
+[CITATION.cff](CITATION.cff).
+
+```bibtex
+@software{f1race2026,
+  title   = {{F1-Race}: Minimum-Lap-Time Racing, Layer by Layer},
+  author  = {{yuanche-auto}},
+  year    = {2026},
+  url     = {https://github.com/yuanche-auto/F1-Race},
+  version = {0.1.0}
+}
+```
+
+## License
 
 MIT for the code in this repository (see [LICENSE](LICENSE)). The track data keeps its upstream license.
 

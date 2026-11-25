@@ -7,70 +7,81 @@
 </p>
 
 <p align="center">
+  <a href="#快速上手你的第一场比赛"><b>快速上手</b></a> ·
+  <a href="#结果"><b>结果</b></a> ·
+  <a href="#研究层"><b>各层报告</b></a> ·
+  <a href="docs/CONTROL_EXPANSION_BENCHMARK.md"><b>基准测试</b></a> ·
+  <a href="notebooks/first_race.ipynb"><b>Notebook</b></a> ·
+  <a href="#引用-f1-race"><b>引用</b></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/yuanche-auto/F1-Race/actions/workflows/tests.yml"><img alt="tests" src="https://github.com/yuanche-auto/F1-Race/actions/workflows/tests.yml/badge.svg"></a>
+  <a href="https://colab.research.google.com/github/yuanche-auto/F1-Race/blob/main/notebooks/first_race.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg"></a>
   <img alt="Python 3.10+" src="https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white">
-  <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-2ea44f">
-  <img alt="CasADi + IPOPT" src="https://img.shields.io/badge/%E6%9C%80%E4%BC%98%E6%8E%A7%E5%88%B6-CasADi%20%2B%20IPOPT-d95926">
-  <img alt="acados RTI" src="https://img.shields.io/badge/%E5%AE%9E%E6%97%B6%E6%8E%A7%E5%88%B6-acados%20RTI-6250d6">
-  <img alt="RL: SB3 SAC" src="https://img.shields.io/badge/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0-SB3%20SAC-EE4C2C?logo=pytorch&logoColor=white">
-  <img alt="pytest" src="https://img.shields.io/badge/tests-pytest-0A9EDC?logo=pytest&logoColor=white">
-  <br>
-  <img alt="L0–L9 已完成" src="https://img.shields.io/badge/%E7%A0%94%E7%A9%B6%E5%B1%82-L0%E2%80%93L9%20%E5%B7%B2%E5%AE%8C%E6%88%90-2ea44f">
-  <img alt="控制扩展 A–I 已完成" src="https://img.shields.io/badge/%E6%8E%A7%E5%88%B6%E6%89%A9%E5%B1%95-A%E2%80%93I%20%E5%B7%B2%E5%AE%8C%E6%88%90-2a78d6">
-  <img alt="预注册实验方案" src="https://img.shields.io/badge/%E5%AE%9E%E9%AA%8C%E6%96%B9%E6%A1%88-%E9%A2%84%E6%B3%A8%E5%86%8C-52514e">
-  <img alt="合并前独立审查" src="https://img.shields.io/badge/%E5%90%88%E5%B9%B6-%E7%8B%AC%E7%AB%8B%E5%AE%A1%E6%9F%A5%E5%90%8E-52514e">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-2ea44f"></a>
+  <img alt="CasADi + IPOPT" src="https://img.shields.io/badge/optimal%20control-CasADi%20%2B%20IPOPT-d95926">
+  <img alt="acados RTI" src="https://img.shields.io/badge/real%20time-acados%20RTI-6250d6">
+  <img alt="PyTorch" src="https://img.shields.io/badge/RL-PyTorch%20%2B%20SB3-EE4C2C?logo=pytorch&logoColor=white">
 </p>
+
+**F1-Race** 是一个自成体系的研究项目：如何让一辆赛车以尽可能快的速度跑完一圈。项目逐层搭建，每一层只引入一种新的难点，
+并在同一辆车、同一条赛道、同一批测试圈上对比多种基于模型与基于学习的方法。贯穿始终的问题是：*在哪些情形下，
+基于学习的控制器能胜过基于模型的控制器？为什么？*
 
 <p align="center">
-  <a href="#-看一圈">🎬 看一圈</a> ·
-  <a href="#-快速上手你的第一场比赛">🏁 第一场比赛</a> ·
-  <a href="#-结果一览">📊 结果</a> ·
-  <a href="#-那么谁在什么情形下胜出">🏆 谁胜出</a> ·
-  <a href="#%EF%B8%8F-亲手探索这一圈">🕹️ 互动</a> ·
-  <a href="#-研究层">🧱 研究层</a> ·
-  <a href="#-控制方法扩展阶段-ai">🔬 控制扩展</a> ·
-  <a href="#%EF%B8%8F-仓库结构">🗂️ 结构</a>
+  <img src="docs/media/ghost_race.webp" alt="Spielberg 赛道幽灵对决：最短时间 OCP 71.26 s、最小曲率线 72.14 s、中心线 77.89 s" width="100%">
+  <br><sub><b>同一圈的三种跑法（L0）。</b>L0 表格中的三种理想规划同场对比：仅赛车线本身就值 5.75 s，
+  同时优化路线与速度再快 0.88 s。· <a href="docs/media/ghost_race.mp4">MP4</a></sub>
 </p>
 
-这是一个自成体系的研究项目：如何让一辆赛车以尽可能快的速度跑完一圈。项目按<b>层（layer）</b>逐步搭建，
-每一层只引入一种新的难点——轮胎动力学、与模型不符的车辆、随机扰动、未知的车辆、结构性模型误差、
-新赛道、实时计算预算——并在同一个问题、同一辆车、同一批测试圈上对比多种求解方法。
-
-> **贯穿整个系列的核心问题：** *在哪些情形下，基于学习的控制器能胜过基于模型的控制器？为什么？*
-
----
-
-## 🎬 看一圈
-
-<p align="center">
-  <img src="docs/media/ghost_race.gif" alt="Spielberg 赛道幽灵对决：最短时间 OCP 71.26 s、最小曲率线 72.14 s、中心线 77.89 s" width="100%">
-</p>
-
-<p align="center"><sub>
-  <b>幽灵对决（L0）。</b>L0 表格中的三种理想规划在 Spielberg 赛道上同场竞速：实时计时塔、最急弯道放大视图、
-  下方的速度曲线。仅赛车线本身就值 5.75 s；同时优化路线与速度再快 0.88 s。
-  · 🎥 <a href="docs/media/ghost_race.mp4">MP4 高清版（1280×720）</a>
-</sub></p>
-
-<p align="center">
-  <img src="docs/media/spin.gif" alt="L1：在动力学车辆上，运动学最优解在 1 号弯打滑，动力学规划完成一圈" width="100%">
-</p>
-
-<p align="center"><sub>
-  <b>为什么模型很重要（L1）。</b>同一辆动力学车辆（Pacejka 轮胎、载荷转移）分别执行两种规划：L0 的运动学规划
-  （3% 裕度）在 1 号弯侧偏角失控、车辆打滑；而在动力学模型上做的规划（5% 裕度）以 75.57 s 完成一圈。
-  慢动作播放，镜头跟随车辆。· 🎥 <a href="docs/media/spin.mp4">MP4 高清版（1280×720）</a>
-</sub></p>
+<table>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <a href="docs/L1.md"><img src="docs/media/spin.webp" alt="L1：在有轮胎滑移的车上，运动学规划在 1 号弯打滑，动力学规划完成一圈" width="100%"></a>
+      <br><b>为什么模型很重要（L1）</b>
+      <br><sub>在有轮胎滑移的车上，运动学最优解在 1 号弯打滑；在动力学模型上做的规划以 75.57 s 完赛。
+      · <a href="docs/media/spin.mp4">MP4</a></sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <a href="#快速上手你的第一场比赛"><img src="docs/media/race_dnf.webp" alt="race.py --grip 1.0：最短时间车在 3.84 km 冲出赛道" width="100%"></a>
+      <br><b>没有容错余量（<code>race.py --grip 1.0</code>）</b>
+      <br><sub>规划用尽全部抓地力时，最快的规划在 3.84 km 冲出赛道，最小曲率车获胜。</sub>
+    </td>
+  </tr>
+</table>
 
 <!--
-  如需在此处显示可播放的视频：在 github.com 上编辑本 README，把 docs/media/ghost_race.mp4 拖入编辑器，
-  GitHub 会上传并插入一个 https://github.com/user-attachments/... 链接，渲染为视频播放器。
-  spin.mp4 同理。上面的 GIF 无需这一步即可在任何地方播放。
+  如需可播放的视频播放器：在 github.com 上编辑本 README，把 docs/media/*.mp4 拖入编辑器，
+  GitHub 会上传并插入一个 https://github.com/user-attachments/... 链接，渲染为视频。
+  上面的动态 WebP 图无需这一步即可在任何地方播放。
 -->
 
-## 🏁 快速上手：你的第一场比赛
+## 亮点
+
+* **一条命令跑完一场比赛。** `python scripts/race.py` 为三位车手规划一圈、在仿真器中驾驶，输出成绩表和 HTML 回放——
+  首次约 1 分钟，之后只需几秒。
+* **同一辆车、同一条赛道上的十层难度。** 从已知的运动学模型（L0），到轮胎滑移、与模型不符的车辆、随机摩擦与阵风、
+  未知车辆、模型中没有的转向延迟、新赛道、湿滑路面，直到单核 50 ms 的实时预算（L9）。
+* **基于模型与基于学习的控制，在同一批测试集上对比。** 最短时间最优控制、NMPC、随机/管道/自适应/学习型 MPC、MPCC、
+  MPPI、残差强化学习、安全滤波器与 acados 实时迭代。
+* **结论可检验。** 从 L5 起，假设、测试集与统计方法都在第一圈测试之前写入经审查的实验方案；全程使用精确检验，
+  负面结果如实报告。
+
+## 新闻
+
+* **2026-11-05** —— `scripts/race.py`：一条命令跑完你的第一场比赛，附 HTML 回放与
+  [notebook](notebooks/first_race.ipynb)。
+* **2026-11-01** —— 控制方法扩展完成：九个阶段，从 MPCC、MPPI 到管道、自适应与学习型 MPC、安全滤波器和延迟补偿 RTI
+  （[基准测试](docs/CONTROL_EXPANSION_BENCHMARK.md)）。
+* **2026-10-19** —— L9，单核实时控制：IPOPT 0 / 105 圈，acados RTI 79 / 105（[报告](docs/L9.md)）。
+* **2026-10-18** —— L8，四条未见过的赛道与湿滑路面：只有辨识加重新规划能够迁移（[报告](docs/L8.md)）。
+* **2026-10-17** —— L7：为 RL 策略加安全滤波器与失败课程学习——两者都使结果变差（[报告](docs/L7.md)）。
+
+## 快速上手：你的第一场比赛
 
 <p align="center">
-  <img src="docs/media/quickstart_zh.gif" alt="视频教程：准备、开始第一场比赛、观看回放、把抓地力推到极限" width="100%">
+  <img src="docs/media/quickstart_zh.webp" alt="视频教程：准备、开始第一场比赛、观看回放、把抓地力推到极限" width="100%">
 </p>
 
 <p align="center"><sub>
@@ -113,6 +124,18 @@ Replay: results/race/Spielberg_grip0.97.html   (open it in a browser)   - 44 s i
   <img src="docs/media/race_replay.png" alt="比赛的 HTML 回放：赛道与车辆、计时塔、速度曲线" width="100%">
 </p>
 
+**也可以在 Python 中调用**——跑过第一场比赛后，赛道数据已在本地：
+
+```python
+from f1race.race import RaceConfig, race, report, write_replay
+
+result = race(RaceConfig(track="Spielberg", grip=1.0))   # 规划用尽全部抓地力
+print(report(result))
+write_replay(result, "my_race.html")
+```
+
+**或者什么都不装：**[在 Colab 中打开第一场比赛的 notebook](https://colab.research.google.com/github/yuanche-auto/F1-Race/blob/main/notebooks/first_race.ipynb)——比赛、成绩表和回放都在浏览器里。
+
 ### 打造你自己的比赛
 
 | 试试 | 会发生什么 |
@@ -130,7 +153,7 @@ Replay: results/race/Spielberg_grip0.97.html   (open it in a browser)   - 44 s i
 | **CTR** | 沿中心线行驶，速度曲线的求法相同——完全不用赛车线 |
 
 每一圈都是真正"开"出来的，而不只是规划：L0 的路径/速度跟踪器在时域仿真器中驾驶每辆车，冲出赛道的车会被判停。
-这是 L0 的设定——运动学车辆；从 L1 开始，车会滑移、模型会出错、天气会变化（见[研究层](#-研究层)）。
+这是 L0 的设定——运动学车辆；从 L1 开始，车会滑移、模型会出错、天气会变化（见[研究层](#研究层)）。
 
 <details>
 <summary><b>🧪 运行测试</b></summary>
@@ -177,7 +200,7 @@ pytest -m "not slow"                                 # 约 2 分钟（完整测�
 
 <br>
 
-[`docs/media/`](docs/media) 下的所有内容都由项目自身的代码生成（GIF / MP4 需要 ffmpeg）：动画、地图、3D 模型、
+[`docs/media/`](docs/media) 下的所有内容都由项目自身的代码生成（动态 WebP / MP4 需要 ffmpeg）：动画、地图、3D 模型、
 横幅与图表由一个脚本生成（同时刷新两份 README 中内嵌的地图与 3D 内容块），视频教程由另一个脚本生成。
 
 ```bash
@@ -188,7 +211,7 @@ python scripts/make_quickstart_video.py render      # 生成中英文教程视�
 
 </details>
 
-## 📊 结果一览
+## 结果
 
 <table>
   <tr>
@@ -235,7 +258,7 @@ python scripts/make_quickstart_video.py render      # 生成中英文教程视�
 <sub>每一行都有各自的测试集（不同的车辆、扰动或赛道），因此行与行之间不可直接比较。橙色表示方法比基线更差——
 负面结果同样如实报告（L7、CX-A、CX-B）。数字均来自下方表格。</sub>
 
-## 🏆 那么，谁在什么情形下胜出？
+## 谁在什么情形下胜出？
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/media/winners_zh_dark.svg">
@@ -254,12 +277,12 @@ python scripts/make_quickstart_video.py render      # 生成中英文教程视�
 * ⏱️ **实时约束让代价反转。** 在单核 50 ms 预算内，RL 策略几乎不受影响（98 / 105），同一个 NMPC 用 IPOPT
   求解则丢掉每一圈，acados 实时迭代把它拉回到 79 圈（L9）。
 
-## 🕹️ 亲手探索这一圈
+## 亲手探索这一圈
 
 以下内容块会被 GitHub 渲染为**可交互**组件——可以拖动、缩放、旋转和点击。（若当前查看器不支持渲染，
 请直接打开 [`docs/media/`](docs/media) 下的文件。）
 
-### 🗺️ 真实赛道上的最短时间赛车线
+### 真实赛道上的最短时间赛车线
 
 拖动、缩放地图；**点击**线段查看速度区间，点击标记查看最高速度与最大制动、最低速度点，以及测试圈冲出赛道的四个失败高发弯。这条线是 L0 的
 最短时间解，已地理配准到真实的红牛环赛道（与赛道轮廓拟合，RMS 误差 1.8 m）；颜色越深 = 越快。
@@ -2075,7 +2098,7 @@ endsolid speed_landscape
 
 </details>
 
-### 🧭 各层如何层层递进
+### 各层如何层层递进
 
 ```mermaid
 flowchart TB
@@ -2102,7 +2125,7 @@ flowchart TB
   P --> U --> LRN --> D --> N
 ```
 
-## 🧱 研究层
+## 研究层
 
 | 层 | 设定 | 对比的方法 | 状态 |
 |---|---|---|---|
@@ -2341,7 +2364,7 @@ B_s2 53 → 38）。这是在这台机器（WSL，acados v0.6.0）和这一规�
 > **尚未完成：** L7–L9 的实验方案要求在第二个 Python 环境中重新运行主要结果；这项工作已推迟
 > （见 [STATUS.md](STATUS.md)）。
 
-## 🔬 控制方法扩展（阶段 A–I）
+## 控制方法扩展（阶段 A–I）
 
 L9 之后，项目没有继续增加新的层，而是横向扩展 L1–L9 的控制方法：共九个阶段，每个阶段都有自己的文献综述、
 实验方案、调参车辆与测试车辆（[路线图](docs/CONTROL_EXPANSION_ROADMAP.md)、
@@ -2359,7 +2382,7 @@ L9 之后，项目没有继续增加新的层，而是横向扩展 L1–L9 的�
 | **H** | ATV-QP 学习型 MPC | ⏹️ 未做基准测试即关闭 | 开发阶段门槛未通过 |
 | **I** | 学习型 MPC 后续工作、复现检查 | ⏹️ 未做基准测试即关闭 | 复现检查后 LMPC 方向被关闭 |
 
-## 🗂️ 仓库结构
+## 仓库结构
 
 ```mermaid
 flowchart LR
@@ -2398,6 +2421,7 @@ src/f1race/
 scripts/            数据下载与各层复现脚本；l9_wsl/：L9 的 WSL 环境（acados 构建、版本、运行驱动）；
                     race.py：你的第一场比赛；make_readme_media.py、make_quickstart_video.py：
                     本 README 的媒体素材
+notebooks/          first_race.ipynb：在 Colab 或 Jupyter 中跑第一场比赛
 tests/              pytest 测试集
 docs/               各层报告与图表、实验方案、审查流程；
                     media/：本 README 的动画、地图、3D 模型、横幅与图表
@@ -2405,7 +2429,7 @@ docs/               各层报告与图表、实验方案、审查流程；
 
 </details>
 
-## 🔁 开发流程
+## 开发流程
 
 每一层都在独立分支上开发，只有通过独立审查后才合并（[docs/workflow.md](docs/workflow.md)、
 [STATUS.md](STATUS.md)）：
@@ -2422,7 +2446,7 @@ flowchart LR
   F -- 批准 --> G["⤵️ 合并到 main"]
 ```
 
-## 📦 数据
+## 数据
 
 赛道中心线与宽度来自 [TUM FTM racetrack-database](https://github.com/TUMFTM/racetrack-database)（LGPL-3.0）。
 本仓库**不**重新分发这些数据：`scripts/fetch_tracks.py` 会从固定的上游提交下载并校验 SHA-256（`scripts/race.py` 首次使用某条赛道时也以同样方式下载）。L0–L7 与 L9
@@ -2433,7 +2457,22 @@ flowchart LR
 拟合到 [bacinger/f1-circuits](https://github.com/bacinger/f1-circuits)（MIT）中的红牛环轮廓；该轮廓本身不包含在
 本仓库中。
 
-## 📄 许可证
+## 引用 F1-Race
+
+如果 F1-Race 对你的工作有帮助，欢迎引用；GitHub 侧栏的 *Cite this repository* 按钮读取
+[CITATION.cff](CITATION.cff)。
+
+```bibtex
+@software{f1race2026,
+  title   = {{F1-Race}: Minimum-Lap-Time Racing, Layer by Layer},
+  author  = {{yuanche-auto}},
+  year    = {2026},
+  url     = {https://github.com/yuanche-auto/F1-Race},
+  version = {0.1.0}
+}
+```
+
+## 许可证
 
 本仓库代码采用 MIT 许可证（见 [LICENSE](LICENSE)）。赛道数据保留其上游许可证。
 

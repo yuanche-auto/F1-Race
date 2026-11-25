@@ -1,7 +1,7 @@
 """Record and render the quick-start video of the README: your first race.
 
     python scripts/make_quickstart_video.py record    # ~3 min: a fresh clone, install, three races
-    python scripts/make_quickstart_video.py render    # docs/media/quickstart_{en,zh}.gif / .mp4
+    python scripts/make_quickstart_video.py render    # docs/media/quickstart_{en,zh}.webp / .mp4, race_dnf.webp
     python scripts/make_quickstart_video.py all
 
 ``record`` runs the README's quick start for real in a temporary directory and writes
@@ -448,12 +448,26 @@ def render(lang: str) -> None:
         proc.stdin.write(im.tobytes())
     proc.stdin.close()
     proc.wait()
-    gif = MEDIA / f"quickstart_{lang}.gif"
-    vf = ("fps=12,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96:stats_mode=diff[p];"
-          "[b][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle")
-    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(mp4), "-vf", vf, "-loop", "0", str(gif)],
-                   check=True)
-    print(f"{mp4.name}: {mp4.stat().st_size / 1e6:.2f} MB, {total:.1f} s; {gif.name}: {gif.stat().st_size / 1e6:.2f} MB")
+    print(f"{mp4.name}: {mp4.stat().st_size / 1e6:.2f} MB, {total:.1f} s")
+    to_webp(mp4, MEDIA / f"quickstart_{lang}.webp")
+
+
+def to_webp(*args, **kw):
+    """make_readme_media.to_webp, imported only when needed (``record`` needs no matplotlib)."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from make_readme_media import to_webp as f
+
+    return f(*args, **kw)
+
+
+def dnf_clip() -> None:
+    """The README gallery's short clip: the --grip 1.0 replay in follow mode, the OCP car
+    leaving the track (the frames ``record`` filmed for step 4)."""
+    frames = FRAMES / "limit"
+    if not frames.exists():
+        print(f"no frames in {frames}: run `record` first; race_dnf.webp not written")
+        return
+    to_webp(frames / "f_%04d.png", MEDIA / "race_dnf.webp", fps=15, width=720, src_fps=CLIP_FPS, pad_16_9=True)
 
 
 def main(argv=None):
@@ -468,6 +482,7 @@ def main(argv=None):
     if args.what in ("render", "all"):
         for lang in args.lang:
             render(lang)
+        dnf_clip()
 
 
 if __name__ == "__main__":
